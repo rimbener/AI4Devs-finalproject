@@ -68,6 +68,7 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 │   └── tdd.mdc                   # NEW — Three Laws of TDD, Red-Green-Refactor for TS
 │                                 #   (reviewer rubrics now live inline in each reviewer agent file — no shared review-standards doc)
 ├── skills/                       # invocable procedures (loaded on demand)
+│   ├── grill-me/                 # relentless one-question-at-a-time interview (runs /grilling) — used by spec_partner
 │   ├── gherkin-authoring/        # NEW — distill spec → tagged gherkin-scenarios.md contract
 │   ├── mutation-testing/         # NEW — StrykerJS scoped to changed files (+ scripts/run-mutation.sh)
 │   ├── storybook-e2e-tests/      # existing — Playwright e2e for Storybook components (owns the .e2e.js location)
@@ -167,7 +168,7 @@ One feature at a time. State on disk. One human approval up front — a single c
 flowchart TD
     CLI["/ticket-orchestrator &lt;story&gt;<br/>reads user-stories/pending/&lt;story&gt;.md"] --> LEAD{{"orchestrator_lead — orchestrator<br/>worktree feat/&lt;name&gt; · story pending→in-progress→done · guards the gate"}}
 
-    LEAD -->|pending| P1["① spec_partner<br/>debate → spec.md · risks.md · tasks.md · task-N.md · gherkin-scenarios.md"]
+    LEAD -->|pending| P1["① spec_partner<br/>grill-me debate → spec.md · risks.md · tasks.md · task-N.md · gherkin-scenarios.md"]
     P1 -->|spec_drafted| SR["① spec_reviewer<br/>vet the bundle → review-spec.md"]
     SR -->|"findings → fix (≤2 rounds)"| P1
     SR -->|spec_ready| GATE{"⏸ HUMAN GATE<br/>approve spec + Gherkin contract"}
@@ -223,7 +224,7 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
 ### Phase 1 — `spec_partner` (Spec + Gherkin contract, one step)
 - **Tools:** `Read, Write, Glob, Grep`.
 - **Input:** the user-story markdown file (the lead moves it to `user-stories/in-progress/<story>.md` before invoking; named on the CLI: `/ticket-orchestrator <story>`), plus any screenshot or API spec it references, plus `PRD.md` for product context.
-- **Behavior:** Read the ticket, then **ask questions and debate** edge cases, output contracts, and discarded alternatives with the human until the spec is unambiguous (recording decisions *with their rationale*). Then, in the **same step**, distill the spec into the Gherkin contract using the `gherkin-authoring` skill.
+- **Behavior:** Read the ticket, then **grill the human** using the `grill-me` skill (`.agents/skills/grill-me/` → `/grilling`): a relentless, one-question-at-a-time interview with a recommended answer per question, resolving decision dependencies until the spec is unambiguous (recording decisions *with their rationale*; facts are looked up, decisions are the human's). **Any new library, new architecture, or structurally significant change is always put to the human explicitly** — never decided silently. Then, in the **same step**, distill the spec into the Gherkin contract using the `gherkin-authoring` skill.
 - **Outputs (in `docs/features/<name>/`):**
   - `spec.md` — a terse **overview**: summary, user stories ("As a … I want … so that …"), the 4 UI states (Loading / Content / Error / Empty) where UI is involved, analytics events, feature flags, non-goals, resolved decisions. **Acceptance criteria are NOT here** — the `@s` scenarios in `gherkin-scenarios.md` are the ACs; `spec.md` links to them. As a **final Phase 1 step, `spec_partner` re-reads and shrinks `spec.md`** (once the tasks + Gherkin exist) so it duplicates nothing they own — no behavior detail (→ gherkin), no task/impl detail (→ `task-N.md`), no risk write-ups (→ `risks.md`); target ≤ ~4 KB. `spec_reviewer` flags any leftover duplication.
   - `risks.md` — technical / product / timeline risks, each with a mitigation. **Written to the gitignored `tmp/<name>/` folder, NOT `docs/features/<name>/`** — it is never re-read into context during the run and is out of the review bundle; `orchestrator_lead` moves it into `docs/features/<name>/` at PR prep (step 11) so it ships in the PR.

@@ -137,6 +137,8 @@
 
 **Prompt 2:**
 
+**Prompt 3:**
+
 ## Prompts adicionales de iteración y revisión
 
 These prompts drove refinement, reconciliation and review across the documents rather than a single deliverable section:
@@ -407,3 +409,13 @@ These prompts drove refinement, reconciliation and review across the documents r
 1. rename everywhere from implementator into implementer
 
 2. write this prompt into prompts.md
+
+---
+
+## Anexo — Prompts de la sesión: `spec_partner` usa `grill-me` y siempre pregunta ante cambios grandes
+
+> Prompts del usuario (verbatim, en orden) de la sesión que conectó la skill `grill-me` (entrevista implacable de a una pregunta por vez, vía `/grilling`) al paso de debate de `spec_partner`, y añadió la regla de que `spec_partner` siempre debe preguntar al humano cuando haya una definición sobre una nueva librería, una nueva arquitectura o cualquier cambio grande/estructural (nunca decidirlo en silencio).
+
+1. I've added a grill-me skill into the project, I want it to be used by the spec_partner to define the spec. Also, I want the spec_partner to always ask me when there is a definition about a new library, a new architecture or any big change
+
+2. add this into prompts.md

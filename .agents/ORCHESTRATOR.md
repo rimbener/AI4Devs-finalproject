@@ -39,7 +39,7 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 | Agent | Phase | Writes | Edits code? |
 |---|---|---|---|
 | `orchestrator_lead` | orchestrates all | `progress/*`, phase in `tasks.md` | no |
-| `spec_partner` | 1 — spec + contract (debate) | spec bundle + `gherkin-scenarios.md` | no |
+| `spec_partner` | 1 — spec + contract (grilling debate via `grill-me`) | spec bundle + `gherkin-scenarios.md` | no |
 | `spec_reviewer` | 1 — spec review (pre-gate) | `review-spec.md` | no |
 | `implementer` | 2 — build (TDD) | `src/`, `tests/`, `tdd.md`, task statuses | **yes** |
 | `reviewer_slice` | 2 — per slice (all `.agents/rules/` + design, one agent) | `review-slice.md` | no |
@@ -110,6 +110,7 @@ See `/ORCHESTRATOR_PLAN.md` §7. Validated by `dod_validator`: Functionality · 
 
 ## Skills index (invocable procedures)
 
+- `.agents/skills/grill-me/` — relentless one-question-at-a-time interview (runs a `/grilling` session); **used by `spec_partner`** to drive the Phase-1 debate
 - `.agents/skills/gherkin-authoring/` — the `@s` contract (used by `spec_partner`)
 - `.agents/skills/mutation-testing/` — StrykerJS scoped to changed files, `scripts/run-mutation.sh [base-ref]` (used by `mutation_tester`)
 - `.agents/skills/storybook-e2e-tests/` — Playwright e2e for Storybook components (used by `implementer`)
