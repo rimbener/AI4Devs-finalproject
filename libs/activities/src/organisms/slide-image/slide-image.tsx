@@ -42,14 +42,15 @@ export const SlideImage = ({ image }: SlideImageProps) => {
           style={styles.image(aspectRatio)}
         />
         <NativeView testID="slide-image-expand-control" style={styles.expandControl}>
-          <IconButton
-            ref={expandControlRef}
-            icon="open_in_full"
-            variant="filled"
-            size={theme.layout.touchTarget}
-            accessibilityLabel={t('player.slideImage.expand')}
-            onPress={() => setOpen(true)}
-          />
+          <NativeView ref={expandControlRef} testID="slide-image-expand-focus-target">
+            <IconButton
+              icon="open_in_full"
+              variant="filled"
+              size={theme.layout.touchTarget}
+              accessibilityLabel={t('player.slideImage.expand')}
+              onPress={() => setOpen(true)}
+            />
+          </NativeView>
         </NativeView>
       </NativeView>
       <ImageLightbox

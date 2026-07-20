@@ -3,6 +3,7 @@ import { AccessibilityInfo } from 'react-native';
 
 import { layout } from '../../theme/spacing';
 import { ImageLightbox } from './image-lightbox';
+import { focusDialog } from './image-lightbox.helpers';
 
 jest.mock('../../atoms/icon-button/icon-button', () => {
   const React = require('react');
@@ -15,6 +16,8 @@ jest.mock('../../atoms/icon-button/icon-button', () => {
 });
 
 describe('ImageLightbox', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('shows a contained image in a fullscreen modal', async () => {
     const { getByLabelText } = await render(
       <ImageLightbox
@@ -56,6 +59,19 @@ describe('ImageLightbox', () => {
     await fireEvent(getByTestId('image-lightbox-modal'), 'show');
 
     expect(sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
+  });
+
+  it('does not focus when the dialog node is not mounted', async () => {
+    const sendAccessibilityEvent = jest
+      .spyOn(AccessibilityInfo, 'sendAccessibilityEvent')
+      .mockImplementation((node) => {
+        if (!node) throw new Error('A dialog node is required to focus it.');
+      });
+
+    sendAccessibilityEvent.mockClear();
+    focusDialog({ current: null });
+
+    expect(sendAccessibilityEvent).not.toHaveBeenCalled();
   });
 
   it('dismisses when the close control is pressed', async () => {

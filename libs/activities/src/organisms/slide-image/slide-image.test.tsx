@@ -177,7 +177,12 @@ describe('SlideImage', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'player.slideImage.expand' }));
     await fireEvent.press(screen.getByLabelText('player.slideImage.close'));
 
-    expect(sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
+    expect(sendAccessibilityEvent).toHaveBeenCalledTimes(1);
+    const focusTarget = sendAccessibilityEvent.mock.calls[0]?.[0] as unknown as {
+      props: { testID?: string };
+    };
+    expect(focusTarget.props.testID).toBe('slide-image-expand-focus-target');
+    expect(sendAccessibilityEvent.mock.calls[0]?.[1]).toBe('focus');
   });
 
   it('passes the resolved URL and source alt to the lightbox image', async () => {

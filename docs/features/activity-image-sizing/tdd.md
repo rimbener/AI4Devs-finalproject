@@ -92,3 +92,15 @@
 - Review Green: added a named `role="dialog"` viewer, 48dp filled controls, and focus transfer/restore.
 - Review Refactor: made `IconButton` ref-capable and used the shared touch-target token.
 - Gate: scoped components, activities, and localization tests, lint, and type checks pass.
+
+## Post-review mutation remediation
+
+| Mutant | Test | File |
+| --- | --- | --- |
+| dialog ref null guard | `does not focus when the dialog node is not mounted` | `libs/components/src/molecules/image-lightbox/image-lightbox.test.tsx` |
+| restore focus target | `restores accessibility focus to the expand control when the lightbox closes` | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+
+- Red: helper import failed, then the `if (true)` dialog-ref mutation failed the null-node test.
+- Green: retained the guarded dialog focus helper; restored focus on an expand-control wrapper, not `IconButton`.
+- Refactor: reverted the `IconButton` ref API; retained filled 48dp controls and named dialog focus behavior.
+- Gate: targeted components and activities tests pass.

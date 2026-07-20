@@ -1,6 +1,6 @@
 import { useInteractionState } from '@helsoft/hooks';
-import { type Ref, useMemo } from 'react';
-import { Pressable, type StyleProp, type View, type ViewStyle } from 'react-native';
+import { useMemo } from 'react';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Icon } from '../icon/icon';
 import { StateLayer } from '../state-layer/state-layer';
@@ -18,7 +18,6 @@ export type IconButtonProps = {
   onPress?: () => void;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
-  ref?: Ref<View>;
 };
 
 /**
@@ -34,7 +33,6 @@ export const IconButton = ({
   onPress,
   accessibilityLabel,
   style,
-  ref,
 }: IconButtonProps) => {
   const { theme } = useUnistyles();
   const { hover, press, handlers } = useInteractionState();
@@ -65,7 +63,6 @@ export const IconButton = ({
 
   return (
     <Pressable
-      ref={ref}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}

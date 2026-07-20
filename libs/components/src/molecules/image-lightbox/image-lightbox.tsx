@@ -1,10 +1,11 @@
 import { useRef } from 'react';
-import { AccessibilityInfo, Image, Modal, Pressable, View } from 'react-native';
+import { Image, Modal, Pressable, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { IconButton } from '../../atoms/icon-button/icon-button';
 import { layout } from '../../theme/spacing';
 
+import { focusDialog } from './image-lightbox.helpers';
 import type { ImageLightboxProps } from './image-lightbox.types';
 
 export const ImageLightbox = ({
@@ -17,12 +18,6 @@ export const ImageLightbox = ({
 }: ImageLightboxProps) => {
   const dialogRef = useRef<View>(null);
 
-  const focusDialog = () => {
-    if (dialogRef.current) {
-      AccessibilityInfo.sendAccessibilityEvent(dialogRef.current, 'focus');
-    }
-  };
-
   return (
     <Modal
       testID="image-lightbox-modal"
@@ -30,7 +25,7 @@ export const ImageLightbox = ({
       visible={visible}
       animationType="fade"
       onRequestClose={onRequestClose}
-      onShow={focusDialog}
+      onShow={() => focusDialog(dialogRef)}
     >
       <Pressable testID="image-lightbox-backdrop" onPress={onRequestClose} style={styles.scrim}>
         <Pressable
