@@ -1,7 +1,7 @@
 # Current session
 
-**Active feature:** plan-entitlements-key-routing
-**Folder:** docs/features/plan-entitlements-key-routing/
-**Phase:** pr_ready
-**Status:** DoD PASS. Amended: plans flag table (no plan-name branches). Ready for human PR.
-**Notes:** Worktree `.worktrees/plan-entitlements-key-routing` on `feat/plan-entitlements-key-routing`.
+**Active feature:** activity-image-sizing
+**Folder:** docs/features/activity-image-sizing/
+**Phase:** pending
+**Status:** Booted. Story in-progress. Awaiting spec_partner.
+**Notes:** Worktree `.worktrees/activity-image-sizing` on `feat/activity-image-sizing` (base: feature-entrega3-HernanLaura).
