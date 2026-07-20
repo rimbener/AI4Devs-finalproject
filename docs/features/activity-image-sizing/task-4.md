@@ -3,7 +3,7 @@ id: task-4
 title: Wire SlideImage expand control + lightbox open/close + a11y
 slice: 3
 scenarios: [s3, s4, s5, s6, s10, s11]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/slide-image/slide-image.tsx
   - libs/activities/src/organisms/slide-image/slide-image.test.tsx

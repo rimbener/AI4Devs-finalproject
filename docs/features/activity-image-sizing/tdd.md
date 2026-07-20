@@ -4,7 +4,7 @@
 
 | Scenario | Test | File |
 | --- | --- | --- |
-| @s1 | caps and centers the image at the readable content width | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| @s1 | caps and centers the image with its expand overlay at the readable content width | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
 | @s2 | renders the image scaled to fit when a url is available | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
 
 - @s1 Red: added cap and centering assertion; failed (missing max width).
@@ -40,3 +40,24 @@
 - Gate: components biome + check-types + image-lightbox unit tests pass.
 - Full components e2e has unrelated existing atoms failures; full-repo lint skipped for pre-existing study-buddy format debt.
 - task-2 + task-3: done.
+
+## Slice 3
+
+| Scenario | Test | File |
+| --- | --- | --- |
+| @s3 | caps and centers the image with its expand overlay at the readable content width | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| @s10 | shows a localized expand control when the image url is ready | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| @s4 | renders nothing when there is no image | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| @s5 | renders nothing when the image ref fails to resolve | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| @s6, @s11 | opens and closes the lightbox from the image controls | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+
+- @s3, @s10 Red: localized expand-control assertion failed; Green: composed `IconButton`.
+- @s4, @s5: extended silent-degrade tests to assert no expand control or lightbox.
+- @s6, @s11 Red: expand-to-lightbox integration failed; Green: added controlled `useState` lightbox wiring.
+- E2E: `WithImage` opens and dismisses the Storybook lightbox.
+- Gate: activities biome, types, unit suite, and scoped e2e pass.
+- Full-repo lint skipped — existing study-buddy format debt, out of scope.
+- task-4: done.
+- Slice-3 review fix @s1, @s3 Red: asserted a shared capped positioned wrapper; failed as missing.
+- Slice-3 review fix @s1, @s3 Green: constrained image and overlay in the same centered wrapper.
+- Slice-3 review fix tdd: aligned @s1/@s3 map to the overlay test name; split @s10 to the visibility test.

@@ -1,11 +1,22 @@
 jest.mock('@helsoft/hooks', () => ({
   useSlideImageUrl: jest.fn(),
+  useInteractionState: () => ({
+    hover: false,
+    press: false,
+    handlers: {},
+  }),
+}));
+
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: () => ({
+    t: (key: string) => key,
+  }),
 }));
 
 import { lightTheme } from '@helsoft/components/theme';
 import { useSlideImageUrl } from '@helsoft/hooks';
 import type { SlideImageRef } from '@helsoft/types';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { SlideImage } from './slide-image';
 
@@ -22,16 +33,18 @@ const imageRef: SlideImageRef = {
 describe('SlideImage', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  // @s8 — no url → render nothing (text-only slide).
-  it('renders nothing when there is no url', async () => {
+  // @s4 — no image → render nothing and no expand control.
+  it('renders nothing when there is no image', async () => {
     mockUseSlideImageUrl.mockReturnValue({ url: null, isLoading: false });
 
     await render(<SlideImage image={undefined} />);
 
     expect(screen.queryByLabelText('Diagram of mitosis')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'player.slideImage.expand' })).toBeNull();
+    expect(screen.queryByTestId('image-lightbox-modal')).toBeNull();
   });
 
-  // @s9 — image ref present but resolution failed → text-only, no error/placeholder.
+  // @s5 — unresolved URLs render no image, control, or openable lightbox.
   it('renders nothing when the image ref fails to resolve', async () => {
     mockUseSlideImageUrl.mockReturnValue({ url: null, isLoading: false });
 
@@ -40,6 +53,8 @@ describe('SlideImage', () => {
     expect(screen.queryByLabelText('Diagram of mitosis')).toBeNull();
     expect(screen.queryByText(/error/i)).toBeNull();
     expect(screen.queryByRole('image')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'player.slideImage.expand' })).toBeNull();
+    expect(screen.queryByTestId('image-lightbox-modal')).toBeNull();
   });
 
   // @s2 — narrow slides preserve full-width scaling without overflow.
@@ -62,8 +77,8 @@ describe('SlideImage', () => {
     );
   });
 
-  // @s1 — wide slides cap the inline image at the readable column and center it.
-  it('caps and centers the image at the readable content width', async () => {
+  // @s1, @s3 — wide slides constrain the image and its expand overlay together.
+  it('caps and centers the image with its expand overlay at the readable content width', async () => {
     mockUseSlideImageUrl.mockReturnValue({
       url: 'https://example.com/signed.png',
       isLoading: false,
@@ -71,12 +86,46 @@ describe('SlideImage', () => {
 
     await render(<SlideImage image={imageRef} />);
 
-    expect(screen.getByTestId('slide-image').props.style).toEqual(
-      expect.objectContaining({ maxWidth: lightTheme.layout.contentReading }),
+    expect(screen.getByTestId('slide-image-wrapper').props.style).toEqual(
+      expect.objectContaining({
+        width: '100%',
+        maxWidth: lightTheme.layout.contentReading,
+        position: 'relative',
+      }),
     );
     expect(screen.getByTestId('slide-image-container').props.style).toEqual(
       expect.objectContaining({ alignItems: 'center' }),
     );
+  });
+
+  // @s3, @s10 — signed URLs expose a localized dedicated expand control.
+  it('shows a localized expand control when the image url is ready', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+
+    expect(screen.getByRole('button', { name: 'player.slideImage.expand' })).toBeTruthy();
+  });
+
+  // @s6, @s11 — expand opens the contained lightbox with a localized close control.
+  it('opens and closes the lightbox from the image controls', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'player.slideImage.expand' }));
+
+    expect(screen.getByTestId('image-lightbox-modal')).toBeTruthy();
+    expect(screen.getByLabelText('player.slideImage.close')).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText('player.slideImage.close'));
+
+    expect(screen.queryByTestId('image-lightbox-modal')).toBeNull();
   });
 
   // Mutation — aspectRatio falls back to 1 unless BOTH width and height are > 0.
