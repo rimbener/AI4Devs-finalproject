@@ -171,6 +171,10 @@ export const de: TranslationResource = {
         message: 'Diese Lektion konnte nicht geladen werden.',
         retry: 'Erneut versuchen',
       },
+      slideImage: {
+        expand: 'Bild im Vollbild anzeigen',
+        close: 'Bild schließen',
+      },
     },
     results: {
       score: '{{correct}} / {{total}}',

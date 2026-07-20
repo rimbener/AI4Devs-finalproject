@@ -3,7 +3,7 @@ id: task-2
 title: Add slideImage expand/close i18n keys in all locales
 slice: 2
 scenarios: [s12]
-status: todo
+status: done
 paths:
   - libs/localization/src/resources/en.ts
   - libs/localization/src/resources/es.ts

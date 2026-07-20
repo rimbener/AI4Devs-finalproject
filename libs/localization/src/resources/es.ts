@@ -168,6 +168,10 @@ export const es: TranslationResource = {
         message: 'No se pudo cargar esta lección.',
         retry: 'Reintentar',
       },
+      slideImage: {
+        expand: 'Ver imagen a pantalla completa',
+        close: 'Cerrar imagen',
+      },
     },
     results: {
       score: '{{correct}} / {{total}}',

@@ -186,6 +186,10 @@ export const en = {
         message: "Couldn't load this lesson.",
         retry: 'Retry',
       },
+      slideImage: {
+        expand: 'View image fullscreen',
+        close: 'Close image',
+      },
     },
     results: {
       score: '{{correct}} / {{total}}',

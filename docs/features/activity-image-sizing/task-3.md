@@ -3,7 +3,7 @@ id: task-3
 title: Build ImageLightbox molecule in @helsoft/components
 slice: 2
 scenarios: [s6, s7, s8, s9]
-status: todo
+status: done
 paths:
   - libs/components/src/molecules/image-lightbox/image-lightbox.tsx
   - libs/components/src/molecules/image-lightbox/image-lightbox.types.ts

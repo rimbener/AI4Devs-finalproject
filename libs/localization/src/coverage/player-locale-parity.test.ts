@@ -32,6 +32,8 @@ const PLAYER_KEYS = [
   'player.empty.message',
   'player.error.message',
   'player.error.retry',
+  'player.slideImage.expand',
+  'player.slideImage.close',
 ];
 
 describe.each([
