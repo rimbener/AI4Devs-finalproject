@@ -17,10 +17,14 @@ import { lightTheme } from '@helsoft/components/theme';
 import { useSlideImageUrl } from '@helsoft/hooks';
 import type { SlideImageRef } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
 
 import { SlideImage } from './slide-image';
 
 const mockUseSlideImageUrl = useSlideImageUrl as jest.Mock;
+
+const flattenStyle = (style: unknown): Record<string, unknown> =>
+  Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
 
 const imageRef: SlideImageRef = {
   imageId: 'img-1',
@@ -110,6 +114,22 @@ describe('SlideImage', () => {
     expect(screen.getByRole('button', { name: 'player.slideImage.expand' })).toBeTruthy();
   });
 
+  // Review — expand control keeps a 48dp, solid contrast boundary over arbitrary images.
+  it('renders a 48dp filled expand control', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+
+    const style = flattenStyle(
+      screen.getByRole('button', { name: 'player.slideImage.expand' }).props.style,
+    );
+    expect(style.width).toBe(lightTheme.layout.touchTarget);
+    expect(style.height).toBe(lightTheme.layout.touchTarget);
+  });
+
   it('keeps the expand control positioned over the image', async () => {
     mockUseSlideImageUrl.mockReturnValue({
       url: 'https://example.com/signed.png',
@@ -141,6 +161,23 @@ describe('SlideImage', () => {
     await fireEvent.press(screen.getByLabelText('player.slideImage.close'));
 
     expect(screen.queryByTestId('image-lightbox-modal')).toBeNull();
+  });
+
+  // Review — closing the lightbox restores accessibility focus to its trigger.
+  it('restores accessibility focus to the expand control when the lightbox closes', async () => {
+    const sendAccessibilityEvent = jest
+      .spyOn(AccessibilityInfo, 'sendAccessibilityEvent')
+      .mockImplementation(() => {});
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'player.slideImage.expand' }));
+    await fireEvent.press(screen.getByLabelText('player.slideImage.close'));
+
+    expect(sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
   });
 
   it('passes the resolved URL and source alt to the lightbox image', async () => {

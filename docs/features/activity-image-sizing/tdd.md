@@ -77,3 +77,18 @@
 - Mutation Red: added expand layout and lightbox source/alt tests; failed until targeted host selectors existed.
 - Mutation Green: exposed expand-control and lightbox-image test selectors; activities tests pass.
 - Mutation validation: each reported replacement was manually applied; its mapped test failed before restoring production code.
+
+## Review remediation
+
+| Finding | Test | File |
+| --- | --- | --- |
+| 48dp solid close control | `renders a 48dp filled close control` | `libs/components/src/molecules/image-lightbox/image-lightbox.test.tsx` |
+| Named, focus-managed dialog | `exposes a named dialog and moves accessibility focus into it when opened` | `libs/components/src/molecules/image-lightbox/image-lightbox.test.tsx` |
+| 48dp solid expand control | `renders a 48dp filled expand control` | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| Restore focus after close | `restores accessibility focus to the expand control when the lightbox closes` | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| Localized dialog name | `translates player.slideImage.dialog away from the English placeholder` | `libs/localization/src/coverage/player-locale-parity.test.ts` |
+
+- Review Red: dialog role/name, lightbox focus, and locale parity tests failed until the dialog, focus event, and translations existed.
+- Review Green: added a named `role="dialog"` viewer, 48dp filled controls, and focus transfer/restore.
+- Review Refactor: made `IconButton` ref-capable and used the shared touch-target token.
+- Gate: scoped components, activities, and localization tests, lint, and type checks pass.

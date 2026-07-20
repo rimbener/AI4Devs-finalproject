@@ -189,6 +189,7 @@ export const en = {
       slideImage: {
         expand: 'View image fullscreen',
         close: 'Close image',
+        dialog: 'Image viewer',
       },
     },
     results: {

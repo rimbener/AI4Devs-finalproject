@@ -5,5 +5,6 @@ export type ImageLightboxProps = {
   source: ImageSourcePropType;
   alt: string;
   closeLabel: string;
+  dialogLabel: string;
   onRequestClose: () => void;
 };

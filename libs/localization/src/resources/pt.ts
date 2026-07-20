@@ -171,6 +171,7 @@ export const pt: TranslationResource = {
       slideImage: {
         expand: 'Ver imagem em tela cheia',
         close: 'Fechar imagem',
+        dialog: 'Visualizador de imagens',
       },
     },
     results: {

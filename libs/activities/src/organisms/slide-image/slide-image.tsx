@@ -1,9 +1,9 @@
 import { IconButton, ImageLightbox } from '@helsoft/components';
 import { useSlideImageUrl } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import { useState } from 'react';
-import { Image, View } from 'react-native';
-import { StyleSheet } from 'react-native-unistyles';
+import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Image, View as NativeView, type View } from 'react-native';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { SlideImageProps } from './slide-image.types';
 
@@ -14,14 +14,25 @@ import type { SlideImageProps } from './slide-image.types';
 export const SlideImage = ({ image }: SlideImageProps) => {
   const { url } = useSlideImageUrl(image);
   const { t } = useLocalization();
+  const { theme } = useUnistyles();
   const [open, setOpen] = useState(false);
+  const expandControlRef = useRef<View>(null);
+  const wasOpen = useRef(false);
+
+  useEffect(() => {
+    if (!open && wasOpen.current && expandControlRef.current) {
+      AccessibilityInfo.sendAccessibilityEvent(expandControlRef.current, 'focus');
+    }
+    wasOpen.current = open;
+  }, [open]);
+
   if (!url || !image) return null;
 
   const aspectRatio = image.width > 0 && image.height > 0 ? image.width / image.height : 1;
 
   return (
-    <View testID="slide-image-container" style={styles.container}>
-      <View testID="slide-image-wrapper" style={styles.imageWrapper}>
+    <NativeView testID="slide-image-container" style={styles.container}>
+      <NativeView testID="slide-image-wrapper" style={styles.imageWrapper}>
         <Image
           testID="slide-image"
           source={{ uri: url }}
@@ -30,22 +41,26 @@ export const SlideImage = ({ image }: SlideImageProps) => {
           resizeMode="contain"
           style={styles.image(aspectRatio)}
         />
-        <View testID="slide-image-expand-control" style={styles.expandControl}>
+        <NativeView testID="slide-image-expand-control" style={styles.expandControl}>
           <IconButton
+            ref={expandControlRef}
             icon="open_in_full"
+            variant="filled"
+            size={theme.layout.touchTarget}
             accessibilityLabel={t('player.slideImage.expand')}
             onPress={() => setOpen(true)}
           />
-        </View>
-      </View>
+        </NativeView>
+      </NativeView>
       <ImageLightbox
         visible={open}
         source={{ uri: url }}
         alt={image.alt ?? ''}
         closeLabel={t('player.slideImage.close')}
+        dialogLabel={t('player.slideImage.dialog')}
         onRequestClose={() => setOpen(false)}
       />
-    </View>
+    </NativeView>
   );
 };
 

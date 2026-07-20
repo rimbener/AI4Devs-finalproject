@@ -1,7 +1,9 @@
-import { Image, Modal, Pressable, View } from 'react-native';
+import { useRef } from 'react';
+import { AccessibilityInfo, Image, Modal, Pressable, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { IconButton } from '../../atoms/icon-button/icon-button';
+import { layout } from '../../theme/spacing';
 
 import type { ImageLightboxProps } from './image-lightbox.types';
 
@@ -10,37 +12,59 @@ export const ImageLightbox = ({
   source,
   alt,
   closeLabel,
+  dialogLabel,
   onRequestClose,
-}: ImageLightboxProps) => (
-  <Modal
-    testID="image-lightbox-modal"
-    transparent
-    visible={visible}
-    animationType="fade"
-    onRequestClose={onRequestClose}
-  >
-    <Pressable testID="image-lightbox-backdrop" onPress={onRequestClose} style={styles.scrim}>
-      <Pressable
-        testID="image-lightbox-content"
-        accessibilityViewIsModal
-        onPress={(event) => event.stopPropagation()}
-        style={styles.content}
-      >
-        <Image
-          testID="image-lightbox-image"
-          source={source}
-          accessible={Boolean(alt)}
-          accessibilityLabel={alt || undefined}
-          resizeMode="contain"
-          style={styles.image}
-        />
-        <View testID="image-lightbox-close-control" style={styles.closeControl}>
-          <IconButton icon="close" accessibilityLabel={closeLabel} onPress={onRequestClose} />
-        </View>
+}: ImageLightboxProps) => {
+  const dialogRef = useRef<View>(null);
+
+  const focusDialog = () => {
+    if (dialogRef.current) {
+      AccessibilityInfo.sendAccessibilityEvent(dialogRef.current, 'focus');
+    }
+  };
+
+  return (
+    <Modal
+      testID="image-lightbox-modal"
+      transparent
+      visible={visible}
+      animationType="fade"
+      onRequestClose={onRequestClose}
+      onShow={focusDialog}
+    >
+      <Pressable testID="image-lightbox-backdrop" onPress={onRequestClose} style={styles.scrim}>
+        <Pressable
+          ref={dialogRef}
+          testID="image-lightbox-content"
+          accessible
+          accessibilityLabel={dialogLabel}
+          role="dialog"
+          accessibilityViewIsModal
+          onPress={(event) => event.stopPropagation()}
+          style={styles.content}
+        >
+          <Image
+            testID="image-lightbox-image"
+            source={source}
+            accessible={Boolean(alt)}
+            accessibilityLabel={alt || undefined}
+            resizeMode="contain"
+            style={styles.image}
+          />
+          <View testID="image-lightbox-close-control" style={styles.closeControl}>
+            <IconButton
+              icon="close"
+              variant="filled"
+              size={layout.touchTarget}
+              accessibilityLabel={closeLabel}
+              onPress={onRequestClose}
+            />
+          </View>
+        </Pressable>
       </Pressable>
-    </Pressable>
-  </Modal>
-);
+    </Modal>
+  );
+};
 
 const styles = StyleSheet.create((theme) => ({
   scrim: {

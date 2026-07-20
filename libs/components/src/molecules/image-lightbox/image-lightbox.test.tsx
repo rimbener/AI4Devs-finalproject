@@ -1,6 +1,18 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { AccessibilityInfo } from 'react-native';
 
+import { layout } from '../../theme/spacing';
 import { ImageLightbox } from './image-lightbox';
+
+jest.mock('../../atoms/icon-button/icon-button', () => {
+  const React = require('react');
+  const { Pressable } = require('react-native');
+
+  return {
+    IconButton: ({ icon: _icon, ...props }: { icon: string }) =>
+      React.createElement(Pressable, { ...props, testID: 'image-lightbox-icon-button' }),
+  };
+});
 
 describe('ImageLightbox', () => {
   it('shows a contained image in a fullscreen modal', async () => {
@@ -10,6 +22,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={jest.fn()}
       />,
     );
@@ -18,6 +31,31 @@ describe('ImageLightbox', () => {
 
     expect(image).toHaveProp('resizeMode', 'contain');
     expect(image.props.style).toMatchObject({ width: '100%', height: '100%' });
+  });
+
+  // Review — the fullscreen viewer is a named dialog and receives focus when opened.
+  it('exposes a named dialog and moves accessibility focus into it when opened', async () => {
+    const sendAccessibilityEvent = jest
+      .spyOn(AccessibilityInfo, 'sendAccessibilityEvent')
+      .mockImplementation(() => {});
+    const { getByTestId } = await render(
+      <ImageLightbox
+        visible
+        source={{ uri: 'https://example.com/diagram.png' }}
+        alt="Photosynthesis diagram"
+        closeLabel="Close image"
+        dialogLabel="Image viewer"
+        onRequestClose={jest.fn()}
+      />,
+    );
+
+    const dialog = getByTestId('image-lightbox-content');
+    expect(dialog).toHaveProp('role', 'dialog');
+    expect(dialog).toHaveProp('accessibilityLabel', 'Image viewer');
+
+    await fireEvent(getByTestId('image-lightbox-modal'), 'show');
+
+    expect(sendAccessibilityEvent).toHaveBeenCalledWith(expect.anything(), 'focus');
   });
 
   it('dismisses when the close control is pressed', async () => {
@@ -29,6 +67,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={onRequestClose}
       />,
     );
@@ -36,6 +75,24 @@ describe('ImageLightbox', () => {
     await fireEvent.press(getByLabelText('Close image'));
 
     expect(onRequestClose).toHaveBeenCalledTimes(1);
+  });
+
+  // Review — close control keeps a 48dp, solid contrast boundary over arbitrary images.
+  it('renders a 48dp filled close control', async () => {
+    const { getByTestId } = await render(
+      <ImageLightbox
+        visible
+        source={{ uri: 'https://example.com/diagram.png' }}
+        alt="Photosynthesis diagram"
+        closeLabel="Close image"
+        dialogLabel="Image viewer"
+        onRequestClose={jest.fn()}
+      />,
+    );
+
+    const closeButton = getByTestId('image-lightbox-icon-button');
+    expect(closeButton.props.size).toBe(layout.touchTarget);
+    expect(closeButton.props.variant).toBe('filled');
   });
 
   it('dismisses when the backdrop is pressed without closing from image presses', async () => {
@@ -47,6 +104,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={onRequestClose}
       />,
     );
@@ -65,6 +123,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={jest.fn()}
       />,
     );
@@ -89,6 +148,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={jest.fn()}
       />,
     );
@@ -108,6 +168,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={onRequestClose}
       />,
     );
@@ -124,6 +185,7 @@ describe('ImageLightbox', () => {
         source={{ uri: 'https://example.com/diagram.png' }}
         alt="Photosynthesis diagram"
         closeLabel="Close image"
+        dialogLabel="Image viewer"
         onRequestClose={jest.fn()}
       />,
     );

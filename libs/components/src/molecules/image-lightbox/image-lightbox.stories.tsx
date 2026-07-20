@@ -10,6 +10,7 @@ const meta = {
     source: { uri: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429' },
     alt: 'Mountain landscape',
     closeLabel: 'Close image',
+    dialogLabel: 'Image viewer',
     onRequestClose: () => undefined,
   },
 } satisfies Meta<typeof ImageLightbox>;
@@ -18,8 +19,12 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Open: Story = {};
+export const Open: Story = {
+  args: {
+    dialogLabel: 'Image viewer',
+  },
+};
 
 export const Hidden: Story = {
-  args: { visible: false },
+  args: { visible: false, dialogLabel: 'Image viewer' },
 };

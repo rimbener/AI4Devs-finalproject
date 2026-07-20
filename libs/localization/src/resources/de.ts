@@ -174,6 +174,7 @@ export const de: TranslationResource = {
       slideImage: {
         expand: 'Bild im Vollbild anzeigen',
         close: 'Bild schließen',
+        dialog: 'Bildbetrachter',
       },
     },
     results: {
