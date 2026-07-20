@@ -1,5 +1,5 @@
 import { useSlideImageUrl } from '@helsoft/hooks';
-import { Image } from 'react-native';
+import { Image, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import type { SlideImageProps } from './slide-image.types';
@@ -15,20 +15,26 @@ export const SlideImage = ({ image }: SlideImageProps) => {
   const aspectRatio = image.width > 0 && image.height > 0 ? image.width / image.height : 1;
 
   return (
-    <Image
-      testID="slide-image"
-      source={{ uri: url }}
-      accessible={Boolean(image.alt)}
-      accessibilityLabel={image.alt || undefined}
-      resizeMode="contain"
-      style={styles.image(aspectRatio)}
-    />
+    <View testID="slide-image-container" style={styles.container}>
+      <Image
+        testID="slide-image"
+        source={{ uri: url }}
+        accessible={Boolean(image.alt)}
+        accessibilityLabel={image.alt || undefined}
+        resizeMode="contain"
+        style={styles.image(aspectRatio)}
+      />
+    </View>
   );
 };
 
-const styles = StyleSheet.create(() => ({
+const styles = StyleSheet.create((theme) => ({
+  container: {
+    alignItems: 'center',
+  },
   image: (aspectRatio: number) => ({
     width: '100%' as const,
+    maxWidth: theme.layout.contentReading,
     aspectRatio,
   }),
 }));

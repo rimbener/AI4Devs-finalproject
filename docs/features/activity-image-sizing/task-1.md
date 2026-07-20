@@ -3,7 +3,7 @@ id: task-1
 title: Cap inline slide image at readable max width, centered
 slice: 1
 scenarios: [s1, s2]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/slide-image/slide-image.tsx
   - libs/activities/src/organisms/slide-image/slide-image.test.tsx

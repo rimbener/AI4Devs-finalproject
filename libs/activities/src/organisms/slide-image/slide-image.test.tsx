@@ -2,6 +2,7 @@ jest.mock('@helsoft/hooks', () => ({
   useSlideImageUrl: jest.fn(),
 }));
 
+import { lightTheme } from '@helsoft/components/theme';
 import { useSlideImageUrl } from '@helsoft/hooks';
 import type { SlideImageRef } from '@helsoft/types';
 import { render, screen } from '@testing-library/react-native';
@@ -41,7 +42,7 @@ describe('SlideImage', () => {
     expect(screen.queryByRole('image')).toBeNull();
   });
 
-  // @s7 — present image renders scaled with alt.
+  // @s2 — narrow slides preserve full-width scaling without overflow.
   it('renders the image scaled to fit when a url is available', async () => {
     mockUseSlideImageUrl.mockReturnValue({
       url: 'https://example.com/signed.png',
@@ -58,6 +59,23 @@ describe('SlideImage', () => {
         width: '100%',
         aspectRatio: 2,
       }),
+    );
+  });
+
+  // @s1 — wide slides cap the inline image at the readable column and center it.
+  it('caps and centers the image at the readable content width', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+
+    expect(screen.getByTestId('slide-image').props.style).toEqual(
+      expect.objectContaining({ maxWidth: lightTheme.layout.contentReading }),
+    );
+    expect(screen.getByTestId('slide-image-container').props.style).toEqual(
+      expect.objectContaining({ alignItems: 'center' }),
     );
   });
 
