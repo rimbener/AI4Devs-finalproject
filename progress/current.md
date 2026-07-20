@@ -2,6 +2,7 @@
 
 **Active feature:** activity-image-sizing
 **Folder:** docs/features/activity-image-sizing/
-**Phase:** pending
-**Status:** Booted. Story in-progress. Awaiting spec_partner.
-**Notes:** Worktree `.worktrees/activity-image-sizing` on `feat/activity-image-sizing` (base: feature-entrega3-HernanLaura).
+**Phase:** approved → in_progress (slice 1)
+**Status:** Human approved spec + Gherkin. Building with non-Anthropic models.
+**Notes:** Worktree `.worktrees/activity-image-sizing` on `feat/activity-image-sizing`.
+
