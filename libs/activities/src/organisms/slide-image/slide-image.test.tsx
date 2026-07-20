@@ -163,6 +163,19 @@ describe('SlideImage', () => {
     expect(screen.queryByTestId('image-lightbox-modal')).toBeNull();
   });
 
+  // Mutation — the lightbox dialog keeps its localized accessible name.
+  it('passes the localized dialog label to the lightbox', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'player.slideImage.expand' }));
+
+    expect(screen.getByRole('dialog', { name: 'player.slideImage.dialog' })).toBeTruthy();
+  });
+
   // Review — closing the lightbox restores accessibility focus to its trigger.
   it('restores accessibility focus to the expand control when the lightbox closes', async () => {
     const sendAccessibilityEvent = jest

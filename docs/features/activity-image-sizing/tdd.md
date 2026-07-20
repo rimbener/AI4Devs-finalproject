@@ -99,8 +99,12 @@
 | --- | --- | --- |
 | dialog ref null guard | `does not focus when the dialog node is not mounted` | `libs/components/src/molecules/image-lightbox/image-lightbox.test.tsx` |
 | restore focus target | `restores accessibility focus to the expand control when the lightbox closes` | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| `slide-image.tsx:61` dialog label key | `passes the localized dialog label to the lightbox` | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
 
 - Red: helper import failed, then the `if (true)` dialog-ref mutation failed the null-node test.
 - Green: retained the guarded dialog focus helper; restored focus on an expand-control wrapper, not `IconButton`.
 - Refactor: reverted the `IconButton` ref API; retained filled 48dp controls and named dialog focus behavior.
 - Gate: targeted components and activities tests pass.
+- Mutation Red: `t("")` made the named-dialog assertion fail.
+- Mutation Green: restored `t('player.slideImage.dialog')`; targeted activities test passes.
+- Mutation Refactor: none needed.
