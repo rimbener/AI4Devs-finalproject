@@ -320,5 +320,4 @@ describe('ApiKeyGate', () => {
     expect(screen.getByText('creation disabled')).toBeTruthy();
     expect(screen.queryByText('creation enabled')).toBeNull();
   });
-
 });

@@ -12,13 +12,13 @@ export * from '../../../hooks/src/hooks/use-interaction-state';
 import type {
   ApiKeyErrorCode,
   ApiKeyStatus,
-  Profile,
   GeneratedLesson,
   GenerateLessonRequest,
   GenerationErrorCode,
   GenerationProgressStep,
   LessonSummary,
   PdfDocumentSummary,
+  Profile,
   SlideImageRef,
 } from '@helsoft/types';
 import { useCallback, useState } from 'react';

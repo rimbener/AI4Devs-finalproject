@@ -75,7 +75,5 @@ export const Paid: Story = {
 
 /** Error — plan read failed and can be retried. */
 export const Error: Story = {
-  decorators: [
-    withProfileMock({ profile: null, error: new globalThis.Error('read failed') }),
-  ],
+  decorators: [withProfileMock({ profile: null, error: new globalThis.Error('read failed') })],
 };

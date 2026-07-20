@@ -36,12 +36,7 @@ const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
  */
 export const ApiKeySettings = () => {
   const { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey } = useApiKey();
-  const {
-    profile,
-    isLoading: isProfileLoading,
-    error: profileError,
-    retry,
-  } = useProfile();
+  const { profile, isLoading: isProfileLoading, error: profileError, retry } = useProfile();
   const { t, locale } = useLocalization();
 
   useEffect(() => {

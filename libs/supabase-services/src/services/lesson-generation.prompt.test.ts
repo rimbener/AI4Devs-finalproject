@@ -1,5 +1,5 @@
-import { MIN_LESSON_SLIDES } from './lesson-generation.schema';
 import { buildDeckPrompt } from './lesson-generation.prompt';
+import { MIN_LESSON_SLIDES } from './lesson-generation.schema';
 
 const pages = [
   { page: 1, text: 'Photosynthesis converts light into chemical energy.' },
