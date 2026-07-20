@@ -110,6 +110,21 @@ describe('SlideImage', () => {
     expect(screen.getByRole('button', { name: 'player.slideImage.expand' })).toBeTruthy();
   });
 
+  it('keeps the expand control positioned over the image', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+
+    expect(screen.getByTestId('slide-image-expand-control').props.style).toMatchObject({
+      position: 'absolute',
+      top: expect.anything(),
+      right: expect.anything(),
+    });
+  });
+
   // @s6, @s11 — expand opens the contained lightbox with a localized close control.
   it('opens and closes the lightbox from the image controls', async () => {
     mockUseSlideImageUrl.mockReturnValue({
@@ -126,6 +141,32 @@ describe('SlideImage', () => {
     await fireEvent.press(screen.getByLabelText('player.slideImage.close'));
 
     expect(screen.queryByTestId('image-lightbox-modal')).toBeNull();
+  });
+
+  it('passes the resolved URL and source alt to the lightbox image', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'player.slideImage.expand' }));
+
+    const lightboxImage = screen.getByTestId('image-lightbox-image');
+    expect(lightboxImage.props.source).toEqual({ uri: 'https://example.com/signed.png' });
+    expect(lightboxImage.props.accessibilityLabel).toBe('Diagram of mitosis');
+  });
+
+  it('keeps a missing alt decorative in the lightbox', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={{ ...imageRef, alt: undefined }} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'player.slideImage.expand' }));
+
+    expect(screen.getByTestId('image-lightbox-image').props.accessibilityLabel).toBeUndefined();
   });
 
   // Mutation — aspectRatio falls back to 1 unless BOTH width and height are > 0.

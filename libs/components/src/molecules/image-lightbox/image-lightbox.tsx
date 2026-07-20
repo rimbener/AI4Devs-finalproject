@@ -21,18 +21,20 @@ export const ImageLightbox = ({
   >
     <Pressable testID="image-lightbox-backdrop" onPress={onRequestClose} style={styles.scrim}>
       <Pressable
+        testID="image-lightbox-content"
         accessibilityViewIsModal
         onPress={(event) => event.stopPropagation()}
         style={styles.content}
       >
         <Image
+          testID="image-lightbox-image"
           source={source}
           accessible={Boolean(alt)}
           accessibilityLabel={alt || undefined}
           resizeMode="contain"
           style={styles.image}
         />
-        <View style={styles.closeControl}>
+        <View testID="image-lightbox-close-control" style={styles.closeControl}>
           <IconButton icon="close" accessibilityLabel={closeLabel} onPress={onRequestClose} />
         </View>
       </Pressable>

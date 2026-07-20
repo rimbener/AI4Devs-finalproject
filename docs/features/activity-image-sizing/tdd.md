@@ -61,3 +61,19 @@
 - Slice-3 review fix @s1, @s3 Red: asserted a shared capped positioned wrapper; failed as missing.
 - Slice-3 review fix @s1, @s3 Green: constrained image and overlay in the same centered wrapper.
 - Slice-3 review fix tdd: aligned @s1/@s3 map to the overlay test name; split @s10 to the visibility test.
+
+## Mutation remediation
+
+| Mutants | Test | File |
+| --- | --- | --- |
+| `image-lightbox.tsx:44,49,56,57` | keeps the modal scrim, content, and close control positioned | `libs/components/src/molecules/image-lightbox/image-lightbox.test.tsx` |
+| `image-lightbox.tsx:25` | stops image-area presses from reaching the backdrop | `libs/components/src/molecules/image-lightbox/image-lightbox.test.tsx` |
+| `slide-image.tsx:65,66` | keeps the expand control positioned over the image | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| `slide-image.tsx:43` | passes the resolved URL and source alt to the lightbox image | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+| `slide-image.tsx:44` | passes the resolved URL and source alt; keeps a missing alt decorative | `libs/activities/src/organisms/slide-image/slide-image.test.tsx` |
+
+- Mutation Red: added lightbox layout and propagation tests; failed until targeted host selectors existed.
+- Mutation Green: exposed content, close-control, and lightbox-image test selectors; component tests pass.
+- Mutation Red: added expand layout and lightbox source/alt tests; failed until targeted host selectors existed.
+- Mutation Green: exposed expand-control and lightbox-image test selectors; activities tests pass.
+- Mutation validation: each reported replacement was manually applied; its mapped test failed before restoring production code.

@@ -30,7 +30,7 @@ export const SlideImage = ({ image }: SlideImageProps) => {
           resizeMode="contain"
           style={styles.image(aspectRatio)}
         />
-        <View style={styles.expandControl}>
+        <View testID="slide-image-expand-control" style={styles.expandControl}>
           <IconButton
             icon="open_in_full"
             accessibilityLabel={t('player.slideImage.expand')}

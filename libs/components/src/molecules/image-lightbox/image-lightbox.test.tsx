@@ -58,6 +58,47 @@ describe('ImageLightbox', () => {
     expect(onRequestClose).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the modal scrim, content, and close control positioned', async () => {
+    const { getByTestId } = await render(
+      <ImageLightbox
+        visible
+        source={{ uri: 'https://example.com/diagram.png' }}
+        alt="Photosynthesis diagram"
+        closeLabel="Close image"
+        onRequestClose={jest.fn()}
+      />,
+    );
+
+    expect(getByTestId('image-lightbox-backdrop').props.style).toMatchObject({
+      flex: 1,
+      padding: expect.anything(),
+      backgroundColor: expect.anything(),
+    });
+    expect(getByTestId('image-lightbox-content').props.style).toMatchObject({ flex: 1 });
+    expect(getByTestId('image-lightbox-close-control').props.style).toMatchObject({
+      position: 'absolute',
+      top: expect.anything(),
+      right: expect.anything(),
+    });
+  });
+
+  it('stops image-area presses from reaching the backdrop', async () => {
+    const { getByTestId } = await render(
+      <ImageLightbox
+        visible
+        source={{ uri: 'https://example.com/diagram.png' }}
+        alt="Photosynthesis diagram"
+        closeLabel="Close image"
+        onRequestClose={jest.fn()}
+      />,
+    );
+    const stopPropagation = jest.fn();
+
+    await fireEvent(getByTestId('image-lightbox-content'), 'press', { stopPropagation });
+
+    expect(stopPropagation).toHaveBeenCalledTimes(1);
+  });
+
   it('dismisses when the system requests closing the modal', async () => {
     const onRequestClose = jest.fn();
 
