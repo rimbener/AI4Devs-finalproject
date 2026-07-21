@@ -20,14 +20,14 @@ pending
   → spec_reviewer       → review-spec.md  (loop with spec_partner, ≤ 2 rounds)          [spec_ready]
   → ⏸ HUMAN GATE: approve the spec + Gherkin contract (single approval)                 [approved]
   → implementer       → per vertical slice: build (TDD) → reviewer_slice (ONE agent,
-        checks all .agents/rules/ + design) → fix → commit; no slice N+1 until clean    [in_progress]
+        checks all .agents/rules/ + design + accessibility) → fix → commit;
+        no slice N+1 until clean                                                        [in_progress]
   ── quality gate (after all slices) ──
-  → mutation_tester (pre-review)   → mutation.md; kill every survivor (≤ 2 rounds)      [mutation]
-  → reviews_lead (full)            → CI once + the 2 reviewers (engineering, standards),
-        skipping any the diff can't trigger → review.md; fix every finding;
-        round 2 re-runs only the reviewer(s) with open findings (≤ 2 rounds)             [in_review]
-  → mutation_tester (post-review)  → ONLY if the review changed source, scoped to the
-        pre-review sha; kill every survivor (≤ 2 rounds)                                [mutation]
+  → reviews_lead (full)            → CI once + reviewer_engineering (code · architecture ·
+        performance · security), the sole full reviewer → review.md; fix every finding
+        (≤ 2 rounds)                                                                     [in_review]
+  → mutation_tester                → mutation.md; changed files vs main (covers the
+        review's fixes too); kill every survivor (≤ 2 rounds)                            [mutation]
   → dod_validator       → dod.md (validate only, no PR)                                 [pr_ready]
   → ⟵ human opens & merges the PR                                                       [done]
 ```
@@ -42,10 +42,10 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 | `spec_partner` | 1 — spec + contract (grilling debate via `grill-me`) | spec bundle + `gherkin-scenarios.md` | no |
 | `spec_reviewer` | 1 — spec review (pre-gate) | `review-spec.md` | no |
 | `implementer` | 2 — build (TDD) | `src/`, `tests/`, `tdd.md`, task statuses | **yes** |
-| `reviewer_slice` | 2 — per slice (all `.agents/rules/` + design, one agent) | `review-slice.md` | no |
-| `reviews_lead` | 3 — full review round (CI once, reviewer/lens skipping) | `review.md` | no |
-| `reviewer_engineering` (code · architecture · performance) / `reviewer_standards` (security · accessibility) | 3 — full only (2 agents in parallel, as applicable) | `review-engineering.md` / `review-standards.md` | no |
-| `mutation_tester` | 3 — StrykerJS (pre-review; post-review only if the review changed source) | `mutation.md` | no |
+| `reviewer_slice` | 2 — per slice (all `.agents/rules/` + design + accessibility, one agent) | `review-slice.md` | no |
+| `reviews_lead` | 3 — full review round (CI once, invokes the sole reviewer) | `review.md` | no |
+| `reviewer_engineering` (code · architecture · performance · security) | 3 — full review's sole reviewer | `review-engineering.md` | no |
+| `mutation_tester` | 3 — StrykerJS, once after the full review (changed files vs `main`) | `mutation.md` | no |
 | `dod_validator` | 4 — DoD | `dod.md` | no |
 
 `implementer` is the **only** agent that edits feature code. Reviewers and leads prune, they don't patch.
@@ -53,7 +53,7 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 ## Models (per-agent `model:` frontmatter)
 
 - **Opus** — `spec_partner` (highest-leverage reasoning).
-- **Sonnet** — `orchestrator_lead`, `spec_reviewer`, `implementer`, `reviewer_slice`, `reviews_lead`, and both full reviewers (`reviewer_engineering`, `reviewer_standards`).
+- **Sonnet** — `orchestrator_lead`, `spec_reviewer`, `implementer`, `reviewer_slice`, `reviews_lead`, and the full reviewer `reviewer_engineering`.
 - **Haiku** — `mutation_tester`, `dod_validator` (mechanical).
 
 ## Gates (all must pass to advance — full detail in `orchestrator_lead.md` §Protocol)
@@ -61,10 +61,9 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 1. **spec_drafted → spec_ready** — `spec_reviewer` clean (≤ 2 rounds).
 2. **HUMAN GATE** — spec + contract approved together.
 3. **per-slice** — lint + check-types + tests (+ e2e where relevant) green; slice `@s` covered; `tdd.md` ≤ 8 000 bytes; `reviewer_slice` clean (≤ 2 rounds, no minors accepted).
-4. **mutation (pre-review)** — 100% killed on changed lines (≤ 2 rounds, else escalate).
-5. **full review** — every finding fixed, any severity (≤ 2 rounds); after round 2: open blocker/major → escalate; only minors → ship as documented, human-accepted risks.
-6. **mutation (post-review)** — only if the review changed source; 100% again on the review-fix files (≤ 2 rounds).
-7. **pr_ready** — `dod_validator` all-pass; human opens/merges the PR → `done`.
+4. **full review** — every finding fixed, any severity (≤ 2 rounds); after round 2: open blocker/major → escalate; only minors → ship as documented, human-accepted risks.
+5. **mutation** — once after the full review; 100% killed on the changed lines vs `main` (≤ 2 rounds, else escalate).
+6. **pr_ready** — `dod_validator` all-pass; human opens/merges the PR → `done`.
 
 ## Artifact map — `docs/features/<name>/`
 
@@ -72,9 +71,9 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 spec.md  tasks.md  task-1.md … task-N.md
 gherkin-scenarios.md  review-spec.md  tdd.md
 review-slice.md
-review-engineering.md  review-standards.md
+review-engineering.md
 review.md  mutation.md  dod.md
-risks.md   # lands here only at PR time (step 11); during the run it lives in tmp/<name>/
+risks.md   # lands here only at PR time (step 10); during the run it lives in tmp/<name>/
 ```
 
 **`risks.md` is written to a gitignored `tmp/<name>/` folder** by `spec_partner` and is **never re-read into context** during the run (not reviewed, not part of the bundle). `orchestrator_lead` moves `tmp/<name>/risks.md` → `docs/features/<name>/risks.md` at PR prep (step 11) so it ships in the PR.
@@ -85,10 +84,9 @@ Session state: `progress/current.md` (active pointer) + `progress/history.md` (a
 
 - **Rubrics live in each reviewer's agent file** — there is no shared review-standards doc loaded into every context.
 - **CI runs once per review round** (by `reviews_lead`); reviewers never re-run `pnpm lint`/`check-types`/`test` — they get the status and judge the **diff**, not the world.
-- **Two full reviewers** — `reviewer_engineering` (code · architecture · performance) always runs; `reviewer_standards` (security · accessibility) is skipped only on a types/docs-only diff with no UI and no security surface. Each agent self-marks any sub-lens the diff can't trigger as `N/A`; each skip is recorded in `review.md`. **Design-system review is not in the full review** — `reviewer_slice` covers it per slice. (Consolidating the review lenses cuts fan-out context/token cost.)
-- **Round 2 re-runs only the reviewer(s) with open findings.**
-- **Per-slice review is ONE agent** (`reviewer_slice`), not a lead + fan-out.
-- **Post-review mutation is conditional** and scoped to the pre-review sha.
+- **One full reviewer** — `reviewer_engineering` (code · architecture · performance · security) is the sole full-review agent; it self-marks performance and/or security `N/A` when the diff can't trigger them (recorded in `review-engineering.md`). **Design & accessibility are not in the full review** — `reviewer_slice` covers them per slice. (Folding all review lenses into one per-slice agent + one full agent removes fan-out context/token cost entirely.)
+- **Per-slice review is ONE agent** (`reviewer_slice`): all `.agents/rules/` + design + accessibility, not a lead + fan-out.
+- **Mutation runs once, after the full review** (changed files vs `main`) — no separate pre-review pass.
 - **Quiet runners everywhere** — `turbo --output-logs=errors-only`; scoped `pnpm --filter <ws> test -- <file> --silent` during TDD cycles; Stryker `--logLevel warn` (log to file, read the summary); Playwright `--reporter=list`.
 - **Artifact hygiene** — a fact lives in exactly one place, others link (ACs only in `gherkin-scenarios.md`; `tasks.md` a bare index; DoD cites rather than restates). Logs are summaries (`tdd.md` = `@s → test` map + one line per cycle, ≤ 8 000 bytes, enforced at each slice gate). One findings-only `review-<type>.md` per reviewer, overwritten each round — never `-r2`/`-r3` copies. State lines are one line. **`risks.md` never enters context** — written once to `tmp/<name>/`, landed in `docs/` only at PR time.
 
@@ -114,4 +112,4 @@ See `/ORCHESTRATOR_PLAN.md` §7. Validated by `dod_validator`: Functionality · 
 - `.agents/skills/gherkin-authoring/` — the `@s` contract (used by `spec_partner`)
 - `.agents/skills/mutation-testing/` — StrykerJS scoped to changed files, `scripts/run-mutation.sh [base-ref]` (used by `mutation_tester`)
 - `.agents/skills/storybook-e2e-tests/` — Playwright e2e for Storybook components (used by `implementer`)
-- `.agents/skills/compact-docs/` — pre-PR doc cleanup (used by `orchestrator_lead`, step 10)
+- `.agents/skills/compact-docs/` — pre-PR doc cleanup (used by `orchestrator_lead`, step 9)

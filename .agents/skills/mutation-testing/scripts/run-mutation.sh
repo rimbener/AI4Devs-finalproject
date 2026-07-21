@@ -7,10 +7,10 @@
 # Computes files changed since the merge-base with base-ref via three-dot
 # (`git diff A...B` ≡ `git diff $(merge-base A B) B`). Required for the
 # default base (`main`) so only this branch's changes are included; when
-# base-ref is an ancestor of HEAD (post-review pre-review-sha), equivalent
-# to two-dot `A..B`. Filters to each lib's mutate-able source (excludes
-# tests, stories, e2e, and index barrels), and runs `stryker run --mutate`
-# for each affected lib. Never runs a whole-repo mutation.
+# base-ref is an ancestor of HEAD, this equals two-dot `A..B`. Filters to
+# each lib's mutate-able source (excludes tests, stories, e2e, and index
+# barrels), and runs `stryker run --mutate` for each affected lib. Never
+# runs a whole-repo mutation.
 set -euo pipefail
 
 BASE="${1:-main}"

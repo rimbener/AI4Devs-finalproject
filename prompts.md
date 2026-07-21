@@ -419,3 +419,18 @@ These prompts drove refinement, reconciliation and review across the documents r
 1. I've added a grill-me skill into the project, I want it to be used by the spec_partner to define the spec. Also, I want the spec_partner to always ask me when there is a definition about a new library, a new architecture or any big change
 
 2. add this into prompts.md
+
+---
+
+## Anexo — Prompts de la sesión: quitar la mutación pre-review y reorganizar los reviewers
+
+> Prompts del usuario (verbatim, en orden) de la sesión que eliminó la pasada de mutación pre-review (quedando una sola mutación después de la revisión completa), actualizó el diagrama `orchestrator-diagram.excalidraw`, y reorganizó los reviewers: mover Accessibility de `reviewer_standards` a `reviewer_slice`, mover Security de `reviewer_standards` a `reviewer_engineering`, y eliminar `reviewer_standards` (dejando a `reviewer_engineering` como único reviewer de la revisión completa).
+
+1. let's remove the mutation_tester pre-review step
+
+2. please also modify the orchestrator-diagram.excalidraw
+
+3. now I want to modify the reviewers again:
+   move the Accessibility review from @reviewer_standards to @reviewer_slice
+   move the Security review from @reviewer_standards to @reviewer_engineering
+   finally remove @reviewer_standards

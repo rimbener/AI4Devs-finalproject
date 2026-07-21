@@ -1,10 +1,10 @@
 # Agentic Orchestrator Workflow — Implementation Plan
 
-> **Superseded in part (2026-07-11, token-efficiency revision):** reviewer rubrics now live **in each reviewer's agent file** (`.agents/rules/review-standards.md` was removed); per-slice reviews run as a single combined `reviewer_slice` agent; **the full review is consolidated into two parallel agents** — `reviewer_engineering` (code · architecture · performance) and `reviewer_standards` (security · accessibility), both on Sonnet, with **design-system review handled per-slice by `reviewer_slice`** (not repeated in the full review); `reviews_lead` runs CI once per round and skips a reviewer/lens the diff can't trigger; round 2 re-runs only the reviewer(s) with open findings; the post-review mutation pass runs only if the review changed source (scoped to the pre-review sha). Where this plan conflicts, `.agents/ORCHESTRATOR.md` wins.
+> **Superseded in part (2026-07-11, token-efficiency revision):** reviewer rubrics now live **in each reviewer's agent file** (`.agents/rules/review-standards.md` was removed); per-slice reviews run as a single combined `reviewer_slice` agent (rules + design + accessibility); **the full review has a single reviewer** — `reviewer_engineering` (code · architecture · performance · security) on Sonnet — with **design & accessibility handled per-slice by `reviewer_slice`** (not repeated in the full review); `reviews_lead` runs CI once per round and invokes that one reviewer; mutation runs **once, after the full review** (on the feature's changed files vs `main`) — the separate pre-review mutation pass was removed. Where this plan conflicts, `.agents/ORCHESTRATOR.md` wins.
 
 > **Project:** AI Study Buddy (AI4Devs final project) — Turborepo + pnpm monorepo, Expo/React Native universal app, `@helsoft/*` libs, Supabase backend, Storybook + Playwright, Jest + RN Testing Library.
 > **Goal:** A repeatable, gate-driven agentic orchestrator that takes a user story/ticket from the command line all the way to a merge-ready PR, following strict TDD, layered reviews, mutation testing, and a full Definition of Done.
-> **Decisions locked in:** orchestrator lives under `.agents/` (extends existing folder) · mutation testing uses **StrykerJS** · pipeline driven by an **orchestrator agent** (`orchestrator_lead`) with a single human approval gate · each feature is built in its own **git worktree** on `feat/<name>` (`.worktrees/<name>`, gitignored) · **per-agent models** (via `model:` frontmatter): **Opus** for `spec_partner`, **Sonnet** for `orchestrator_lead` + `spec_reviewer` + `implementer` + `reviewer_slice` + `reviews_lead` + the 2 full reviewers (`reviewer_engineering` + `reviewer_standards`), **Haiku** for `mutation_tester` + `dod_validator`.
+> **Decisions locked in:** orchestrator lives under `.agents/` (extends existing folder) · mutation testing uses **StrykerJS** · pipeline driven by an **orchestrator agent** (`orchestrator_lead`) with a single human approval gate · each feature is built in its own **git worktree** on `feat/<name>` (`.worktrees/<name>`, gitignored) · **per-agent models** (via `model:` frontmatter): **Opus** for `spec_partner`, **Sonnet** for `orchestrator_lead` + `spec_reviewer` + `implementer` + `reviewer_slice` + `reviews_lead` + the full reviewer `reviewer_engineering`, **Haiku** for `mutation_tester` + `dod_validator`.
 
 ---
 
@@ -22,7 +22,7 @@ This orchestrator blends two references:
 | Entry | "implement next pending feature" | `/spec FEAT-XXX` | User-story `.md` file in `user-stories/pending/`, named on the command line (moved pending → in-progress → done as it runs) |
 | Spec + Contract | `spec_partner` debates → `project-spec.md`; separate `gherkin_author` | `/spec` → spec + risks + tasks + qa | **`spec_partner` produces spec.md + risks.md + tasks.md + `gherkin-scenarios.md` in one step** (Gherkin via the `gherkin-authoring` skill), **`spec_reviewer` vets the bundle before the gate**, then approved at a **single human gate** |
 | Build | `implementer` strict TDD | Code Agent by vertical slice | **`implementer`**, strict TDD **by vertical slice** (1→2→3), branching by artifact type (UI vs logic), always integration tests |
-| Review | single `judge` | `/arch` + `/security` separately | **Two cadences:** per-slice light review (`reviewer_slice`, checks the slice against **all `.agents/rules/` + design**) during the build, then a **full 2-reviewer** round after all slices — `reviewer_engineering` (code · architecture · performance) + `reviewer_standards` (security · accessibility) — driven by **`reviews_lead`**, which runs CI once and consolidates findings into one change request to the implementer (design-system review stays at the slice level) |
+| Review | single `judge` | `/arch` + `/security` separately | **Two cadences:** per-slice light review (`reviewer_slice`, checks the slice against **all `.agents/rules/` + design + accessibility**) during the build, then a **single-reviewer full round** after all slices — `reviewer_engineering` (code · architecture · performance · security) — driven by **`reviews_lead`**, which runs CI once and turns the findings into one change request to the implementer (design & accessibility stay at the slice level) |
 | Mutation | custom `mutate.py` | — | **StrykerJS** with per-feature score thresholds |
 | DoD / PR | — | `/pr` PR Guardian (validates DoD **and** opens PR) | **`dod_validator`** — validates the full DoD only; PR creation is a manual human step |
 
@@ -81,11 +81,10 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 │   ├── spec_partner.md           # Phase 1 — spec + Gherkin contract (one step)
 │   ├── spec_reviewer.md          # Phase 1 — pre-gate review of the spec bundle
 │   ├── implementer.md          # Phase 2 (+ change re-work in Phase 3)
-│   ├── reviewer_slice.md         # Phase 2 — per-slice review vs. all .agents/rules/ + design (one agent)
-│   ├── reviews_lead.md           # Phase 3 — CI once, fans out 2 reviewers in parallel, consolidates, requests changes
-│   ├── reviewer_engineering.md   # Phase 3 (full, parallel) — code · architecture · performance
-│   ├── reviewer_standards.md      # Phase 3 (full, parallel) — security (OWASP) · accessibility (WCAG)
-│   ├── mutation_tester.md        # Phase 3 (StrykerJS — runs pre- AND post-review)
+│   ├── reviewer_slice.md         # Phase 2 — per-slice review vs. all .agents/rules/ + design + accessibility (one agent)
+│   ├── reviews_lead.md           # Phase 3 — CI once, invokes the sole full reviewer, consolidates, requests changes
+│   ├── reviewer_engineering.md   # Phase 3 (full review, sole reviewer) — code · architecture · performance · security
+│   ├── mutation_tester.md        # Phase 3 (StrykerJS — runs once, after the full review)
 │   └── dod_validator.md          # Phase 4 (validates DoD only; does not open the PR)
 ├── templates/                    # NEW — per-feature doc templates copied at Phase 1
 │   ├── spec.md
@@ -111,8 +110,7 @@ docs/
         ├── gherkin-scenarios.md        # spec_partner — the Gherkin contract (via gherkin-authoring skill)
         ├── review-spec.md        # spec_reviewer — pre-gate spec-bundle review (findings; empty on APPROVED)
         ├── tdd.md                # implementer — TDD cycle log + @scenario → test map
-        ├── review-engineering.md # reviewer_engineering ┐ 2 parallel reviewers,
-        ├── review-standards.md    # reviewer_standards   ┘ one report file each
+        ├── review-engineering.md # reviewer_engineering — the sole full-review report
         ├── review.md             # reviews_lead — consolidated findings + change requests + round verdict
         ├── mutation.md           # mutation_tester — StrykerJS score + surviving mutants
         ├── dod.md                # dod_validator — DoD validation report (pass/fail + evidence)
@@ -152,7 +150,7 @@ progress/                         # NEW — session-level state only (nothing fe
 ```
 pending → spec_drafted → [spec_reviewer ↔ spec_partner, ≤ 2 rounds] → spec_ready
         → [HUMAN GATE: approve spec + Gherkin contract] → approved
-        → in_progress → mutation (pre-review) → in_review → mutation (post-review) → pr_ready
+        → in_progress → in_review → mutation → pr_ready
         → [human opens & merges PR] → done
 ```
 
@@ -175,30 +173,26 @@ flowchart TD
     GATE -->|rejected| P1
 
     GATE -->|"approved"| P3G
-    subgraph P3G["② implementer — strict TDD, one slice at a time (each slice: build → code+design review → next) (in_progress)"]
+    subgraph P3G["② implementer — strict TDD, one slice at a time (each slice: build → rules+design review → next) (in_progress)"]
         direction LR
         S1["Slice 1<br/>Happy path + Loading"] --> S2["Slice 2<br/>Empty + Error + Retry"] --> S3["Slice 3<br/>Analytics + Flag + a11y + i18n"] --> INT["Integration tests"]
     end
 
-    P3G -->|"in_progress → mutation"| MUTPRE["③ mutation_tester (pre-review)<br/>StrykerJS on changed files"]
-    MUTPRE -->|"survivor → fix (≤2 rounds)"| P3G
-    MUTPRE -->|"0 survivors → in_review"| RL
-
-    subgraph RV["③ Full review — 2 reviewers in parallel (code+design already ran per slice)"]
+    subgraph RV["③ Full review — sole reviewer (rules+design+a11y already ran per slice)"]
         direction LR
-        R1["reviewer_engineering<br/>code · architecture · performance"]
-        R2["reviewer_standards<br/>security (OWASP) · accessibility (WCAG)"]
+        R1["reviewer_engineering<br/>code · architecture · performance · security (OWASP)"]
     end
-    RL{{"reviews_lead<br/>CI once ▸ fan out ▸ consolidate ▸ one change request"}}
+    RL{{"reviews_lead<br/>CI once ▸ invoke reviewer ▸ consolidate ▸ one change request"}}
+    P3G -->|"in_progress → in_review"| RL
     RL --> RV
     RV --> RL
 
     RL -->|"any finding — even minor → fix (≤2 rounds)"| P3G
-    RL -->|"clean — OR after 2 rounds: minors-only (documented + accepted)"| MUTPOST["③ mutation_tester (post-review)<br/>re-run StrykerJS"]
+    RL -->|"clean — OR after 2 rounds: minors-only (documented + accepted)"| MUT["③ mutation_tester<br/>StrykerJS on changed files vs main"]
     RL -.->|"after 2 rounds: blocker/major → escalate & block"| ESC(["human"])
-    MUTPOST -->|"survivor → fix (≤2 rounds)"| P3G
-    MUTPOST -->|"0 survivors → pr_ready"| DV["④ dod_validator<br/>validate full DoD → dod.md"]
-    MUTPOST -.->|"after 2 rounds: survivor remains → escalate & block"| ESC
+    MUT -->|"survivor → fix (≤2 rounds)"| P3G
+    MUT -->|"0 survivors → pr_ready"| DV["④ dod_validator<br/>validate full DoD → dod.md"]
+    MUT -.->|"after 2 rounds: survivor remains → escalate & block"| ESC
     DV -->|DOD_FAILED| P3G
     DV -->|"DoD passed → pr_ready"| HPR["human opens the PR<br/>review → merge"]
     HPR -->|merged → done| DONE(["done"])
@@ -213,7 +207,7 @@ flowchart TD
     class DONE terminal;
 ```
 
-*State transitions written by `orchestrator_lead`: `pending → spec_drafted → spec_ready → approved → in_progress → mutation (pre) → in_review → mutation (post) → pr_ready`. The human then opens and merges the PR → `done`.*
+*State transitions written by `orchestrator_lead`: `pending → spec_drafted → spec_ready → approved → in_progress → in_review → mutation → pr_ready`. The human then opens and merges the PR → `done`.*
 
 ---
 
@@ -251,7 +245,7 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
   | **2 — Empty + Error + Retry** | Empty and Error UI states, retry action, error handling by failure type (e.g. Supabase/API error, 401→refresh, 429→backoff) | the error/empty `@s` scenarios | `feat(<name>): add error handling and empty state` |
   | **3 — Analytics + Flag + a11y + i18n** | Instrument analytics events, wrap in feature flag (if rollout), accessibility labels/roles, strings externalized | the observability/a11y `@s` scenarios | `feat(<name>): add analytics, a11y, and i18n` |
 
-  **Per-slice gate** (before the commit and before the next slice): the slice's `@s` scenarios are covered by passing tests; `pnpm --filter <ws> test` (+ relevant `test:e2e`) green; `pnpm lint` + `pnpm check-types` clean; no hardcoded strings/colors/dims; **and a light `reviewer_slice` review (checks the slice against all `.agents/rules/` + design, invoked directly by `orchestrator_lead`) is clean** — findings fixed via TDD, ≤ 2 rounds. Then the Conventional Commit is made. Each slice is logged as its own block in `docs/features/<name>/tdd.md`. Non-UI/logic-only features still slice by risk (happy path → error/edge → observability) even without the 4 UI states.
+  **Per-slice gate** (before the commit and before the next slice): the slice's `@s` scenarios are covered by passing tests; `pnpm --filter <ws> test` (+ relevant `test:e2e`) green; `pnpm lint` + `pnpm check-types` clean; no hardcoded strings/colors/dims; **and a light `reviewer_slice` review (checks the slice against all `.agents/rules/` + design + accessibility, invoked directly by `orchestrator_lead`) is clean** — findings fixed via TDD, ≤ 2 rounds. Then the Conventional Commit is made. Each slice is logged as its own block in `docs/features/<name>/tdd.md`. Non-UI/logic-only features still slice by risk (happy path → error/edge → observability) even without the 4 UI states.
 - **What it generates within each slice, by artifact type:**
 
   **a. UI component** (Storybook-backed, atomic design) — TDD-driven exactly like logic:
@@ -265,38 +259,37 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
   - Implementation following the `Component → Hook → Service → DAO` layering, exported through the barrels.
 
   **c. Always:** an **integration test** exercising the vertical slice end-to-end across layers (e.g., hook→service→DAO with a mocked Supabase client, or a Playwright flow across composed components).
-- **Feature gate → `in_review` (after all slices):** every `@s` covered by ≥1 concrete test across the slices; the integration test green; `pnpm --filter <ws> test` and relevant `test:e2e` green; `pnpm lint` and `pnpm check-types` green; no scope beyond the contract; no hardcoded strings/colors/dims. The implementer does **not** self-mark `done`. (Two review cadences: `reviewer_slice` (checks the slice against all `.agents/rules/` + design) runs **per slice** as a fast gate; then, once after all slices, the **quality gate** runs — **mutation → full two-reviewer round → mutation** — keeping the heavier lenses (architecture, security, accessibility, performance, now folded into the two agents) to a single round and running the compute-bound mutation twice to bracket it.)
-- **Re-work loop:** the post-build **quality gate** is an ordered sequence — mutation (pre-review) → full review → mutation (post-review). Each is its own loop (≤ 2 rounds) that routes work to `implementer`: `mutation_tester` hands back surviving mutants (kill via a red test); `reviews_lead` hands back one consolidated change request holding **every** finding (any severity, incl. minor). Mutants are killed on **both** mutation passes; `review.md` ends holding only the findings that were never fixed.
+- **Feature gate → `in_review` (after all slices):** every `@s` covered by ≥1 concrete test across the slices; the integration test green; `pnpm --filter <ws> test` and relevant `test:e2e` green; `pnpm lint` and `pnpm check-types` green; no scope beyond the contract; no hardcoded strings/colors/dims. The implementer does **not** self-mark `done`. (Two review cadences: `reviewer_slice` (checks the slice against all `.agents/rules/` + design + accessibility) runs **per slice** as a fast gate; then, once after all slices, the **quality gate** runs — **single-reviewer full round → mutation** — the full review (`reviewer_engineering`: code · architecture · performance · security) runs once, then a single compute-bound mutation pass after it.)
+- **Re-work loop:** the post-build **quality gate** is an ordered sequence — full review → mutation. Each is its own loop (≤ 2 rounds) that routes work to `implementer`: `reviews_lead` hands back one consolidated change request holding **every** finding (any severity, incl. minor); then `mutation_tester` hands back surviving mutants (kill via a red test). `review.md` ends holding only the findings that were never fixed.
 
 ### Phase 3 (full review) — Reviewers (the review is the whole game)
-> Bracketed by mutation: `mutation_tester` runs **before** this full review and **again after** it (see "Phase 3 (mutation)" below).
-This is the **full review**, run once after all slices (during the build, `reviewer_slice` already enforced every rule in `.agents/rules/` + the design lens per slice — so **design-system review is not repeated here**). The remaining lenses are consolidated into **two reviewers that run in parallel**, each an independent subagent with `Read, Glob, Grep, Bash` only — `reviewer_engineering` applies three sub-lenses (code · architecture · performance), `reviewer_standards` applies two (security · accessibility) — in one pass (**reviewers never edit code** — they prune, they don't patch). Each writes its own report file so the parallel runs never collide:
+> Followed by mutation: `mutation_tester` runs **once, after** this full review (see "Phase 3 (mutation)" below).
+This is the **full review**, run once after all slices (during the build, `reviewer_slice` already enforced every rule in `.agents/rules/` + the design and accessibility lenses per slice — so **design & accessibility are not repeated here**). The remaining lenses are handled by a **single reviewer**, an independent subagent with `Read, Glob, Grep, Bash` only (**it never edits code** — it prunes, it doesn't patch):
 
 ```
-reviewer_engineering → review-engineering.md  [code] quality, TDD discipline, scenario coverage · [arch] layering (Component→Hook→Service→DAO), no cross-layer/DTO leaks, no unapproved deps · [perf] re-renders, memoization, list virtualization, N+1/round-trips, bundle weight
-reviewer_standards   → review-standards.md    [security] OWASP Top 10 + MASVS: secrets, input validation, no PII in logs, TLS, Supabase RLS/auth · [a11y] WCAG 2.2 AA: labels/roles, contrast ≥ 4.5:1, targets ≥ 44/48, focus order, dynamic type   (design-system review runs per-slice via reviewer_slice, not here)
+reviewer_engineering → review-engineering.md  [code] quality, TDD discipline, scenario coverage · [arch] layering (Component→Hook→Service→DAO), no cross-layer/DTO leaks, no unapproved deps · [perf] re-renders, memoization, list virtualization, N+1/round-trips, bundle weight · [security] OWASP Top 10 + MASVS: secrets, input validation, no PII in logs, TLS, Supabase RLS/auth
 ```
 
 Each reviewer runs its rubric (inline in its agent file), judges the diff against the lead-provided CI status (it never re-runs lint/type/test itself), self-marks any sub-lens the diff can't trigger as `N/A`, and writes `APPROVED` or `CHANGES_REQUESTED` with concrete `file:line` findings (tagged by lens) to its own report file, returning a one-line verdict.
 
 **`reviews_lead`** (tools: `Read, Write, Glob, Grep, Bash, Task`; never edits code) orchestrates the whole review round:
-1. CI once, then fan out: run lint/type/test (+ e2e where relevant) once, then invoke the applicable reviewer(s) **in parallel** with the CI status. `reviewer_engineering` always runs; `reviewer_standards` is skipped only on a types/docs-only diff with no UI and no security surface (skip recorded in `review.md`).
-2. Consolidate: read the two report files, de-duplicate overlapping findings, resolve conflicts, and prioritize (blocker → major → minor). Write the consolidated verdict + a single ordered change-request list to `docs/features/<name>/review.md`.
-3. Verdict — **any finding blocks**: only if there are **zero findings of any severity** → report `APPROVED`. If **any** finding remains — **blocker, major, OR minor** → issue **one consolidated change request** to `implementer`, which fixes **every** item via TDD. There is no "approve with minor findings left open."
-4. Re-review (round 2): after `implementer` fixes via TDD, `reviews_lead` re-runs CI once and re-runs **only the reviewer(s) whose findings were open** — verifying the other reviewer's territory itself via the fix diff — then re-consolidates, **pruning `review.md` to only the findings still open**. (Mutation is **not** part of this loop — `mutation_tester` runs as a separate pass **before** and **after** this full review.)
+1. CI once, then invoke the reviewer: run lint/type/test (+ e2e where relevant) once, then invoke `reviewer_engineering` with the CI status. It always runs (code + architecture always apply) and self-marks performance and/or security `N/A` when the diff can't trigger them (recorded in `review-engineering.md`).
+2. Consolidate: read `review-engineering.md` and write the verdict + a single ordered change-request list (blocker → major → minor) to `docs/features/<name>/review.md`.
+3. Verdict — **any finding blocks**: only if there are **zero findings of any severity** → report `APPROVED`. If **any** finding remains — **blocker, major, OR minor** → issue **one change request** to `implementer`, which fixes **every** item via TDD. There is no "approve with minor findings left open."
+4. Re-review (round 2): after `implementer` fixes via TDD, `reviews_lead` re-runs CI once and re-runs `reviewer_engineering` over the fix diff, then re-consolidates, **pruning `review.md` to only the findings still open**. (Mutation is **not** part of this loop — `mutation_tester` runs once **after** this full review.)
 5. **Round cap:** at most **2 rounds**. After the 2nd round, a remaining **blocker/major** is **hard** — escalate and block. If **only minors** remain, they may ship as **documented, human-accepted** risks (recorded in `review.md`, `spec.md` Open decisions, `dod.md`). `review.md` ends holding **only the unresolved items** (empty on a clean exit, or the accepted minors).
 
-The two reviewers are independent, so running them concurrently is faster and avoids a false "mechanics first" sequencing. `reviews_lead` is the single point that turns their parallel opinions into one actionable request for the implementer.
+`reviews_lead` runs CI once (so the reviewer judges the diff, not the world) and owns `review.md` + the ≤ 2-round loop; `reviewer_engineering` is the single point of judgment. Design & accessibility already ran per slice via `reviewer_slice`.
 
 **Reviewer hard rules:** never approve with failing tests/lint/types (use the lead's CI status; never re-run suites); be specific (`file:line`, no generic feedback); never edit code.
 
-### Phase 3 (mutation) — `mutation_tester` (StrykerJS, pre- and post-review)
+### Phase 3 (mutation) — `mutation_tester` (StrykerJS, once after the full review)
 - **Tools:** `Read, Glob, Grep, Bash`. **Measures only; never edits code.**
-- **Runs twice, bracketing the full review:** once **before** it (harden the test net so reviewers look at code whose tests already bite) and once **after** it (the review's fixes may have changed code).
+- **Runs once, after the full review:** the final quality gate before DoD, over the feature's changed files (vs `main`) — so it covers the code the review just fixed as well as the original build.
 - **Tool:** StrykerJS (`@stryker-mutator/core` + `@stryker-mutator/jest-runner`, plus the TS checker). Config per workspace (`stryker.config.mjs`) scoped to the feature's changed files via `mutate: [...]`.
 - **Behavior:** run Stryker over the feature's new/changed source; report `killed / survived / score` and each surviving mutant to `docs/features/<name>/mutation.md`.
 - **Threshold:** **100% killed on the lines new/changed by this feature** (matching the reference repo's intent); legacy untouched code is measured, not blocked. An *equivalent* mutant may be excluded **only** with a written justification in the report.
-- **Loop (each pass):** any survivor → back to `implementer` (write the red test that kills it) → re-run Stryker, capped at **2 rounds** (unresolved survivors → escalate & block). Mutants are killed on **both** passes — the pre-review pass gates entry to the full review; the post-review pass is the final gate before `dod_validator`.
+- **Loop:** any survivor → back to `implementer` (write the red test that kills it) → re-run Stryker, capped at **2 rounds** (unresolved survivors → escalate & block). This single pass, after the review, is the final gate before `dod_validator`.
 
 Stryker runs on **every workspace that ships changed source — including `libs/components`** — since UI components now carry Jest unit tests. Example `stryker.config.mjs`:
 ```js
@@ -326,7 +319,7 @@ export default {
 
 ## 6. Orchestrator — `orchestrator_lead`
 - **Tools:** `Read, Write, Glob, Grep, Bash, Task` (it invokes subagents; it does **not** implement or edit feature code).
-- **Responsibilities:** create the feature's **git worktree** on `feat/<name>` (`.worktrees/<name>`) and run everything inside it (never on the main checkout); own the feature folders under `docs/features/` (task statuses + feature phase in `tasks.md`) and `progress/current.md`; enforce one feature at a time; run phases in order; **stop at the single human gate** (combined spec + Gherkin contract approval) and loop edits back to `spec_partner` until approved; delegate the whole review phase to `reviews_lead` (which runs CI once, fans out the 2 parallel reviewers, consolidates, and loops changes with the implementer); route surviving mutants back to `implementer`; append to `progress/history.md`. It never lets a phase advance until its gate passes.
+- **Responsibilities:** create the feature's **git worktree** on `feat/<name>` (`.worktrees/<name>`) and run everything inside it (never on the main checkout); own the feature folders under `docs/features/` (task statuses + feature phase in `tasks.md`) and `progress/current.md`; enforce one feature at a time; run phases in order; **stop at the single human gate** (combined spec + Gherkin contract approval) and loop edits back to `spec_partner` until approved; delegate the whole review phase to `reviews_lead` (which runs CI once, invokes the sole full reviewer `reviewer_engineering`, consolidates, and loops changes with the implementer); route surviving mutants back to `implementer`; append to `progress/history.md`. It never lets a phase advance until its gate passes.
 - **Entry:** the `/ticket-orchestrator <story>` command (`.agents/commands/ticket-orchestrator.md`) sets the role, resolves `$ARGUMENTS` to `user-stories/<story>.md`, and reads it as the ticket.
 
 **Anti-"telephone" rule:** subagents persist artifacts to disk and return a single reference line (e.g. `green -> docs/features/<name>/tdd.md`, `CHANGES_REQUESTED -> docs/features/<name>/review.md`). Content lives on disk, surviving restarts and blown context windows.
@@ -359,7 +352,7 @@ export default {
 6. Add per-feature templates in `.agents/templates/` (spec, risks, tasks, pr).
 
 **Phase 2 — Define the agents**
-7. Write the 10 role files in `.agents/agents/` (orchestrator_lead + spec_partner + spec_reviewer + implementer + reviewer_slice + reviews_lead + 2 full reviewers [`reviewer_engineering`, `reviewer_standards`] + mutation_tester + dod_validator), each with frontmatter, tools, protocol, gates, and hard rules — ported from the reference agents but adapted to this stack.
+7. Write the 9 role files in `.agents/agents/` (orchestrator_lead + spec_partner + spec_reviewer + implementer + reviewer_slice + reviews_lead + the full reviewer `reviewer_engineering` + mutation_tester + dod_validator), each with frontmatter, tools, protocol, gates, and hard rules — ported from the reference agents but adapted to this stack.
 8. Write `.agents/commands/ticket-orchestrator.md` (the `/ticket-orchestrator <story>` entry that reads `user-stories/<story>.md`) and update `.agents/rules.md` / `CLAUDE.md` to point at `AGENTS.md`.
 
 **Phase 3 — Dry run & verification**
@@ -377,7 +370,7 @@ Resolved (locked in):
 - **Ticket source & lifecycle — RESOLVED:** tickets are markdown files in `user-stories/`, organized as a folder kanban: authored in `pending/`; the orchestrator `git mv`s the story to `in-progress/` when it starts (step 1) and to `done/` when the feature reaches `pr_ready` (hand-off), committed on `feat/<name>`. No tracker MCP needed.
 - **Figma access — RESOLVED:** no Figma in this repo. `implementer` builds UI from the spec, or from a pasted screenshot if the story includes one. No Figma MCP step.
 - **Jest / Expo SDK 57 / RN 0.86 / React 19 — RESOLVED:** already configured (`jest-expo` in `@helsoft/components`, `ts-jest` in `@helsoft/hooks`/`@helsoft/services`/`@helsoft/supabase-services`). Phase 0 only adds StrykerJS (+ Supabase Test Helpers if missing).
-- **Review & mutation sequencing — RESOLVED:** after all slices, the quality gate runs **mutation (pre-review) → full review → mutation (post-review)**. Each is its own ≤ 2-round loop routing fixes to `implementer`; surviving mutants are killed on **both** mutation passes. In the full review `implementer` fixes **every** finding (any severity, incl. minor); after the 2-round cap, blockers/majors → escalate & block, while **minors-only may ship as documented, human-accepted risks** (recorded in `review.md`, `spec.md` Open decisions, `dod.md`).
+- **Review & mutation sequencing — RESOLVED:** after all slices, the quality gate runs **full review → mutation** (the separate pre-review mutation pass was removed). Each is its own ≤ 2-round loop routing fixes to `implementer`; the single mutation pass runs after the review on the feature's changed files (vs `main`), so it covers the review's fixes too. In the full review `implementer` fixes **every** finding (any severity, incl. minor); after the 2-round cap, blockers/majors → escalate & block, while **minors-only may ship as documented, human-accepted risks** (recorded in `review.md`, `spec.md` Open decisions, `dod.md`).
 - **e2e vs mutation — RESOLVED:** Stryker's Jest runner won't cover Playwright `.e2e.js` visual tests; mutation thresholds apply to Jest-testable code (services/hooks/DAOs **and** component logic/behavior), while Playwright guards rendered/visual behavior. This split is documented in the `mutation-testing` skill (`.agents/skills/mutation-testing/SKILL.md`).
 - **Mutation scope & cost — RESOLVED:** always mutate **only the feature's changed files** (changed services/DAOs/hooks + changed component `.tsx`) with `coverageAnalysis: 'perTest'`. No global mutation runs. This is the accepted cost/coverage tradeoff — it keeps Stryker affordable even though it's the slowest gate and rendering-based component tests add runtime.
 
