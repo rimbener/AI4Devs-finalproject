@@ -32,6 +32,7 @@ export const ImageLightbox = ({
           ref={dialogRef}
           testID="image-lightbox-content"
           accessible
+          focusable
           accessibilityLabel={dialogLabel}
           role="dialog"
           accessibilityViewIsModal

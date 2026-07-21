@@ -74,6 +74,28 @@ describe('ImageLightbox', () => {
     expect(sendAccessibilityEvent).not.toHaveBeenCalled();
   });
 
+  // RN Web — AccessibilityInfo.sendAccessibilityEvent is missing; must not throw.
+  it('falls back to host.focus when sendAccessibilityEvent is unavailable', () => {
+    const focus = jest.fn();
+    const original = AccessibilityInfo.sendAccessibilityEvent;
+    Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+
+    try {
+      expect(() => focusDialog({ current: { focus } as never })).not.toThrow();
+      expect(focus).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(AccessibilityInfo, 'sendAccessibilityEvent', {
+        configurable: true,
+        writable: true,
+        value: original,
+      });
+    }
+  });
+
   it('dismisses when the close control is pressed', async () => {
     const onRequestClose = jest.fn();
 

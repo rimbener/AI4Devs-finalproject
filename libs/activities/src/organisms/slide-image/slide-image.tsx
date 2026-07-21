@@ -1,8 +1,8 @@
-import { IconButton, ImageLightbox } from '@helsoft/components';
+import { focusDialog, IconButton, ImageLightbox } from '@helsoft/components';
 import { useSlideImageUrl } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Image, View as NativeView, type View } from 'react-native';
+import { Image, View as NativeView, type View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { SlideImageProps } from './slide-image.types';
@@ -20,8 +20,8 @@ export const SlideImage = ({ image }: SlideImageProps) => {
   const wasOpen = useRef(false);
 
   useEffect(() => {
-    if (!open && wasOpen.current && expandControlRef.current) {
-      AccessibilityInfo.sendAccessibilityEvent(expandControlRef.current, 'focus');
+    if (!open && wasOpen.current) {
+      focusDialog(expandControlRef);
     }
     wasOpen.current = open;
   }, [open]);
@@ -42,7 +42,12 @@ export const SlideImage = ({ image }: SlideImageProps) => {
           style={styles.image(aspectRatio)}
         />
         <NativeView testID="slide-image-expand-control" style={styles.expandControl}>
-          <NativeView ref={expandControlRef} testID="slide-image-expand-focus-target">
+          <NativeView
+            ref={expandControlRef}
+            accessible
+            focusable
+            testID="slide-image-expand-focus-target"
+          >
             <IconButton
               icon="open_in_full"
               variant="filled"
