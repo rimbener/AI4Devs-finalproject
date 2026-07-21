@@ -79,3 +79,5 @@
 2026-07-21 | activity-image-split-layout | pr_ready | docs/features/activity-image-split-layout/ | Split any valid image on landscape viewports.
 
 2026-07-21 | activity-image-split-layout | done | docs/features/activity-image-split-layout/ | Merged into feature-entrega3; worktree removed.
+
+2026-07-21 | login-enter-submit (ad hoc) | n/a | — | LoginForm submits on Enter via onSubmitEditing (9bf62b543).
