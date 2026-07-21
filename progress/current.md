@@ -2,6 +2,6 @@
 
 **Active feature:** activity-image-split-layout
 **Folder:** docs/features/activity-image-split-layout/
-**Phase:** approved
-**Status:** Human gate passed. Starting Phase 2 slice 1.
-**Notes:** Worktree `.worktrees/activity-image-split-layout` on `feat/activity-image-split-layout`. Non-Claude models for subagents.
+**Phase:** in_progress
+**Status:** Slice 1 build (implementer).
+**Notes:** Non-Claude models for subagents.
