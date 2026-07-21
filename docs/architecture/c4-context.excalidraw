@@ -1,7 +1,7 @@
 {
   "type": "excalidraw",
   "version": 2,
-  "source": "https://github.com/AI4Devs-finalproject (migrated from mermaid via excalidraw-mcp)",
+  "source": "https://marketplace.visualstudio.com/items?itemName=pomdtr.excalidraw-editor",
   "elements": [
     {
       "id": "title",
@@ -22,22 +22,24 @@
       "frameId": null,
       "roundness": null,
       "seed": 2071098617,
-      "version": 1,
-      "versionNonce": 70558006,
+      "version": 2,
+      "versionNonce": 554155458,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633396017,
       "link": null,
       "locked": false,
       "fontSize": 24,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "System Context — AI Study Buddy",
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "System Context — AI Study Buddy",
       "lineHeight": 1.25,
-      "baseline": 22
+      "baseline": 22,
+      "index": "a0",
+      "autoResize": true
     },
     {
       "id": "subtitle",
@@ -58,28 +60,30 @@
       "frameId": null,
       "roundness": null,
       "seed": 778478242,
-      "version": 1,
-      "versionNonce": 1972766655,
+      "version": 2,
+      "versionNonce": 581793630,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633396017,
       "link": null,
       "locked": false,
       "fontSize": 15,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "C4 Level 1 · learner ↔ system ↔ Groq",
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "C4 Level 1 · learner ↔ system ↔ Groq",
       "lineHeight": 1.25,
-      "baseline": 14
+      "baseline": 14,
+      "index": "a1",
+      "autoResize": true
     },
     {
       "id": "learner",
       "type": "rectangle",
-      "x": 40,
-      "y": 210,
+      "x": -43.468963623046875,
+      "y": 208.78201293945312,
       "width": 190,
       "height": 150,
       "angle": 0,
@@ -96,8 +100,8 @@
         "type": 3
       },
       "seed": 578301939,
-      "version": 1,
-      "versionNonce": 284286094,
+      "version": 92,
+      "versionNonce": 1512399006,
       "isDeleted": false,
       "boundElements": [
         {
@@ -109,15 +113,16 @@
           "id": "a1"
         }
       ],
-      "updated": 1784130178582,
+      "updated": 1784633400644,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a2"
     },
     {
       "id": "learner_label",
       "type": "text",
-      "x": 65,
-      "y": 225,
+      "x": -18.468963623046875,
+      "y": 223.78201293945312,
       "width": 141,
       "height": 120,
       "angle": 0,
@@ -132,22 +137,24 @@
       "frameId": null,
       "roundness": null,
       "seed": 1124755171,
-      "version": 1,
-      "versionNonce": 172035251,
+      "version": 92,
+      "versionNonce": 1714134238,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633400644,
       "link": null,
       "locked": false,
       "fontSize": 16,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "Learner\n(Person)\n\nUploads PDFs,\nstudies lessons,\nself-tests",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "learner",
       "originalText": "Learner\n(Person)\n\nUploads PDFs,\nstudies lessons,\nself-tests",
       "lineHeight": 1.25,
-      "baseline": 14
+      "baseline": 14,
+      "index": "a3",
+      "autoResize": true
     },
     {
       "id": "system",
@@ -170,8 +177,8 @@
         "type": 3
       },
       "seed": 1739473245,
-      "version": 1,
-      "versionNonce": 696615816,
+      "version": 2,
+      "versionNonce": 1340126530,
       "isDeleted": false,
       "boundElements": [
         {
@@ -187,9 +194,10 @@
           "id": "a2"
         }
       ],
-      "updated": 1784130178582,
+      "updated": 1784633396017,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a4"
     },
     {
       "id": "system_label",
@@ -210,29 +218,31 @@
       "frameId": null,
       "roundness": null,
       "seed": 1395920954,
-      "version": 1,
-      "versionNonce": 1679949373,
+      "version": 2,
+      "versionNonce": 597800926,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633396017,
       "link": null,
       "locked": false,
       "fontSize": 16,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "AI Study Buddy\n[System]\n\nTurns a PDF into an\nAI lesson; tracks\nprogress + scores",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "system",
       "originalText": "AI Study Buddy\n[System]\n\nTurns a PDF into an\nAI lesson; tracks\nprogress + scores",
       "lineHeight": 1.25,
-      "baseline": 14
+      "baseline": 14,
+      "index": "a5",
+      "autoResize": true
     },
     {
       "id": "groq",
       "type": "rectangle",
-      "x": 600,
-      "y": 210,
-      "width": 180,
+      "x": 644.5989990234375,
+      "y": 210.64019775390625,
+      "width": 228.03869628906256,
       "height": 150,
       "angle": 0,
       "strokeColor": "#495057",
@@ -248,8 +258,8 @@
         "type": 3
       },
       "seed": 448744027,
-      "version": 1,
-      "versionNonce": 958613135,
+      "version": 55,
+      "versionNonce": 1714693954,
       "isDeleted": false,
       "boundElements": [
         {
@@ -261,16 +271,17 @@
           "id": "a2"
         }
       ],
-      "updated": 1784130178582,
+      "updated": 1784633406245,
       "link": null,
-      "locked": false
+      "locked": false,
+      "index": "a6"
     },
     {
       "id": "groq_label",
       "type": "text",
-      "x": 593,
-      "y": 225,
-      "width": 194,
+      "x": 655.4933471679688,
+      "y": 225.64019775390625,
+      "width": 206.25,
       "height": 120,
       "angle": 0,
       "strokeColor": "#212529",
@@ -284,30 +295,32 @@
       "frameId": null,
       "roundness": null,
       "seed": 2078687920,
-      "version": 1,
-      "versionNonce": 914804712,
+      "version": 57,
+      "versionNonce": 1495318210,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633406246,
       "link": null,
       "locked": false,
       "fontSize": 16,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "Groq\n[External System]\n\nHosted LLM\ninference (text +\nvision), Vercel AI SDK",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "groq",
       "originalText": "Groq\n[External System]\n\nHosted LLM\ninference (text +\nvision), Vercel AI SDK",
       "lineHeight": 1.25,
-      "baseline": 14
+      "baseline": 14,
+      "index": "a7",
+      "autoResize": true
     },
     {
       "id": "a1",
       "type": "arrow",
-      "x": 232,
-      "y": 285,
-      "width": 71,
-      "height": 0,
+      "x": 149.65759034789306,
+      "y": 284.1117725704057,
+      "width": 152.1740760765694,
+      "height": 0.5189803653748299,
       "angle": 0,
       "strokeColor": "#1971c2",
       "backgroundColor": "transparent",
@@ -320,8 +333,8 @@
       "frameId": null,
       "roundness": null,
       "seed": 1982979702,
-      "version": 1,
-      "versionNonce": 1372742434,
+      "version": 92,
+      "versionNonce": 1184911646,
       "isDeleted": false,
       "boundElements": [
         {
@@ -329,7 +342,7 @@
           "id": "a1_label"
         }
       ],
-      "updated": 1784130178582,
+      "updated": 1784633400644,
       "link": null,
       "locked": false,
       "points": [
@@ -338,8 +351,8 @@
           0
         ],
         [
-          71,
-          0
+          152.1740760765694,
+          0.5189803653748299
         ]
       ],
       "lastCommittedPoint": null,
@@ -362,15 +375,16 @@
           0,
           0.5
         ]
-      }
+      },
+      "index": "a8"
     },
     {
       "id": "a1_label",
       "type": "text",
       "x": 222,
       "y": 286,
-      "width": 92,
-      "height": 18,
+      "width": 98.4375,
+      "height": 17.5,
       "angle": 0,
       "strokeColor": "#1971c2",
       "backgroundColor": "transparent",
@@ -383,30 +397,32 @@
       "frameId": null,
       "roundness": null,
       "seed": 1085565390,
-      "version": 1,
-      "versionNonce": 29698337,
+      "version": 3,
+      "versionNonce": 1415256670,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633398725,
       "link": null,
       "locked": false,
       "fontSize": 14,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "Uses (HTTPS)",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "a1",
       "originalText": "Uses (HTTPS)",
       "lineHeight": 1.25,
-      "baseline": 13
+      "baseline": 13,
+      "index": "a9",
+      "autoResize": true
     },
     {
       "id": "a2",
       "type": "arrow",
-      "x": 517,
-      "y": 285,
-      "width": 81,
-      "height": 0,
+      "x": 518.1683335755375,
+      "y": 285.1989197351104,
+      "width": 123.10663555711812,
+      "height": 0.22609437853975578,
       "angle": 0,
       "strokeColor": "#e8590c",
       "backgroundColor": "transparent",
@@ -419,8 +435,8 @@
       "frameId": null,
       "roundness": null,
       "seed": 357817512,
-      "version": 1,
-      "versionNonce": 271614473,
+      "version": 55,
+      "versionNonce": 1232203522,
       "isDeleted": false,
       "boundElements": [
         {
@@ -428,7 +444,7 @@
           "id": "a2_label"
         }
       ],
-      "updated": 1784130178582,
+      "updated": 1784633406245,
       "link": null,
       "locked": false,
       "points": [
@@ -437,8 +453,8 @@
           0
         ],
         [
-          81,
-          0
+          123.10663555711812,
+          0.22609437853975578
         ]
       ],
       "lastCommittedPoint": null,
@@ -461,14 +477,15 @@
           0,
           0.5
         ]
-      }
+      },
+      "index": "aA"
     },
     {
       "id": "a2_label",
       "type": "text",
       "x": 531,
       "y": 278,
-      "width": 54,
+      "width": 57.421875,
       "height": 35,
       "angle": 0,
       "strokeColor": "#e8590c",
@@ -482,22 +499,24 @@
       "frameId": null,
       "roundness": null,
       "seed": 575916110,
-      "version": 1,
-      "versionNonce": 30014567,
+      "version": 3,
+      "versionNonce": 1057373826,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633402766,
       "link": null,
       "locked": false,
       "fontSize": 14,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "AI SDK\n(HTTPS)",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "a2",
       "originalText": "AI SDK\n(HTTPS)",
       "lineHeight": 1.25,
-      "baseline": 13
+      "baseline": 13,
+      "index": "aB",
+      "autoResize": true
     },
     {
       "id": "cap1",
@@ -518,22 +537,24 @@
       "frameId": null,
       "roundness": null,
       "seed": 1016977470,
-      "version": 1,
-      "versionNonce": 756960288,
+      "version": 2,
+      "versionNonce": 73598018,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633396017,
       "link": null,
       "locked": false,
       "fontSize": 14,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "Signs up / logs in, uploads PDFs,\nstudies lessons, answers activities",
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "Signs up / logs in, uploads PDFs,\nstudies lessons, answers activities",
       "lineHeight": 1.25,
-      "baseline": 13
+      "baseline": 13,
+      "index": "aC",
+      "autoResize": true
     },
     {
       "id": "cap2",
@@ -554,26 +575,30 @@
       "frameId": null,
       "roundness": null,
       "seed": 948562770,
-      "version": 1,
-      "versionNonce": 954334298,
+      "version": 2,
+      "versionNonce": 711973086,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1784130178582,
+      "updated": 1784633396017,
       "link": null,
       "locked": false,
       "fontSize": 14,
-      "fontFamily": 1,
+      "fontFamily": 3,
       "text": "Requests structured lesson decks\n+ image-placement decisions",
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
       "originalText": "Requests structured lesson decks\n+ image-placement decisions",
       "lineHeight": 1.25,
-      "baseline": 13
+      "baseline": 13,
+      "index": "aD",
+      "autoResize": true
     }
   ],
   "appState": {
-    "gridSize": null,
+    "gridSize": 20,
+    "gridStep": 5,
+    "gridModeEnabled": false,
     "viewBackgroundColor": "#ffffff"
   },
   "files": {}
