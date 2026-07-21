@@ -1,9 +1,9 @@
 # Gherkin scenarios — activity-image-split-layout
 
 ```gherkin
-Feature: Split (side-by-side) slide layout for portrait images
-  As a learner, I want a portrait slide image to sit beside the slide body on wide
-  (landscape) screens, so a tall image does not push the activity down and I can see
+Feature: Split (side-by-side) slide layout for images
+  As a learner, I want every slide image to sit beside the slide body on wide
+  (landscape) screens, so the image does not push the activity down and I can see
   the image and the interaction together.
 
   Background:
@@ -13,8 +13,8 @@ Feature: Split (side-by-side) slide layout for portrait images
   # --- Split happy path -------------------------------------------------------
 
   @s1
-  Scenario: Portrait image on a landscape viewport splits into title + 50/50 row
-    Given the slide image is portrait (height greater than width)
+  Scenario: An image on a landscape viewport splits into title + 50/50 row
+    Given the slide has an image with valid dimensions
     And the viewport is wider than it is tall
     And the available height for the slide has been measured
     When the slide renders
@@ -39,25 +39,27 @@ Feature: Split (side-by-side) slide layout for portrait images
     And the image sits in a separate column that is not part of the body's scroller
     # Structure only — true pixel-stickiness is best-effort (nested scroller, Q2=B).
 
-  # --- Stacked (fallback) behaviors -------------------------------------------
+  # --- Image-shape behaviors --------------------------------------------------
 
   @s4
-  Scenario: A landscape image stays stacked (image above body)
+  Scenario: A landscape image uses the split layout on a wide viewport
     Given the slide image is landscape (width greater than height)
     And the viewport is wider than it is tall
+    And the available height for the slide has been measured
     When the slide renders
-    Then the layout is stacked with the image above the body, as before
+    Then it uses the split layout with the image left and body right
 
   @s5
-  Scenario: A square image stays stacked
+  Scenario: A square image uses the split layout on a wide viewport
     Given the slide image is square (width equal to height)
     And the viewport is wider than it is tall
+    And the available height for the slide has been measured
     When the slide renders
-    Then the layout is stacked with the image above the body
+    Then it uses the split layout with the image left and body right
 
   @s6
-  Scenario: A portrait image on a portrait or narrow viewport stays stacked
-    Given the slide image is portrait (height greater than width)
+  Scenario: An image on a portrait or narrow viewport stays stacked
+    Given the slide has an image with valid dimensions
     And the viewport is not wider than it is tall
     When the slide renders
     Then the layout is stacked with the image above the body
@@ -72,7 +74,7 @@ Feature: Split (side-by-side) slide layout for portrait images
 
   @s8
   Scenario: Before the available height is known, layout stays stacked
-    Given the slide image is portrait (height greater than width)
+    Given the slide has an image with valid dimensions
     And the viewport is wider than it is tall
     And the available height for the slide has not yet been measured
     When the slide renders
@@ -80,7 +82,7 @@ Feature: Split (side-by-side) slide layout for portrait images
     And it switches to split once the available height is measured
 
   @s9
-  Scenario Outline: Non-positive image dimensions are not treated as portrait
+  Scenario Outline: Non-positive image dimensions are not treated as valid
     Given the slide image has <dims>
     And the viewport is wider than it is tall
     When the slide renders
@@ -94,7 +96,7 @@ Feature: Split (side-by-side) slide layout for portrait images
 
   @s10
   Scenario Outline: Layout reacts to viewport orientation changes
-    Given the slide image is portrait (height greater than width)
+    Given the slide has an image with valid dimensions
     And the available height for the slide has been measured
     When the viewport orientation is <orientation>
     Then the layout is <layout>
@@ -108,7 +110,7 @@ Feature: Split (side-by-side) slide layout for portrait images
 
   @s11
   Scenario Outline: The same rules apply to every slide kind with an image
-    Given a <kind> slide with a portrait image
+    Given a <kind> slide with an image
     And the viewport is wider than it is tall
     And the available height for the slide has been measured
     When the slide renders
@@ -136,7 +138,7 @@ Feature: Split (side-by-side) slide layout for portrait images
 
   @s13
   Scenario: The player measures the available body height and feeds it to the slide
-    Given the lesson player is showing a slide with a portrait image on a landscape viewport
+    Given the lesson player is showing a slide with an image on a landscape viewport
     When the player has measured its body area
     Then it passes the measured available height to the slide
     And the slide uses that height to bound the image and size the split row

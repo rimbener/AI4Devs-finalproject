@@ -17,7 +17,6 @@ Signature (implementer writes the body TDD-first):
 ```ts
 // isSplit is true iff ALL hold:
 //   image exists AND image.width > 0 AND image.height > 0   (valid dims)
-//   image.height > image.width                              (portrait; square is NOT portrait)
 //   window.width > window.height                            (landscape viewport; orientation-only, Q3=A)
 //   availableHeight != null && availableHeight > 0          (height known — else stacked, Q6 guard)
 export function useSlideLayout(args: {
@@ -29,11 +28,10 @@ export function useSlideLayout(args: {
 - Re-renders on resize/rotation automatically (drives `@s10`).
 
 ## Done criteria
-- [ ] `@s6` — portrait image + `width <= height` viewport → `isSplit === false`
-- [ ] `@s4` — landscape image (`width > height`) → `false`, regardless of viewport
-- [ ] `@s5` — square image (`width === height`) → `false`
+- [ ] `@s4`, `@s5` — valid landscape and square images split when viewport + height conditions hold
+- [ ] `@s6` — any valid image + `width <= height` viewport → `isSplit === false`
 - [ ] `@s9` — `width <= 0` or `height <= 0` (or missing image) → `false`
-- [ ] `@s8` — `availableHeight` `undefined`/`null`/`<= 0` → `false` even when orientation + portrait hold
+- [ ] `@s8` — `availableHeight` `undefined`/`null`/`<= 0` → `false` even when an image and landscape viewport are present
 - [ ] `@s10` — flipping `useWindowDimensions` from landscape to portrait flips `isSplit` true→false (and back)
 - [ ] `@s11` — the decision is image/viewport-based only (independent of slide `kind`)
 - [ ] Unit-tested by mocking `useWindowDimensions` and passing `availableHeight`; `pnpm lint` + `pnpm check-types` green

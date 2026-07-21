@@ -16,7 +16,7 @@ import * as ReactNative from 'react-native';
 
 import { SlideView } from './slide-view';
 
-const portraitSlide: InstructionalSlide = {
+const landscapeImageSlide: InstructionalSlide = {
   id: 'slide-1',
   lessonId: 'lesson-1',
   title: 'Photosynthesis',
@@ -26,8 +26,8 @@ const portraitSlide: InstructionalSlide = {
   image: {
     imageId: 'image-1',
     storagePath: 'slides/image-1.png',
-    width: 400,
-    height: 800,
+    width: 800,
+    height: 400,
   },
 };
 
@@ -36,8 +36,8 @@ describe('SlideView layout integration', () => {
     jest.restoreAllMocks();
   });
 
-  // @s1 — SlideView composes real viewport-derived layout into the split tree.
-  it('renders the split tree for a measured portrait image in landscape', async () => {
+  // @s1 — SlideView composes real viewport-derived layout into the split tree for any image.
+  it('renders the split tree for a measured landscape image on a wide viewport', async () => {
     jest.spyOn(ReactNative, 'useWindowDimensions').mockReturnValue({
       width: 1024,
       height: 768,
@@ -45,7 +45,7 @@ describe('SlideView layout integration', () => {
       fontScale: 1,
     });
 
-    await render(<SlideView slide={portraitSlide} availableHeight={600} />);
+    await render(<SlideView slide={landscapeImageSlide} availableHeight={600} />);
 
     expect(screen.getByTestId('slide-split-row')).toBeTruthy();
     expect(screen.getByTestId('slide-image-split')).toBeTruthy();

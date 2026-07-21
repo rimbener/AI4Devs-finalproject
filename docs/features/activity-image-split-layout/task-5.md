@@ -17,7 +17,7 @@ Lock the behavior across every slide kind and prove it in a real browser. No new
 - e2e (Playwright, per `storybook-e2e-tests` skill): render the split story and assert the `[image | body]` row structure, the body-pane scroller, expand control presence, and that a portrait-on-narrow story renders stacked.
 
 ## Done criteria
-- [ ] `@s11` — split renders for instructional, multiple-choice, fill-in-the-blank, flashcard, matching, open-ended (portrait image + landscape + measured height)
+- [ ] `@s11` — split renders for instructional, multiple-choice, fill-in-the-blank, flashcard, matching, open-ended (valid image + landscape + measured height)
 - [ ] `@s1`, `@s3` — split story shows full-width title + 50/50 row; body pane is its own scroller with the image column beside it
 - [ ] `@s7` — no-image story is unchanged (no image column)
 - [ ] `@s10` — a resize/orientation story (or e2e viewport resize) shows stacked↔split switching

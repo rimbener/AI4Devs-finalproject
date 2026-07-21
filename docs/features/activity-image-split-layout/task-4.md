@@ -19,7 +19,7 @@ Plumb a real **bounded** available height from `LessonPlayer` into `SlideView` (
 
 ## Done criteria
 - [ ] `@s13` — after the body area is measured, `SlideView` receives a positive `availableHeight`; the results-slide path is untouched
-- [ ] `@s8` — on the first commit (pre-measure) `availableHeight` is undefined and `SlideView` renders stacked; it flips to split once measured (given portrait image + landscape)
+- [ ] `@s8` — on the first commit (pre-measure) `availableHeight` is undefined and `SlideView` renders stacked; it flips to split once measured (given any valid image + landscape)
 - [ ] Measurement uses `useLayoutEffect` + `ref.measure()` (jump-minimized vs async `onLayout`)
 - [ ] Existing `LessonPlayer` states (Empty/Error/results/deck) and tests stay green
 - [ ] `pnpm lint` + `pnpm check-types` green

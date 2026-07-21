@@ -25,10 +25,10 @@ Make `SlideView` branch on `useSlideLayout(...).isSplit` and accept an `availabl
 
 ## Done criteria
 - [ ] `SlideViewProps` gains `availableHeight?: number | null` (passed through to `useSlideLayout`)
-- [ ] `@s1` — portrait image + landscape + measured height → full-width title + `[image | body]` row, columns ~50/50 (`flex:1`/`flex:1`) with a `gutter` gap
+- [ ] `@s1` — any valid image + landscape + measured height → full-width title + `[image | body]` row, columns ~50/50 (`flex:1`/`flex:1`) with a `gutter` gap
 - [ ] `@s2` — split image is rendered via `SlideImage layout="split"` (contain, height-bounded) with the expand control present
 - [ ] `@s3` — the body sits in its own `ScrollView`; the image column is a sibling outside that scroller (assert structure, not pixel-stickiness)
-- [ ] `@s6`, `@s7`, `@s14` — stacked fallback (portrait+portrait viewport, no image, and stacked image sizing) unchanged; existing `slide-view.test.tsx` stays green
+- [ ] `@s6`, `@s7`, `@s14` — stacked fallback (image+portrait viewport, no image, and stacked image sizing) unchanged; existing `slide-view.test.tsx` stays green
 - [ ] `@s12` — DOM/reading order is title → image → body in the split tree
 - [ ] Storybook `Split*` story renders a portrait-image slide in a bounded wide container
 - [ ] `pnpm lint` + `pnpm check-types` green; tokens only

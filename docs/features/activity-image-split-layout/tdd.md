@@ -62,3 +62,5 @@
 - RED→GREEN r2: asserted the split container fills its pane while stacked containers remain
   content-sized, killing all four non-equivalent container-height mutants.
 - MUTATION ACCEPTED: human accepted leaving four non-equivalent height-style survivors with a TODO.
+- @s1/@s4/@s5 FOLLOW-UP RED→GREEN: broadened the trigger so portrait, landscape, and square
+  images split on measured landscape viewports; invalid dimensions still stack.

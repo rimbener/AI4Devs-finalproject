@@ -31,19 +31,19 @@ describe('useSlideLayout', () => {
     });
   });
 
-  // @s1 — portrait images split only in a measured landscape pane.
-  it('selects split layout for a portrait image in a measured landscape viewport', async () => {
-    const { result } = await renderHook(() =>
-      useSlideLayout({ image: portraitImage, availableHeight: 600 }),
-    );
+  // @s1, @s4, @s5 — every valid image shape splits in a measured landscape pane.
+  it.each([
+    ['portrait', portraitImage],
+    ['landscape', { ...portraitImage, width: 800, height: 400 }],
+    ['square', { ...portraitImage, width: 400, height: 400 }],
+  ] as const)('selects split layout for a %s image in landscape', async (_shape, image) => {
+    const { result } = await renderHook(() => useSlideLayout({ image, availableHeight: 600 }));
 
     expect(result.current).toEqual({ isSplit: true });
   });
 
-  // @s4, @s5, @s9 — invalid, landscape, and square image dimensions stay stacked.
+  // @s9 — invalid image dimensions stay stacked.
   it.each([
-    ['a landscape image', { ...portraitImage, width: 800, height: 400 }],
-    ['a square image', { ...portraitImage, width: 400, height: 400 }],
     ['a zero-width image', { ...portraitImage, width: 0 }],
     ['a zero-height image', { ...portraitImage, height: 0 }],
     ['a negative-size image', { ...portraitImage, width: -1 }],
