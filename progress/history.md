@@ -65,3 +65,6 @@
 
 2026-07-17 | grill-me-spec-partner (ad hoc) | n/a | — | Wire grill-me/grilling into spec_partner; escalate big structural changes.
 2026-07-20 | activity-image-sizing | pr_ready | docs/features/activity-image-sizing/ | DoD PASS; human opens PR
+
+2026-07-21 | js-utils-rn-utils (ad hoc) | n/a | — | Scaffold @helsoft/js-utils + @helsoft/rn-utils; lightbox uses sendAccessibilityEvent.
+2026-07-21 | supabase-seed (ad hoc) | n/a | — | Seed free/paid plans to match hosted; drop unused test@mail.com auth user.
