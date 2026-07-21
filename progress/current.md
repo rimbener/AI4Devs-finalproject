@@ -1,7 +1,7 @@
 # Current session
 
-**Active feature:** activity-image-split-layout
-**Folder:** docs/features/activity-image-split-layout/
-**Phase:** pr_ready
-**Status:** DoD PASS. Ready for human PR.
-**Notes:** Worktree `.worktrees/activity-image-split-layout` on `feat/activity-image-split-layout`. Opening & merging PR is manual. 4 height-style mutants human-excluded with TODO.
+**Active feature:** _(none)_
+**Last feature:** activity-image-split-layout
+**Phase:** done
+**Status:** Merged into `feature-entrega3-HernanLaura`. Worktree removed.
+**Notes:** Branch `feat/activity-image-split-layout` deleted locally. Delivery branch is 14 commits ahead of origin (not pushed).
