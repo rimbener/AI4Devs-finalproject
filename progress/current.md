@@ -1,8 +1,7 @@
 # Current session
 
-**Active feature:** activity-image-sizing
-**Folder:** docs/features/activity-image-sizing/
-**Phase:** pr_ready
-**Status:** DoD PASS. Ready for human PR.
-**Notes:** Worktree `.worktrees/activity-image-sizing` on `feat/activity-image-sizing`. Opening & merging PR is manual.
-
+**Active feature:** activity-image-split-layout
+**Folder:** docs/features/activity-image-split-layout/
+**Phase:** pending
+**Status:** Boot complete. Awaiting Phase 1 (spec_partner).
+**Notes:** Worktree `.worktrees/activity-image-split-layout` on `feat/activity-image-split-layout` (branched from feature-entrega3 — includes activity-image-sizing).
