@@ -28,3 +28,16 @@
 - @s12 REVIEW RED→GREEN: asserted the named, focusable body scroll pane and image-before-body tree order, then added the localized accessibility contract.
 - REVIEW REFACTOR: moved the instructional-slide discriminator into `slide-view.helpers.ts`.
 - @s1 REVIEW RED→GREEN: rendered `SlideView` with the real layout hook and mocked landscape viewport.
+
+## Slice 3
+
+| Scenario | Test | File |
+| --- | --- | --- |
+| @s8, @s13 | passes measured player body height to SlideView | `libs/activities/src/organisms/lesson-player/lesson-player.test.tsx` |
+| @s11 | renders every content kind in the split wrapper | `libs/activities/src/organisms/slide-view/slide-view.test.tsx` |
+| @s1, @s3, @s10, @s12 | split stories and narrow-viewport Playwright coverage | `libs/activities/tests/e2e/organisms/slide-view/slide-view.e2e.js` |
+
+- @s8/@s13 RED→GREEN: added the player height assertion, then measured the body frame in `useLayoutEffect` and passed the positive height to content slides.
+- @s11 REFACTOR: added portrait-image split stories and shared-wrapper coverage for every slide kind.
+- @s1/@s3/@s10/@s12 RED→GREEN: added Storybook e2e for panes, source order, all kinds, and portrait fallback; serialized it because its Storybook URL mock is shared.
+- @s8/@s13 REVIEW RED→GREEN: isolated the body ref measurement mock, asserted pre-measure `undefined`, post-measure height, and preserved SlideView's mount ref.

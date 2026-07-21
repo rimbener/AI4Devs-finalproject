@@ -3,7 +3,7 @@ id: task-5
 title: All-kinds coverage, a11y order, Storybook + Playwright e2e
 slice: 3
 scenarios: [s1, s3, s7, s10, s11, s12]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/slide-view/slide-view.stories.tsx
   - libs/activities/src/organisms/slide-view/slide-view.test.tsx

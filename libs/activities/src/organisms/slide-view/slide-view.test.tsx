@@ -388,6 +388,33 @@ describe('SlideView', () => {
     });
   });
 
+  // @s11 — every content kind uses the same image-left, body-right split wrapper.
+  it.each([
+    ['instructional', instructional],
+    ['multiple-choice', multipleChoice],
+    ['fill-in-the-blank', fillBlank],
+    ['matching', matching],
+    ['flashcard', flashcard],
+    ['open-ended', openEnded],
+  ] as const)('renders the %s kind in the split layout', async (_kind, slide) => {
+    const imageSlide = {
+      ...slide,
+      image: {
+        imageId: 'image-1',
+        storagePath: 'slides/image-1.png',
+        width: 400,
+        height: 800,
+      },
+    };
+    mockedUseSlideLayout.mockReturnValue({ isSplit: true });
+
+    await render(<SlideView slide={imageSlide} availableHeight={600} />);
+
+    expect(screen.getByTestId('slide-split-row')).toBeTruthy();
+    expect(screen.getByTestId('slide-image-split')).toBeTruthy();
+    expect(screen.getByTestId('slide-body-scroll')).toBeTruthy();
+  });
+
   // @s6, @s14 — stacked fallback preserves the existing image-before-body order.
   it('keeps a non-split image above the body', async () => {
     const imageSlide: InstructionalSlide = {

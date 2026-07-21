@@ -1,5 +1,6 @@
 import { Button } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
+import * as React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -100,9 +101,26 @@ type DeckProps = {
   onBackToLessons: () => void;
 };
 
+type Measurable = {
+  measure: (callback: (x: number, y: number, width: number, height: number) => void) => void;
+};
+
 const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
   const { t } = useLocalization();
   const player = useLessonPlayer(lesson);
+  const bodyRef = React.useRef<ScrollView>(null);
+  const [availableHeight, setAvailableHeight] = React.useState<number>();
+
+  const measureBody = React.useCallback(() => {
+    const measurableBody = bodyRef.current as (ScrollView & Measurable) | null;
+    measurableBody?.measure((_x, _y, _width, height) => {
+      if (height > 0) setAvailableHeight(height);
+    });
+  }, []);
+
+  React.useLayoutEffect(() => {
+    measureBody();
+  }, [measureBody]);
 
   const stepLabel = t('player.slideOf', {
     current: player.currentIndex + 1,
@@ -124,7 +142,12 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
         onBack={player.goBack}
         onNext={player.goNext}
       />
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+      <ScrollView
+        ref={bodyRef}
+        style={styles.body}
+        contentContainerStyle={styles.bodyContent}
+        onLayout={measureBody}
+      >
         {player.isResultsSlide ? (
           <LessonResults
             lesson={lesson}
@@ -137,6 +160,7 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
           <SlideView
             key={player.currentSlide.id}
             slide={player.currentSlide}
+            availableHeight={availableHeight}
             onAnswered={player.onAnswered}
             initialAnswer={player.answers[player.currentSlide.id]}
           />

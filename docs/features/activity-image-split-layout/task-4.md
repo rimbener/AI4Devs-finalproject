@@ -3,7 +3,7 @@ id: task-4
 title: LessonPlayer measures its body area and feeds availableHeight down
 slice: 3
 scenarios: [s8, s13]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/lesson-player/lesson-player.tsx
   - libs/activities/src/organisms/lesson-player/lesson-player.test.tsx

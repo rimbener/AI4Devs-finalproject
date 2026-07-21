@@ -6,9 +6,10 @@ import type {
   MultipleChoiceSlide,
   OpenEndedSlide,
 } from '@helsoft/types';
-import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { View } from 'react-native';
 
+import { configureSlideImageUrlMock } from '../../../.storybook/mocks/hooks';
 import { SlideView } from './slide-view';
 
 const instructional: InstructionalSlide = {
@@ -101,6 +102,29 @@ const openEnded: OpenEndedSlide = {
   modelAnswer: 'Plants convert light into chemical energy.',
 };
 
+const portraitMultipleChoice: MultipleChoiceSlide = {
+  ...multipleChoice,
+  image: portraitInstructional.image,
+};
+const portraitFillBlank: FillInTheBlankSlide = { ...fillBlank, image: portraitInstructional.image };
+const portraitMatching: MatchingSlide = { ...matching, image: portraitInstructional.image };
+const portraitFlashcard: FlashcardSlide = { ...flashcard, image: portraitInstructional.image };
+const portraitOpenEnded: OpenEndedSlide = { ...openEnded, image: portraitInstructional.image };
+
+const withSlideImageUrlMock: Decorator = (Story) => {
+  configureSlideImageUrlMock({
+    url: 'https://picsum.photos/seed/split-slide-view/400/800',
+    isLoading: false,
+  });
+  return <Story />;
+};
+
+const splitDecorator: Decorator = (Story) => (
+  <View style={{ width: 960, height: 600, padding: 16 }}>
+    <Story />
+  </View>
+);
+
 const meta = {
   title: 'Organisms/SlideView',
   component: SlideView,
@@ -120,16 +144,31 @@ type Story = StoryObj<typeof meta>;
 export const Instructional: Story = { args: { slide: instructional } };
 export const SplitInstructional: Story = {
   args: { slide: portraitInstructional, availableHeight: 600 },
-  decorators: [
-    (Story) => (
-      <View style={{ width: 960, height: 600, padding: 16 }}>
-        <Story />
-      </View>
-    ),
-  ],
+  decorators: [withSlideImageUrlMock, splitDecorator],
 };
 export const MultipleChoice: Story = { args: { slide: multipleChoice } };
+export const SplitMultipleChoice: Story = {
+  args: { slide: portraitMultipleChoice, availableHeight: 600 },
+  decorators: [withSlideImageUrlMock, splitDecorator],
+};
 export const FillInTheBlank: Story = { args: { slide: fillBlank } };
+export const SplitFillInTheBlank: Story = {
+  args: { slide: portraitFillBlank, availableHeight: 600 },
+  decorators: [withSlideImageUrlMock, splitDecorator],
+};
 export const Matching: Story = { args: { slide: matching } };
+export const SplitMatching: Story = {
+  args: { slide: portraitMatching, availableHeight: 600 },
+  decorators: [withSlideImageUrlMock, splitDecorator],
+};
 export const Flashcard: Story = { args: { slide: flashcard } };
+export const SplitFlashcard: Story = {
+  args: { slide: portraitFlashcard, availableHeight: 600 },
+  decorators: [withSlideImageUrlMock, splitDecorator],
+};
 export const OpenEnded: Story = { args: { slide: openEnded } };
+export const SplitOpenEnded: Story = {
+  args: { slide: portraitOpenEnded, availableHeight: 600 },
+  decorators: [withSlideImageUrlMock, splitDecorator],
+};
+export const StackedPortrait: Story = { args: { slide: portraitInstructional } };
