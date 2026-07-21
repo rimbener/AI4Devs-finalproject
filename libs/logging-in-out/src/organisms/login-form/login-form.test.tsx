@@ -56,6 +56,46 @@ describe('LoginForm', () => {
     expect(onSubmit).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret1' });
   });
 
+  // Keyboard submit — Enter / return key on either field matches the submit button.
+  it('calls onSubmit when Enter is pressed on the password field', async () => {
+    const onSubmit = jest.fn();
+    await render(<LoginForm onSubmit={onSubmit} />);
+
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('auth.email'), 'user@example.com');
+    });
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('auth.password'), 'secret1');
+    });
+    fireEvent(screen.getByLabelText('auth.password'), 'submitEditing');
+
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret1' });
+  });
+
+  it('calls onSubmit when Enter is pressed on the email field', async () => {
+    const onSubmit = jest.fn();
+    await render(<LoginForm onSubmit={onSubmit} />);
+
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('auth.email'), 'user@example.com');
+    });
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('auth.password'), 'secret1');
+    });
+    fireEvent(screen.getByLabelText('auth.email'), 'submitEditing');
+
+    expect(onSubmit).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret1' });
+  });
+
+  it('does not submit on Enter while the form is pristine', async () => {
+    const onSubmit = jest.fn();
+    await render(<LoginForm onSubmit={onSubmit} />);
+
+    fireEvent(screen.getByLabelText('auth.password'), 'submitEditing');
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   // @s3 — while isSubmitting, the submit control is disabled and shows a loading affordance.
   it('disables the submit control and shows a loading affordance while isSubmitting', async () => {
     await render(<LoginForm onSubmit={jest.fn()} isSubmitting />);

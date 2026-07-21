@@ -31,6 +31,12 @@ export const LoginForm = ({
     passwordError,
   });
 
+  const canSubmit = !isSubmitting && !isPristine && !hasFieldError;
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    onSubmit({ email, password });
+  };
+
   return (
     <View style={styles.form}>
       {errorMessage ? (
@@ -52,6 +58,8 @@ export const LoginForm = ({
         accessibilityState={{ disabled: isSubmitting }}
         autoCapitalize="none"
         keyboardType="email-address"
+        returnKeyType="go"
+        onSubmitEditing={handleSubmit}
         error={!!emailError}
         supportingText={emailError}
         accessibilityHint={emailError}
@@ -64,15 +72,14 @@ export const LoginForm = ({
         disabled={isSubmitting}
         accessibilityState={{ disabled: isSubmitting }}
         secureTextEntry
+        returnKeyType="go"
+        onSubmitEditing={handleSubmit}
         error={!!passwordError}
         supportingText={passwordError}
         accessibilityHint={passwordError}
       />
       <View style={styles.submitRow}>
-        <Button
-          disabled={isSubmitting || isPristine || hasFieldError}
-          onPress={() => onSubmit({ email, password })}
-        >
+        <Button disabled={!canSubmit} onPress={handleSubmit}>
           {t('auth.submit')}
         </Button>
         {isSubmitting ? (
