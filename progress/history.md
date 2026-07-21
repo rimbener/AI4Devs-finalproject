@@ -68,3 +68,5 @@
 
 2026-07-21 | js-utils-rn-utils (ad hoc) | n/a | — | Scaffold @helsoft/js-utils + @helsoft/rn-utils; lightbox uses sendAccessibilityEvent.
 2026-07-21 | supabase-seed (ad hoc) | n/a | — | Seed free/paid plans to match hosted; drop unused test@mail.com auth user.
+
+2026-07-21 | create-user-story-grilling (ad hoc) | n/a | — | Wire grilling into create-user-story clarifying flow (996895b).
