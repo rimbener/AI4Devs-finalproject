@@ -75,3 +75,5 @@
 2026-07-21 | activity-image-split-layout | pending | user-stories/pending/ | Pending story: portrait image beside body on wide viewports (b5d4550).
 
 2026-07-21 | activity-image-split-layout | pr_ready | docs/features/activity-image-split-layout/ | Portrait split layout; 4 mutants TODO-accepted.
+
+2026-07-21 | activity-image-split-layout | pr_ready | docs/features/activity-image-split-layout/ | Split any valid image on landscape viewports.
