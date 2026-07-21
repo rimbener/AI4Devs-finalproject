@@ -94,7 +94,8 @@ export const SlideImage = ({ image, layout = 'stacked' }: SlideImageProps) => {
 const styles = StyleSheet.create((theme) => ({
   container: (layout: NonNullable<SlideImageProps['layout']>) => ({
     alignItems: 'center',
-    // TODO: fix this — Stryker survivors on height: '100%' style branch (mutation.md); tests don't bite yet.
+    // TODO: fix this — Stryker survivors on height: '100%' style branch; see
+    // docs/features/activity-image-split-layout/mutation.md. Tests don't bite yet.
     ...(layout === 'split' && { height: '100%' as const }),
   }),
   imageWrapper: (layout: NonNullable<SlideImageProps['layout']>) =>

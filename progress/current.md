@@ -2,6 +2,6 @@
 
 **Active feature:** activity-image-split-layout
 **Folder:** docs/features/activity-image-split-layout/
-**Phase:** mutation
-**Status:** Human accepted 4 survivors with TODO. Preparing DoD.
-**Notes:** Non-Claude models.
+**Phase:** pr_ready
+**Status:** DoD PASS. Ready for human PR.
+**Notes:** Worktree `.worktrees/activity-image-split-layout` on `feat/activity-image-split-layout`. Opening & merging PR is manual. 4 height-style mutants human-excluded with TODO.

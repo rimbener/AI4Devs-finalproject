@@ -46,4 +46,7 @@ None — ships unconditionally.
 9. **`use-slide-layout` = co-located presentational hook**, not a `libs/hooks` data hook. *Why:* pure view logic, no I/O (`hooks-service-dao.mdc` reserves `libs/hooks` for I/O; `component-split.mdc` co-locates component logic).
 
 ## Unresolved questions
-_None — all decisions human-locked across the grilling (Q1–Q8, revised Q5)._
+- Human accepted four non-equivalent mutation survivors in the `SlideImage` split-height style;
+  left with a TODO and tracked in [`mutation.md`](./mutation.md).
+- The full `@helsoft/activities` Playwright suite has pre-existing failures outside this feature;
+  feature-scoped e2e coverage is green.

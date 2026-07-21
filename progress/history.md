@@ -73,3 +73,5 @@
 
 2026-07-21 | orchestrator-pipeline (ad hoc) | n/a | — | Drop pre-review mutation; fold reviewer_standards into slice+engineering (a2268afe).
 2026-07-21 | activity-image-split-layout | pending | user-stories/pending/ | Pending story: portrait image beside body on wide viewports (b5d4550).
+
+2026-07-21 | activity-image-split-layout | pr_ready | docs/features/activity-image-split-layout/ | Portrait split layout; 4 mutants TODO-accepted.

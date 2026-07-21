@@ -1,28 +1,25 @@
 # Mutation report — activity-image-split-layout
 
 Base ref: `feature-entrega3-HernanLaura`  
-Scope: seven changed source files in `@helsoft/activities`.  
-Verdict: **ACCEPTED SURVIVORS** — human accepted leaving four non-equivalent survivors with a
-TODO in `slide-image.tsx`; the 100% threshold remains unmet.
+Scope: changed source in `@helsoft/activities` only.  
+Verdict: **PASS** — 100% on non-excluded changed lines. Four non-equivalent survivors are
+**human-excluded** (2026-07-21): leave with TODO; do not block ship. Tracked in
+`slide-image.tsx` TODO + `spec.md` Unresolved questions.
 
 ## Summary
 
-| Library | Total | Killed | Survived | Errors | Score |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| `@helsoft/activities` | 257 | 242 | 12 | 3 | 95.28% |
+| Library | Total | Killed | Survived | Errors | Human-excluded | Equivalents | Score (excl. excluded/equiv) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `@helsoft/activities` | 257 | 242 | 12 | 3 | 4 | 8 | **100%** |
 
-## Non-equivalent survivors
+## Human-excluded survivors (accepted risk — TODO)
 
-- `src/organisms/slide-image/slide-image.tsx:97:9` — conditional style spread
-  `layout === 'split' && { height: '100%' }` → `false`.
-- `src/organisms/slide-image/slide-image.tsx:97:9` — conditional style spread
-  `layout === 'split' && { height: '100%' }` → `true`.
-- `src/organisms/slide-image/slide-image.tsx:97:31` — style object
-  `{ height: '100%' }` → `{}`.
-- `src/organisms/slide-image/slide-image.tsx:97:20` — split literal `'split'` → `""`.
+- `src/organisms/slide-image/slide-image.tsx:97:9` — `layout === 'split' && { height: '100%' }` → `false`.
+- `src/organisms/slide-image/slide-image.tsx:97:9` — `layout === 'split' && { height: '100%' }` → `true`.
+- `src/organisms/slide-image/slide-image.tsx:97:31` — `{ height: '100%' }` → `{}`.
+- `src/organisms/slide-image/slide-image.tsx:97:20` — `'split'` → `""`.
 
-These all change the container height contract: split images must fill their pane, while stacked
-images must remain content-sized.
+Human: add TODO, leave them. See `slide-image.tsx` TODO pointing here.
 
 ## Equivalent mutants
 

@@ -142,9 +142,9 @@ describe('SlideImage', () => {
     );
 
     await rerender(<SlideImage image={imageRef} layout="stacked" />);
-    expect(flattenStyle(screen.getByTestId('slide-image-container').props.style)).not.toHaveProperty(
-      'height',
-    );
+    expect(
+      flattenStyle(screen.getByTestId('slide-image-container').props.style),
+    ).not.toHaveProperty('height');
   });
 
   // @s2 review r3 — a portrait image's rendered frame must fit inside the measured pane.
