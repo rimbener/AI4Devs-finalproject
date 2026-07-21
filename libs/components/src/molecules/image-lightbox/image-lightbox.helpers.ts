@@ -1,5 +1,6 @@
+import { sendAccessibilityEvent } from '@helsoft/rn-utils';
 import type { RefObject } from 'react';
-import { AccessibilityInfo, type View } from 'react-native';
+import type { View } from 'react-native';
 
 type FocusableHost = View & { focus?: () => void };
 
@@ -12,11 +13,7 @@ export const focusDialog = (dialogRef: RefObject<View | null>) => {
   const host = dialogRef.current as FocusableHost | null;
   if (!host) return;
 
-  const sendAccessibilityEvent = AccessibilityInfo.sendAccessibilityEvent;
-  if (typeof sendAccessibilityEvent === 'function') {
-    sendAccessibilityEvent.call(AccessibilityInfo, host, 'focus');
-    return;
-  }
+  if (sendAccessibilityEvent(host)) return;
 
   host.focus?.();
 };

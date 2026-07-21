@@ -10,6 +10,12 @@ This is a monorepo for react-native/node/next applications.
 
 - libs: this folder should contain the shared code between the applications. Always name them with @helsoft/
   The main libraries are:
+  - @helsoft/js-utils: pure, platform-agnostic TypeScript utilities.
+    - Follow `libs/js-utils/AGENTS.md`.
+    - No React, React Native, Expo, Supabase, JSX, or platform APIs.
+  - @helsoft/rn-utils: React Native-specific TypeScript utilities.
+    - Follow `libs/rn-utils/AGENTS.md`.
+    - React Native APIs are allowed; no components, hooks, JSX, Expo-only APIs, services, or business logic.
   - @helsoft/types: this library should contain the shared types between the applications (cross-lib contracts only).
     - The files on this folder should be named like this: type-name.ts.
     - The files on this folder should be plain typescript files. No need to use any framework or library.

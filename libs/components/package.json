@@ -25,6 +25,7 @@
   "dependencies": {
     "@helsoft/hooks": "workspace:*",
     "@helsoft/localization": "workspace:*",
+    "@helsoft/rn-utils": "workspace:*",
     "@helsoft/types": "workspace:*"
   },
   "peerDependencies": {
