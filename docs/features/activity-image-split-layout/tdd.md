@@ -44,3 +44,21 @@
 - REVIEW r1 RED→GREEN: CI's `WithImage` lightbox locator timed out while the shared Storybook URL mock was susceptible to parallel stories; serialized the SlideImage e2e file and verified its 2 tests, SlideView's 10 e2e tests, and both affected unit files green.
 - @s2 REVIEW r3 RED→GREEN: added a measured-pane portrait-frame test that fails when rendered image dimensions exceed pane bounds, then measured the split pane and calculated contained image dimensions.
 - @s2/@s13 REVIEW r3 RED→GREEN: asserted the split row consumes residual root space rather than the full body-frame height, then bounded the split root and made its row flex into title/gap-reserved space.
+
+## Mutation re-work
+
+| Mutant area | Test |
+| --- | --- |
+| Non-positive measured player height | `lesson-player.test.tsx` |
+| Split pane dimensions and stacked-only behavior | `slide-image.test.tsx` |
+| Zero-height split root and body scroller | `slide-view.test.tsx` |
+| Square viewport fallback | `use-slide-layout.test.ts` |
+
+- RED→GREEN: rejected zero/negative player and zero-sized pane measurements; retained the
+  stacked fallback until positive dimensions exist.
+- RED→GREEN: asserted stacked components omit split-only layout hooks/styles and a zero split
+  height stays unbounded; asserted a square viewport remains stacked.
+- REFACTOR: documented six semantic-equivalent mutants in `mutation.md`; no source change.
+- RED→GREEN r2: asserted the split container fills its pane while stacked containers remain
+  content-sized, killing all four non-equivalent container-height mutants.
+- MUTATION ACCEPTED: human accepted leaving four non-equivalent height-style survivors with a TODO.

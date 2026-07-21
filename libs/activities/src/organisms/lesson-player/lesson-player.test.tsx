@@ -226,6 +226,35 @@ describe('LessonPlayer', () => {
     expect(screen.getByTestId('slide-available-height').props.children).toBe('480');
   });
 
+  // Mutation — non-positive frame measurements must preserve the pre-measure fallback.
+  it.each([0, -1])('ignores a non-positive measured body height of %d', async (height) => {
+    const originalUseRef = React.useRef;
+    let reportMeasuredHeight:
+      | ((_x: number, _y: number, _width: number, measuredHeight: number) => void)
+      | undefined;
+    const measuredBodyRef = Object.defineProperty({}, 'current', {
+      get: () => ({
+        measure: (
+          callback: (_x: number, _y: number, _width: number, measuredHeight: number) => void,
+        ) => {
+          reportMeasuredHeight = callback;
+        },
+      }),
+      set: () => {},
+    }) as React.RefObject<unknown>;
+    jest.spyOn(React, 'useRef').mockImplementation((initialValue) => {
+      const ref = originalUseRef(initialValue);
+      return initialValue === null ? measuredBodyRef : ref;
+    });
+
+    await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
+    await act(async () => {
+      reportMeasuredHeight?.(0, 0, 0, height);
+    });
+
+    expect(screen.getByTestId('slide-available-height').props.children).toBe('undefined');
+  });
+
   // Mutation — SlideProgress gets 0-based current + kind→type map (instructional→lesson).
   it('feeds 0-based current and slide kinds into the segmented progress indicator', async () => {
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);

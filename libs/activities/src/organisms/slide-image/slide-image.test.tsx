@@ -129,6 +129,24 @@ describe('SlideImage', () => {
     );
   });
 
+  // Mutation — only split containers fill their parent pane.
+  it('makes the split container fill its pane but keeps stacked containers content-sized', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    const { rerender } = await render(<SlideImage image={imageRef} layout="split" />);
+    expect(flattenStyle(screen.getByTestId('slide-image-container').props.style)).toEqual(
+      expect.objectContaining({ alignItems: 'center', height: '100%' }),
+    );
+
+    await rerender(<SlideImage image={imageRef} layout="stacked" />);
+    expect(flattenStyle(screen.getByTestId('slide-image-container').props.style)).not.toHaveProperty(
+      'height',
+    );
+  });
+
   // @s2 review r3 — a portrait image's rendered frame must fit inside the measured pane.
   it('keeps a portrait split image inside its measured pane', async () => {
     mockUseSlideImageUrl.mockReturnValue({
@@ -147,6 +165,41 @@ describe('SlideImage', () => {
     expect(imageStyle.height).toBe(300);
     expect(imageStyle.width as number).toBeLessThanOrEqual(pane.width);
     expect(imageStyle.height as number).toBeLessThanOrEqual(pane.height);
+  });
+
+  // Mutation — only a non-zero split pane may replace its fill-pane image dimensions.
+  it.each([
+    ['zero width', { width: 0, height: 300 }],
+    ['zero height', { width: 240, height: 0 }],
+  ])('ignores a split pane with %s', async (_description, layout) => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={{ ...imageRef, width: 400, height: 800 }} layout="split" />);
+    await fireEvent(screen.getByTestId('slide-image-wrapper'), 'layout', {
+      nativeEvent: { layout: { ...layout, x: 0, y: 0 } },
+    });
+
+    expect(screen.getByLabelText('Diagram of mitosis').props.style).toEqual(
+      expect.objectContaining({ width: '100%', height: '100%' }),
+    );
+  });
+
+  // Mutation — stacked layout has no pane measurement or split-only height constraint.
+  it('keeps stacked layout free of split-only pane behavior', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} />);
+
+    expect(screen.getByTestId('slide-image-wrapper').props.onLayout).toBeUndefined();
+    expect(screen.getByTestId('slide-image-container').props.style).not.toEqual(
+      expect.objectContaining({ height: '100%' }),
+    );
   });
 
   // @s3, @s10 — signed URLs expose a localized dedicated expand control.

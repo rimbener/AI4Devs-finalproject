@@ -57,6 +57,7 @@ describe('useSlideLayout', () => {
   // @s6, @s8 — a portrait image requires landscape orientation and positive measured height.
   it.each([
     ['a portrait viewport', { width: 768, height: 1024 }, 600],
+    ['a square viewport', { width: 800, height: 800 }, 600],
     ['no measured height', { width: 1024, height: 768 }, undefined],
     ['a null height', { width: 1024, height: 768 }, null],
     ['a zero height', { width: 1024, height: 768 }, 0],

@@ -390,6 +390,29 @@ describe('SlideView', () => {
     });
   });
 
+  // Mutation — a split tree still needs a positive measured height before it is height-bounded.
+  it('does not height-bound a split tree when the measured height is zero', async () => {
+    const imageSlide: InstructionalSlide = {
+      ...instructional,
+      image: {
+        imageId: 'image-1',
+        storagePath: 'slides/image-1.png',
+        width: 400,
+        height: 800,
+      },
+    };
+    mockedUseSlideLayout.mockReturnValue({ isSplit: true });
+
+    await render(<SlideView slide={imageSlide} availableHeight={0} />);
+
+    expect(screen.getByText('Photosynthesis').parent?.props.style).toEqual(
+      expect.objectContaining({ flex: 1 }),
+    );
+    expect(screen.getByTestId('slide-body-scroll').props.style).toEqual(
+      expect.objectContaining({ flex: 1 }),
+    );
+  });
+
   // @s11 — every content kind uses the same image-left, body-right split wrapper.
   it.each([
     ['instructional', instructional],
