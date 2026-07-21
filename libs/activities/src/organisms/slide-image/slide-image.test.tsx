@@ -102,6 +102,35 @@ describe('SlideImage', () => {
     );
   });
 
+  // @s2 — split images fill a bounded pane without the readable-content cap.
+  it('contains split images within the available pane height without a width cap', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    await render(<SlideImage image={imageRef} layout="split" />);
+
+    expect(screen.getByTestId('slide-image-wrapper').props.style).toEqual(
+      expect.objectContaining({
+        width: '100%',
+        maxHeight: '100%',
+        flex: 1,
+        position: 'relative',
+      }),
+    );
+    expect(screen.getByTestId('slide-image-wrapper').props.style).not.toEqual(
+      expect.objectContaining({ maxWidth: lightTheme.layout.contentReading }),
+    );
+    expect(screen.getByLabelText('Diagram of mitosis').props.style).toEqual(
+      expect.objectContaining({
+        width: '100%',
+        maxHeight: '100%',
+        flex: 1,
+      }),
+    );
+  });
+
   // @s3, @s10 — signed URLs expose a localized dedicated expand control.
   it('shows a localized expand control when the image url is ready', async () => {
     mockUseSlideImageUrl.mockReturnValue({

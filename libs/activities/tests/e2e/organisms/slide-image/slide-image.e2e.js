@@ -13,3 +13,13 @@ test('WithImage opens the lightbox and dismisses it from the close control', asy
 
   await expect(canvas.getByLabel('Close image')).toHaveCount(0);
 });
+
+test('SplitImage opens the lightbox from the bounded pane', async ({ page }) => {
+  await page.goto('/?path=/story/organisms-slideimage--split-image');
+
+  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+  await expect(canvas.getByLabel('View image fullscreen')).toBeVisible();
+  await canvas.getByLabel('View image fullscreen').click();
+
+  await expect(canvas.getByLabel('Close image')).toBeVisible();
+});

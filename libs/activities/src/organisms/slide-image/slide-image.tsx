@@ -11,7 +11,7 @@ import type { SlideImageProps } from './slide-image.types';
  * SlideImage — resolves a signed URL via useSlideImageUrl and renders it scaled to fit.
  * Renders nothing when there is no url (text-only degrade).
  */
-export const SlideImage = ({ image }: SlideImageProps) => {
+export const SlideImage = ({ image, layout = 'stacked' }: SlideImageProps) => {
   const { url } = useSlideImageUrl(image);
   const { t } = useLocalization();
   const { theme } = useUnistyles();
@@ -32,14 +32,14 @@ export const SlideImage = ({ image }: SlideImageProps) => {
 
   return (
     <NativeView testID="slide-image-container" style={styles.container}>
-      <NativeView testID="slide-image-wrapper" style={styles.imageWrapper}>
+      <NativeView testID="slide-image-wrapper" style={styles.imageWrapper(layout)}>
         <Image
           testID="slide-image"
           source={{ uri: url }}
           accessible={Boolean(image.alt)}
           accessibilityLabel={image.alt || undefined}
           resizeMode="contain"
-          style={styles.image(aspectRatio)}
+          style={styles.image(aspectRatio, layout)}
         />
         <NativeView testID="slide-image-expand-control" style={styles.expandControl}>
           <NativeView
@@ -74,14 +74,26 @@ const styles = StyleSheet.create((theme) => ({
   container: {
     alignItems: 'center',
   },
-  imageWrapper: {
-    width: '100%' as const,
-    maxWidth: theme.layout.contentReading,
-    position: 'relative',
-  },
-  image: (aspectRatio: number) => ({
+  imageWrapper: (layout: NonNullable<SlideImageProps['layout']>) =>
+    layout === 'split'
+      ? {
+          width: '100%' as const,
+          maxHeight: '100%' as const,
+          flex: 1,
+          position: 'relative',
+        }
+      : {
+          width: '100%' as const,
+          maxWidth: theme.layout.contentReading,
+          position: 'relative',
+        },
+  image: (aspectRatio: number, layout: NonNullable<SlideImageProps['layout']>) => ({
     width: '100%' as const,
     aspectRatio,
+    ...(layout === 'split' && {
+      maxHeight: '100%' as const,
+      flex: 1,
+    }),
   }),
   expandControl: {
     position: 'absolute',

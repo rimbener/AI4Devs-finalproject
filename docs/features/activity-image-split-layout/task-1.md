@@ -3,7 +3,7 @@ id: task-1
 title: Add a layout variant to SlideImage (stacked | split)
 slice: 1
 scenarios: [s2, s14]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/slide-image/slide-image.tsx
   - libs/activities/src/organisms/slide-image/slide-image.types.ts
