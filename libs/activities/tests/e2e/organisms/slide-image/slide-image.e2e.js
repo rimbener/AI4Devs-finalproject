@@ -1,5 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
+// Story decorators share the URL mock; parallel stories could overwrite its active value.
+test.describe.configure({ mode: 'serial' });
+
 test('WithImage opens the lightbox and dismisses it from the close control', async ({ page }) => {
   await page.goto('/?path=/story/organisms-slideimage--with-image');
 

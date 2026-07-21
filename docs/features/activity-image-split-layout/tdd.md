@@ -41,3 +41,6 @@
 - @s11 REFACTOR: added portrait-image split stories and shared-wrapper coverage for every slide kind.
 - @s1/@s3/@s10/@s12 RED→GREEN: added Storybook e2e for panes, source order, all kinds, and portrait fallback; serialized it because its Storybook URL mock is shared.
 - @s8/@s13 REVIEW RED→GREEN: isolated the body ref measurement mock, asserted pre-measure `undefined`, post-measure height, and preserved SlideView's mount ref.
+- REVIEW r1 RED→GREEN: CI's `WithImage` lightbox locator timed out while the shared Storybook URL mock was susceptible to parallel stories; serialized the SlideImage e2e file and verified its 2 tests, SlideView's 10 e2e tests, and both affected unit files green.
+- @s2 REVIEW r3 RED→GREEN: added a measured-pane portrait-frame test that fails when rendered image dimensions exceed pane bounds, then measured the split pane and calculated contained image dimensions.
+- @s2/@s13 REVIEW r3 RED→GREEN: asserted the split row consumes residual root space rather than the full body-frame height, then bounded the split root and made its row flex into title/gap-reserved space.

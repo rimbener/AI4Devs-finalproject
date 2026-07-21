@@ -114,8 +114,7 @@ describe('SlideImage', () => {
     expect(screen.getByTestId('slide-image-wrapper').props.style).toEqual(
       expect.objectContaining({
         width: '100%',
-        maxHeight: '100%',
-        flex: 1,
+        height: '100%',
         position: 'relative',
       }),
     );
@@ -125,10 +124,29 @@ describe('SlideImage', () => {
     expect(screen.getByLabelText('Diagram of mitosis').props.style).toEqual(
       expect.objectContaining({
         width: '100%',
-        maxHeight: '100%',
-        flex: 1,
+        height: '100%',
       }),
     );
+  });
+
+  // @s2 review r3 — a portrait image's rendered frame must fit inside the measured pane.
+  it('keeps a portrait split image inside its measured pane', async () => {
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
+
+    const pane = { width: 240, height: 300 };
+    await render(<SlideImage image={{ ...imageRef, width: 400, height: 800 }} layout="split" />);
+    await fireEvent(screen.getByTestId('slide-image-wrapper'), 'layout', {
+      nativeEvent: { layout: { ...pane, x: 0, y: 0 } },
+    });
+
+    const imageStyle = flattenStyle(screen.getByLabelText('Diagram of mitosis').props.style);
+    expect(imageStyle.width).toBe(150);
+    expect(imageStyle.height).toBe(300);
+    expect(imageStyle.width as number).toBeLessThanOrEqual(pane.width);
+    expect(imageStyle.height as number).toBeLessThanOrEqual(pane.height);
   });
 
   // @s3, @s10 — signed URLs expose a localized dedicated expand control.

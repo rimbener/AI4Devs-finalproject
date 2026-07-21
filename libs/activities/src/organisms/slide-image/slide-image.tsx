@@ -2,10 +2,20 @@ import { focusDialog, IconButton, ImageLightbox } from '@helsoft/components';
 import { useSlideImageUrl } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { useEffect, useRef, useState } from 'react';
-import { Image, View as NativeView, type View } from 'react-native';
+import { Image, type LayoutChangeEvent, View as NativeView, type View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import type { SlideImageProps } from './slide-image.types';
+
+type PaneSize = {
+  width: number;
+  height: number;
+};
+
+const getContainedImageSize = (aspectRatio: number, pane: PaneSize): PaneSize => {
+  const width = Math.min(pane.width, pane.height * aspectRatio);
+  return { width, height: width / aspectRatio };
+};
 
 /**
  * SlideImage — resolves a signed URL via useSlideImageUrl and renders it scaled to fit.
@@ -16,6 +26,7 @@ export const SlideImage = ({ image, layout = 'stacked' }: SlideImageProps) => {
   const { t } = useLocalization();
   const { theme } = useUnistyles();
   const [open, setOpen] = useState(false);
+  const [paneSize, setPaneSize] = useState<PaneSize>();
   const expandControlRef = useRef<View>(null);
   const wasOpen = useRef(false);
 
@@ -29,17 +40,27 @@ export const SlideImage = ({ image, layout = 'stacked' }: SlideImageProps) => {
   if (!url || !image) return null;
 
   const aspectRatio = image.width > 0 && image.height > 0 ? image.width / image.height : 1;
+  const containedSize =
+    layout === 'split' && paneSize ? getContainedImageSize(aspectRatio, paneSize) : undefined;
+  const handlePaneLayout = (event: LayoutChangeEvent) => {
+    const { width, height } = event.nativeEvent.layout;
+    if (width > 0 && height > 0) setPaneSize({ width, height });
+  };
 
   return (
-    <NativeView testID="slide-image-container" style={styles.container}>
-      <NativeView testID="slide-image-wrapper" style={styles.imageWrapper(layout)}>
+    <NativeView testID="slide-image-container" style={styles.container(layout)}>
+      <NativeView
+        testID="slide-image-wrapper"
+        style={styles.imageWrapper(layout)}
+        onLayout={layout === 'split' ? handlePaneLayout : undefined}
+      >
         <Image
           testID="slide-image"
           source={{ uri: url }}
           accessible={Boolean(image.alt)}
           accessibilityLabel={image.alt || undefined}
           resizeMode="contain"
-          style={styles.image(aspectRatio, layout)}
+          style={styles.image(aspectRatio, layout, containedSize)}
         />
         <NativeView testID="slide-image-expand-control" style={styles.expandControl}>
           <NativeView
@@ -71,15 +92,15 @@ export const SlideImage = ({ image, layout = 'stacked' }: SlideImageProps) => {
 };
 
 const styles = StyleSheet.create((theme) => ({
-  container: {
+  container: (layout: NonNullable<SlideImageProps['layout']>) => ({
     alignItems: 'center',
-  },
+    ...(layout === 'split' && { height: '100%' as const }),
+  }),
   imageWrapper: (layout: NonNullable<SlideImageProps['layout']>) =>
     layout === 'split'
       ? {
           width: '100%' as const,
-          maxHeight: '100%' as const,
-          flex: 1,
+          height: '100%' as const,
           position: 'relative',
         }
       : {
@@ -87,13 +108,14 @@ const styles = StyleSheet.create((theme) => ({
           maxWidth: theme.layout.contentReading,
           position: 'relative',
         },
-  image: (aspectRatio: number, layout: NonNullable<SlideImageProps['layout']>) => ({
-    width: '100%' as const,
-    aspectRatio,
-    ...(layout === 'split' && {
-      maxHeight: '100%' as const,
-      flex: 1,
-    }),
+  image: (
+    aspectRatio: number,
+    layout: NonNullable<SlideImageProps['layout']>,
+    containedSize?: PaneSize,
+  ) => ({
+    ...(layout === 'split'
+      ? (containedSize ?? { width: '100%' as const, height: '100%' as const })
+      : { width: '100%' as const, aspectRatio }),
   }),
   expandControl: {
     position: 'absolute',

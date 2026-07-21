@@ -31,12 +31,12 @@ export const SlideView = ({
   );
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root(isSplit, availableHeight)}>
       <Text accessibilityRole="header" style={styles.title}>
         {slide.title}
       </Text>
       {isSplit ? (
-        <View testID="slide-split-row" style={styles.splitRow(availableHeight)}>
+        <View testID="slide-split-row" style={styles.splitRow}>
           <View testID="slide-image-pane" style={styles.splitPane}>
             <SlideImage image={slide.image} layout="split" />
           </View>
@@ -113,10 +113,10 @@ const ActivityBody = ({ slide, onAnswered, initialAnswer }: ActivityBodyProps) =
 };
 
 const styles = StyleSheet.create((theme) => ({
-  root: {
+  root: (isSplit: boolean, availableHeight: number | null | undefined) => ({
     gap: theme.spacing.s3,
-    flex: 1,
-  },
+    ...(isSplit && availableHeight ? { height: availableHeight } : { flex: 1 }),
+  }),
   title: {
     ...theme.typography.headlineSmall,
     color: theme.colors.onSurface,
@@ -125,11 +125,12 @@ const styles = StyleSheet.create((theme) => ({
     ...theme.typography.bodyLarge,
     color: theme.colors.onSurface,
   },
-  splitRow: (availableHeight: number | null | undefined) => ({
+  splitRow: {
     flexDirection: 'row' as const,
     gap: theme.layout.gutter,
-    height: availableHeight,
-  }),
+    flex: 1,
+    minHeight: 0,
+  },
   splitPane: {
     flex: 1,
   },

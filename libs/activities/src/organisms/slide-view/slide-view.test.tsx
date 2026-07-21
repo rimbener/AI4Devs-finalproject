@@ -369,8 +369,10 @@ describe('SlideView', () => {
     expect(screen.getByTestId('slide-image-split')).toBeTruthy();
     expect(screen.getByText('Plants convert light into energy.')).toBeTruthy();
     expect(row.props.style).toEqual(
-      expect.objectContaining({ flexDirection: 'row', gap: 16, height: 600 }),
+      expect.objectContaining({ flexDirection: 'row', gap: 16, flex: 1 }),
     );
+    expect(row.props.style).not.toEqual(expect.objectContaining({ height: 600 }));
+    expect(row.parent?.props.style).toEqual(expect.objectContaining({ height: 600, gap: 12 }));
     expect(imagePane.props.style).toEqual(expect.objectContaining({ flex: 1 }));
     expect(bodyPane.props.style).toEqual(expect.objectContaining({ flex: 1 }));
     expect(bodyScroll.parent).toBe(bodyPane);
