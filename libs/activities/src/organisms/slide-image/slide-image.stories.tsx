@@ -1,5 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { View } from 'react-native';
+import { StyleSheet } from 'react-native-unistyles';
 
 import { configureSlideImageUrlMock } from '../../../.storybook/mocks/hooks';
 import { SlideImage } from './slide-image';
@@ -16,7 +17,7 @@ const meta = {
   component: SlideImage,
   decorators: [
     (Story) => (
-      <View style={{ width: 320, padding: 16 }}>
+      <View style={styles.stackedContainer}>
         <Story />
       </View>
     ),
@@ -46,12 +47,49 @@ export const WithImage: Story = {
   },
 };
 
+// @s2 — split: bounded, wide pane with the same expandable control.
+export const SplitImage: Story = {
+  decorators: [
+    withSlideImageUrlMock({
+      url: 'https://picsum.photos/seed/split-lesson-player/400/800',
+      isLoading: false,
+    }),
+    (Story) => (
+      <View style={styles.splitContainer}>
+        <Story />
+      </View>
+    ),
+  ],
+  args: {
+    image: {
+      imageId: 'img-split',
+      storagePath: 'demo/portrait-diagram.png',
+      width: 400,
+      height: 800,
+      alt: 'A portrait sample diagram',
+    },
+    layout: 'split',
+  },
+};
+
 // @s8 — no image → renders nothing.
 export const NoImage: Story = {
   args: {
     image: undefined,
   },
 };
+
+const styles = StyleSheet.create((theme) => ({
+  stackedContainer: {
+    width: theme.layout.contentReading,
+    padding: theme.spacing.s4,
+  },
+  splitContainer: {
+    width: theme.layout.contentMax,
+    height: theme.layout.contentReading,
+    padding: theme.spacing.s4,
+  },
+}));
 
 // @s9 — ref present but resolution failed → renders nothing (text-only degrade).
 export const UnresolvableImage: Story = {

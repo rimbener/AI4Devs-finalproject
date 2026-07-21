@@ -6,6 +6,7 @@ jest.mock('../slide-view/slide-view', () => ({
     slide,
     onAnswered,
     initialAnswer,
+    availableHeight,
   }: {
     slide: { title: string; id: string; activityType?: string; correctOptionId?: string };
     onAnswered?: (answer: {
@@ -16,6 +17,7 @@ jest.mock('../slide-view/slide-view', () => ({
       isCorrect: boolean;
     }) => void;
     initialAnswer?: { selectedOptionId?: string } | null;
+    availableHeight?: number;
   }) => {
     const { Text, Pressable, View } = require('react-native');
     const { useRef } = require('react');
@@ -24,6 +26,7 @@ jest.mock('../slide-view/slide-view', () => ({
     return (
       <View testID={`slide-${slide.id}`}>
         <Text testID="slide-mount-id">{mountId}</Text>
+        <Text testID="slide-available-height">{String(availableHeight)}</Text>
         <Text>{slide.title}</Text>
         {initialAnswer?.selectedOptionId ? (
           <Text testID="restored-answer">{initialAnswer.selectedOptionId}</Text>
@@ -84,6 +87,7 @@ jest.mock('../lesson-results/lesson-results', () => ({
 import { useLocalization } from '@helsoft/localization';
 import type { Lesson } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import * as React from 'react';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import {
@@ -177,6 +181,10 @@ describe('LessonPlayer', () => {
     mockUseLocalization.mockReturnValue(localizationValue({ t }));
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   // @s1 — starts on first content slide, exactly one.
   it('starts on the first content slide', async () => {
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
@@ -185,6 +193,66 @@ describe('LessonPlayer', () => {
     expect(screen.getByTestId('slide-s1')).toBeTruthy();
     expect(screen.queryByTestId('slide-s2')).toBeNull();
     expect(screen.getByText('Slide 1 of 5')).toBeTruthy();
+  });
+
+  // activity-image-split-layout @s8/@s13 — body frame bounds SlideView only after measure.
+  it('passes the measured body height to the active content slide', async () => {
+    const originalUseRef = React.useRef;
+    let reportMeasuredHeight:
+      | ((_x: number, _y: number, _width: number, height: number) => void)
+      | undefined;
+    const measuredBodyRef = Object.defineProperty({}, 'current', {
+      get: () => ({
+        measure: (callback: (_x: number, _y: number, _width: number, height: number) => void) => {
+          reportMeasuredHeight = callback;
+        },
+      }),
+      set: () => {},
+    }) as React.RefObject<unknown>;
+    jest.spyOn(React, 'useRef').mockImplementation((initialValue) => {
+      const ref = originalUseRef(initialValue);
+      return initialValue === null ? measuredBodyRef : ref;
+    });
+
+    await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
+
+    expect(screen.getByTestId('slide-available-height').props.children).toBe('undefined');
+    expect(typeof screen.getByTestId('slide-mount-id').props.children).toBe('string');
+
+    await act(async () => {
+      reportMeasuredHeight?.(0, 0, 0, 480);
+    });
+
+    expect(screen.getByTestId('slide-available-height').props.children).toBe('480');
+  });
+
+  // Mutation — non-positive frame measurements must preserve the pre-measure fallback.
+  it.each([0, -1])('ignores a non-positive measured body height of %d', async (height) => {
+    const originalUseRef = React.useRef;
+    let reportMeasuredHeight:
+      | ((_x: number, _y: number, _width: number, measuredHeight: number) => void)
+      | undefined;
+    const measuredBodyRef = Object.defineProperty({}, 'current', {
+      get: () => ({
+        measure: (
+          callback: (_x: number, _y: number, _width: number, measuredHeight: number) => void,
+        ) => {
+          reportMeasuredHeight = callback;
+        },
+      }),
+      set: () => {},
+    }) as React.RefObject<unknown>;
+    jest.spyOn(React, 'useRef').mockImplementation((initialValue) => {
+      const ref = originalUseRef(initialValue);
+      return initialValue === null ? measuredBodyRef : ref;
+    });
+
+    await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
+    await act(async () => {
+      reportMeasuredHeight?.(0, 0, 0, height);
+    });
+
+    expect(screen.getByTestId('slide-available-height').props.children).toBe('undefined');
   });
 
   // Mutation — SlideProgress gets 0-based current + kind→type map (instructional→lesson).

@@ -2,6 +2,7 @@ import type { ActivityAnswer, ActivitySlide, Slide } from '@helsoft/types';
 
 export type SlideViewProps = {
   slide: Slide;
+  availableHeight?: number | null;
   onAnswered?: (answer: ActivityAnswer) => void;
   /** Prior in-session answer for this slide — rehydrates the activity organism. */
   initialAnswer?: ActivityAnswer;

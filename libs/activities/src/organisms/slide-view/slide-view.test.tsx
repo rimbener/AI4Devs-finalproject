@@ -1,5 +1,23 @@
 jest.mock('../slide-image/slide-image', () => ({
-  SlideImage: () => null,
+  SlideImage: ({
+    image,
+    layout,
+  }: {
+    image?: { imageId: string };
+    layout?: 'stacked' | 'split';
+  }) => {
+    const { Text } = require('react-native');
+    if (!image) return null;
+    return <Text testID={`slide-image-${layout ?? 'stacked'}`}>{layout ?? 'stacked'}</Text>;
+  },
+}));
+jest.mock('./use-slide-layout', () => ({
+  useSlideLayout: jest.fn(),
+}));
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: () => ({
+    t: (key: string) => key,
+  }),
 }));
 jest.mock('../multiple-choice/multiple-choice', () => ({
   MultipleChoice: ({
@@ -117,6 +135,12 @@ import type {
 import { render, screen } from '@testing-library/react-native';
 
 import { SlideView } from './slide-view';
+import { useSlideLayout } from './use-slide-layout';
+
+const mockedUseSlideLayout = jest.mocked(useSlideLayout);
+const I18N = {
+  splitBody: 'player.slideBody.scroll',
+} as const;
 
 const instructional: InstructionalSlide = {
   id: 'slide-1',
@@ -189,6 +213,10 @@ const openEnded: OpenEndedSlide = {
 };
 
 describe('SlideView', () => {
+  beforeEach(() => {
+    mockedUseSlideLayout.mockReturnValue({ isSplit: false });
+  });
+
   // @s5 — instructional shows title + content text.
   it('renders an instructional slide title and content', async () => {
     await render(<SlideView slide={instructional} />);
@@ -315,5 +343,127 @@ describe('SlideView', () => {
       }),
     );
     expect(title.parent?.props.style).toEqual(expect.objectContaining({ gap: 12, flex: 1 }));
+  });
+
+  // @s1, @s2, @s3, @s12 — split keeps title first, then isolated image and scrolling body panes.
+  it('renders a bounded 50/50 split row for a portrait image', async () => {
+    const imageSlide: InstructionalSlide = {
+      ...instructional,
+      image: {
+        imageId: 'image-1',
+        storagePath: 'slides/image-1.png',
+        width: 400,
+        height: 800,
+      },
+    };
+    mockedUseSlideLayout.mockReturnValue({ isSplit: true });
+
+    await render(<SlideView slide={imageSlide} availableHeight={600} />);
+
+    const row = screen.getByTestId('slide-split-row');
+    const imagePane = screen.getByTestId('slide-image-pane');
+    const bodyPane = screen.getByTestId('slide-body-pane');
+    const bodyScroll = screen.getByTestId('slide-body-scroll');
+
+    expect(screen.getByText('Photosynthesis')).toBeTruthy();
+    expect(screen.getByTestId('slide-image-split')).toBeTruthy();
+    expect(screen.getByText('Plants convert light into energy.')).toBeTruthy();
+    expect(row.props.style).toEqual(
+      expect.objectContaining({ flexDirection: 'row', gap: 16, flex: 1 }),
+    );
+    expect(row.props.style).not.toEqual(expect.objectContaining({ height: 600 }));
+    expect(row.parent?.props.style).toEqual(expect.objectContaining({ height: 600, gap: 12 }));
+    expect(imagePane.props.style).toEqual(expect.objectContaining({ flex: 1 }));
+    expect(bodyPane.props.style).toEqual(expect.objectContaining({ flex: 1 }));
+    expect(bodyScroll.parent).toBe(bodyPane);
+    expect(bodyScroll.props).toEqual(
+      expect.objectContaining({
+        accessible: true,
+        accessibilityLabel: I18N.splitBody,
+        focusable: true,
+      }),
+    );
+    expect(row.children).toEqual([imagePane, bodyPane]);
+    expect(mockedUseSlideLayout).toHaveBeenCalledWith({
+      image: imageSlide.image,
+      availableHeight: 600,
+    });
+  });
+
+  // Mutation — a split tree still needs a positive measured height before it is height-bounded.
+  it('does not height-bound a split tree when the measured height is zero', async () => {
+    const imageSlide: InstructionalSlide = {
+      ...instructional,
+      image: {
+        imageId: 'image-1',
+        storagePath: 'slides/image-1.png',
+        width: 400,
+        height: 800,
+      },
+    };
+    mockedUseSlideLayout.mockReturnValue({ isSplit: true });
+
+    await render(<SlideView slide={imageSlide} availableHeight={0} />);
+
+    expect(screen.getByText('Photosynthesis').parent?.props.style).toEqual(
+      expect.objectContaining({ flex: 1 }),
+    );
+    expect(screen.getByTestId('slide-body-scroll').props.style).toEqual(
+      expect.objectContaining({ flex: 1 }),
+    );
+  });
+
+  // @s11 — every content kind uses the same image-left, body-right split wrapper.
+  it.each([
+    ['instructional', instructional],
+    ['multiple-choice', multipleChoice],
+    ['fill-in-the-blank', fillBlank],
+    ['matching', matching],
+    ['flashcard', flashcard],
+    ['open-ended', openEnded],
+  ] as const)('renders the %s kind in the split layout', async (_kind, slide) => {
+    const imageSlide = {
+      ...slide,
+      image: {
+        imageId: 'image-1',
+        storagePath: 'slides/image-1.png',
+        width: 400,
+        height: 800,
+      },
+    };
+    mockedUseSlideLayout.mockReturnValue({ isSplit: true });
+
+    await render(<SlideView slide={imageSlide} availableHeight={600} />);
+
+    expect(screen.getByTestId('slide-split-row')).toBeTruthy();
+    expect(screen.getByTestId('slide-image-split')).toBeTruthy();
+    expect(screen.getByTestId('slide-body-scroll')).toBeTruthy();
+  });
+
+  // @s6, @s14 — stacked fallback preserves the existing image-before-body order.
+  it('keeps a non-split image above the body', async () => {
+    const imageSlide: InstructionalSlide = {
+      ...instructional,
+      image: {
+        imageId: 'image-1',
+        storagePath: 'slides/image-1.png',
+        width: 400,
+        height: 800,
+      },
+    };
+
+    await render(<SlideView slide={imageSlide} availableHeight={600} />);
+
+    expect(screen.getByTestId('slide-image-stacked')).toBeTruthy();
+    expect(screen.queryByTestId('slide-split-row')).toBeNull();
+    expect(screen.queryByTestId('slide-body-scroll')).toBeNull();
+  });
+
+  // @s7 — text-only slides do not introduce an image column.
+  it('keeps text-only slides without image panes', async () => {
+    await render(<SlideView slide={instructional} availableHeight={600} />);
+
+    expect(screen.queryByTestId('slide-image-stacked')).toBeNull();
+    expect(screen.queryByTestId('slide-image-pane')).toBeNull();
   });
 });
