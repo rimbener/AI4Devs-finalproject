@@ -14,10 +14,10 @@ Use this skill when you need help creating a structured user story. Provide your
 **Input:** A description of a feature, behavior, or capability you want to build (can be vague)
 
 **Process:**
-1. Ask clarifying questions to understand the user persona, their goal, the benefit, and relevant context
+1. Grill the user (via the `grilling` skill at `.claude/skills/grilling/SKILL.md`) to understand the user persona, their goal, the benefit, and relevant context — ask one question at a time, provide a recommended answer per question, and look up facts in the environment rather than asking
 2. Gather acceptance criteria (what success looks like, observable outcomes)
 3. Optionally collect details like analytics events, feature flags, or design notes if relevant
-4. Generate a properly-formatted markdown file
+4. Generate a properly-formatted markdown file (only after the grilling reaches a shared understanding you both confirm)
 
 **Output:** A file saved to `user-stories/pending/<derived-name>.md` with confirmation of the file path
 
@@ -60,7 +60,7 @@ The generated file follows this structure:
 
 ## Running the skill
 
-When you're ready, just describe your feature idea. The more details you have, the better — but don't worry if it's rough. The skill will ask follow-up questions to clarify:
+When you're ready, just describe your feature idea. The more details you have, the better — but don't worry if it's rough. The skill will then apply the `grilling` skill (`.claude/skills/grilling/SKILL.md`) — interviewing you relentlessly, one question at a time with a recommended answer each, until you reach a shared understanding — to clarify:
 
 - **Who** is the user? (the persona or type of person using this)
 - **What** do they want to do? (the action, goal, or capability)
@@ -69,4 +69,4 @@ When you're ready, just describe your feature idea. The more details you have, t
 - **Success criteria:** What does "done" look like? (observable, testable outcomes)
 - **Optional details:** Analytics events, feature flags, design references, or related context
 
-The skill will then generate your user story file and save it to the correct location.
+Once you confirm the grilling has reached a shared understanding, the skill generates your user story file and saves it to the correct location.
