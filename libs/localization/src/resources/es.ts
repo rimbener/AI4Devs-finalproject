@@ -173,6 +173,9 @@ export const es: TranslationResource = {
         close: 'Cerrar imagen',
         dialog: 'Visor de imágenes',
       },
+      slideBody: {
+        scroll: 'Contenido de la diapositiva',
+      },
     },
     results: {
       score: '{{correct}} / {{total}}',

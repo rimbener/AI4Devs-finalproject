@@ -191,6 +191,9 @@ export const en = {
         close: 'Close image',
         dialog: 'Image viewer',
       },
+      slideBody: {
+        scroll: 'Slide content',
+      },
     },
     results: {
       score: '{{correct}} / {{total}}',

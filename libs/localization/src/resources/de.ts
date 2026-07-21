@@ -176,6 +176,9 @@ export const de: TranslationResource = {
         close: 'Bild schließen',
         dialog: 'Bildbetrachter',
       },
+      slideBody: {
+        scroll: 'Folieninhalt',
+      },
     },
     results: {
       score: '{{correct}} / {{total}}',

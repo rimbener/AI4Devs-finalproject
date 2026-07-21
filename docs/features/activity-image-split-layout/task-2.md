@@ -3,7 +3,7 @@ id: task-2
 title: use-slide-layout hook — derive the split decision
 slice: 2
 scenarios: [s4, s5, s6, s8, s9, s10, s11]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/slide-view/use-slide-layout.ts
   - libs/activities/src/organisms/slide-view/use-slide-layout.test.ts

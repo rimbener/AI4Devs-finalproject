@@ -20,6 +20,17 @@ const instructional: InstructionalSlide = {
   kind: 'instructional',
 };
 
+const portraitInstructional: InstructionalSlide = {
+  ...instructional,
+  image: {
+    imageId: 'slide-image-1',
+    storagePath: 'slides/portrait-image.png',
+    width: 400,
+    height: 800,
+    alt: 'Portrait leaf diagram',
+  },
+};
+
 const multipleChoice: MultipleChoiceSlide = {
   id: 'slide-2',
   lessonId: 'lesson-1',
@@ -107,6 +118,16 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Instructional: Story = { args: { slide: instructional } };
+export const SplitInstructional: Story = {
+  args: { slide: portraitInstructional, availableHeight: 600 },
+  decorators: [
+    (Story) => (
+      <View style={{ width: 960, height: 600, padding: 16 }}>
+        <Story />
+      </View>
+    ),
+  ],
+};
 export const MultipleChoice: Story = { args: { slide: multipleChoice } };
 export const FillInTheBlank: Story = { args: { slide: fillBlank } };
 export const Matching: Story = { args: { slide: matching } };

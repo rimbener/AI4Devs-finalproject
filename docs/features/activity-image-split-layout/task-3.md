@@ -3,7 +3,7 @@ id: task-3
 title: SlideView renders the split row (title + 50/50 + right-pane scroller)
 slice: 2
 scenarios: [s1, s2, s3, s6, s7, s12, s14]
-status: todo
+status: done
 paths:
   - libs/activities/src/organisms/slide-view/slide-view.tsx
   - libs/activities/src/organisms/slide-view/slide-view.types.ts
