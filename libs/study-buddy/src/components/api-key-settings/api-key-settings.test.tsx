@@ -160,7 +160,9 @@ describe('ApiKeySettings', () => {
 
     const expectedDate = new Date(updatedAt).toLocaleDateString('en');
     expect(
-      screen.getByText(`settings.apiKey.savedStatus:{"provider":"Groq","date":"${expectedDate}"}`),
+      screen.getByText(
+        `settings.apiKey.savedStatus:{"provider":"settings.apiKey.provider.groq","date":"${expectedDate}"}`,
+      ),
     ).toBeTruthy();
   });
 

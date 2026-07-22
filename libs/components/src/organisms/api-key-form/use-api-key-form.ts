@@ -1,7 +1,12 @@
 import { useLocalization } from '@helsoft/localization';
 import type { ApiKeyStatus } from '@helsoft/types';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { AccessibilityInfo } from 'react-native';
+
+import {
+  apiKeyFormReducer,
+  initialApiKeyFormState,
+} from './use-api-key-form.reducer';
 
 type UseApiKeyFormArgs = {
   status: ApiKeyStatus;
@@ -21,9 +26,7 @@ export const useApiKeyForm = ({
   errorMessage,
 }: UseApiKeyFormArgs) => {
   const { t } = useLocalization();
-  const [apiKey, setApiKey] = useState('');
-  const [isReplacing, setIsReplacing] = useState(false);
-  const [isConfirmingRemove, setIsConfirmingRemove] = useState(false);
+  const [state, dispatch] = useReducer(apiKeyFormReducer, initialApiKeyFormState);
   const wasSubmitting = useRef(isSubmitting);
 
   // @s4 — once a replace-save resolves successfully (isSubmitting flips back to false while
@@ -31,8 +34,7 @@ export const useApiKeyForm = ({
   // leaving the input open.
   useEffect(() => {
     if (wasSubmitting.current && !isSubmitting && status.hasKey) {
-      setIsReplacing(false);
-      setApiKey('');
+      dispatch({ type: 'replace-save/success' });
     }
     wasSubmitting.current = isSubmitting;
   }, [isSubmitting, status.hasKey]);
@@ -61,17 +63,23 @@ export const useApiKeyForm = ({
     }
   }, [isSubmitting, t]);
 
-  const showInput = !status.hasKey || isReplacing;
+  const showInput = !status.hasKey || state.isReplacing;
   // @s5 — a blank/whitespace-only key is never submittable (AC7).
-  const isSaveDisabled = isSubmitting || !apiKey.trim();
+  const isSaveDisabled = isSubmitting || !state.apiKey.trim();
 
   return {
-    apiKey,
-    setApiKey,
-    isReplacing,
-    setIsReplacing,
-    isConfirmingRemove,
-    setIsConfirmingRemove,
+    apiKey: state.apiKey,
+    setApiKey: (apiKey: string) => dispatch({ type: 'set-api-key', apiKey }),
+    isReplacing: state.isReplacing,
+    setIsReplacing: (isReplacing: boolean) => {
+      if (isReplacing) dispatch({ type: 'start-replace' });
+    },
+    isConfirmingRemove: state.isConfirmingRemove,
+    setIsConfirmingRemove: (isConfirmingRemove: boolean) => {
+      dispatch({
+        type: isConfirmingRemove ? 'confirm-remove/open' : 'confirm-remove/close',
+      });
+    },
     showInput,
     isSaveDisabled,
   };

@@ -1,22 +1,13 @@
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform } from 'react-native';
-import type {
-  MatchingItemView,
-  MatchingLabels,
-  MatchingResult,
-  UseMatchingProps,
-} from './matching.types';
+import type { MatchingItemView, MatchingResult, UseMatchingProps } from './matching.types';
 import { useMatching } from './use-matching';
-
-const labels: MatchingLabels = {
-  submit: 'Submit',
-  correct: 'All correct!',
-  incorrect: 'Not quite',
-  correctPair: 'correct',
-  incorrectPair: 'incorrect',
-  explanationHeading: 'Why',
-  unavailable: 'This activity is unavailable.',
-};
 
 const leftItems: MatchingItemView[] = [
   { id: 'l1', label: 'France' },
@@ -53,18 +44,16 @@ const mixedResult: MatchingResult = {
 const defaultProps: UseMatchingProps = {
   leftItems,
   rightItems,
-  labels,
 };
 
 describe('useMatching', () => {
-  it('starts unsubmitted with null pending, unlocked, and no result label', async () => {
+  it('starts unsubmitted with null pending, unlocked', async () => {
     const { result } = await renderHook(() => useMatching(defaultProps));
 
     expect(result.current.pending).toBeNull();
     expect(result.current.formedPairs).toEqual([]);
     expect(result.current.locked).toBe(false);
     expect(result.current.allPaired).toBe(false);
-    expect(result.current.resultLabel).toBeNull();
     expect(result.current.isUnavailable).toBe(false);
   });
 
@@ -80,22 +69,20 @@ describe('useMatching', () => {
     expect(result.current.allPaired).toBe(true);
   });
 
-  it('locks and surfaces the correct result label when result.isCorrect', async () => {
+  it('locks when result is set and isCorrect', async () => {
     const { result } = await renderHook(() =>
       useMatching({ ...defaultProps, result: allCorrectResult }),
     );
 
     expect(result.current.locked).toBe(true);
-    expect(result.current.resultLabel).toBe(labels.correct);
   });
 
-  it('surfaces the incorrect result label when result.isCorrect is false', async () => {
+  it('locks when result is set and incorrect', async () => {
     const { result } = await renderHook(() =>
       useMatching({ ...defaultProps, result: mixedResult }),
     );
 
     expect(result.current.locked).toBe(true);
-    expect(result.current.resultLabel).toBe(labels.incorrect);
   });
 
   it('marks unavailable when unavailable prop is true', async () => {
@@ -220,7 +207,7 @@ describe('useMatching', () => {
 
       await renderHook(() => useMatching({ ...defaultProps, result: allCorrectResult }));
 
-      expect(announceSpy).toHaveBeenCalledWith(labels.correct);
+      expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct');
       announceSpy.mockRestore();
     });
 
@@ -232,7 +219,7 @@ describe('useMatching', () => {
 
       await renderHook(() => useMatching({ ...defaultProps, result: mixedResult }));
 
-      expect(announceSpy).toHaveBeenCalledWith(labels.incorrect);
+      expect(announceSpy).toHaveBeenCalledWith('activity.matching.incorrect');
       announceSpy.mockRestore();
     });
 
@@ -252,7 +239,7 @@ describe('useMatching', () => {
         await rerender({ ...defaultProps, result: allCorrectResult });
       });
 
-      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith(labels.correct));
+      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct'));
       expect(announceSpy).toHaveBeenCalledTimes(1);
       announceSpy.mockRestore();
     });
@@ -279,7 +266,7 @@ describe('useMatching', () => {
 
       await renderHook(() => useMatching({ ...defaultProps, result: allCorrectResult }));
 
-      expect(announceSpy).toHaveBeenCalledWith(labels.correct);
+      expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct');
       announceSpy.mockRestore();
     });
   });

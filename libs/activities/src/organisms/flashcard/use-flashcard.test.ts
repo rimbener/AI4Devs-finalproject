@@ -1,20 +1,14 @@
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 import type { FlashcardAnswer, FlashcardSlide } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform } from 'react-native';
 
-import type { FlashcardLabels } from './flashcard.types';
 import { useFlashcard } from './use-flashcard';
-
-const labels: FlashcardLabels = {
-  reveal: 'Reveal answer',
-  recalled: 'Recalled',
-  notRecalled: 'Not recalled',
-  recalledConfirmed: 'Marked recalled',
-  notRecalledConfirmed: 'Marked not recalled',
-  answerHeading: 'Answer',
-  explanationHeading: 'Why',
-  unavailable: 'Unavailable',
-};
 
 const slide: FlashcardSlide = {
   id: 'slide-1',
@@ -36,7 +30,7 @@ const recalledAnswer: FlashcardAnswer = {
 
 describe('useFlashcard', () => {
   it('starts hidden, unlocked, and available', async () => {
-    const { result } = await renderHook(() => useFlashcard({ slide, labels }));
+    const { result } = await renderHook(() => useFlashcard({ slide }));
 
     expect(result.current.revealed).toBe(false);
     expect(result.current.answer).toBeNull();
@@ -47,7 +41,7 @@ describe('useFlashcard', () => {
 
   it('seeds revealed and locked from initialAnswer', async () => {
     const { result } = await renderHook(() =>
-      useFlashcard({ slide, initialAnswer: recalledAnswer, labels }),
+      useFlashcard({ slide, initialAnswer: recalledAnswer }),
     );
 
     expect(result.current.answer).toEqual(recalledAnswer);
@@ -56,9 +50,7 @@ describe('useFlashcard', () => {
   });
 
   it('seeds isRevealed from initialRevealed without an answer', async () => {
-    const { result } = await renderHook(() =>
-      useFlashcard({ slide, initialRevealed: true, labels }),
-    );
+    const { result } = await renderHook(() => useFlashcard({ slide, initialRevealed: true }));
 
     expect(result.current.revealed).toBe(true);
     expect(result.current.answer).toBeNull();
@@ -67,9 +59,7 @@ describe('useFlashcard', () => {
   });
 
   it('marks unavailable when the slide is invalid', async () => {
-    const { result } = await renderHook(() =>
-      useFlashcard({ slide: { ...slide, back: '' }, labels }),
-    );
+    const { result } = await renderHook(() => useFlashcard({ slide: { ...slide, back: '' } }));
 
     expect(result.current.isUnavailable).toBe(true);
   });
@@ -91,13 +81,13 @@ describe('useFlashcard', () => {
     });
 
     it('does not announce while hidden', async () => {
-      await renderHook(() => useFlashcard({ slide, labels }));
+      await renderHook(() => useFlashcard({ slide }));
 
       expect(announceSpy).not.toHaveBeenCalled();
     });
 
     it('announces the answer heading and the revealed answer content when revealed', async () => {
-      const { result } = await renderHook(() => useFlashcard({ slide, labels }));
+      const { result } = await renderHook(() => useFlashcard({ slide }));
 
       await act(async () => {
         result.current.setRevealed(true);
@@ -106,13 +96,15 @@ describe('useFlashcard', () => {
       await waitFor(() =>
         expect(announceSpy).toHaveBeenCalledWith(expect.stringContaining(slide.back)),
       );
-      expect(announceSpy).toHaveBeenCalledWith(expect.stringContaining(labels.answerHeading));
+      expect(announceSpy).toHaveBeenCalledWith(
+        expect.stringContaining('activity.flashcard.answerHeading'),
+      );
     });
 
     it('does not announce on Android', async () => {
       Platform.OS = 'android';
 
-      const { result } = await renderHook(() => useFlashcard({ slide, labels }));
+      const { result } = await renderHook(() => useFlashcard({ slide }));
 
       await act(async () => {
         result.current.setRevealed(true);

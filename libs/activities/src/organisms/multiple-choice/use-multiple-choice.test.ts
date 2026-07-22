@@ -1,17 +1,14 @@
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 import type { MultipleChoiceAnswer, MultipleChoiceSlide } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform } from 'react-native';
 
-import type { MultipleChoiceLabels } from './multiple-choice.types';
 import { useMultipleChoice } from './use-multiple-choice';
-
-const labels: MultipleChoiceLabels = {
-  submit: 'Submit',
-  correct: 'Correct',
-  incorrect: 'Incorrect',
-  explanationHeading: 'Why',
-  unavailable: 'Unavailable',
-};
 
 const slide: MultipleChoiceSlide = {
   id: 'slide-1',
@@ -46,19 +43,18 @@ const incorrectAnswer: MultipleChoiceAnswer = {
 
 describe('useMultipleChoice', () => {
   it('starts unanswered and available with submit disabled', async () => {
-    const { result } = await renderHook(() => useMultipleChoice({ slide, labels }));
+    const { result } = await renderHook(() => useMultipleChoice({ slide }));
 
     expect(result.current.answer).toBeNull();
     expect(result.current.answered).toBe(false);
     expect(result.current.locked).toBe(false);
     expect(result.current.canSubmit).toBe(false);
     expect(result.current.isUnavailable).toBe(false);
-    expect(result.current.resultLabel).toBeNull();
     expect(result.current.stateForOption('opt-a')).toBe('default');
   });
 
   it('marks the pending selection as selected before locking', async () => {
-    const { result } = await renderHook(() => useMultipleChoice({ slide, labels }));
+    const { result } = await renderHook(() => useMultipleChoice({ slide }));
 
     await act(() => {
       result.current.setSelectedOptionId('opt-b');
@@ -72,14 +68,13 @@ describe('useMultipleChoice', () => {
 
   it('seeds from initialAnswer and derives correct/incorrect state', async () => {
     const { result } = await renderHook(() =>
-      useMultipleChoice({ slide, initialAnswer: incorrectAnswer, labels }),
+      useMultipleChoice({ slide, initialAnswer: incorrectAnswer }),
     );
 
     expect(result.current.answered).toBe(true);
     expect(result.current.locked).toBe(true);
     expect(result.current.canSubmit).toBe(false);
     expect(result.current.isCorrect).toBe(false);
-    expect(result.current.resultLabel).toBe(labels.incorrect);
     expect(result.current.stateForOption('opt-a')).toBe('correct');
     expect(result.current.stateForOption('opt-b')).toBe('incorrect');
   });
@@ -88,7 +83,6 @@ describe('useMultipleChoice', () => {
     const { result } = await renderHook(() =>
       useMultipleChoice({
         slide: { ...slide, correctOptionId: 'missing' },
-        labels,
       }),
     );
 
@@ -96,7 +90,7 @@ describe('useMultipleChoice', () => {
   });
 
   it('updates derived state when setAnswer is called', async () => {
-    const { result } = await renderHook(() => useMultipleChoice({ slide, labels }));
+    const { result } = await renderHook(() => useMultipleChoice({ slide }));
 
     await act(() => {
       result.current.setSelectedOptionId('opt-a');
@@ -107,7 +101,6 @@ describe('useMultipleChoice', () => {
     expect(result.current.locked).toBe(true);
     expect(result.current.canSubmit).toBe(false);
     expect(result.current.isCorrect).toBe(true);
-    expect(result.current.resultLabel).toBe(labels.correct);
   });
 
   describe('AccessibilityInfo announcement', () => {
@@ -123,7 +116,7 @@ describe('useMultipleChoice', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMultipleChoice({ slide, labels }));
+      await renderHook(() => useMultipleChoice({ slide }));
 
       expect(announceSpy).not.toHaveBeenCalled();
       announceSpy.mockRestore();
@@ -135,9 +128,9 @@ describe('useMultipleChoice', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMultipleChoice({ slide, initialAnswer: correctAnswer, labels }));
+      await renderHook(() => useMultipleChoice({ slide, initialAnswer: correctAnswer }));
 
-      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith(labels.correct));
+      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('activity.mcq.correct'));
       announceSpy.mockRestore();
     });
 
@@ -148,7 +141,7 @@ describe('useMultipleChoice', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMultipleChoice({ slide, initialAnswer: correctAnswer, labels }));
+      await renderHook(() => useMultipleChoice({ slide, initialAnswer: correctAnswer }));
 
       expect(announceSpy).not.toHaveBeenCalled();
       announceSpy.mockRestore();

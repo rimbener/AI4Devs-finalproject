@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Animated, Platform, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Animated, Platform, View } from 'react-native';
 import { useUnistyles } from 'react-native-unistyles';
 
 import {
@@ -19,23 +19,7 @@ import {
   runIndeterminateLoop,
   spinnerArcStyle,
 } from './progress-indicator.helpers';
-import type { ProgressIndicatorVariant } from './progress-indicator.types';
-
-export type { ProgressIndicatorVariant } from './progress-indicator.types';
-
-export type ProgressIndicatorProps = {
-  variant?: ProgressIndicatorVariant;
-  /** 0–100. Omit for an indeterminate/animated state. */
-  value?: number;
-  /** Circular diameter. */
-  size?: number;
-  thickness?: number;
-  color?: string;
-  trackColor?: string;
-  /** Accessible name for the progressbar (WCAG 4.1.2). */
-  accessibilityLabel?: string;
-  style?: StyleProp<ViewStyle>;
-};
+import type { ProgressIndicatorProps } from './progress-indicator.types';
 
 /**
  * Half-ring arc used to compose the circular indicator without SVG:

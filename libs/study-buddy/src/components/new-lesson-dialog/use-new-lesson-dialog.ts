@@ -9,6 +9,7 @@ import {
 
 /**
  * Dialog open/step/documentId + pdf upload chooseFile (must stay on the trigger press).
+ * Handlers stay in the component — hook exposes state + setters/actions.
  */
 export const useNewLessonDialog = ({
   onExtracted,
@@ -35,13 +36,11 @@ export const useNewLessonDialog = ({
     onGenerateHandled?.();
   }, [generateDocumentId, onGenerateHandled]);
 
-  const handleUploadPress = useCallback(() => {
-    resetUpload();
+  const openUpload = useCallback(() => {
     dispatch({ type: 'open-upload' });
-    void chooseFile();
-  }, [chooseFile, resetUpload]);
+  }, []);
 
-  const handleClose = useCallback(() => {
+  const close = useCallback(() => {
     dispatch({ type: 'close' });
   }, []);
 
@@ -50,7 +49,9 @@ export const useNewLessonDialog = ({
     step: state.step,
     documentId: state.documentId,
     panelProps,
-    handleUploadPress,
-    handleClose,
+    chooseFile,
+    resetUpload,
+    openUpload,
+    close,
   };
 };

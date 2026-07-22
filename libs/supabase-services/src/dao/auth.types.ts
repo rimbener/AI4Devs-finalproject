@@ -9,3 +9,5 @@ export type SignInWithPasswordResult = {
   session: Session | null;
   user: User | null;
 };
+
+export type AuthStateChangeUnsubscribe = () => void;

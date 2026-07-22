@@ -1,16 +1,5 @@
 import type { FlashcardAnswer, FlashcardSlide } from '@helsoft/types';
 
-export type FlashcardLabels = {
-  reveal: string;
-  recalled: string;
-  notRecalled: string;
-  recalledConfirmed: string;
-  notRecalledConfirmed: string;
-  answerHeading: string;
-  explanationHeading: string;
-  unavailable: string;
-};
-
 export type FlashcardProps = {
   slide: FlashcardSlide;
   onAnswered?: (answer: FlashcardAnswer) => void;
@@ -24,5 +13,4 @@ export type UseFlashcardProps = {
   slide: FlashcardSlide;
   initialAnswer?: FlashcardAnswer | null;
   initialRevealed?: boolean;
-  labels: FlashcardLabels;
 };

@@ -20,10 +20,17 @@ export const AppChrome = (_props: AppChromeProps) => {
     useAppChrome(pathname);
   const navigateHome = useCallback(() => router.navigate('/'), [router]);
   const navigateNewLesson = useCallback(() => router.navigate('/upload'), [router]);
-  const homeProps = useMemo(() => ({ ...home, onPress: navigateHome }), [home, navigateHome]);
+  const homeProps = useMemo(
+    () => ({ active: home.active, label: t(home.labelKey), onPress: navigateHome }),
+    [home, navigateHome, t],
+  );
   const newLessonProps = useMemo(
-    () => ({ ...newLesson, onPress: navigateNewLesson }),
-    [navigateNewLesson, newLesson],
+    () => ({
+      active: newLesson.active,
+      label: t(newLesson.labelKey),
+      onPress: navigateNewLesson,
+    }),
+    [navigateNewLesson, newLesson, t],
   );
   const accountMenu = identity ? (
     <AccountMenu

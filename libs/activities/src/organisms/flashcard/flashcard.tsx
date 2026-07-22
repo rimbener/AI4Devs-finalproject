@@ -22,28 +22,16 @@ export const Flashcard = ({
   const { theme } = useUnistyles();
   const { t } = useLocalization();
 
-  const labels = {
-    reveal: t('activity.flashcard.reveal'),
-    recalled: t('activity.flashcard.recalled'),
-    notRecalled: t('activity.flashcard.notRecalled'),
-    recalledConfirmed: t('activity.flashcard.recalledConfirmed'),
-    notRecalledConfirmed: t('activity.flashcard.notRecalledConfirmed'),
-    answerHeading: t('activity.flashcard.answerHeading'),
-    explanationHeading: t('activity.flashcard.explanationHeading'),
-    unavailable: t('activity.flashcard.unavailable'),
-  };
-
   const { answer, setAnswer, isRevealed, isUnavailable, locked, setRevealed } = useFlashcard({
     slide,
     initialAnswer,
     initialRevealed,
-    labels,
   });
 
   if (isUnavailable) {
     return (
       <Card testID="flashcard-root" style={styles.root}>
-        <Text style={styles.prompt}>{labels.unavailable}</Text>
+        <Text style={styles.prompt}>{t('activity.flashcard.unavailable')}</Text>
       </Card>
     );
   }
@@ -65,8 +53,12 @@ export const Flashcard = ({
 
   const renderMarkButton = (recalled: boolean) => {
     const isChosen = answer ? answer.recalled === recalled : false;
-    const idleLabel = recalled ? labels.recalled : labels.notRecalled;
-    const confirmedLabel = recalled ? labels.recalledConfirmed : labels.notRecalledConfirmed;
+    const idleLabel = recalled
+      ? t('activity.flashcard.recalled')
+      : t('activity.flashcard.notRecalled');
+    const confirmedLabel = recalled
+      ? t('activity.flashcard.recalledConfirmed')
+      : t('activity.flashcard.notRecalledConfirmed');
     const label = isChosen ? confirmedLabel : idleLabel;
     const iconName = isChosen ? (recalled ? 'check_circle' : 'cancel') : null;
     // Self-marked, not graded — both marks share one neutral color pairing so the icon
@@ -93,17 +85,19 @@ export const Flashcard = ({
       <Text style={styles.prompt}>{slide.content}</Text>
       {!isRevealed ? (
         <Button fullWidth onPress={handleReveal}>
-          {labels.reveal}
+          {t('activity.flashcard.reveal')}
         </Button>
       ) : (
         <>
           <View testID="flashcard-answer" style={styles.answer}>
-            <Text style={styles.answerHeading}>{labels.answerHeading}</Text>
+            <Text style={styles.answerHeading}>{t('activity.flashcard.answerHeading')}</Text>
             <Text style={styles.answerBody}>{slide.back}</Text>
           </View>
           {slide.explanation ? (
             <View testID="flashcard-explanation" style={styles.explanation}>
-              <Text style={styles.explanationHeading}>{labels.explanationHeading}</Text>
+              <Text style={styles.explanationHeading}>
+                {t('activity.flashcard.explanationHeading')}
+              </Text>
               <Text style={styles.explanationBody}>{slide.explanation}</Text>
             </View>
           ) : null}

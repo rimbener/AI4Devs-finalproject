@@ -1,3 +1,4 @@
+import { PdfUploadDao } from '@helsoft/supabase-services';
 import {
   FunctionsFetchError,
   FunctionsHttpError,
@@ -5,7 +6,6 @@ import {
 } from '@supabase/supabase-js';
 
 import { trackPdfExtractionEvent } from '../analytics/pdf-extraction-analytics';
-import { PdfUploadDao } from '../dao/pdf-upload.dao';
 import type {
   PdfExtractionError,
   PdfExtractionErrorCode,
@@ -161,7 +161,7 @@ export abstract class PdfExtractionService {
           duration_ms: Date.now() - startedAt,
         },
       });
-      return result;
+      return result as PdfExtractionResult;
     } catch (cause) {
       const normalized = await normalizeExtractionError(cause);
       trackExtractionFailure(documentId, normalized.code, 'server');

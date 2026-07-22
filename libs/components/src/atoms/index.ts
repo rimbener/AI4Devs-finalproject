@@ -9,5 +9,6 @@ export * from './icon-button/icon-button';
 export * from './initials-avatar/initials-avatar';
 export type * from './initials-avatar/initials-avatar.types';
 export * from './progress-indicator/progress-indicator';
+export type * from './progress-indicator/progress-indicator.types';
 export * from './state-layer/state-layer';
 export * from './switch/switch';

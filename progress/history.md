@@ -81,5 +81,24 @@
 2026-07-21 | activity-image-split-layout | done | docs/features/activity-image-split-layout/ | Merged into feature-entrega3; worktree removed.
 
 2026-07-21 | login-enter-submit (ad hoc) | n/a | — | LoginForm submits on Enter via onSubmitEditing (9bf62b543).
+
 2026-07-22 | android-dev-client (ad hoc) | n/a | — | pnpm android switched to expo run:android (dev client, not Expo Go); Android Supabase URL rewritten 127.0.0.1→10.0.2.2 (3cc14dad8).
 2026-07-22 | android-dev-client (ad hoc) | n/a | — | iOS bundle identifier set (prebuild for expo run:ios) alongside earlier Android dev-client fix (ef7483c1b).
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Complete supabase-services dao/index.ts barrel exports.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | useSession via AuthService/AuthDao; added unit tests.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Move PdfUploadDao to supabase-services; add pdf-upload-extraction barrels.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | new-lesson-dialog handlers in component; stories/tests + player-loading story.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Drop activity labels={t()} bags; inline t() + hook localization.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | api-key-form local state → useReducer + *.reducer.ts.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Shared component types moved into *.types.ts per types.mdc.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Finish i18n: app-chrome keys, provider.groq t(), generation panel inline.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Format sweep after activity i18n cleanup.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Split SlideImage into use-slide-image + helpers.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Hooks tests → @testing-library/react-native + jest-expo.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Tokenize hardcoded spacing in components + home screen.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | LocalizationProvider → useLocalePreference → LocalePreferenceService.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Co-located Jest for previously uncovered components atoms/molecules.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Jest for OpenEndedBody + LessonPlayerNavigator.
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Rules audit fixes (excl. screen-container). Worktree .worktrees/rules-compliance-fixes, branch feat/rules-compliance-fixes.
+2026-07-22 | rules-compliance-fixes (ad hoc) | done | — | Merged into feature-entrega3-HernanLaura; worktree removed.

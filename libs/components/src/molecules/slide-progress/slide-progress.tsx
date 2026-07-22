@@ -1,17 +1,7 @@
-import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-export type SlideType = 'lesson' | 'activity';
-
-export type SlideProgressSlide = { type: SlideType };
-
-export type SlideProgressProps = {
-  slides?: SlideProgressSlide[];
-  /** Index of the active slide. */
-  current?: number;
-  onSeek?: (index: number) => void;
-  style?: StyleProp<ViewStyle>;
-};
+import type { SlideProgressProps } from './slide-progress.types';
 
 /**
  * SlideProgress — segmented lesson tracker; the signature blue/rust motif.
@@ -45,20 +35,20 @@ const styles = StyleSheet.create((theme) => ({
   track: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: theme.spacing.s2,
     alignSelf: 'stretch',
   },
   segment: {
     flex: 1,
-    minWidth: 8,
-    height: 6,
+    minWidth: theme.spacing.s2,
+    height: theme.spacing.s1,
   },
   activeRing: (isActivity: boolean) => ({
     position: 'absolute',
-    top: -4,
-    bottom: -4,
-    left: -4,
-    right: -4,
+    top: -theme.spacing.s1,
+    bottom: -theme.spacing.s1,
+    left: -theme.spacing.s1,
+    right: -theme.spacing.s1,
     borderWidth: 2,
     borderColor: theme.utils.hexWithOpacity(
       isActivity ? theme.colors.tertiary : theme.colors.primary,

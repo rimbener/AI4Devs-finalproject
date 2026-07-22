@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react-native';
 
 import { useLesson } from './use-lesson';
 

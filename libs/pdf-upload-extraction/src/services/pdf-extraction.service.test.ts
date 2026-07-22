@@ -1,10 +1,12 @@
-jest.mock('../dao/pdf-upload.dao', () => ({
+jest.mock('@helsoft/supabase-services', () => ({
   PdfUploadDao: {
     uploadPdf: jest.fn(),
     insertDocument: jest.fn(),
     invokeExtraction: jest.fn(),
   },
 }));
+
+import { PdfUploadDao } from '@helsoft/supabase-services';
 jest.mock('../analytics/pdf-extraction-analytics', () => ({ trackPdfExtractionEvent: jest.fn() }));
 
 import {
@@ -14,7 +16,6 @@ import {
 } from '@supabase/supabase-js';
 
 import { trackPdfExtractionEvent } from '../analytics/pdf-extraction-analytics';
-import { PdfUploadDao } from '../dao/pdf-upload.dao';
 import { PDF_EXTRACTION_LIMITS } from './pdf-extraction.constants';
 import { generateDocumentId, PdfExtractionService } from './pdf-extraction.service';
 

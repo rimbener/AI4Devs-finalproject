@@ -4,7 +4,7 @@ jest.mock('@helsoft/supabase-services', () => ({
 
 import { LessonImageService } from '@helsoft/supabase-services';
 import type { SlideImageRef } from '@helsoft/types';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { useSlideImageUrl } from './use-slide-image-url';
 

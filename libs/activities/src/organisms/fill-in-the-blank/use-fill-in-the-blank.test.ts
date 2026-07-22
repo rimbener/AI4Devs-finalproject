@@ -1,18 +1,14 @@
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 import type { FillInTheBlankAnswer, FillInTheBlankSlide } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform } from 'react-native';
 
-import type { FillInTheBlankLabels } from './fill-in-the-blank.types';
 import { useFillInTheBlank } from './use-fill-in-the-blank';
-
-const labels: FillInTheBlankLabels = {
-  submit: 'Submit',
-  correct: 'Correct',
-  incorrect: 'Incorrect',
-  explanationHeading: 'Why',
-  unavailable: 'Unavailable',
-  blankInput: 'Blank',
-};
 
 const slide: FillInTheBlankSlide = {
   id: 'slide-1',
@@ -35,7 +31,7 @@ const correctAnswer: FillInTheBlankAnswer = {
 
 describe('useFillInTheBlank', () => {
   it('starts with empty value, unlocked, and available', async () => {
-    const { result } = await renderHook(() => useFillInTheBlank({ slide, labels }));
+    const { result } = await renderHook(() => useFillInTheBlank({ slide }));
 
     expect(result.current.value).toBe('');
     expect(result.current.answer).toBeNull();
@@ -46,22 +42,20 @@ describe('useFillInTheBlank', () => {
       after: '.',
     });
     expect(result.current.maxLength).toBe(7);
-    expect(result.current.resultLabel).toBeNull();
   });
 
   it('seeds value and answer from initialAnswer', async () => {
     const { result } = await renderHook(() =>
-      useFillInTheBlank({ slide, initialAnswer: correctAnswer, labels }),
+      useFillInTheBlank({ slide, initialAnswer: correctAnswer }),
     );
 
     expect(result.current.value).toBe('paris');
     expect(result.current.locked).toBe(true);
-    expect(result.current.resultLabel).toBe(labels.correct);
   });
 
   it('marks unavailable when acceptedAnswers is empty', async () => {
     const { result } = await renderHook(() =>
-      useFillInTheBlank({ slide: { ...slide, acceptedAnswers: [] }, labels }),
+      useFillInTheBlank({ slide: { ...slide, acceptedAnswers: [] } }),
     );
 
     expect(result.current.isUnavailable).toBe(true);
@@ -69,7 +63,7 @@ describe('useFillInTheBlank', () => {
 
   it('marks unavailable when content has no blank', async () => {
     const { result } = await renderHook(() =>
-      useFillInTheBlank({ slide: { ...slide, content: 'No blank.' }, labels }),
+      useFillInTheBlank({ slide: { ...slide, content: 'No blank.' } }),
     );
 
     expect(result.current.isUnavailable).toBe(true);
@@ -77,7 +71,7 @@ describe('useFillInTheBlank', () => {
   });
 
   it('updates value via setValue while unlocked', async () => {
-    const { result } = await renderHook(() => useFillInTheBlank({ slide, labels }));
+    const { result } = await renderHook(() => useFillInTheBlank({ slide }));
 
     await act(() => {
       result.current.setValue('Paris');
@@ -99,7 +93,7 @@ describe('useFillInTheBlank', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useFillInTheBlank({ slide, labels }));
+      await renderHook(() => useFillInTheBlank({ slide }));
 
       expect(announceSpy).not.toHaveBeenCalled();
       announceSpy.mockRestore();
@@ -111,9 +105,11 @@ describe('useFillInTheBlank', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useFillInTheBlank({ slide, initialAnswer: correctAnswer, labels }));
+      await renderHook(() => useFillInTheBlank({ slide, initialAnswer: correctAnswer }));
 
-      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith(labels.correct));
+      await waitFor(() =>
+        expect(announceSpy).toHaveBeenCalledWith('activity.fillInTheBlank.correct'),
+      );
       announceSpy.mockRestore();
     });
 
@@ -124,7 +120,7 @@ describe('useFillInTheBlank', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useFillInTheBlank({ slide, initialAnswer: correctAnswer, labels }));
+      await renderHook(() => useFillInTheBlank({ slide, initialAnswer: correctAnswer }));
 
       expect(announceSpy).not.toHaveBeenCalled();
       announceSpy.mockRestore();

@@ -16,16 +16,6 @@ export type MatchingResult = {
   summary: string;
 };
 
-export type MatchingLabels = {
-  submit: string;
-  correct: string;
-  incorrect: string;
-  correctPair: string;
-  incorrectPair: string;
-  explanationHeading: string;
-  unavailable: string;
-};
-
 export type MatchingProps = {
   slide: MatchingSlide;
   onAnswered?: (answer: MatchingAnswer) => void;
@@ -41,5 +31,4 @@ export type UseMatchingProps = {
   unavailable?: boolean;
   initialPairs?: MatchingPairSelection[];
   result?: MatchingResult | null;
-  labels: MatchingLabels;
 };

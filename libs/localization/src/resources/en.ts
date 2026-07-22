@@ -246,6 +246,9 @@ export const en = {
         replace: 'Replace',
         remove: 'Remove',
         savedStatus: '{{provider}} key saved · Updated {{date}}',
+        provider: {
+          groq: 'Groq',
+        },
         // ai-key-management task-11 (Slice 2) — added ahead of task-13 for the same
         // compiler-parity reason as task-8's original apiKey.* keys: es/pt/de are typed
         // against this exact shape, so ApiKeyForm's new Empty/Error/Remove-confirm labels

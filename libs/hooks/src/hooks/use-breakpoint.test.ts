@@ -3,7 +3,7 @@ jest.mock('react-native', () => ({
   useWindowDimensions: jest.fn(),
 }));
 
-import { renderHook } from '@testing-library/react';
+import { renderHook } from '@testing-library/react-native';
 import { Platform, useWindowDimensions } from 'react-native';
 
 import { useBreakpoint } from './use-breakpoint';

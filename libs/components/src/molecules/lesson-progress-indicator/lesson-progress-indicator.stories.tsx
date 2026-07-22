@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { View } from 'react-native';
 
-import type { SlideProgressSlide } from '../slide-progress/slide-progress';
+import type { SlideProgressSlide } from '../slide-progress/slide-progress.types';
 import { LessonProgressIndicator } from './lesson-progress-indicator';
 
 const deck: SlideProgressSlide[] = [

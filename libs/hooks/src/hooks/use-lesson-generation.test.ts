@@ -15,7 +15,7 @@ jest.mock('@helsoft/supabase-services', () => ({
 jest.mock('./use-session', () => ({ useSession: jest.fn() }));
 
 import { LessonGenerationService } from '@helsoft/supabase-services';
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react-native';
 
 import { useLessonGeneration } from './use-lesson-generation';
 import { useSession } from './use-session';

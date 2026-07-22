@@ -34,7 +34,7 @@ export const Dialog = ({
         >
           {icon ? (
             <View style={styles.iconWrap}>
-              <Icon name={icon} size={24} color={theme.colors.secondary} />
+              <Icon name={icon} size={theme.layout.iconSize} color={theme.colors.secondary} />
             </View>
           ) : null}
           {headline ? <Text style={styles.headline(!!icon)}>{headline}</Text> : null}
@@ -62,7 +62,7 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: theme.padding.dialog,
     backgroundColor: theme.utils.hexWithOpacity(theme.colors.scrim, 0.32),
   },
   surface: {
@@ -76,11 +76,11 @@ const styles = StyleSheet.create((theme) => ({
   },
   iconWrap: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: theme.spacing.s4,
   },
   headline: (centered: boolean) => ({
     ...theme.typography.headlineSmall,
-    marginBottom: 16,
+    marginBottom: theme.spacing.s4,
     textAlign: centered ? 'center' : 'left',
     color: theme.colors.onSurface,
   }),
@@ -91,7 +91,7 @@ const styles = StyleSheet.create((theme) => ({
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 24,
+    gap: theme.spacing.s2,
+    marginTop: theme.spacing.s6,
   },
 }));

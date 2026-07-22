@@ -1,8 +1,8 @@
 import type { AuthError, AuthErrorCode } from '@helsoft/types';
-import { isAuthApiError } from '@supabase/supabase-js';
+import { isAuthApiError, type Session } from '@supabase/supabase-js';
 
 import { AuthDao } from '../dao/auth.dao';
-import type { SignInWithPasswordResult } from '../dao/auth.types';
+import type { AuthStateChangeUnsubscribe, SignInWithPasswordResult } from '../dao/auth.types';
 import { toTypedError } from '../utils/typed-error';
 
 // Lightweight MVP check: local-part@domain-label.tld — enough to catch missing
@@ -67,6 +67,29 @@ export abstract class AuthService {
       await AuthDao.signOut();
     } catch (cause) {
       throw normalizeAuthError(cause);
+    }
+  }
+
+  /** Current session, or null if none / client not initialized. */
+  static async getSession(): Promise<Session | null> {
+    try {
+      return await AuthDao.getSession();
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Subscribe to auth session changes. Returns null when the Supabase client was never
+   * initialized (Storybook / tests without initSupabase).
+   */
+  static onAuthStateChange(
+    callback: (session: Session | null) => void,
+  ): AuthStateChangeUnsubscribe | null {
+    try {
+      return AuthDao.onAuthStateChange(callback);
+    } catch {
+      return null;
     }
   }
 }

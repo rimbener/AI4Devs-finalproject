@@ -62,28 +62,28 @@ export const RadioGroup = ({
 const styles = StyleSheet.create((theme) => ({
   group: (direction: 'column' | 'row') => ({
     flexDirection: direction,
-    gap: direction === 'row' ? 20 : 8,
+    gap: direction === 'row' ? theme.spacing.s5 : theme.spacing.s2,
   }),
   option: (disabled: boolean) => ({
     flexDirection: 'row',
     alignSelf: 'flex-start',
     alignItems: 'center',
-    gap: 12,
+    gap: theme.spacing.s3,
     opacity: disabled ? theme.disabledOpacity : 1,
   }),
   ring: (selected: boolean) => ({
-    width: 20,
-    height: 20,
+    width: theme.spacing.s5,
+    height: theme.spacing.s5,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 10,
+    borderRadius: theme.shape.full,
     borderWidth: 2,
     borderColor: selected ? theme.colors.primary : theme.colors.onSurfaceVariant,
   }),
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: theme.spacing.s5 / 2,
+    height: theme.spacing.s5 / 2,
+    borderRadius: theme.shape.full,
     backgroundColor: theme.colors.primary,
   },
   label: {

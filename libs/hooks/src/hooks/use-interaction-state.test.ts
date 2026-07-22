@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react-native';
 
 import { useInteractionState } from './use-interaction-state';
 
