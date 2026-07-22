@@ -43,6 +43,9 @@
         "projectId": "8d10a287-6bd1-40a6-9649-31993eb16c2a"
       }
     },
-    "owner": "rimbener"
+    "owner": "rimbener",
+    "ios": {
+      "bundleIdentifier": "com.rimbener.aistudybuddy"
+    }
   }
 }
