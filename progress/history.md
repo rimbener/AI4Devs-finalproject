@@ -107,3 +107,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Tokenize hardcoded spacing in components + home screen.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | LocalizationProvider → useLocalePreference → LocalePreferenceService.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Co-located Jest for previously uncovered components atoms/molecules.
