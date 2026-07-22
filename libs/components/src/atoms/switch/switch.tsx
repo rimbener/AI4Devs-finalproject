@@ -43,7 +43,9 @@ export const Switch = ({
     >
       <View style={styles.track(checked)}>
         <View style={styles.knob(checked)}>
-          {checked ? <Icon name="check" size={theme.spacing.s4} color={theme.colors.primary} /> : null}
+          {checked ? (
+            <Icon name="check" size={theme.spacing.s4} color={theme.colors.primary} />
+          ) : null}
         </View>
       </View>
       {label ? <Text style={styles.label}>{label}</Text> : null}
