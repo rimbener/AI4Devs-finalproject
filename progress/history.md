@@ -95,3 +95,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | api-key-form local state → useReducer + *.reducer.ts.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Shared component types moved into *.types.ts per types.mdc.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Finish i18n: app-chrome keys, provider.groq t(), generation panel inline.
