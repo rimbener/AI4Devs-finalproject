@@ -89,3 +89,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Move PdfUploadDao to supabase-services; add pdf-upload-extraction barrels.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | new-lesson-dialog handlers in component; stories/tests + player-loading story.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Drop activity labels={t()} bags; inline t() + hook localization.
