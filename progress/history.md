@@ -83,3 +83,5 @@
 2026-07-21 | login-enter-submit (ad hoc) | n/a | — | LoginForm submits on Enter via onSubmitEditing (9bf62b543).
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Complete supabase-services dao/index.ts barrel exports.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | useSession via AuthService/AuthDao; added unit tests.
