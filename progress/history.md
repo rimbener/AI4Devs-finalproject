@@ -81,3 +81,4 @@
 2026-07-21 | activity-image-split-layout | done | docs/features/activity-image-split-layout/ | Merged into feature-entrega3; worktree removed.
 
 2026-07-21 | login-enter-submit (ad hoc) | n/a | — | LoginForm submits on Enter via onSubmitEditing (9bf62b543).
+2026-07-22 | android-dev-client (ad hoc) | n/a | — | pnpm android switched to expo run:android (dev client, not Expo Go); Android Supabase URL rewritten 127.0.0.1→10.0.2.2 (3cc14dad8).
