@@ -2,8 +2,15 @@ import { initSupabase } from '@helsoft/supabase-services';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const rawSupabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+// The Android emulator's loopback interface is itself, not the host machine;
+// 10.0.2.2 is the emulator's alias for the host's localhost.
+const supabaseUrl =
+  Platform.OS === 'android' && rawSupabaseUrl
+    ? rawSupabaseUrl.replace(/(127\.0\.0\.1|localhost)/, '10.0.2.2')
+    : rawSupabaseUrl;
 
 if (supabaseUrl && supabaseAnonKey) {
   initSupabase({
