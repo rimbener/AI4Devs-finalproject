@@ -84,7 +84,7 @@ export const TextField = ({
         {leadingIcon ? (
           <Icon
             name={leadingIcon}
-            size={20}
+            size={theme.spacing.s5}
             color={theme.colors.onSurfaceVariant}
             style={multiline ? styles.multilineIcon : undefined}
           />
@@ -108,7 +108,7 @@ export const TextField = ({
         {trailingIcon ? (
           <Icon
             name={trailingIcon}
-            size={20}
+            size={theme.spacing.s5}
             color={accent}
             style={multiline ? styles.multilineIcon : undefined}
           />
@@ -125,8 +125,8 @@ const styles = StyleSheet.create((theme) => ({
   }),
   label: (error: boolean) => ({
     ...theme.typography.bodySmall,
-    fontWeight: '600',
-    marginBottom: 6,
+    fontWeight: theme.fontWeight.semibold,
+    marginBottom: theme.spacing.s2,
     color: error ? theme.colors.error : theme.colors.onSurfaceVariant,
   }),
   field: (
@@ -138,10 +138,10 @@ const styles = StyleSheet.create((theme) => ({
   ) => ({
     flexDirection: 'row',
     alignItems: multiline ? 'flex-start' : 'center',
-    gap: 12,
-    minHeight: 56,
-    paddingHorizontal: 16,
-    paddingVertical: multiline ? 16 : 0,
+    gap: theme.spacing.s3,
+    minHeight: theme.spacing.s14,
+    paddingHorizontal: theme.spacing.s4,
+    paddingVertical: multiline ? theme.spacing.s4 : theme.spacing.s0,
     opacity: disabled ? theme.disabledOpacity : 1,
     variants: {
       variant: {
@@ -165,20 +165,20 @@ const styles = StyleSheet.create((theme) => ({
     ...theme.typography.bodyLarge,
     flex: 1,
     color: theme.colors.onSurface,
-    paddingVertical: multiline ? 0 : 16,
-    minHeight: multiline ? rows * 24 : undefined,
+    paddingVertical: multiline ? theme.spacing.s0 : theme.spacing.s4,
+    minHeight: multiline ? rows * theme.spacing.s6 : undefined,
     textAlignVertical: multiline ? 'top' : 'center',
     outlineStyle: 'solid',
     outlineWidth: 0,
     outlineColor: borderColor,
   }),
   multilineIcon: {
-    marginTop: 2,
+    marginTop: theme.spacing.s1 / 2,
   },
   supporting: (error: boolean) => ({
     ...theme.typography.bodySmall,
-    marginTop: 4,
-    paddingHorizontal: 16,
+    marginTop: theme.spacing.s1,
+    paddingHorizontal: theme.spacing.s4,
     color: error ? theme.colors.error : theme.colors.onSurfaceVariant,
   }),
 }));

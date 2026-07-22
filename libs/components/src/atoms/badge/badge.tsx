@@ -49,9 +49,9 @@ export const Badge = ({
 
 const styles = StyleSheet.create((theme) => ({
   badge: (dot: boolean, count = 0) => ({
-    width: dot ? 6 : count > 9 ? 24 : 16,
-    height: dot ? 6 : count > 9 ? 24 : 16,
-    paddingHorizontal: dot ? 0 : 4,
+    width: dot ? theme.spacing.s2 : count > 9 ? theme.spacing.s6 : theme.spacing.s4,
+    height: dot ? theme.spacing.s2 : count > 9 ? theme.spacing.s6 : theme.spacing.s4,
+    paddingHorizontal: dot ? theme.spacing.s0 : theme.spacing.s1,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: theme.shape.full,
@@ -64,10 +64,7 @@ const styles = StyleSheet.create((theme) => ({
     },
   }),
   count: {
-    fontFamily: theme.fontFamily.body,
-    fontSize: 11,
-    fontWeight: '600',
-    lineHeight: 12,
+    ...theme.typography.labelSmall,
     variants: {
       color: {
         error: { color: theme.colors.onError },
@@ -81,7 +78,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   anchorBadge: (dot: boolean) => ({
     position: 'absolute',
-    top: dot ? 2 : -2,
-    right: dot ? 2 : -2,
+    top: dot ? theme.spacing.s1 / 2 : -theme.spacing.s1 / 2,
+    right: dot ? theme.spacing.s1 / 2 : -theme.spacing.s1 / 2,
   }),
 }));

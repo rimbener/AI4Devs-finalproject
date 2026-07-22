@@ -40,9 +40,9 @@ export const Checkbox = ({
     >
       <View style={styles.box(active, error)}>
         {indeterminate ? (
-          <Icon name="remove" size={16} color={theme.colors.onPrimary} />
+          <Icon name="remove" size={theme.spacing.s4} color={theme.colors.onPrimary} />
         ) : checked ? (
-          <Icon name="check" size={16} color={theme.colors.onPrimary} />
+          <Icon name="check" size={theme.spacing.s4} color={theme.colors.onPrimary} />
         ) : null}
       </View>
       {label ? (
@@ -59,17 +59,17 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignSelf: 'flex-start',
     alignItems: 'center',
-    gap: 10,
+    gap: theme.spacing.s3,
     minHeight: theme.layout.touchTarget,
     minWidth: hasLabel ? undefined : theme.layout.touchTarget,
     opacity: disabled ? theme.disabledOpacity : 1,
   }),
   box: (active: boolean, error: boolean) => ({
-    width: 18,
-    height: 18,
+    width: theme.spacing.s4,
+    height: theme.spacing.s4,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 2,
+    borderRadius: theme.shape.xs,
     borderWidth: active ? 0 : 2,
     borderColor: error ? theme.colors.error : theme.colors.onSurfaceVariant,
     backgroundColor: active ? (error ? theme.colors.error : theme.colors.primary) : 'transparent',

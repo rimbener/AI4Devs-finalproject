@@ -40,7 +40,9 @@ export const AnswerOption = ({
         <Text style={styles.markerText}>{marker}</Text>
       </View>
       <Text style={styles.label}>{label}</Text>
-      {feedbackIcon ? <Icon name={feedbackIcon} size={22} fill color={feedbackColor} /> : null}
+      {feedbackIcon ? (
+        <Icon name={feedbackIcon} size={theme.layout.iconSize} fill color={feedbackColor} />
+      ) : null}
     </Pressable>
   );
 };
@@ -50,9 +52,9 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: 'row',
     alignSelf: 'stretch',
     alignItems: 'center',
-    gap: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    gap: theme.spacing.s4,
+    paddingVertical: theme.spacing.s4,
+    paddingHorizontal: theme.spacing.s4,
     borderRadius: theme.shape.md,
     variants: {
       state: {
@@ -84,11 +86,11 @@ const styles = StyleSheet.create((theme) => ({
     },
   },
   marker: {
-    width: 32,
-    height: 32,
+    width: theme.spacing.s8,
+    height: theme.spacing.s8,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
+    borderRadius: theme.shape.full,
     variants: {
       state: {
         default: { backgroundColor: theme.colors.surfaceContainerHighest },
@@ -100,8 +102,8 @@ const styles = StyleSheet.create((theme) => ({
   },
   markerText: {
     fontFamily: theme.fontFamily.brand,
-    fontWeight: '700',
-    fontSize: 15,
+    fontWeight: theme.fontWeight.bold,
+    fontSize: theme.typography.titleSmall.fontSize,
     variants: {
       state: {
         default: { color: theme.colors.onSurfaceVariant },
