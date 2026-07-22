@@ -99,3 +99,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Finish i18n: app-chrome keys, provider.groq t(), generation panel inline.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Format sweep after activity i18n cleanup.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Split SlideImage into use-slide-image + helpers.
