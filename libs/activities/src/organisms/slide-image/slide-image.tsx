@@ -1,58 +1,30 @@
-import { focusDialog, IconButton, ImageLightbox } from '@helsoft/components';
-import { useSlideImageUrl } from '@helsoft/hooks';
+import { IconButton, ImageLightbox } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
-import { useEffect, useRef, useState } from 'react';
-import { Image, type LayoutChangeEvent, View as NativeView, type View } from 'react-native';
+import { Image, View as NativeView } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
+import type { PaneSize } from './slide-image.helpers';
 import type { SlideImageProps } from './slide-image.types';
-
-type PaneSize = {
-  width: number;
-  height: number;
-};
-
-const getContainedImageSize = (aspectRatio: number, pane: PaneSize): PaneSize => {
-  const width = Math.min(pane.width, pane.height * aspectRatio);
-  return { width, height: width / aspectRatio };
-};
+import { useSlideImage } from './use-slide-image';
 
 /**
  * SlideImage — resolves a signed URL via useSlideImageUrl and renders it scaled to fit.
  * Renders nothing when there is no url (text-only degrade).
  */
 export const SlideImage = ({ image, layout = 'stacked' }: SlideImageProps) => {
-  const { url } = useSlideImageUrl(image);
   const { t } = useLocalization();
   const { theme } = useUnistyles();
-  const [open, setOpen] = useState(false);
-  const [paneSize, setPaneSize] = useState<PaneSize>();
-  const expandControlRef = useRef<View>(null);
-  const wasOpen = useRef(false);
-
-  useEffect(() => {
-    if (!open && wasOpen.current) {
-      focusDialog(expandControlRef);
-    }
-    wasOpen.current = open;
-  }, [open]);
+  const { url, open, setOpen, expandControlRef, aspectRatio, containedSize, onPaneLayout } =
+    useSlideImage({ image, layout });
 
   if (!url || !image) return null;
-
-  const aspectRatio = image.width > 0 && image.height > 0 ? image.width / image.height : 1;
-  const containedSize =
-    layout === 'split' && paneSize ? getContainedImageSize(aspectRatio, paneSize) : undefined;
-  const handlePaneLayout = (event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    if (width > 0 && height > 0) setPaneSize({ width, height });
-  };
 
   return (
     <NativeView testID="slide-image-container" style={styles.container(layout)}>
       <NativeView
         testID="slide-image-wrapper"
         style={styles.imageWrapper(layout)}
-        onLayout={layout === 'split' ? handlePaneLayout : undefined}
+        onLayout={layout === 'split' ? onPaneLayout : undefined}
       >
         <Image
           testID="slide-image"
