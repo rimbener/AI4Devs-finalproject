@@ -43,3 +43,10 @@
 - components playwright: 144/144 (mobile-bar e2e gone)
 - app-study-buddy: 9/9; check-types clean
 - tdd.md ~2.7KB
+
+## Full-review CI fix (no feature scope)
+- biome format: new-lesson-dialog; pdf-extraction.service.test; + localization/activities/components stragglers
+- hooks tests: `rerender(undefined)`; use-lesson `renderHook<UseLessonResult, LessonIdProps>`
+- activities tests: SlideType `lesson|activity`; OpenEndedSlide shape (`kind`/`activityType`)
+- e2e real: api-key-settings story slug `entitlements-error` → `profile-error` (+ alert selector)
+- verified: lint / check-types / test green; study-buddy e2e 77; components e2e 144

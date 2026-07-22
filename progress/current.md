@@ -4,6 +4,6 @@
 **Folder:** `docs/features/native-bottom-tabs/`
 **Branch:** `feat/native-bottom-tabs`
 **Worktree:** `.worktrees/native-bottom-tabs`
-**Phase:** approved → in_progress
-**Status:** Human approved revised spec+Gherkin. Starting Slice 1.
+**Phase:** in_review
+**Status:** All 3 slices committed + slice-reviewed. Starting full review (reviews_lead).
 **Notes:** Base = `feature-entrega3-HernanLaura` @ 5aaa7ae98.

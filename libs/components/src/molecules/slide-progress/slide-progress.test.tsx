@@ -4,12 +4,7 @@ import { SlideProgress } from './slide-progress';
 
 describe('SlideProgress', () => {
   it('renders labeled segments for lesson and activity slides', async () => {
-    await render(
-      <SlideProgress
-        slides={[{ type: 'lesson' }, { type: 'activity' }]}
-        current={1}
-      />,
-    );
+    await render(<SlideProgress slides={[{ type: 'lesson' }, { type: 'activity' }]} current={1} />);
 
     expect(screen.getByRole('button', { name: 'Lesson 1' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Activity 2' })).toBeTruthy();

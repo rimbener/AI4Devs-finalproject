@@ -319,7 +319,7 @@ describe('usePdfDocuments', () => {
     const deleteDocument = result.current.deleteDocument;
     const callsAfterLoad = service.getDocuments.mock.calls.length;
 
-    rerender();
+    rerender(undefined);
 
     expect(result.current.refetch).toBe(refetch);
     expect(result.current.deleteDocument).toBe(deleteDocument);
@@ -339,7 +339,7 @@ describe('usePdfDocuments', () => {
     const { result, rerender } = renderHook(() => usePdfDocuments());
     await waitFor(() => expect(result.current.documents).toEqual(documents));
 
-    rerender();
+    rerender(undefined);
 
     await act(async () => {
       result.current.refetch();

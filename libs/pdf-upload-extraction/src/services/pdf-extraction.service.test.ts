@@ -7,6 +7,7 @@ jest.mock('@helsoft/supabase-services', () => ({
 }));
 
 import { PdfUploadDao } from '@helsoft/supabase-services';
+
 jest.mock('../analytics/pdf-extraction-analytics', () => ({ trackPdfExtractionEvent: jest.fn() }));
 
 import {

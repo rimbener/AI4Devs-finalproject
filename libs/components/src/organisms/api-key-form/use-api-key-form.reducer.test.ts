@@ -1,7 +1,4 @@
-import {
-  apiKeyFormReducer,
-  initialApiKeyFormState,
-} from './use-api-key-form.reducer';
+import { apiKeyFormReducer, initialApiKeyFormState } from './use-api-key-form.reducer';
 
 describe('apiKeyFormReducer', () => {
   it('sets api key', () => {

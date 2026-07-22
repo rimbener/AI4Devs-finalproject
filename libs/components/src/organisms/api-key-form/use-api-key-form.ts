@@ -3,10 +3,7 @@ import type { ApiKeyStatus } from '@helsoft/types';
 import { useEffect, useReducer, useRef } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
-import {
-  apiKeyFormReducer,
-  initialApiKeyFormState,
-} from './use-api-key-form.reducer';
+import { apiKeyFormReducer, initialApiKeyFormState } from './use-api-key-form.reducer';
 
 type UseApiKeyFormArgs = {
   status: ApiKeyStatus;
