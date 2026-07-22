@@ -1,24 +1,24 @@
-import { getSupabase } from '@helsoft/supabase-services';
+import { getSupabase } from '../supabase/supabase-client';
 
-import { PDF_UPLOAD_BUCKET } from '../services/pdf-extraction.constants';
-import type { PdfExtractionResult } from '../types/pdf-extraction.types';
-import type { InsertDocumentParams, UploadPdfParams } from './pdf-upload.types';
+import type {
+  InsertDocumentParams,
+  PdfUploadExtractionResult,
+  UploadPdfParams,
+} from './pdf-upload.types';
 
 const PDF_CONTENT_TYPE = 'application/pdf';
 const EXTRACT_FUNCTION_NAME = 'extract-pdf';
 const DOCUMENTS_TABLE = 'documents';
 const PROCESSING_STATUS = 'processing';
+/** Locked private bucket (spec decision #3); mirrored in pdf-upload-extraction constants. */
+const PDF_UPLOAD_BUCKET = 'pdf-uploads';
 
 const buildSourcePath = (userId: string, documentId: string): string =>
   `${userId}/${documentId}/source.pdf`;
 
 /**
- * Raw Supabase data access for the client side of upload: writes the raw PDF to the private
- * `pdf-uploads` bucket, upserts the `documents` row, and invokes the `extract-pdf` function. No
- * validation, no error mapping, and — critically — no PDF parsing (@s4): the client never reads
- * the PDF's own bytes beyond passing them through. Both writes use upsert-by-id (@s13, task-12)
- * so a retry that reuses the same documentId overwrites the prior attempt instead of erroring on
- * a conflict.
+ * Raw Supabase data access for PDF upload: storage write, documents upsert, extract-pdf invoke.
+ * No validation / error mapping — that lives in PdfExtractionService.
  */
 export abstract class PdfUploadDao {
   static async uploadPdf({ userId, documentId, bytes }: UploadPdfParams) {
@@ -49,7 +49,7 @@ export abstract class PdfUploadDao {
     return data;
   }
 
-  static async invokeExtraction(documentId: string): Promise<PdfExtractionResult> {
+  static async invokeExtraction(documentId: string): Promise<PdfUploadExtractionResult> {
     const { data, error } = await getSupabase().functions.invoke(EXTRACT_FUNCTION_NAME, {
       body: { documentId },
     });

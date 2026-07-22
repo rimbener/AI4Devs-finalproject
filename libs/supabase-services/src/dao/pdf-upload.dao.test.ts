@@ -1,6 +1,6 @@
-jest.mock('@helsoft/supabase-services', () => ({ getSupabase: jest.fn() }));
+jest.mock('../supabase/supabase-client', () => ({ getSupabase: jest.fn() }));
 
-import { getSupabase } from '@helsoft/supabase-services';
+import { getSupabase } from '../supabase/supabase-client';
 import { PdfUploadDao } from './pdf-upload.dao';
 
 const mockGetSupabase = getSupabase as jest.Mock;
@@ -24,10 +24,6 @@ describe('PdfUploadDao', () => {
   });
 
   describe('uploadPdf', () => {
-    // @s1/@s4/@s13 (Slice 2, task-12) — uploads the raw PDF bytes to the private pdf-uploads
-    // bucket at the locked {user_id}/{document_id}/source.pdf path (spec decision #3); no
-    // parsing happens here. `upsert: true` lets a retry (which reuses the same documentId/path,
-    // task-12) overwrite a prior attempt's object instead of erroring on a conflict.
     it('uploads the given bytes to the pdf-uploads bucket at the {userId}/{documentId}/source.pdf path, allowing overwrite for retries', async () => {
       upload.mockResolvedValue({ data: { path: 'u1/d1/source.pdf' }, error: null });
       const bytes = new Uint8Array([1, 2, 3]);
@@ -53,10 +49,6 @@ describe('PdfUploadDao', () => {
   });
 
   describe('insertDocument', () => {
-    // @s1/@s13 (Slice 2, task-12) — upserts the documents row (by id) with status 'processing'
-    // and a cleared error_code (spec's processing model, step 3). Upserting rather than plain
-    // inserting means a retry that reuses the same documentId (task-12) updates the existing
-    // failed row instead of erroring on a duplicate primary key.
     it('upserts a documents row with status processing, clears any prior error_code, and returns the row', async () => {
       const row = {
         id: 'd1',
@@ -102,8 +94,6 @@ describe('PdfUploadDao', () => {
   });
 
   describe('invokeExtraction', () => {
-    // @s1/@s4 — invokes the extract-pdf function with the given documentId and returns its raw
-    // result untouched; normalizing it into the typed contract is the service's job.
     it('invokes the extract-pdf function with the given documentId and returns its raw result', async () => {
       const raw = {
         documentId: 'd1',

@@ -5,4 +5,6 @@ export * from './lesson-generation.dao';
 export * from './lesson-image.dao';
 export * from './lessons.dao';
 export * from './pdf-documents.dao';
+export * from './pdf-upload.dao';
+export type * from './pdf-upload.types';
 export * from './profile.dao';
