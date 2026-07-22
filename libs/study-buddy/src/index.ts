@@ -5,6 +5,8 @@ export type * from './components/api-key-gate/api-key-gate.types';
 export * from './components/api-key-settings/api-key-settings';
 export * from './components/app-chrome/app-chrome';
 export type * from './components/app-chrome/app-chrome.types';
+export { isNativeTabSelected } from './components/app-chrome/native-tab-selected';
+export type { NativeTabName } from './components/app-chrome/native-tab-selected';
 export * from './components/fill-in-the-blank-activity/fill-in-the-blank-activity';
 export type * from './components/fill-in-the-blank-activity/fill-in-the-blank-activity.types';
 export * from './components/flashcard-activity/flashcard-activity';
