@@ -85,3 +85,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Complete supabase-services dao/index.ts barrel exports.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | useSession via AuthService/AuthDao; added unit tests.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Move PdfUploadDao to supabase-services; add pdf-upload-extraction barrels.
