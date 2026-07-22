@@ -93,3 +93,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Drop activity labels={t()} bags; inline t() + hook localization.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | api-key-form local state → useReducer + *.reducer.ts.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Shared component types moved into *.types.ts per types.mdc.
