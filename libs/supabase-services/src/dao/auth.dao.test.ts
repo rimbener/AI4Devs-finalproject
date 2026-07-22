@@ -8,10 +8,14 @@ const mockGetSupabase = getSupabase as jest.Mock;
 describe('AuthDao', () => {
   const signInWithPassword = jest.fn();
   const signOut = jest.fn();
+  const getSession = jest.fn();
+  const onAuthStateChange = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSupabase.mockReturnValue({ auth: { signInWithPassword, signOut } });
+    mockGetSupabase.mockReturnValue({
+      auth: { signInWithPassword, signOut, getSession, onAuthStateChange },
+    });
   });
 
   // @s2 — happy path sign-in delegates to supabase-js with the exact credentials and returns
@@ -52,5 +56,41 @@ describe('AuthDao', () => {
     signOut.mockResolvedValue({ error });
 
     await expect(AuthDao.signOut()).rejects.toBe(error);
+  });
+
+  it('getSession returns the current session from supabase auth', async () => {
+    const session = { access_token: 'tok' };
+    getSession.mockResolvedValue({ data: { session }, error: null });
+
+    const result = await AuthDao.getSession();
+
+    expect(getSession).toHaveBeenCalledWith();
+    expect(result).toBe(session);
+  });
+
+  it('getSession throws the raw supabase error when it fails', async () => {
+    const error = { message: 'session failed' };
+    getSession.mockResolvedValue({ data: { session: null }, error });
+
+    await expect(AuthDao.getSession()).rejects.toBe(error);
+  });
+
+  it('onAuthStateChange wires the callback and returns an unsubscribe', () => {
+    const unsubscribe = jest.fn();
+    onAuthStateChange.mockReturnValue({
+      data: { subscription: { unsubscribe } },
+    });
+    const callback = jest.fn();
+
+    const stop = AuthDao.onAuthStateChange(callback);
+    const registered = onAuthStateChange.mock.calls[0][0] as (
+      event: string,
+      session: unknown,
+    ) => void;
+    registered('SIGNED_IN', { access_token: 'tok' });
+    stop();
+
+    expect(callback).toHaveBeenCalledWith({ access_token: 'tok' });
+    expect(unsubscribe).toHaveBeenCalledWith();
   });
 });

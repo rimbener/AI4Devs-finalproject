@@ -2,6 +2,8 @@ jest.mock('../dao/auth.dao', () => ({
   AuthDao: {
     signInWithPassword: jest.fn(),
     signOut: jest.fn(),
+    getSession: jest.fn(),
+    onAuthStateChange: jest.fn(),
   },
 }));
 
@@ -187,6 +189,38 @@ describe('AuthService', () => {
       dao.signOut.mockRejectedValue(new Error('boom'));
 
       await expect(AuthService.signOut()).rejects.toMatchObject({ code: 'network_error' });
+    });
+  });
+
+  describe('getSession', () => {
+    it('returns the DAO session', async () => {
+      const session = { access_token: 'tok' };
+      dao.getSession.mockResolvedValue(session as never);
+
+      await expect(AuthService.getSession()).resolves.toBe(session);
+    });
+
+    it('returns null when the DAO throws (e.g. client not initialized)', async () => {
+      dao.getSession.mockRejectedValue(new Error('not init'));
+
+      await expect(AuthService.getSession()).resolves.toBeNull();
+    });
+  });
+
+  describe('onAuthStateChange', () => {
+    it('returns the DAO unsubscribe', () => {
+      const stop = jest.fn();
+      dao.onAuthStateChange.mockReturnValue(stop);
+
+      expect(AuthService.onAuthStateChange(jest.fn())).toBe(stop);
+    });
+
+    it('returns null when the DAO throws (e.g. client not initialized)', () => {
+      dao.onAuthStateChange.mockImplementation(() => {
+        throw new Error('not init');
+      });
+
+      expect(AuthService.onAuthStateChange(jest.fn())).toBeNull();
     });
   });
 });
