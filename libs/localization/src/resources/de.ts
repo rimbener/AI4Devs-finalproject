@@ -223,6 +223,9 @@ export const de: TranslationResource = {
         replace: 'Ersetzen',
         remove: 'Entfernen',
         savedStatus: '{{provider}}-Schlüssel gespeichert · Aktualisiert {{date}}',
+        provider: {
+          groq: 'Groq',
+        },
         guidance: 'Noch keinen Schlüssel? Bei Groq erhalten',
         removeConfirmHeadline: 'API-Schlüssel entfernen?',
         removeConfirmBody:

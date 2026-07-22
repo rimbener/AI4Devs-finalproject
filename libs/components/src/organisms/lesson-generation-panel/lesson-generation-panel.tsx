@@ -1,6 +1,5 @@
 import { useLocalization } from '@helsoft/localization';
 import type { LessonComposition } from '@helsoft/types';
-import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -58,34 +57,16 @@ export const LessonGenerationPanel = ({
   const { t } = useLocalization();
   const disabled = state === 'loading';
 
-  // review.md round-1 finding #7 (minor) — stabilizes these derived arrays/objects across
-  // re-renders instead of rebuilding them on every render (fixed 3-item lists; a perf-only
-  // refactor, no behavior change).
-  const options = useMemo(
-    () =>
-      COMPOSITION_OPTION_VALUES.map((value) => ({
-        value,
-        label: t(COMPOSITION_LABEL_KEYS[value]),
-      })),
-    [t],
-  );
-  const steps = useMemo(() => STEP_LABEL_KEYS.map((key) => ({ label: t(key) })), [t]);
-  const statusLabels = useMemo<Record<GenerationProgressStepStatus, string>>(
-    () => ({
-      done: t(STATUS_LABEL_KEYS.done),
-      current: t(STATUS_LABEL_KEYS.current),
-      upcoming: t(STATUS_LABEL_KEYS.upcoming),
-    }),
-    [t],
-  );
-
   return (
     <Card>
       <View style={styles.root}>
         <View style={styles.section}>
           <Text style={styles.heading}>{t('generation.composition.heading')}</Text>
           <RadioGroup
-            options={options}
+            options={COMPOSITION_OPTION_VALUES.map((value) => ({
+              value,
+              label: t(COMPOSITION_LABEL_KEYS[value]),
+            }))}
             value={composition}
             onChange={onCompositionChange}
             disabled={disabled}
@@ -99,9 +80,13 @@ export const LessonGenerationPanel = ({
 
         {state === 'loading' ? (
           <GenerationProgress
-            steps={steps}
+            steps={STEP_LABEL_KEYS.map((key) => ({ label: t(key) }))}
             currentIndex={stepToIndex(currentStep)}
-            statusLabels={statusLabels}
+            statusLabels={{
+              done: t(STATUS_LABEL_KEYS.done),
+              current: t(STATUS_LABEL_KEYS.current),
+              upcoming: t(STATUS_LABEL_KEYS.upcoming),
+            }}
           />
         ) : null}
 

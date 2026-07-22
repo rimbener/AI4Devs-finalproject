@@ -6,10 +6,10 @@ import { useEffect } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-/** Provider brand names are not translated (proper nouns) — the seam stays open for more
- * providers alongside the `AiProvider` union (spec.md Open decision 2; ai-lesson-generation
- * Open decision #1 swaps the v1 provider from OpenAI to Groq). */
-const PROVIDER_DISPLAY_NAMES: Record<AiProvider, string> = { groq: 'Groq' };
+/** Provider brand names via i18n keys (proper nouns; seam open for more AiProvider values). */
+const PROVIDER_DISPLAY_NAME_KEYS: Record<AiProvider, string> = {
+  groq: 'settings.apiKey.provider.groq',
+};
 
 /** Where the Empty state's guidance link sends the user (spec.md Open decision 2 — Groq is
  * the fixed v1 provider, ai-lesson-generation Open decision #1). Owned by the wiring layer
@@ -68,7 +68,7 @@ export const ApiKeySettings = () => {
 
   const keySavedStatusLabel = status.hasKey
     ? t('settings.apiKey.savedStatus', {
-        provider: status.provider ? PROVIDER_DISPLAY_NAMES[status.provider] : '',
+        provider: status.provider ? t(PROVIDER_DISPLAY_NAME_KEYS[status.provider]) : '',
         date: status.updatedAt ? new Date(status.updatedAt).toLocaleDateString(locale) : '',
       })
     : EMPTY_SAVED_STATUS_LABEL;

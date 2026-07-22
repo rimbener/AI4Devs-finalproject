@@ -220,6 +220,9 @@ export const pt: TranslationResource = {
         replace: 'Substituir',
         remove: 'Remover',
         savedStatus: 'Chave da {{provider}} salva · Atualizada em {{date}}',
+        provider: {
+          groq: 'Groq',
+        },
         guidance: 'Não tem uma chave? Obtenha uma na Groq',
         removeConfirmHeadline: 'Remover chave de API?',
         removeConfirmBody: 'Você precisará adicionar uma nova chave para gerar lições novamente.',

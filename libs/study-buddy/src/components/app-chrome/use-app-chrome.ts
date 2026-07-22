@@ -1,27 +1,25 @@
 import { useSession } from '@helsoft/hooks';
-import { useLocalization } from '@helsoft/localization';
 import { useMemo, useState } from 'react';
 
 import { getSessionIdentity } from '../../helpers/session-identity.helpers';
 import { getMobileTitleKey } from './app-chrome.helpers';
 
 export const useAppChrome = (pathname: string) => {
-  const { t } = useLocalization();
   const { session } = useSession();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const home = useMemo(
     () => ({
       active: pathname === '/',
-      label: t('nav.myLessons'),
+      labelKey: 'nav.myLessons' as const,
     }),
-    [pathname, t],
+    [pathname],
   );
   const newLesson = useMemo(
     () => ({
       active: pathname === '/upload',
-      label: t('nav.newLesson'),
+      labelKey: 'nav.newLesson' as const,
     }),
-    [pathname, t],
+    [pathname],
   );
 
   return {
