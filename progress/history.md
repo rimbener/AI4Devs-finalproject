@@ -91,3 +91,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | new-lesson-dialog handlers in component; stories/tests + player-loading story.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Drop activity labels={t()} bags; inline t() + hook localization.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | api-key-form local state → useReducer + *.reducer.ts.
