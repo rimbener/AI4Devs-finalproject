@@ -20,14 +20,6 @@ export const MultipleChoice = ({
 }: MultipleChoiceProps) => {
   const { t } = useLocalization();
 
-  const labels = {
-    submit: t('activity.mcq.submit'),
-    correct: t('activity.mcq.correct'),
-    incorrect: t('activity.mcq.incorrect'),
-    explanationHeading: t('activity.mcq.explanation'),
-    unavailable: t('activity.mcq.unavailable'),
-  };
-
   const {
     setAnswer,
     selectedOptionId,
@@ -36,9 +28,8 @@ export const MultipleChoice = ({
     locked,
     canSubmit,
     isCorrect,
-    resultLabel,
     stateForOption,
-  } = useMultipleChoice({ slide, initialAnswer, labels });
+  } = useMultipleChoice({ slide, initialAnswer });
 
   const handleSelect = (optionId: string) => {
     if (locked) return;
@@ -55,7 +46,7 @@ export const MultipleChoice = ({
   if (isUnavailable) {
     return (
       <Card style={styles.root}>
-        <Text style={styles.question}>{labels.unavailable}</Text>
+        <Text style={styles.question}>{t('activity.mcq.unavailable')}</Text>
       </Card>
     );
   }
@@ -78,8 +69,8 @@ export const MultipleChoice = ({
                 marker,
                 option.label,
                 state,
-                labels.correct,
-                labels.incorrect,
+                t('activity.mcq.correct'),
+                t('activity.mcq.incorrect'),
               )}
               onPress={() => handleSelect(option.id)}
             />
@@ -88,7 +79,7 @@ export const MultipleChoice = ({
       </View>
       {!locked ? (
         <Button disabled={!canSubmit} fullWidth onPress={handleSubmit}>
-          {labels.submit}
+          {t('activity.mcq.submit')}
         </Button>
       ) : null}
       {locked ? (
@@ -100,13 +91,13 @@ export const MultipleChoice = ({
             style={styles.bannerText(isCorrect)}
             accessibilityLiveRegion={isCorrect ? 'polite' : 'assertive'}
           >
-            {resultLabel}
+            {isCorrect ? t('activity.mcq.correct') : t('activity.mcq.incorrect')}
           </Text>
         </View>
       ) : null}
       {locked && slide.explanation ? (
         <View style={styles.explanation}>
-          <Text style={styles.explanationHeading}>{labels.explanationHeading}</Text>
+          <Text style={styles.explanationHeading}>{t('activity.mcq.explanation')}</Text>
           <Text style={styles.explanationBody}>{slide.explanation}</Text>
         </View>
       ) : null}

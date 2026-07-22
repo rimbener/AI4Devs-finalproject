@@ -1,7 +1,6 @@
 import type {
   ItemVisualState,
   MatchingItemView,
-  MatchingLabels,
   MatchingPairSelection,
 } from './matching.types';
 
@@ -14,9 +13,10 @@ export const findPairForItem = (
 export const itemAccessibilityLabel = (
   item: MatchingItemView,
   state: ItemVisualState,
-  labels: MatchingLabels,
+  correctPairLabel: string,
+  incorrectPairLabel: string,
 ): string => {
-  if (state === 'correct') return `${item.label}, ${labels.correctPair}`;
-  if (state === 'incorrect') return `${item.label}, ${labels.incorrectPair}`;
+  if (state === 'correct') return `${item.label}, ${correctPairLabel}`;
+  if (state === 'incorrect') return `${item.label}, ${incorrectPairLabel}`;
   return item.label;
 };

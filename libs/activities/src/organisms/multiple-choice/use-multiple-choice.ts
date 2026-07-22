@@ -1,3 +1,4 @@
+import { useLocalization } from '@helsoft/localization';
 import type { MultipleChoiceAnswer } from '@helsoft/types';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
@@ -12,8 +13,8 @@ import type { UseMultipleChoiceProps } from './multiple-choice.types';
 export const useMultipleChoice = ({
   slide,
   initialAnswer = null,
-  labels,
 }: UseMultipleChoiceProps) => {
+  const { t } = useLocalization();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(
     initialAnswer?.selectedOptionId ?? null,
   );
@@ -23,14 +24,15 @@ export const useMultipleChoice = ({
   const answered = !!answer;
   const locked = answered;
   const isCorrect = answer?.isCorrect ?? false;
-  const resultLabel = answered ? (isCorrect ? labels.correct : labels.incorrect) : null;
   const canSubmit = !!selectedOptionId && !locked;
 
   useEffect(() => {
-    if (!isUnavailable && answered && Platform.OS !== 'android' && resultLabel) {
-      AccessibilityInfo.announceForAccessibility(resultLabel);
+    if (!isUnavailable && answered && Platform.OS !== 'android') {
+      AccessibilityInfo.announceForAccessibility(
+        isCorrect ? t('activity.mcq.correct') : t('activity.mcq.incorrect'),
+      );
     }
-  }, [isUnavailable, answered, resultLabel]);
+  }, [isUnavailable, answered, isCorrect, t]);
 
   const stateForOption = (optionId: string) =>
     optionState(optionId, slide.correctOptionId, selectedOptionId, answered);
@@ -45,7 +47,6 @@ export const useMultipleChoice = ({
     locked,
     canSubmit,
     isCorrect,
-    resultLabel,
     stateForOption,
   };
 };

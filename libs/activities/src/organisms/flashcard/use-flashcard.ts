@@ -1,3 +1,4 @@
+import { useLocalization } from '@helsoft/localization';
 import type { FlashcardAnswer } from '@helsoft/types';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
@@ -13,8 +14,8 @@ export const useFlashcard = ({
   slide,
   initialAnswer = null,
   initialRevealed = false,
-  labels,
 }: UseFlashcardProps) => {
+  const { t } = useLocalization();
   const [revealed, setRevealed] = useState(initialRevealed || !!initialAnswer);
   const [answer, setAnswer] = useState<FlashcardAnswer | null>(initialAnswer);
 
@@ -24,8 +25,10 @@ export const useFlashcard = ({
 
   useEffect(() => {
     if (!isRevealed || Platform.OS === 'android') return;
-    AccessibilityInfo.announceForAccessibility(`${labels.answerHeading}: ${slide.back}`);
-  }, [isRevealed, labels.answerHeading, slide.back]);
+    AccessibilityInfo.announceForAccessibility(
+      `${t('activity.flashcard.answerHeading')}: ${slide.back}`,
+    );
+  }, [isRevealed, slide.back, t]);
 
   return {
     revealed,

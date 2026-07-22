@@ -20,15 +20,6 @@ export const FillInTheBlank = ({
   const { t } = useLocalization();
   const { theme } = useUnistyles();
 
-  const labels = {
-    submit: t('activity.fillInTheBlank.submit'),
-    correct: t('activity.fillInTheBlank.correct'),
-    incorrect: t('activity.fillInTheBlank.incorrect'),
-    explanationHeading: t('activity.fillInTheBlank.explanationHeading'),
-    unavailable: t('activity.fillInTheBlank.unavailable'),
-    blankInput: t('activity.fillInTheBlank.blankInput'),
-  };
-
   const {
     value,
     setValue,
@@ -38,8 +29,7 @@ export const FillInTheBlank = ({
     locked,
     isUnavailable,
     maxLength,
-    resultLabel,
-  } = useFillInTheBlank({ slide, initialAnswer, labels });
+  } = useFillInTheBlank({ slide, initialAnswer });
 
   const handleSubmit = () => {
     if (answer || isUnavailable) return;
@@ -51,7 +41,7 @@ export const FillInTheBlank = ({
   if (isUnavailable || !parts) {
     return (
       <Card style={styles.root}>
-        <Text style={styles.prompt}>{labels.unavailable}</Text>
+        <Text style={styles.prompt}>{t('activity.fillInTheBlank.unavailable')}</Text>
       </Card>
     );
   }
@@ -61,7 +51,7 @@ export const FillInTheBlank = ({
       <View style={styles.promptRow}>
         {parts.before.length > 0 ? <Text style={styles.prompt}>{parts.before}</Text> : null}
         <TextInput
-          accessibilityLabel={labels.blankInput}
+          accessibilityLabel={t('activity.fillInTheBlank.blankInput')}
           accessibilityState={{ disabled: locked }}
           value={value}
           maxLength={maxLength}
@@ -74,7 +64,7 @@ export const FillInTheBlank = ({
         {parts.after.length > 0 ? <Text style={styles.prompt}>{parts.after}</Text> : null}
       </View>
       <Button disabled={locked} fullWidth onPress={locked ? undefined : handleSubmit}>
-        {labels.submit}
+        {t('activity.fillInTheBlank.submit')}
       </Button>
       {answer ? (
         <View
@@ -93,7 +83,9 @@ export const FillInTheBlank = ({
               style={styles.bannerText(answer.isCorrect)}
               accessibilityLiveRegion={answer.isCorrect ? 'polite' : 'assertive'}
             >
-              {resultLabel}
+              {answer.isCorrect
+                ? t('activity.fillInTheBlank.correct')
+                : t('activity.fillInTheBlank.incorrect')}
             </Text>
           </View>
           {!answer.isCorrect && answer.acceptedAnswerShown ? (
@@ -103,7 +95,9 @@ export const FillInTheBlank = ({
       ) : null}
       {answer && slide.explanation ? (
         <View style={styles.explanation}>
-          <Text style={styles.explanationHeading}>{labels.explanationHeading}</Text>
+          <Text style={styles.explanationHeading}>
+            {t('activity.fillInTheBlank.explanationHeading')}
+          </Text>
           <Text style={styles.explanationBody}>{slide.explanation}</Text>
         </View>
       ) : null}

@@ -29,16 +29,6 @@ export const Matching = ({
   const [answer, setAnswer] = useState<MatchingAnswer | null>(initialAnswer);
   const valid = isMatchingSlideValid(slide);
 
-  const labels = {
-    submit: t('activity.matching.submit'),
-    correct: t('activity.matching.correct'),
-    incorrect: t('activity.matching.incorrect'),
-    correctPair: t('activity.matching.correctPair'),
-    incorrectPair: t('activity.matching.incorrectPair'),
-    explanationHeading: t('activity.matching.explanationHeading'),
-    unavailable: t('activity.matching.unavailable'),
-  };
-
   const result: MatchingResult | null = answer
     ? {
         pairs: answer.pairs,
@@ -54,7 +44,6 @@ export const Matching = ({
     pending,
     locked,
     isUnavailable,
-    resultLabel,
     formedPairs,
     itemState,
     setFormedPairs,
@@ -66,7 +55,6 @@ export const Matching = ({
     unavailable: !valid,
     initialPairs,
     result,
-    labels,
   });
 
   const handleSubmit = () => {
@@ -79,7 +67,7 @@ export const Matching = ({
   if (isUnavailable) {
     return (
       <Card testID="matching-root" style={styles.root}>
-        <Text style={styles.prompt}>{labels.unavailable}</Text>
+        <Text style={styles.prompt}>{t('activity.matching.unavailable')}</Text>
       </Card>
     );
   }
@@ -124,7 +112,12 @@ export const Matching = ({
     const feedbackIcon =
       state === 'correct' ? 'check_circle' : state === 'incorrect' ? 'cancel' : null;
     const feedbackColor = state === 'correct' ? theme.colors.tertiary : theme.colors.error;
-    const accessibilityLabel = itemAccessibilityLabel(item, state, labels);
+    const accessibilityLabel = itemAccessibilityLabel(
+      item,
+      state,
+      t('activity.matching.correctPair'),
+      t('activity.matching.incorrectPair'),
+    );
 
     return (
       <Pressable
@@ -158,7 +151,7 @@ export const Matching = ({
       </View>
       {!locked ? (
         <Button disabled={!allPaired} fullWidth onPress={handleSubmit}>
-          {labels.submit}
+          {t('activity.matching.submit')}
         </Button>
       ) : null}
       {result ? (
@@ -171,14 +164,18 @@ export const Matching = ({
             style={styles.bannerText(result.isCorrect)}
             accessibilityLiveRegion={result.isCorrect ? 'polite' : 'assertive'}
           >
-            {resultLabel}
+            {result.isCorrect
+              ? t('activity.matching.correct')
+              : t('activity.matching.incorrect')}
           </Text>
           <Text style={styles.summary(result.isCorrect)}>{result.summary}</Text>
         </View>
       ) : null}
       {result && slide.explanation ? (
         <View testID="matching-explanation" style={styles.explanation}>
-          <Text style={styles.explanationHeading}>{labels.explanationHeading}</Text>
+          <Text style={styles.explanationHeading}>
+            {t('activity.matching.explanationHeading')}
+          </Text>
           <Text style={styles.explanationBody}>{slide.explanation}</Text>
         </View>
       ) : null}

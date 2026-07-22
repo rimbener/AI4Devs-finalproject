@@ -1,3 +1,4 @@
+import { useLocalization } from '@helsoft/localization';
 import type { FillInTheBlankAnswer } from '@helsoft/types';
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
@@ -13,8 +14,8 @@ import type { UseFillInTheBlankProps } from './fill-in-the-blank.types';
 export const useFillInTheBlank = ({
   slide,
   initialAnswer = null,
-  labels,
 }: UseFillInTheBlankProps) => {
+  const { t } = useLocalization();
   const [value, setValue] = useState(initialAnswer?.submittedAnswer ?? '');
   const [answer, setAnswer] = useState<FillInTheBlankAnswer | null>(initialAnswer);
 
@@ -23,14 +24,13 @@ export const useFillInTheBlank = ({
   const locked = !!answer;
   const isUnavailable = !valid || !parts;
   const maxLength = blankMaxLength(slide);
-  const resultLabel = answer ? (answer.isCorrect ? labels.correct : labels.incorrect) : null;
 
   useEffect(() => {
     if (!answer || Platform.OS === 'android') return;
     AccessibilityInfo.announceForAccessibility(
-      answer.isCorrect ? labels.correct : labels.incorrect,
+      answer.isCorrect ? t('activity.fillInTheBlank.correct') : t('activity.fillInTheBlank.incorrect'),
     );
-  }, [answer, labels.correct, labels.incorrect]);
+  }, [answer, t]);
 
   return {
     value,
@@ -41,6 +41,5 @@ export const useFillInTheBlank = ({
     locked,
     isUnavailable,
     maxLength,
-    resultLabel,
   };
 };
