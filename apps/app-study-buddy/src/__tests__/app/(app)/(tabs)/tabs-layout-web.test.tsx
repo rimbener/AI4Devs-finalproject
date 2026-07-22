@@ -13,8 +13,12 @@ jest.mock('@helsoft/localization', () => ({
 jest.mock('@helsoft/study-buddy', () => {
   const React = require('react');
   const { View } = require('react-native');
+  const { NATIVE_TAB_TRIGGERS } = jest.requireActual(
+    '@helsoft/study-buddy/src/components/app-chrome/native-tabs-triggers',
+  );
   return {
     AppChrome: () => React.createElement(View, { testID: 'app-chrome' }),
+    NATIVE_TAB_TRIGGERS,
   };
 });
 

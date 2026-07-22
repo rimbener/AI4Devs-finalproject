@@ -1,24 +1,22 @@
 # Review — native-bottom-tabs (round 1)
 
-**CI red @** `d1112967f` — reviewer_engineering **not** invoked.  
-**Unit tests:** green (`pnpm test`).  
-**E2e:** `@helsoft/components` 144 passed; `@helsoft/study-buddy` 1 failed / 76 passed.
+**CI green @** `1043d827d57af2838e3eece620747b01ce0b7443`  
+**Lenses N/A:** none (perf + security in scope; no findings under those lenses).
 
-## Open — CI failures (fix before full review)
+## Open findings
 
-### blocker
+### major
 
-1. **lint `@helsoft/study-buddy`** — `libs/study-buddy/src/components/new-lesson-dialog/new-lesson-dialog.tsx:19` Biome format (destructure must be one line + wrap). Feature package red.
-2. **check-types `@helsoft/hooks`** — blocks dependents (`study-buddy` / app). Pre-existing (no feature diff), still fails full `pnpm check-types`:
-   - `libs/hooks/src/hooks/use-api-key.test.ts:107,134,324` — `Expected 1 arguments, but got 0`
-   - `libs/hooks/src/hooks/use-auth.test.ts:200,218` — same
-   - `libs/hooks/src/hooks/use-pdf-documents.test.ts:322,342` — same
-   - `libs/hooks/src/hooks/use-lesson.test.ts:164+` — `renderHook` props/`result.current` typing
-3. **lint `@helsoft/pdf-upload-extraction`** — `libs/pdf-upload-extraction/src/services/pdf-extraction.service.test.ts:10` Biome `organizeImports` needs blank line before statement. Pre-existing (no feature diff).
-4. **e2e `@helsoft/study-buddy`** — `libs/study-buddy/tests/e2e/components/api-key-settings/api-key-settings.e2e.js:62` — `EntitlementsError` story: timeout waiting for `We couldn't load your plan.` (not in feature diff; re-run/confirm flake vs real).
+1. **[code]** `libs/study-buddy/src/components/app-chrome/native-tab-selected.ts:8` (+ barrel `libs/study-buddy/src/index.ts:8-9`) — `isNativeTabSelected` dead production code (no call sites outside unit test). `@s5` only covered via unused helper, not real `NativeTabs` path in `(tabs)/_layout.tsx` / `_layout.web.tsx`. Drop helper/export or wire into production; cover `@s5` on the path Expo owns.
+
+2. **[code]** `apps/app-study-buddy/src/app/(app)/_layout.tsx:13-15` — `@s7`/`@s16` need deep-link `/upload` back → My lessons. Layout lacks `unstable_settings.initialRouteName: '(tabs)'` (or equiv). Tests only regex `headerShown` (`tabs-layout.test.ts:58-61`). Add stack anchor (or explicit back → `/`) + concrete deep-link back test.
+
+### minor
+
+3. **[code]** `apps/app-study-buddy/src/app/(app)/(tabs)/_layout.tsx:8-17` vs `_layout.web.tsx:20-30` — duplicated NativeTabs trigger trees; tests lock native only for `@s1`/`@s10`. Extract shared config or assert both files.
+
+4. **[arch]** `libs/study-buddy/src/components/app-chrome/tabs-layout.test.ts:4-7` — feature-lib suite reads `apps/app-study-buddy` via relative path. Prefer app-colocated tests or shared contract module in `@helsoft/study-buddy`.
 
 ## Request to implementer
 
-Make full CI green (`pnpm lint`, `pnpm check-types`, `pnpm test`, study-buddy + components playwright). Prefer minimal Biome/format + hooks test typing fixes; do not expand feature scope. Re-run same suites after.
-
-**Verdict:** CHANGES_REQUESTED — CI red; engineering review deferred.
+Fix **every** open finding via TDD (majors + minors). Re-run CI green after.

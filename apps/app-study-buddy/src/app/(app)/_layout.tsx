@@ -2,6 +2,12 @@ import { ApiKeyProvider, ProfileProvider } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { Stack } from 'expo-router';
 
+// Deep-link /upload (and other stack siblings) needs (tabs) on the back stack
+// so the header back control returns to My lessons at `/` (@s7 @s16).
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
 export default function AppLayout() {
   const { t } = useLocalization();
 

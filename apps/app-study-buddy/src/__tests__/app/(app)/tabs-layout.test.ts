@@ -1,49 +1,44 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const tabsRoute = (name: string) =>
-  resolve(__dirname, `../../../../../apps/app-study-buddy/src/app/(app)/(tabs)/${name}`);
-const appRoute = (name: string) =>
-  resolve(__dirname, `../../../../../apps/app-study-buddy/src/app/(app)/${name}`);
+const appRoot = resolve(__dirname, '../../../app/(app)');
+const tabsRoute = (name: string) => resolve(appRoot, `(tabs)/${name}`);
+const appRoute = (name: string) => resolve(appRoot, name);
 
-// @s1 @s10 — native NativeTabs layout structure
-describe('(tabs)/_layout.tsx native NativeTabs', () => {
-  it('uses NativeTabs from expo-router/unstable-native-tabs', () => {
-    const src = readFileSync(tabsRoute('_layout.tsx'), 'utf8');
+const readTabsLayout = (name: '_layout.tsx' | '_layout.web.tsx') =>
+  readFileSync(tabsRoute(name), 'utf8');
+
+// @s1 @s10 — NativeTabs trigger trees must not drift across platforms
+describe('NativeTabs trigger wiring (native + web)', () => {
+  it.each([
+    '_layout.tsx',
+    '_layout.web.tsx',
+  ] as const)('%s imports NATIVE_TAB_TRIGGERS shared contract (@s1 @s10)', (file) => {
+    const src = readTabsLayout(file);
+    expect(src).toMatch(/NATIVE_TAB_TRIGGERS/);
+    expect(src).toMatch(/@helsoft\/study-buddy/);
+  });
+
+  it.each([
+    '_layout.tsx',
+    '_layout.web.tsx',
+  ] as const)('%s uses NativeTabs from expo-router/unstable-native-tabs', (file) => {
+    const src = readTabsLayout(file);
     expect(src).toMatch(/expo-router\/unstable-native-tabs/);
     expect(src).toMatch(/NativeTabs/);
   });
 
-  it('registers exactly two triggers: index and settings — no upload/newLesson (@s1)', () => {
-    const src = readFileSync(tabsRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/name="index"/);
-    expect(src).toMatch(/name="settings"/);
+  it.each([
+    '_layout.tsx',
+    '_layout.web.tsx',
+  ] as const)('%s has no inline upload/newLesson trigger (@s1)', (file) => {
+    const src = readTabsLayout(file);
     expect(src).not.toMatch(/name="upload"/);
-    expect(src).not.toMatch(/newLesson/);
-  });
-
-  it('uses nav.myLessons and nav.settings locale keys — no nav.newLesson (@s10)', () => {
-    const src = readFileSync(tabsRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/nav\.myLessons/);
-    expect(src).toMatch(/nav\.settings/);
     expect(src).not.toMatch(/nav\.newLesson/);
-  });
-
-  it('uses platform glyphs books.vertical + menu_book for My lessons, gearshape for Settings (@s10)', () => {
-    const src = readFileSync(tabsRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/books\.vertical/);
-    expect(src).toMatch(/menu_book/);
-    expect(src).toMatch(/gearshape/);
-  });
-
-  it('no hardcoded label strings — labels come from t() (@s10)', () => {
-    const src = readFileSync(tabsRoute('_layout.tsx'), 'utf8');
-    expect(src).not.toMatch(/"My lessons"/);
-    expect(src).not.toMatch(/"Settings"/);
   });
 });
 
-// @s7 @s9 — upload + lesson outside tabs (immersive)
+// @s7 @s9 @s16 — upload + lesson outside tabs; deep-link back → My lessons
 describe('(app)/_layout.tsx Stack structure', () => {
   it('lists (tabs) group as a Stack.Screen child', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
@@ -69,13 +64,25 @@ describe('(app)/_layout.tsx Stack structure', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
     expect(src).toMatch(/lesson\/\[id\]/);
   });
+
+  it('anchors stack with initialRouteName (tabs) so deep-link /upload back → / My lessons (@s7 @s16)', () => {
+    const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
+    expect(src).toMatch(/unstable_settings/);
+    expect(src).toMatch(/initialRouteName:\s*['"]\(tabs\)['"]/);
+    // (tabs)/index is My lessons at URL /
+    expect(existsSync(tabsRoute('index.tsx'))).toBe(true);
+    // upload is a sibling after (tabs): back pops to (tabs) → /
+    const tabsIdx = src.indexOf('name="(tabs)"');
+    const uploadIdx = src.indexOf('name="upload"');
+    expect(tabsIdx).toBeGreaterThan(-1);
+    expect(uploadIdx).toBeGreaterThan(tabsIdx);
+  });
 });
 
 // @s16 — route group adds no URL segment; duplicate routes removed
 describe('@s16 route structure + duplicate route removal', () => {
   it('(tabs) directory exists as a route group', () => {
-    const tabsDir = resolve(__dirname, '../../../../../apps/app-study-buddy/src/app/(app)/(tabs)');
-    expect(existsSync(tabsDir)).toBe(true);
+    expect(existsSync(resolve(appRoot, '(tabs)'))).toBe(true);
   });
 
   it('(app)/index.tsx deleted — duplicate / route gone', () => {
