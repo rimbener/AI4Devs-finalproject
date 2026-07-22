@@ -103,3 +103,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Split SlideImage into use-slide-image + helpers.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Hooks tests → @testing-library/react-native + jest-expo.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Tokenize hardcoded spacing in components + home screen.
