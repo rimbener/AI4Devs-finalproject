@@ -7,7 +7,7 @@ jest.mock('@helsoft/supabase-services', () => ({
 
 import type { Session } from '@helsoft/supabase-services';
 import { AuthService } from '@helsoft/supabase-services';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { useSession } from './use-session';
 

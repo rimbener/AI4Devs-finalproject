@@ -8,7 +8,7 @@ jest.mock('@helsoft/supabase-services', () => ({
 jest.mock('./use-session', () => ({ useSession: jest.fn() }));
 
 import { ApiKeyService } from '@helsoft/supabase-services';
-import { act, render, renderHook, waitFor } from '@testing-library/react';
+import { act, render, renderHook, waitFor } from '@testing-library/react-native';
 import { createElement } from 'react';
 
 import { ApiKeyProvider, useApiKey } from './use-api-key';

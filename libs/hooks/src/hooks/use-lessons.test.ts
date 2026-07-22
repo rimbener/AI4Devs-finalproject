@@ -3,7 +3,7 @@ jest.mock('@helsoft/supabase-services', () => ({
 }));
 
 import { LessonsService } from '@helsoft/supabase-services';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { useLessons } from './use-lessons';
 
