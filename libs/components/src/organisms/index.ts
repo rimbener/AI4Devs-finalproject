@@ -13,8 +13,6 @@ export * from './lesson-generation-panel/lesson-generation-panel';
 export type * from './lesson-generation-panel/lesson-generation-panel.types';
 export * from './lesson-list/lesson-list';
 export type * from './lesson-list/lesson-list.types';
-export * from './mobile-bar/mobile-bar';
-export type * from './mobile-bar/mobile-bar.types';
 export * from './pdf-document-list/pdf-document-list';
 export type * from './pdf-document-list/pdf-document-list.types';
 export * from './pdf-upload-panel/pdf-upload-panel';

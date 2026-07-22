@@ -98,4 +98,10 @@ describe('@s2 @s15 narrow web (<768) — native tab bar', () => {
     await render(<TabsWebLayout />);
     expect(screen.queryByTestId('app-chrome')).toBeNull();
   });
+
+  it('does NOT render the retired custom mobile bar (@s2)', async () => {
+    await render(<TabsWebLayout />);
+    expect(screen.queryByTestId('mobile-top-bar')).toBeNull();
+    expect(screen.queryByTestId('mobile-bottom-bar')).toBeNull();
+  });
 });
