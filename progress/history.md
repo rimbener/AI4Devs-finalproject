@@ -82,3 +82,4 @@
 
 2026-07-21 | login-enter-submit (ad hoc) | n/a | — | LoginForm submits on Enter via onSubmitEditing (9bf62b543).
 2026-07-22 | android-dev-client (ad hoc) | n/a | — | pnpm android switched to expo run:android (dev client, not Expo Go); Android Supabase URL rewritten 127.0.0.1→10.0.2.2 (3cc14dad8).
+2026-07-22 | android-dev-client (ad hoc) | n/a | — | iOS bundle identifier set (prebuild for expo run:ios) alongside earlier Android dev-client fix (ef7483c1b).
