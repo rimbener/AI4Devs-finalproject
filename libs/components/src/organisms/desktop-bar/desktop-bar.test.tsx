@@ -8,11 +8,11 @@ const baseProps = {
   brandLabel: 'AI Study Buddy',
   avatar: <Text>HL</Text>,
   home: { label: 'Home', onPress: jest.fn() },
-  newLesson: { label: 'New lesson', onPress: jest.fn() },
 };
 
 describe('DesktopBar', () => {
-  it('renders the desktop brand, primary destinations, visual alerts, and avatar slot', async () => {
+  // @s3 — wide web desktop bar: My lessons only; no New lesson / Settings destinations.
+  it('renders the desktop brand, My lessons only, visual alerts, and avatar slot', async () => {
     await render(<DesktopBar {...baseProps} />);
 
     expect(screen.getByText('AI Study Buddy')).toBeOnTheScreen();
@@ -21,7 +21,10 @@ describe('DesktopBar', () => {
       fontSize: expect.any(Number),
     });
     expect(screen.getByRole('link', { name: 'Home' })).toBeOnTheScreen();
-    expect(screen.getByRole('link', { name: 'New lesson' })).toBeOnTheScreen();
+    // Exactly one primary destination — New lesson / Settings are not bar items (@s3).
+    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.queryByRole('link', { name: 'New lesson' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     expect(screen.getByTestId('desktop-alerts', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Alerts' })).toBeNull();
     expect(screen.getByText('HL')).toBeOnTheScreen();
@@ -65,22 +68,13 @@ describe('DesktopBar', () => {
     });
   });
 
-  it('forwards primary destination presses to its injected handlers', async () => {
+  it('forwards Home presses to its injected handler', async () => {
     const onHomePress = jest.fn();
-    const onNewLessonPress = jest.fn();
 
-    await render(
-      <DesktopBar
-        {...baseProps}
-        home={{ label: 'Home', onPress: onHomePress }}
-        newLesson={{ label: 'New lesson', onPress: onNewLessonPress }}
-      />,
-    );
+    await render(<DesktopBar {...baseProps} home={{ label: 'Home', onPress: onHomePress }} />);
 
     fireEvent.press(screen.getByRole('link', { name: 'Home' }));
-    fireEvent.press(screen.getByRole('link', { name: 'New lesson' }));
 
     expect(onHomePress).toHaveBeenCalledTimes(1);
-    expect(onNewLessonPress).toHaveBeenCalledTimes(1);
   });
 });

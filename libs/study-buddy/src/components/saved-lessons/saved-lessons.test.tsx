@@ -35,6 +35,7 @@ const t = (key: string, options?: Record<string, unknown>) => {
   if (key === 'home.retry') return 'Try again';
   if (key === 'home.savedLessons') return 'Saved lessons';
   if (key === 'lessons.count') return `${options?.count} lessons`;
+  if (key === 'nav.newLesson') return 'New lesson';
   return key;
 };
 
@@ -76,6 +77,30 @@ describe('SavedLessons', () => {
     await render(<SavedLessons />);
 
     expect(screen.getByText('No saved lessons yet. Create one to get started.')).toBeTruthy();
+  });
+
+  // @s6 — persistent New Lesson CTA in content + empty; label from nav.newLesson → /upload.
+  it.each([
+    ['empty', [] as ReturnType<typeof useLessons>['lessons']],
+    [
+      'content',
+      [
+        {
+          id: 'lesson-1',
+          title: 'One',
+          createdAt: '2026-07-13T12:00:00.000Z',
+        },
+      ],
+    ],
+  ])('shows New Lesson CTA labelled from nav.newLesson and pushes /upload in %s state', async (_state, lessons) => {
+    mockUseLessons.mockReturnValue(lessonsValue({ lessons }));
+
+    await render(<SavedLessons />);
+
+    const cta = screen.getByRole('button', { name: 'New lesson' });
+    expect(cta).toBeTruthy();
+    fireEvent.press(cta);
+    expect(push).toHaveBeenCalledWith('/upload');
   });
 
   // @s4 — content shows title + locale-formatted date; newest-first comes from hook order.

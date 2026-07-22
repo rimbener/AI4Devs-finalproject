@@ -9,7 +9,6 @@ export const DesktopBar = ({
   brandLabel,
   avatar,
   home,
-  newLesson,
   indicatorVariant,
   alertsBadgeCount,
 }: DesktopBarProps) => (
@@ -20,7 +19,6 @@ export const DesktopBar = ({
     </View>
     <View style={styles.navigation}>
       <NavItem {...home} indicatorVariant={indicatorVariant} />
-      <NavItem {...newLesson} indicatorVariant={indicatorVariant} />
     </View>
     <View style={styles.actions}>
       <View

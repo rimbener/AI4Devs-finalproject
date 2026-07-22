@@ -23,7 +23,7 @@ describe('useAppChrome', () => {
     });
   });
 
-  it('derives identity, navigation, and controlled sign-out state', async () => {
+  it('derives identity, Home nav, and controlled sign-out state without newLesson/mobile title', async () => {
     const { result } = await renderHook(() => useAppChrome('/upload'));
 
     expect(result.current.identity).toMatchObject({
@@ -31,8 +31,8 @@ describe('useAppChrome', () => {
       label: 'Ada Lovelace',
     });
     expect(result.current.home).toEqual({ active: false, labelKey: 'nav.myLessons' });
-    expect(result.current.newLesson).toEqual({ active: true, labelKey: 'nav.newLesson' });
-    expect(result.current.mobileTitleKey).toBe('nav.newLesson');
+    expect(result.current).not.toHaveProperty('newLesson');
+    expect(result.current).not.toHaveProperty('mobileTitleKey');
     expect(result.current.signOutOpen).toBe(false);
 
     await act(async () => {
@@ -55,18 +55,16 @@ describe('useAppChrome', () => {
     await rerender({ pathname: '/lesson/123' });
 
     expect(result.current.home).toEqual({ active: false, labelKey: 'nav.myLessons' });
-    expect(result.current.newLesson).toEqual({ active: false, labelKey: 'nav.newLesson' });
   });
 
   it('keeps navigation props stable for unrelated chrome state changes', async () => {
     const { result } = await renderHook(() => useAppChrome('/'));
-    const { home, newLesson } = result.current;
+    const { home } = result.current;
 
     await act(async () => {
       result.current.setSignOutOpen(true);
     });
 
     expect(result.current.home).toBe(home);
-    expect(result.current.newLesson).toBe(newLesson);
   });
 });

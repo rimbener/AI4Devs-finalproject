@@ -6,7 +6,6 @@
  * with fake, story-configurable implementations. Aliased in main.ts's viteFinal — never
  * resolved by Jest or the real app build.
  */
-export * from '../../../hooks/src/hooks/use-breakpoint';
 export * from '../../../hooks/src/hooks/use-interaction-state';
 
 import type {
@@ -23,7 +22,28 @@ import type {
 } from '@helsoft/types';
 import { useCallback, useState } from 'react';
 
+import { useBreakpoint as useBreakpointReal } from '../../../hooks/src/hooks/use-breakpoint';
+
 export type AuthErrorCode = 'invalid_credentials' | 'network_error';
+
+export type BreakpointMock = 'desktop' | 'mobile';
+
+let pendingBreakpoint: BreakpointMock | null = null;
+
+/** Story decorator: force useBreakpoint before the story mounts. */
+export const configureBreakpointMock = (breakpoint: BreakpointMock) => {
+  pendingBreakpoint = breakpoint;
+};
+
+export const useBreakpoint = (): BreakpointMock => {
+  const [configured] = useState(() => {
+    const next = pendingBreakpoint;
+    pendingBreakpoint = null;
+    return next;
+  });
+  const real = useBreakpointReal();
+  return configured ?? real;
+};
 
 export type SessionMockConfig = {
   isLoading?: boolean;

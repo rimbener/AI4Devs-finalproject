@@ -8,7 +8,7 @@ test('Content story renders desktop navigation chrome', async ({ page }) => {
 
   await expect(canvas.locator('text=AI Study Buddy').first()).toBeVisible();
   await expect(canvas.locator('text=Home').first()).toBeVisible();
-  await expect(canvas.locator('text=New lesson').first()).toBeVisible();
+  await expect(canvas.locator('text=New lesson')).toHaveCount(0);
   await expect(canvas.locator('text=HL').first()).toBeVisible();
 });
 

@@ -9,7 +9,6 @@ const meta = {
     brandLabel: 'AI Study Buddy',
     avatar: <Text>HL</Text>,
     home: { label: 'Home', active: true, onPress: () => undefined },
-    newLesson: { label: 'New lesson', onPress: () => undefined },
   },
 } satisfies Meta<typeof DesktopBar>;
 

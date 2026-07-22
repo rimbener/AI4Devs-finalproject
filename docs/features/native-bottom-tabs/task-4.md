@@ -3,7 +3,7 @@ id: task-4
 title: Trim desktop chrome — remove New lesson, slim AppChrome to desktop-only
 slice: 2
 scenarios: [s3, s11, s12]
-status: todo
+status: done
 paths:
   [
     libs/components/src/organisms/desktop-bar/desktop-bar.tsx,
@@ -25,14 +25,14 @@ Two coupled desktop-chrome trims now that New Lesson is a CTA (task-3) and nativ
 2. **Slim `AppChrome` to desktop-only** — remove the `MobileBar` branch/import, the mobile-title path (`getMobileTitleKey`) + mobile safe-area bits, and the now-unused New lesson handler/props. It renders only `DesktopBar` + `AccountMenu` (Settings + Sign out) via the controlled `SignOut`.
 
 ## Done criteria
-- [ ] Scenario(s) s3, s11, s12 covered by concrete test(s)
-- [ ] `DesktopBar` shows My lessons only (no New lesson, no Settings nav item); `newLesson` prop removed; stories/tests updated (s3)
-- [ ] `AppChrome` renders `DesktopBar` + `AccountMenu` with no `MobileBar` reference; `getMobileTitleKey`/mobile bits deleted
-- [ ] Settings reachable from the desktop avatar `AccountMenu`, not a bar item (s11)
-- [ ] Sign out available from the desktop `AccountMenu` via the existing confirm flow (s12)
-- [ ] No remaining importers of the removed `newLesson` prop / mobile-title helper repo-wide
-- [ ] `pnpm lint` + `pnpm check-types` + `pnpm test` green
-- [ ] No hardcoded strings/colors/dimensions
+- [x] Scenario(s) s3, s11, s12 covered by concrete test(s)
+- [x] `DesktopBar` shows My lessons only (no New lesson, no Settings nav item); `newLesson` prop removed; stories/tests updated (s3)
+- [x] `AppChrome` renders `DesktopBar` + `AccountMenu` with no `MobileBar` reference; `getMobileTitleKey`/mobile bits deleted
+- [x] Settings reachable from the desktop avatar `AccountMenu`, not a bar item (s11)
+- [x] Sign out available from the desktop `AccountMenu` via the existing confirm flow (s12)
+- [x] No remaining importers of the removed `newLesson` prop / mobile-title helper repo-wide
+- [x] `pnpm lint` + `pnpm check-types` + `pnpm test` green
+- [x] No hardcoded strings/colors/dimensions
 
 ## Notes
 - Locks: Q5 DesktopBar otherwise unchanged; Q6 strip dead app wiring; revision Q3 remove New lesson from DesktopBar (CTA is the sole create entry).

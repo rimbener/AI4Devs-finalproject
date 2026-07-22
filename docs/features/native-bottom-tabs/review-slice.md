@@ -1,7 +1,7 @@
-# Slice 1 review — native-bottom-tabs (round 2)
+# Slice 2 review — native-bottom-tabs
 
 **Verdict: APPROVED**
-Slice: task-1 + task-2 | Scenarios owned: @s1 @s2 @s3 @s4 @s5 @s7 @s8 @s9 @s10 @s15 @s16
+Slice: task-3 + task-4 + task-5 | Scenarios owned: @s6 @s3 (desktop trim) @s11 @s12 @s13 @s14
 
 ---
 
@@ -11,23 +11,15 @@ None.
 
 ---
 
-## Prior findings (round 1) — resolved
-
-- **F1 [tdd] @s5** — `native-tab-selected.test.ts` covers route→`accessibilityState.selected` shape; tdd.md maps @s5 → `exposes accessibilityState.selected shape for the active route`. Trigger is config-only (renders null) so helper contract is accepted equivalent.
-- **F2 [tdd] @s4 / @s8** — tdd.md rows reference concrete tests (`registers exactly two triggers…`, `lists upload as a Stack sibling…`).
-- **F3 [global]** — `ApiKeyProvider` + `ProfileProvider` why-comment restored in `(app)/_layout.tsx:8-9`.
-
----
-
 ## Passed checks
 
-- **[global]** Functional React, no Redux, kebab-case, `.web.tsx` platform split; thin app screens; why-comment present.
-- **[hooks-service-dao]** Routing/chrome only — N/A.
-- **[atomic-design]** No new Storybook lib components — N/A.
-- **[component-split]** Thin layouts, no local state — N/A.
-- **[state]** No ≥3 related state — N/A.
-- **[types]** `NativeTabName` single-file next to helper — OK.
-- **[i18n]** Labels via inline `t()`; no hardcoded display strings.
-- **[tdd]** All owned @s mapped to concrete tests; Red→Green logged.
-- **[design]** ScreenContainer + spacing tokens; NativeTabs / AppChrome per breakpoint.
-- **[a11y]** Trigger.Label names tabs; selection via NativeTabs (+ tested route→selected contract for @s5).
+- **[global]** Functional React, no Redux; kebab-case; thin `settings.tsx` wiring; why-comments on `SettingsSignOut` / `AppChrome` / `SavedLessons`; Storybook stories for new + touched Storybook components; `SettingsSignOut` + barrel export.
+- **[hooks-service-dao]** Component → hooks only (`useBreakpoint`, `useLessons`, `useAuth` via `SignOut`); no DAO/service skips.
+- **[atomic-design]** Shared `Button` / `DesktopBar` / `SignOut`; tokens via Unistyles; stories cover owned states (SavedLessons content/empty CTA; SettingsSignOut mobile/desktop; DesktopBar content).
+- **[component-split]** Handlers in components; trivial `SettingsSignOut` needs no hook/helpers; AppChrome helpers deleted with MobileBar path.
+- **[state]** No ≥3 related local state introduced.
+- **[types]** `SettingsSignOutProps` / `DesktopBarProps` in `*.types.ts`; no runtime in types files.
+- **[i18n]** CTA `t('nav.newLesson')`; SignOut reuses `auth.logOut*`; no labels bag / no new keys.
+- **[tdd]** @s6/@s3/@s11/@s12/@s13/@s14 mapped in `tdd.md`; unit + e2e + `slice-2.integration.test.tsx`; Red→Green logged; no scope inflation beyond tasks.
+- **[design]** Persistent header CTA; DesktopBar My-lessons-only; AppChrome desktop-only (parent layout still breakpoint-gates); Settings SignOut mobile-only — matches spec Q2/Q3/Q6/Q7.
+- **[a11y]** CTA via `Button` (`accessibilityRole="button"`, hitSlop→touchTarget, theme contrast); tests assert roles/labels; SignOut confirm flow unchanged; desktop null branch has no orphan control.
