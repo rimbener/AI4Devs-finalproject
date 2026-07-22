@@ -1,4 +1,5 @@
 export * from './answer-option/answer-option';
+export type * from './answer-option/answer-option.types';
 export * from './generation-progress/generation-progress';
 export type * from './generation-progress/generation-progress.types';
 export * from './image-lightbox/image-lightbox';
@@ -15,4 +16,5 @@ export * from './pdf-document-list-item/pdf-document-list-item';
 export type * from './pdf-document-list-item/pdf-document-list-item.types';
 export * from './radio-group/radio-group';
 export * from './slide-progress/slide-progress';
+export type * from './slide-progress/slide-progress.types';
 export * from './text-field/text-field';

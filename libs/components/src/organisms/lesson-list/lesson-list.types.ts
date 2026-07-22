@@ -9,7 +9,7 @@ export type LessonListItemData = {
   deleteAccessibilityLabel?: string;
 };
 
-type LessonListSharedProps = {
+export type LessonListSharedProps = {
   state: LessonListState;
   lessons: LessonListItemData[];
   onOpenLesson: (id: string) => void;

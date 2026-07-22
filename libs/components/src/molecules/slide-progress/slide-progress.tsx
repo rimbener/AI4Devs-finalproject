@@ -1,17 +1,7 @@
-import { Pressable, type StyleProp, View, type ViewStyle } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-export type SlideType = 'lesson' | 'activity';
-
-export type SlideProgressSlide = { type: SlideType };
-
-export type SlideProgressProps = {
-  slides?: SlideProgressSlide[];
-  /** Index of the active slide. */
-  current?: number;
-  onSeek?: (index: number) => void;
-  style?: StyleProp<ViewStyle>;
-};
+import type { SlideProgressProps } from './slide-progress.types';
 
 /**
  * SlideProgress — segmented lesson tracker; the signature blue/rust motif.

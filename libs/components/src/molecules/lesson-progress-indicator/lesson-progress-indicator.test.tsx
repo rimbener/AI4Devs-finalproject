@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
 
-import type { SlideProgressSlide } from '../slide-progress/slide-progress';
+import type { SlideProgressSlide } from '../slide-progress/slide-progress.types';
 import { LESSON_PROGRESS_TEST_ID, LessonProgressIndicator } from './lesson-progress-indicator';
 
 const deck: SlideProgressSlide[] = [

@@ -1,4 +1,4 @@
-import type { SlideProgressSlide } from '../slide-progress/slide-progress';
+import type { SlideProgressSlide } from '../slide-progress/slide-progress.types';
 
 export type LessonProgressIndicatorProps = {
   /** Content slides (instructional → `lesson`, activity → `activity`). No results segment. */
