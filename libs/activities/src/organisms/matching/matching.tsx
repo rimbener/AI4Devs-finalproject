@@ -164,18 +164,14 @@ export const Matching = ({
             style={styles.bannerText(result.isCorrect)}
             accessibilityLiveRegion={result.isCorrect ? 'polite' : 'assertive'}
           >
-            {result.isCorrect
-              ? t('activity.matching.correct')
-              : t('activity.matching.incorrect')}
+            {result.isCorrect ? t('activity.matching.correct') : t('activity.matching.incorrect')}
           </Text>
           <Text style={styles.summary(result.isCorrect)}>{result.summary}</Text>
         </View>
       ) : null}
       {result && slide.explanation ? (
         <View testID="matching-explanation" style={styles.explanation}>
-          <Text style={styles.explanationHeading}>
-            {t('activity.matching.explanationHeading')}
-          </Text>
+          <Text style={styles.explanationHeading}>{t('activity.matching.explanationHeading')}</Text>
           <Text style={styles.explanationBody}>{slide.explanation}</Text>
         </View>
       ) : null}

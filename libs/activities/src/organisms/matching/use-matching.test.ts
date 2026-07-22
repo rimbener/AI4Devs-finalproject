@@ -239,9 +239,7 @@ describe('useMatching', () => {
         await rerender({ ...defaultProps, result: allCorrectResult });
       });
 
-      await waitFor(() =>
-        expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct'),
-      );
+      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct'));
       expect(announceSpy).toHaveBeenCalledTimes(1);
       announceSpy.mockRestore();
     });

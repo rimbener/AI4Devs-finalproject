@@ -20,16 +20,8 @@ export const FillInTheBlank = ({
   const { t } = useLocalization();
   const { theme } = useUnistyles();
 
-  const {
-    value,
-    setValue,
-    answer,
-    setAnswer,
-    parts,
-    locked,
-    isUnavailable,
-    maxLength,
-  } = useFillInTheBlank({ slide, initialAnswer });
+  const { value, setValue, answer, setAnswer, parts, locked, isUnavailable, maxLength } =
+    useFillInTheBlank({ slide, initialAnswer });
 
   const handleSubmit = () => {
     if (answer || isUnavailable) return;

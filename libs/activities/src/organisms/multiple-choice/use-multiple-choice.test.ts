@@ -130,9 +130,7 @@ describe('useMultipleChoice', () => {
 
       await renderHook(() => useMultipleChoice({ slide, initialAnswer: correctAnswer }));
 
-      await waitFor(() =>
-        expect(announceSpy).toHaveBeenCalledWith('activity.mcq.correct'),
-      );
+      await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('activity.mcq.correct'));
       announceSpy.mockRestore();
     });
 

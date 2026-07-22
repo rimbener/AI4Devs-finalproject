@@ -514,7 +514,7 @@ describe('Matching', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
-  it('uses a null resultLabel while unsubmitted', async () => {
+  it('shows no result banner while unsubmitted', async () => {
     await render(<Matching slide={slide} />);
     expect(screen.queryByText(I18N.correct)).toBeNull();
     expect(screen.queryByText(I18N.incorrect)).toBeNull();

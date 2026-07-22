@@ -1,8 +1,4 @@
-import type {
-  ItemVisualState,
-  MatchingItemView,
-  MatchingPairSelection,
-} from './matching.types';
+import type { ItemVisualState, MatchingItemView, MatchingPairSelection } from './matching.types';
 
 export const findPairForItem = (
   pairs: MatchingPairSelection[],

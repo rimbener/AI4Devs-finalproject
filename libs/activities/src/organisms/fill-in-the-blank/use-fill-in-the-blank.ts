@@ -11,10 +11,7 @@ import type { UseFillInTheBlankProps } from './fill-in-the-blank.types';
  * Fill-in-the-blank interaction + derived state.
  * Owns blank value + graded answer; locks once graded. Handlers stay in the component.
  */
-export const useFillInTheBlank = ({
-  slide,
-  initialAnswer = null,
-}: UseFillInTheBlankProps) => {
+export const useFillInTheBlank = ({ slide, initialAnswer = null }: UseFillInTheBlankProps) => {
   const { t } = useLocalization();
   const [value, setValue] = useState(initialAnswer?.submittedAnswer ?? '');
   const [answer, setAnswer] = useState<FillInTheBlankAnswer | null>(initialAnswer);
@@ -28,7 +25,9 @@ export const useFillInTheBlank = ({
   useEffect(() => {
     if (!answer || Platform.OS === 'android') return;
     AccessibilityInfo.announceForAccessibility(
-      answer.isCorrect ? t('activity.fillInTheBlank.correct') : t('activity.fillInTheBlank.incorrect'),
+      answer.isCorrect
+        ? t('activity.fillInTheBlank.correct')
+        : t('activity.fillInTheBlank.incorrect'),
     );
   }, [answer, t]);
 

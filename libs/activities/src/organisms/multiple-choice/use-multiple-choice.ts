@@ -10,10 +10,7 @@ import type { UseMultipleChoiceProps } from './multiple-choice.types';
  * Multiple-choice interaction + derived state.
  * Owns pending selection + graded answer; locks once graded. Handlers stay in the component.
  */
-export const useMultipleChoice = ({
-  slide,
-  initialAnswer = null,
-}: UseMultipleChoiceProps) => {
+export const useMultipleChoice = ({ slide, initialAnswer = null }: UseMultipleChoiceProps) => {
   const { t } = useLocalization();
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(
     initialAnswer?.selectedOptionId ?? null,
