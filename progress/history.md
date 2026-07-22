@@ -111,3 +111,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Co-located Jest for previously uncovered components atoms/molecules.
 
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Jest for OpenEndedBody + LessonPlayerNavigator.
+
+2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Rules audit fixes (excl. screen-container). Worktree .worktrees/rules-compliance-fixes, branch feat/rules-compliance-fixes.
