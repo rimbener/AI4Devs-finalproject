@@ -3,7 +3,7 @@ id: task-1
 title: Route restructure + native 2-tab layout + immersive upload
 slice: 1
 scenarios: [s1, s4, s5, s7, s8, s9, s10, s16]
-status: todo
+status: done
 paths:
   [
     apps/app-study-buddy/src/app/(app)/_layout.tsx,

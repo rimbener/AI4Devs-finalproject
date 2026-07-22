@@ -3,7 +3,7 @@ id: task-2
 title: Web layout — breakpoint DesktopBar vs NativeTabs
 slice: 1
 scenarios: [s2, s3, s15]
-status: todo
+status: done
 paths: [apps/app-study-buddy/src/app/(app)/(tabs)/_layout.web.tsx]
 ---
 
