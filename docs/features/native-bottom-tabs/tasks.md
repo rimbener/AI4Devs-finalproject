@@ -1,6 +1,6 @@
 ---
 feature: native-bottom-tabs
-phase: mutation
+phase: pr_ready
 review_round: 2
 ---
 

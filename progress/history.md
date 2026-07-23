@@ -103,3 +103,4 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Rules audit fixes (excl. screen-container). Worktree .worktrees/rules-compliance-fixes, branch feat/rules-compliance-fixes.
 2026-07-22 | rules-compliance-fixes (ad hoc) | done | — | Merged into feature-entrega3-HernanLaura; worktree removed.
 2026-07-22 | native-bottom-tabs | in_review | docs/features/native-bottom-tabs/ | CI: SF Symbol sf: glyphs excluded from i18n dotted-key scanner.
+2026-07-22 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | NativeTabs 2-tab shell; New Lesson CTA; MobileBar removed
