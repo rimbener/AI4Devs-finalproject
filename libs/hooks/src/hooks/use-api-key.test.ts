@@ -113,6 +113,29 @@ describe('useApiKey', () => {
     expect(result.current.status).toEqual(status);
   });
 
+  it('reloads the status when the authenticated user changes', async () => {
+    mockUseSession.mockReturnValue({
+      session: { access_token: 'tok-1', user: { id: 'user-1' } },
+      isLoading: false,
+    });
+    service.getApiKeyStatus.mockResolvedValueOnce(keysStatus(['groq']));
+    service.getApiKeyStatus.mockResolvedValueOnce(keysStatus(['openai']));
+
+    const { result, rerender } = renderHook(() => useApiKey());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.status).toEqual(keysStatus(['groq']));
+    expect(service.getApiKeyStatus).toHaveBeenCalledTimes(1);
+
+    mockUseSession.mockReturnValue({
+      session: { access_token: 'tok-2', user: { id: 'user-2' } },
+      isLoading: false,
+    });
+    rerender(undefined as never);
+
+    await waitFor(() => expect(result.current.status).toEqual(keysStatus(['openai'])));
+    expect(service.getApiKeyStatus).toHaveBeenCalledTimes(2);
+  });
+
   it('does not reload the status when the session is replaced for the same user', async () => {
     const sessionForUser1 = { access_token: 'tok-1', user: { id: 'user-1' } };
     mockUseSession.mockReturnValue({ session: sessionForUser1, isLoading: false });
@@ -347,6 +370,27 @@ describe('useApiKey', () => {
 
     expect(result.current.error).toBe('network_error');
     expect(result.current.status).toEqual(savedStatus);
+  });
+
+  it('keeps saveApiKey and removeApiKey wired to the current runMutation across rerenders', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    service.saveApiKey.mockResolvedValue(keysStatus(['groq']));
+    service.removeApiKey.mockResolvedValue(emptyStatus);
+
+    const { result, rerender } = renderHook(() => useApiKey());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.saveApiKey('groq', 'sk-first');
+    });
+    expect(service.saveApiKey).toHaveBeenCalledWith('groq', 'sk-first');
+
+    rerender(undefined as never);
+
+    await act(async () => {
+      await result.current.removeApiKey('groq');
+    });
+    expect(service.removeApiKey).toHaveBeenCalledWith('groq');
   });
 
   it('sets isSubmitting true during removeApiKey and false once it resolves', async () => {

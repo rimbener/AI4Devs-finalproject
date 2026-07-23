@@ -16,6 +16,13 @@ const service = ProfileService as jest.Mocked<typeof ProfileService>;
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseSession = useSession as jest.Mock;
 
+type ProfilePlanResult = {
+  plan: 'free' | 'paid';
+  keySource: 'user' | 'platform';
+  showKeySettings: boolean;
+  showAds: boolean;
+};
+
 describe('useProfile', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -281,6 +288,124 @@ describe('useProfile', () => {
     await act(async () => rejectFirst(new Error('stale failure')));
 
     expect(result.current.error).toBeNull();
+    expect(result.current.profile?.plan).toBe('paid');
+  });
+
+  it('uses a single shared retry without duplicate fetches from nested consumers', async () => {
+    service.getProfile.mockResolvedValue({
+      plan: 'free',
+      keySource: 'user',
+      showKeySettings: true,
+      showAds: true,
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) =>
+      createElement(ProfileProvider, null, children);
+
+    const { result } = renderHook(
+      () => ({
+        a: useProfile(),
+        b: useProfile(),
+      }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.a.isLoading).toBe(false));
+    expect(service.getProfile).toHaveBeenCalledTimes(1);
+
+    act(() => result.current.a.retry());
+
+    await waitFor(() => expect(service.getProfile).toHaveBeenCalledTimes(2));
+  });
+
+  it('resets profile when the session becomes unauthenticated', async () => {
+    service.getProfile.mockResolvedValue({
+      plan: 'free',
+      keySource: 'user',
+      showKeySettings: true,
+      showAds: true,
+    });
+
+    const { result, rerender } = renderHook(() => useProfile());
+    await waitFor(() => expect(result.current.profile?.plan).toBe('free'));
+
+    mockUseSession.mockReturnValue({ session: null, isLoading: false });
+    rerender(undefined as never);
+
+    await waitFor(() => expect(result.current.profile).toBeNull());
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('does not fetch profile while the session is still loading', async () => {
+    mockUseSession.mockReturnValue({ session: null, isLoading: true });
+
+    renderHook(() => useProfile());
+
+    expect(service.getProfile).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch profile while the session is loading even when a user id is present', async () => {
+    mockUseSession.mockReturnValue({
+      session: { user: { id: 'user-1' } },
+      isLoading: true,
+    });
+
+    renderHook(() => useProfile());
+
+    expect(service.getProfile).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch profile when session has no user id', async () => {
+    mockUseSession.mockReturnValue({ session: { user: {} }, isLoading: false });
+
+    const { result } = renderHook(() => useProfile());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(service.getProfile).not.toHaveBeenCalled();
+    expect(result.current.profile).toBeNull();
+  });
+
+  it('does not throw when the session object omits user', async () => {
+    mockUseSession.mockReturnValue({
+      session: { access_token: 'tok-only' },
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() => useProfile());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(service.getProfile).not.toHaveBeenCalled();
+    expect(result.current.profile).toBeNull();
+  });
+
+  it('ignores an older successful request after a newer load succeeds', async () => {
+    let resolveFirst: (value: ProfilePlanResult) => void = () => {};
+    service.getProfile
+      .mockReturnValueOnce(
+        new Promise<ProfilePlanResult>((resolve) => {
+          resolveFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce({
+        plan: 'paid',
+        keySource: 'platform',
+        showKeySettings: false,
+        showAds: false,
+      });
+
+    const { result } = renderHook(() => useProfile());
+    act(() => result.current.retry());
+    await waitFor(() => expect(result.current.profile?.plan).toBe('paid'));
+
+    await act(async () => {
+      resolveFirst({
+        plan: 'free',
+        keySource: 'user',
+        showKeySettings: true,
+        showAds: true,
+      });
+    });
+
     expect(result.current.profile?.plan).toBe('paid');
   });
 

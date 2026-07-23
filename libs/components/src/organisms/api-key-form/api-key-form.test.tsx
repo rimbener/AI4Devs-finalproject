@@ -127,6 +127,40 @@ describe('ApiKeyForm', () => {
     expect(screen.getByRole('button', { name: labels.guidance })).toBeTruthy();
   });
 
+  it('hides the guidance link when replacing an existing saved key', async () => {
+    await render(
+      <ApiKeyForm
+        savedKey={savedKey}
+        onSave={jest.fn()}
+        guidanceUrl={guidanceUrl}
+        keySavedStatusLabel={labels.keySavedStatus}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: labels.replace }));
+    });
+
+    expect(screen.queryByRole('button', { name: labels.guidance })).toBeNull();
+    expect(screen.getByLabelText(labels.inputLabel)).toBeTruthy();
+  });
+
+  it('requests the input label via the settings.apiKey.inputLabel i18n key', async () => {
+    const t = jest.fn((key: string) => (key === 'settings.apiKey.inputLabel' ? labels.inputLabel : key));
+    mockUseLocalization.mockReturnValue({ t });
+
+    await render(
+      <ApiKeyForm
+        savedKey={noKey}
+        onSave={jest.fn()}
+        guidanceUrl={guidanceUrl}
+        keySavedStatusLabel={labels.keySavedStatus}
+      />,
+    );
+
+    expect(t).toHaveBeenCalledWith('settings.apiKey.inputLabel');
+  });
+
   // Full-review Round 1, Minor 13 (WCAG 1.3.2) — guidance before input before Save.
   it('renders the guidance link before the input in the Empty state', async () => {
     await render(

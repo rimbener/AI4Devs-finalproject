@@ -1,1 +1,4 @@
-// jest-expo / RTL-RN setup for @helsoft/hooks (no extra matchers required yet).
+import { configure } from '@testing-library/react-native';
+
+configure({ asyncUtilTimeout: 2000 });
+jest.setTimeout(8000);

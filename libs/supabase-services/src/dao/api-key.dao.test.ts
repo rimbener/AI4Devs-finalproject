@@ -71,6 +71,12 @@ describe('ApiKeyDao', () => {
     await expect(ApiKeyDao.getApiKeyStatus()).resolves.toEqual({ keys: [] });
   });
 
+  it('getApiKeyStatus maps null data to an empty keys array', async () => {
+    select.mockResolvedValue({ data: null, error: null });
+
+    await expect(ApiKeyDao.getApiKeyStatus()).resolves.toEqual({ keys: [] });
+  });
+
   // @s1 (failure path) — raw select error is thrown; service degrades to { keys: [] }
   it('getApiKeyStatus throws the raw select error when the query fails', async () => {
     const error = { message: 'select failed' };
@@ -115,5 +121,53 @@ describe('ApiKeyDao', () => {
     invoke.mockResolvedValue({ data: null, error });
 
     await expect(ApiKeyDao.removeApiKey('groq')).rejects.toBe(error);
+  });
+
+  it('saveApiKey rejects invoke payloads that fail the ApiKeyStatus type guard', async () => {
+    invoke.mockResolvedValueOnce({ data: { keys: 'not-an-array' }, error: null });
+    invoke.mockResolvedValueOnce({ data: 'not-an-object', error: null });
+    invoke.mockResolvedValueOnce({
+      data: { keys: [{ provider: 123, updatedAt: '2026-01-01T00:00:00.000Z' }] },
+      error: null,
+    });
+    invoke.mockResolvedValueOnce({ data: { keys: [{ provider: 'groq' }] }, error: null });
+    invoke.mockResolvedValueOnce({
+      data: { keys: [{ provider: 'groq', updatedAt: 123 }] },
+      error: null,
+    });
+    invoke.mockResolvedValueOnce({
+      data: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+          { provider: 'openai', updatedAt: null },
+        ],
+      },
+      error: null,
+    });
+
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+  });
+
+  it('removeApiKey rejects invoke payloads that fail the ApiKeyStatus type guard', async () => {
+    invoke.mockResolvedValue({ data: null, error: null });
+
+    await expect(ApiKeyDao.removeApiKey('groq')).rejects.toThrow('invalid status payload');
   });
 });

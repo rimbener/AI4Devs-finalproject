@@ -1,3 +1,5 @@
+import { AI_MODEL_REGISTRY } from '@helsoft/types';
+
 import {
   GENERATION_ERROR_KEYS,
   GENERATION_ERROR_RECOVERY,
@@ -125,6 +127,31 @@ describe('resolveGenerationSelection (@s20/@s21)', () => {
     expect(resolveGenerationSelection(savedProviders, null)).toEqual({
       provider: 'groq',
       model: 'openai/gpt-oss-20b',
+    });
+  });
+
+  it('falls back safely when the saved provider has no models registered', () => {
+    expect(resolveGenerationSelection(['openai'] as const, null)).toEqual({
+      provider: 'openai',
+      model: 'gpt-5.6-luna',
+    });
+  });
+
+  it('falls back to an empty model id when the registry entry has no models', () => {
+    const original = AI_MODEL_REGISTRY.openai.models;
+    Object.defineProperty(AI_MODEL_REGISTRY.openai, 'models', {
+      configurable: true,
+      value: [],
+    });
+
+    expect(resolveGenerationSelection(['openai'] as const, null)).toEqual({
+      provider: 'openai',
+      model: '',
+    });
+
+    Object.defineProperty(AI_MODEL_REGISTRY.openai, 'models', {
+      configurable: true,
+      value: original,
     });
   });
 });

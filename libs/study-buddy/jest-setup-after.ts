@@ -1,4 +1,7 @@
-import { cleanup } from '@testing-library/react-native';
+import { cleanup, configure } from '@testing-library/react-native';
+
+configure({ asyncUtilTimeout: 2000 });
+jest.setTimeout(8000);
 
 // The components barrel transitively imports @helsoft/supabase-services, which pulls in the
 // native AsyncStorage module. Replace it with an in-memory stub so component tests

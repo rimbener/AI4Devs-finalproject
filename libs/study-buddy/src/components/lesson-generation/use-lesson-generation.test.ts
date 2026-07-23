@@ -213,4 +213,135 @@ describe('useLessonGenerationForm', () => {
       model: 'openai/gpt-oss-20b',
     });
   });
+
+  it('ignores a stale preference load after savedProviders changes', async () => {
+    let resolvePref!: (value: { provider: string; model: string }) => void;
+    mockGetStoredPreference.mockReturnValue(
+      new Promise((resolve) => {
+        resolvePref = resolve;
+      }),
+    );
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01' }],
+      },
+      hasKey: true,
+    });
+
+    const { result, rerender } = await renderHook(
+      ({ documentId }: { documentId?: string }) =>
+        useLessonGenerationForm({ documentId, composition: 'both' }),
+      { initialProps: { documentId: 'doc-1' } },
+    );
+
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'openai', updatedAt: '2026-01-02' }],
+      },
+      hasKey: true,
+    });
+    await rerender({ documentId: 'doc-1' });
+
+    await act(async () => {
+      resolvePref({ provider: 'groq', model: 'openai/gpt-oss-20b' });
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('openai');
+    });
+  });
+
+  it('blocks canGenerate until both provider and model are selected', async () => {
+    mockGetStoredPreference.mockResolvedValue(null);
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01' }],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBe('groq'));
+
+    await act(async () => {
+      result.current.setSelectedModel(undefined);
+    });
+
+    expect(result.current.canGenerate).toBe(false);
+
+    await act(async () => {
+      result.current.setSelectedModel('openai/gpt-oss-20b');
+    });
+
+    expect(result.current.canGenerate).toBe(true);
+  });
+
+  it('does not load a stored preference when pickers are hidden', async () => {
+    mockUseProfile.mockReturnValue({
+      profile: { keySource: 'platform', canCreate: true },
+    });
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01' }],
+      },
+      hasKey: true,
+    });
+
+    await renderHook(() => useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }));
+
+    expect(mockGetStoredPreference).not.toHaveBeenCalled();
+  });
+
+  it('omits provider and model from the generate request when the model is cleared', async () => {
+    mockGetStoredPreference.mockResolvedValue(null);
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01' }],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBe('groq'));
+
+    await act(async () => {
+      result.current.setSelectedModel(undefined);
+    });
+
+    expect(result.current.buildGenerateRequest()).toEqual({
+      documentId: 'doc-1',
+      composition: 'both',
+    });
+  });
+
+  it('ignores preference resolution after the hook unmounts', async () => {
+    let resolvePref!: (value: null) => void;
+    mockGetStoredPreference.mockReturnValue(
+      new Promise<null>((resolve) => {
+        resolvePref = resolve;
+      }),
+    );
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01' }],
+      },
+      hasKey: true,
+    });
+
+    const { unmount } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    unmount();
+
+    await act(async () => {
+      resolvePref(null);
+    });
+  });
 });

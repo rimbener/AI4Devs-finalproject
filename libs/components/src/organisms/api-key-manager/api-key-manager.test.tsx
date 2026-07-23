@@ -5,8 +5,11 @@ jest.mock('@helsoft/localization', () => ({
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider, SavedProviderKey } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 
-import { ApiKeyManager } from './api-key-manager';
+import { lightColors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+import { ApiKeyManager, apiKeyManagerStyles } from './api-key-manager';
 import type { ApiKeyManagerProps } from './api-key-manager.types';
 
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -171,6 +174,7 @@ describe('ApiKeyManager', () => {
 
     expect(screen.getByLabelText('API key')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
   });
 
   // @s1 — Save is disabled until a non-blank key is typed.
@@ -316,5 +320,229 @@ describe('ApiKeyManager', () => {
     expect(
       screen.getByRole('button', { name: "Don't have a key? Get one from Groq" }),
     ).toBeTruthy();
+  });
+
+  it('requests localized chrome via the expected i18n keys', async () => {
+    const t = jest.fn((key: string, opts?: TOptions) => {
+      if (key === 'settings.apiKey.guidanceTemplate' && opts) {
+        return `guidance:${opts.provider}`;
+      }
+      return key;
+    });
+    mockUseLocalization.mockReturnValue({ t });
+
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    expect(t).toHaveBeenCalledWith('settings.apiKey.manager.addHeading');
+    expect(t).toHaveBeenCalledWith('settings.apiKey.replace');
+    expect(t).toHaveBeenCalledWith('settings.apiKey.remove');
+    expect(t).toHaveBeenCalledWith('settings.apiKey.provider.groq');
+  });
+
+  it('clears the key field when selecting a provider in the add section', async () => {
+    await render(<ApiKeyManager {...defaultProps} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
+    });
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('API key'), 'sk-old');
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
+    });
+
+    expect(screen.getByLabelText('API key').props.value).toBe('');
+  });
+
+  it('does not show guidance when replacing an already saved provider', async () => {
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Replace Groq' }));
+    });
+
+    expect(screen.queryByRole('button', { name: /Don't have a key/ })).toBeNull();
+  });
+
+  it('passes disabled accessibilityState to the key field while submitting', async () => {
+    const view = await render(<ApiKeyManager {...defaultProps} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
+    });
+
+    await view.rerender(<ApiKeyManager {...defaultProps} isSubmitting />);
+
+    expect(screen.getByLabelText('API key').props.accessibilityState).toEqual({ disabled: true });
+  });
+
+  it('announces loading status via the localized loading key', async () => {
+    const t = jest.fn((key: string) => tMap[key] ?? key);
+    mockUseLocalization.mockReturnValue({ t });
+
+    await render(<ApiKeyManager {...defaultProps} isLoading />);
+
+    expect(t).toHaveBeenCalledWith('settings.apiKey.loadingStatus');
+  });
+
+  it('preserves layout styles for rows, actions, and visually hidden loading text', () => {
+    expect(apiKeyManagerStyles.container).toMatchObject({ gap: 16 });
+    expect(apiKeyManagerStyles.row).toMatchObject({ gap: 8 });
+    expect(apiKeyManagerStyles.actionsRow).toMatchObject({
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    });
+    expect(apiKeyManagerStyles.form).toMatchObject({ gap: 12 });
+    expect(apiKeyManagerStyles.addSection).toMatchObject({ gap: 12 });
+    expect(apiKeyManagerStyles.savedStatusLabel).toMatchObject({
+      ...typography.bodyMedium,
+      color: lightColors.onSurfaceVariant,
+    });
+    expect(apiKeyManagerStyles.addHeading).toMatchObject({
+      ...typography.titleSmall,
+      color: lightColors.onSurface,
+    });
+    expect(apiKeyManagerStyles.emptyMessage).toMatchObject({
+      ...typography.bodyMedium,
+      color: lightColors.onSurfaceVariant,
+    });
+    expect(apiKeyManagerStyles.errorBanner).toMatchObject({ padding: 12 });
+    expect(apiKeyManagerStyles.errorBannerText).toMatchObject({
+      ...typography.bodyMedium,
+      color: lightColors.onErrorContainer,
+    });
+    expect(apiKeyManagerStyles.visuallyHidden).toMatchObject({
+      position: 'absolute',
+      overflow: 'hidden',
+    });
+  });
+
+  it('hides the empty message once at least one provider is saved', async () => {
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    expect(screen.queryByText('No API keys configured')).toBeNull();
+  });
+
+  it('renders only saved provider rows in registry order', async () => {
+    const openaiKey: SavedProviderKey = {
+      provider: 'openai',
+      updatedAt: '2026-02-01T00:00:00.000Z',
+    };
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[openaiKey]} />);
+
+    expect(screen.getByRole('button', { name: 'Replace OpenAI' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Replace Groq' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Replace Anthropic' })).toBeNull();
+  });
+
+  it('renders exactly one saved row when only one provider key exists', async () => {
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    expect(screen.getAllByRole('button', { name: /^Replace / })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Remove / })).toHaveLength(1);
+  });
+
+  it('binds each saved row to its own provider metadata', async () => {
+    const openaiKey: SavedProviderKey = {
+      provider: 'openai',
+      updatedAt: '2026-02-01T00:00:00.000Z',
+    };
+    const labelFor = (provider: AiProvider, updatedAt: string) => `${provider}@${updatedAt}`;
+
+    await render(
+      <ApiKeyManager
+        {...defaultProps}
+        savedKeys={[groqKey, openaiKey]}
+        getSavedStatusLabel={labelFor}
+      />,
+    );
+
+    expect(screen.getByText(`groq@${groqKey.updatedAt}`)).toBeTruthy();
+    expect(screen.getByText(`openai@${openaiKey.updatedAt}`)).toBeTruthy();
+  });
+
+  it('renders replace and remove button labels from i18n keys', async () => {
+    const t = jest.fn((key: string, opts?: TOptions) => {
+      if (key === 'settings.apiKey.guidanceTemplate' && opts) {
+        return `guidance:${opts.provider}`;
+      }
+      return tMap[key] ?? key;
+    });
+    mockUseLocalization.mockReturnValue({ t });
+
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    expect(screen.getByRole('button', { name: 'Replace Groq' })).toHaveTextContent('Replace');
+    expect(screen.getByRole('button', { name: 'Remove Groq' })).toHaveTextContent('Remove');
+  });
+
+  it('does not open a guidance URL when the selected provider has no configured URL', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    await render(
+      <ApiKeyManager {...defaultProps} guidanceUrls={{ groq: 'https://console.groq.com/keys' }} />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
+    });
+    expect(screen.queryByRole('button', { name: /Don't have a key/ })).toBeNull();
+
+    openURL.mockRestore();
+  });
+
+  it('opens the guidance URL when the add-form guidance link is pressed', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    await render(<ApiKeyManager {...defaultProps} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: "Don't have a key? Get one from Groq" }));
+    });
+
+    expect(openURL).toHaveBeenCalledWith('https://console.groq.com/keys');
+    openURL.mockRestore();
+  });
+
+  it('requests input, remove-dialog, and picker i18n keys', async () => {
+    const t = jest.fn((key: string, opts?: TOptions) => {
+      if (key === 'settings.apiKey.guidanceTemplate' && opts) {
+        return `guidance:${opts.provider}`;
+      }
+      return tMap[key] ?? key;
+    });
+    mockUseLocalization.mockReturnValue({ t });
+
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Replace Groq' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Remove Groq' }));
+    });
+
+    expect(t).toHaveBeenCalledWith('settings.apiKey.inputLabel');
+    expect(t).toHaveBeenCalledWith('settings.apiKey.manager.selectProvider');
+    expect(t).toHaveBeenCalledWith('settings.apiKey.removeConfirmBody');
+  });
+
+  it('clears the key field when Replace is pressed', async () => {
+    await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Replace Groq' }));
+    });
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('API key'), 'sk-old');
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Replace Groq' }));
+    });
+
+    expect(screen.getByLabelText('API key').props.value).toBe('');
   });
 });

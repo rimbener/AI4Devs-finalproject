@@ -17,7 +17,7 @@ const PROVIDER_NAME_KEYS: Record<AiProvider, string> = {
 };
 
 /** Per-provider guidance URLs. */
-const GUIDANCE_URLS: Partial<Record<AiProvider, string>> = {
+export const API_KEY_SETTINGS_GUIDANCE_URLS: Partial<Record<AiProvider, string>> = {
   groq: 'https://console.groq.com/keys',
   openai: 'https://platform.openai.com/api-keys',
   anthropic: 'https://console.anthropic.com/settings/keys',
@@ -25,6 +25,8 @@ const GUIDANCE_URLS: Partial<Record<AiProvider, string>> = {
   xai: 'https://console.x.ai',
   deepseek: 'https://platform.deepseek.com/api_keys',
 };
+
+const GUIDANCE_URLS = API_KEY_SETTINGS_GUIDANCE_URLS;
 
 /**
  * Maps useApiKey()'s normalized ApiKeyErrorCode to its i18n banner key (@s7/@s9).

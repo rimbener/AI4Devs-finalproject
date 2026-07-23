@@ -76,6 +76,7 @@ describe('ApiKeyService', () => {
 
       await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
         code: 'network_error',
+        message: 'Network error',
       });
       await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).resolves.toBe(status);
     });
@@ -114,6 +115,7 @@ describe('ApiKeyService', () => {
 
       await expect(ApiKeyService.removeApiKey('groq')).rejects.toMatchObject({
         code: 'network_error',
+        message: 'Network error',
       });
     });
   });

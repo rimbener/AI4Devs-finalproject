@@ -185,7 +185,7 @@ export const ApiKeyManager = ({
   );
 };
 
-const styles = StyleSheet.create((theme) => ({
+export const apiKeyManagerStyles = StyleSheet.create((theme) => ({
   container: {
     gap: theme.spacing.s4,
   },
@@ -231,3 +231,5 @@ const styles = StyleSheet.create((theme) => ({
     overflow: 'hidden',
   },
 }));
+
+const styles = apiKeyManagerStyles;

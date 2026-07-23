@@ -4,7 +4,9 @@ import { useLocalization } from '@helsoft/localization';
 import type { AiProvider } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import { LessonGenerationPanel } from './lesson-generation-panel';
+import { lightColors } from '../../theme/colors';
+import { typography } from '../../theme/typography';
+import { LessonGenerationPanel, lessonGenerationPanelStyles } from './lesson-generation-panel';
 
 const mockUseLocalization = useLocalization as jest.Mock;
 
@@ -79,6 +81,41 @@ describe('LessonGenerationPanel', () => {
       fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
 
       expect(onProviderChange).toHaveBeenCalledWith('openai');
+    });
+
+    it('calls onModelChange when a different model is chosen', async () => {
+      const onModelChange = jest.fn();
+      await render(<LessonGenerationPanel {...pickerProps} onModelChange={onModelChange} />);
+
+      fireEvent.press(
+        screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b' }),
+      );
+
+      expect(onModelChange).toHaveBeenCalledWith('openai/gpt-oss-120b');
+    });
+
+    it('requests picker and status copy via the expected i18n keys', async () => {
+      const t = jest.fn(localizationValue().t);
+      mockUseLocalization.mockReturnValue(localizationValue({ t }));
+
+      await render(
+        <LessonGenerationPanel
+          {...pickerProps}
+          state="loading"
+          currentStep="generating"
+        />,
+      );
+
+      expect(t).toHaveBeenCalledWith('generation.provider.heading');
+      expect(t).toHaveBeenCalledWith('generation.model.heading');
+      expect(t).toHaveBeenCalledWith('generation.step.status.done');
+      expect(t).toHaveBeenCalledWith('generation.step.status.upcoming');
+    });
+
+    it('hides the model picker when modelOptions is empty', async () => {
+      await render(<LessonGenerationPanel {...pickerProps} modelOptions={[]} />);
+
+      expect(screen.queryByText('generation.model.heading')).toBeNull();
     });
 
     // @s16 — free-BYOK missing-key gate replaces pickers; generate stays disabled.
@@ -400,5 +437,140 @@ describe('LessonGenerationPanel', () => {
       expect(screen.queryByText('generation.step.reading')).toBeNull();
       expect(screen.queryByText('generation.ready.openInPlayer')).toBeNull();
     });
+  });
+
+  it('preserves panel layout styles for sections and error banner', () => {
+    expect(lessonGenerationPanelStyles.root).toMatchObject({ gap: 16 });
+    expect(lessonGenerationPanelStyles.section).toMatchObject({ gap: 12 });
+    expect(lessonGenerationPanelStyles.heading).toMatchObject({
+      ...typography.titleSmall,
+      color: lightColors.onSurfaceVariant,
+    });
+    expect(lessonGenerationPanelStyles.summary).toMatchObject({
+      ...typography.bodyMedium,
+      color: lightColors.onSurface,
+    });
+    expect(lessonGenerationPanelStyles.errorBanner).toMatchObject({ padding: 12 });
+    expect(lessonGenerationPanelStyles.errorBannerText).toMatchObject({
+      ...typography.bodyMedium,
+      color: lightColors.onErrorContainer,
+    });
+  });
+
+  it('defaults to hiding pickers and the missing-key gate', async () => {
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={false}
+        onGenerate={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('generation.provider.heading')).toBeNull();
+    expect(screen.queryByText('upload.apiKeyRequired.message')).toBeNull();
+  });
+
+  it('does not show the missing-key gate without an action handler', async () => {
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={false}
+        onGenerate={jest.fn()}
+        showMissingKeyGate
+      />,
+    );
+
+    expect(screen.queryByText('upload.apiKeyRequired.message')).toBeNull();
+  });
+
+  it('does not render the error banner outside the error state', async () => {
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={false}
+        onGenerate={jest.fn()}
+        errorMessage="should not show"
+      />,
+    );
+
+    expect(screen.queryByText('should not show')).toBeNull();
+  });
+
+  it('defaults the model picker value to the first option when selectedModel is unset', async () => {
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={true}
+        onGenerate={jest.fn()}
+        showPickers
+        savedProviders={['groq']}
+        modelOptions={[{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }]}
+        selectedProvider="groq"
+        providerNameKeys={PROVIDER_NAME_KEYS}
+      />,
+    );
+
+    expect(
+      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
+    ).toBeTruthy();
+  });
+
+  it('defaults the provider picker to the first saved provider when selectedProvider is unset', async () => {
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={true}
+        onGenerate={jest.fn()}
+        showPickers
+        savedProviders={['groq', 'openai']}
+        modelOptions={[{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }]}
+        providerNameKeys={PROVIDER_NAME_KEYS}
+      />,
+    );
+
+    expect(
+      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
+    ).toBeTruthy();
+  });
+
+  it('does not render stray default savedProviders when showPickers is omitted', async () => {
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={false}
+        onGenerate={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('radio', { name: 'settings.apiKey.provider.groq' })).toBeNull();
+  });
+
+  it('requests composition heading via the generation.composition.heading i18n key', async () => {
+    const t = jest.fn(localizationValue().t);
+    mockUseLocalization.mockReturnValue(localizationValue({ t }));
+
+    await render(
+      <LessonGenerationPanel
+        state="empty"
+        composition="both"
+        onCompositionChange={jest.fn()}
+        canGenerate={false}
+        onGenerate={jest.fn()}
+      />,
+    );
+
+    expect(t).toHaveBeenCalledWith('generation.composition.heading');
   });
 });

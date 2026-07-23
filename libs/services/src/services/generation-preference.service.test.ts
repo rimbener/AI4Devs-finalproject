@@ -43,6 +43,30 @@ describe('GenerationPreferenceService', () => {
     await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
   });
 
+  it('getStoredPreference returns null when provider or model is not a string', async () => {
+    dao.getStoredPreference.mockResolvedValueOnce('{"provider":123,"model":"gpt-5.6-luna"}');
+    dao.getStoredPreference.mockResolvedValueOnce('{"provider":"openai","model":null}');
+    dao.getStoredPreference.mockResolvedValueOnce('{"provider":"openai","model":456}');
+
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+  });
+
+  it('getStoredPreference returns null for non-object JSON values', async () => {
+    dao.getStoredPreference.mockResolvedValueOnce('null');
+    dao.getStoredPreference.mockResolvedValueOnce('"openai"');
+    dao.getStoredPreference.mockResolvedValueOnce('[]');
+    dao.getStoredPreference.mockResolvedValueOnce('42');
+    dao.getStoredPreference.mockResolvedValueOnce('true');
+
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+  });
+
   // @s21 — read failure never throws; degrades to null.
   it('getStoredPreference resolves to null when the DAO read fails', async () => {
     dao.getStoredPreference.mockRejectedValue(new Error('storage unavailable'));

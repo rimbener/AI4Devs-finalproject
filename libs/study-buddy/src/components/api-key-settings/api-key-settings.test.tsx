@@ -10,10 +10,10 @@ jest.mock('@helsoft/localization', () => ({
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo } from 'react-native';
+import { AccessibilityInfo, Linking } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
-import { ApiKeySettings, apiKeySettingsStyles } from './api-key-settings';
+import { ApiKeySettings, apiKeySettingsStyles, API_KEY_SETTINGS_GUIDANCE_URLS } from './api-key-settings';
 
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -288,5 +288,61 @@ describe('ApiKeySettings', () => {
     });
 
     expect(removeApiKey).toHaveBeenCalledWith('groq');
+  });
+
+  it('lists every provider name key in the add-section radio group', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue());
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettings />);
+
+    for (const key of [
+      'settings.apiKey.provider.groq',
+      'settings.apiKey.provider.openai',
+      'settings.apiKey.provider.anthropic',
+      'settings.apiKey.provider.google',
+      'settings.apiKey.provider.xai',
+      'settings.apiKey.provider.deepseek',
+    ]) {
+      expect(screen.getByRole('radio', { name: key })).toBeTruthy();
+    }
+  });
+
+  it('preserves every provider guidance URL constant', () => {
+    expect(API_KEY_SETTINGS_GUIDANCE_URLS).toEqual({
+      groq: 'https://console.groq.com/keys',
+      openai: 'https://platform.openai.com/api-keys',
+      anthropic: 'https://console.anthropic.com/settings/keys',
+      google: 'https://aistudio.google.com/app/apikey',
+      xai: 'https://console.x.ai',
+      deepseek: 'https://platform.deepseek.com/api_keys',
+    });
+  });
+
+  it('opens the groq guidance URL when the guidance link is pressed', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    mockUseApiKey.mockReturnValue(apiKeyValue());
+    mockUseLocalization.mockReturnValue(
+      localizationValue({
+        t: (key: string, options?: Record<string, unknown>) =>
+          options ? `${key}:${JSON.stringify(options)}` : key,
+      }),
+    );
+
+    await render(<ApiKeySettings />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.groq' }));
+    });
+    await act(async () => {
+      fireEvent.press(
+        screen.getByRole('button', {
+          name: 'settings.apiKey.guidanceTemplate:{"provider":"settings.apiKey.provider.groq"}',
+        }),
+      );
+    });
+
+    expect(openURL).toHaveBeenCalledWith('https://console.groq.com/keys');
+    openURL.mockRestore();
   });
 });

@@ -81,4 +81,36 @@ describe('useApiKeyManager', () => {
     });
     expect(result.current?.confirmingRemove).toBeNull();
   });
+
+  it('recomputes unsaved providers when savedKeys changes', async () => {
+    const openaiKey: SavedProviderKey = {
+      provider: 'openai',
+      updatedAt: '2026-02-01T00:00:00.000Z',
+    };
+    const { result, rerender } = await renderHook(
+      ({ savedKeys }: { savedKeys: SavedProviderKey[] }) => useApiKeyManager({ savedKeys }),
+      { initialProps: { savedKeys: [groqKey] } },
+    );
+
+    expect(result.current?.unsavedProviders).not.toContain('groq');
+    expect(result.current?.unsavedProviders).toContain('openai');
+
+    await rerender({ savedKeys: [groqKey, openaiKey] });
+
+    expect(result.current?.unsavedProviders).not.toContain('openai');
+    expect(result.current?.savedProviders.has('openai')).toBe(true);
+  });
+
+  it('keeps save disabled for whitespace-only keys', async () => {
+    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [] }));
+
+    await act(async () => {
+      result.current?.setFormProvider('groq');
+    });
+    await act(async () => {
+      result.current?.setApiKey('   ');
+    });
+
+    expect(result.current?.isSaveDisabled).toBe(true);
+  });
 });

@@ -185,4 +185,15 @@ describe('useApiKeyForm', () => {
     await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('saving key'));
     announceSpy.mockRestore();
   });
+
+  it('does not enter replace mode when setIsReplacing(false) is called', async () => {
+    const { result } = await renderFormHook({ savedKey: savedProviderKey });
+
+    await act(async () => {
+      result.current?.setIsReplacing(false);
+    });
+
+    expect(result.current?.isReplacing).toBe(false);
+    expect(result.current?.showInput).toBe(false);
+  });
 });

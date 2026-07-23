@@ -1,151 +1,38 @@
 # TDD Log — multi-provider-ai-keys
 
-## @s → test map
+## @s → test map (mutation R3 highlights)
 
-| @s  | Test file | Description |
-|-----|-----------|-------------|
-| @s1 | composite-pk-migration.test.ts | composite PK + CHECK constraint + RPC redefinition |
-| @s1 | ai-provider.test.ts | AiProvider union + AI_PROVIDERS order + AI_MODEL_REGISTRY coverage |
-| @s1 | api-key.dao.test.ts | saveApiKey/getApiKeyStatus/removeApiKey multi-key DAO |
-| @s1 | api-key.service.test.ts | provider-scoped service layer + ApiKeyStatus shape |
-| @s1 | use-api-key.test.ts | multi-key hook + derived hasKey + saveApiKey(provider,key) |
-| @s1 | api-key-form.test.tsx | savedKey prop refactor (Empty/Content/Loading/Error) |
-| @s1 | use-api-key-manager.test.ts | derived provider lists + form/confirm state setters |
-| @s1 | api-key-manager.test.tsx | empty state, add flow, onSave(provider,key) |
-| @s2 | api-key-manager.test.tsx | isSubmitting disables Save + progress label |
-| @s3 | api-key-manager.test.tsx | masked row renders for saved provider |
-| @s4 | api-key-form.test.tsx | Replace flow + reverts to masked on success |
-| @s4 | api-key.integration.test.ts | replace one provider leaves other key unchanged |
-| @s4 | api-key-manager.test.tsx | provider-scoped Replace/Remove a11y labels |
-| @s5 | api-key-form.test.tsx | Save disabled until non-blank key, guidance link |
-| @s6 | api-key-manager.test.tsx | Add section shows only unsaved providers |
-| @s7 | api-key-manager.test.tsx | error banner visible |
-| @s8 | api-key-manager.test.tsx | Remove confirm dialog → onRemove(provider) |
-| @s9 | api-key-manager.test.tsx | error banner with saved row |
-| @s1-9 | api-key-settings.test.tsx | ApiKeySettings → ApiKeyManager wiring |
-| @s1-9 | api-key.integration.test.ts | hook→service→DAO chain multi-key integration |
+| Cluster | Test file | @s / mutant target |
+|---------|-----------|-------------------|
+| profile session guards | use-profile.test.ts | isSessionLoading + session without user |
+| api-key callback deps | use-api-key.test.ts | save/remove after rerender |
+| picker persist guards | use-lesson-generation.test.ts | buildGenerateRequest w/o model |
+| handleGenerate persist | lesson-generation.test.tsx | mocked form, no model → no setStoredPreference |
+| step routing | new-lesson-dialog.test.tsx | upload vs generate step isolation |
+| i18n/style survivors | api-key-manager.test.tsx | t() keys, typography spreads, row filter |
+| panel defaults/i18n | lesson-generation-panel.test.tsx | default props, provider fallback, typography |
+| slide-image default | use-slide-image.test.ts | layout stacked vs split |
+| equivalent (documented) | — | typeof===object guards (services + dao) |
 
-## Slice 2 (@s10–@s19)
+## Mutation rework (R3 — 63 survivors + 48 timeout)
 
-| @s | Test file | Description |
-|----|-----------|-------------|
-| @s18 | lesson-generation.test.ts | GenerationErrorCode += invalid_model (11 codes) |
-| @s18 | lesson-generation.helpers.test.ts | invalid_model i18n key + none recovery |
-| @s18 | lesson-generation.service.test.ts | invalid_model server normalization |
-| @s12 | lesson-generation.test.ts | GenerateLessonRequest optional provider/model |
-| @s12 | lesson-generation.dao.test.ts | DAO forwards provider/model in invoke body |
-| @s12 | lesson-generation.service.test.ts | service delegates provider/model unchanged |
-| @s12/@s17/@s18 | lesson-generation.validation.test.ts | BYOK validate + missing_key + invalid_model |
-| @s12/@s17/@s18 | lesson-generation.key-routing.integration.test.ts | route BYOK/platform key paths |
-| @s13/@s14/@s15 | lesson-generation.vision-model.test.ts | vision auto-select + null degrade |
-| @s10/@s11/@s16/@s19 | lesson-generation-panel.test.tsx | pickers free-BYOK-only + controlled |
-| @s10/@s11/@s16/@s19 | lesson-generation-panel.e2e.js | Storybook e2e pickers visible/hidden |
-| @s10/@s11/@s16/@s19 | lesson-generation.test.tsx | wiring saved providers + platform gate |
-| @s16 | lesson-generation.test.tsx | missing-key gate blocks generate + settings path |
-| @s16 | use-lesson-generation.test.ts | showMissingKeyGate + null generate request |
-| @s10–@s12 | lesson-generation.integration.test.tsx | full stack sends provider/model BYOK |
-
-## Slice-2 review rework (R1)
-
-| Finding | Cycle |
+| Cluster | Cycle |
 |---------|-------|
-| F1 @s16 gate | RED wiring test → GREEN showMissingKeyGate + canGenerate guard + ApiKeyRequiredNotice |
-| F2 @s16 tdd | RED use-lesson-generation.test.ts → GREEN buildGenerateRequest null when gated |
-| F3 task-11 story | RED e2e FreeByokMissingKey → GREEN story + panel showMissingKeyGate prop |
-| F4 component-split | RED hook test file → GREEN useLessonGenerationForm co-located hook |
+| hooks perf | RED configure asyncUtilTimeout 2s + jest 8s → hooks jest-setup-after.ts |
+| profile guards | RED session loading w/ user id + session w/o user → GREEN use-profile.test.ts |
+| api-key deps | RED save then remove after rerender → GREEN use-api-key.test.ts |
+| buildGenerateRequest | RED clear model omits provider/model → GREEN use-lesson-generation.test.ts |
+| handleGenerate | RED mock form selectedModel undefined → GREEN lesson-generation.test.tsx |
+| dialog routing | RED generate hides upload / upload hides generation → GREEN new-lesson-dialog.test.tsx |
+| manager i18n/style | RED typography toMatchObject + row count + provider label binding + radio checked → GREEN api-key-manager.test.tsx |
+| panel i18n/style | RED heading/summary colors + provider default + stray providers → GREEN lesson-generation-panel.test.tsx |
+| slide layout | RED explicit split vs stacked containedSize → GREEN use-slide-image.test.ts |
+| equivalent mutants | `generation-preference.service.ts:8` + `api-key.dao.ts:6` — typeof check redundant given null/string/`in`/`Array.isArray` guards; same null/false for all JSON.parse inputs |
 
-## Slice-2 cycles (summary)
+## Prior rounds (abbrev)
 
-- **T7** RED invalid_model tests → GREEN types/service/helpers/i18n (422, none recovery)
-- **T8** RED optional provider/model tests → GREEN types/DAO/Deno mirror pass-through
-- **T9** RED validation tests → GREEN registry mirror + factory + route BYOK resolve
-- **T10** RED vision-model tests → GREEN resolveVisionModelForPlacement + index seam
-- **T11** RED panel picker tests → GREEN RadioGroups + stories + e2e + i18n
-- **T12** RED wiring tests → GREEN useApiKey/useProfile + selection reset + generate body
+R1: services/supabase guards, hooks reducer/session, components i18n/styles, study-buddy wiring, activities use-slide-image.
 
-Manual live-verify (task-9/10): Deno `@ai-sdk/*` factory + vision calls — not run in sandbox.
+R2: hooks TS fixes, boolean JSON guards, Linking/guidance, StyleSheet spacing, panel defaults, platform persist guards.
 
-## Slice-1 review rework (R2)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 component-split | handlers → api-key-manager.tsx; hook exposes setters + derived only |
-| F2 tdd | removed dead ApiKeyFormLabels |
-| F3 @s9 | api-key-manager.test.tsx banner + masked row together |
-| F4 scope | reverted new-lesson-dialog.tsx |
-| F5 scope | reverted localization-provider.tsx |
-| F6 design | Error story includes savedKeys + errorMessage |
-
-## Slice-1 review rework (R1)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 component-split | RED: use-api-key-manager.test.ts → GREEN: hook + slim component |
-| F2 i18n | providerNames → providerNameKeys |
-| F3 tdd | removed dead ApiKeyFormProps.provider |
-| F4 scope | reverted icon-button + slide-progress tests |
-| F5 a11y | provider-scoped Replace/Remove accessibilityLabel |
-| F6 @s4 | integration test: other provider unchanged on replace |
-
-## Cycles summary
-
-- **T1–T6** see R1 table; slice-1 tasks 1–6 done
-
-## Slice 3 (@s20–@s21)
-
-| @s | Test file | Description |
-|----|-----------|-------------|
-| @s20 | generation-preference.dao.test.ts | stable key + JSON read/write |
-| @s20 | generation-preference.service.test.ts | parse/write provider+model; corrupt→null |
-| @s20/@s21 | lesson-generation.helpers.test.ts | resolveGenerationSelection valid/fallback |
-| @s20/@s21 | use-lesson-generation.test.ts | async preselect + invalid fallback |
-| @s20/@s21 | lesson-generation.test.tsx | UI preselect, write-on-generate, fallback |
-| @s20 | lesson-generation.integration.test.tsx | full stack persists preference on generate |
-
-## Slice-3 cycles (summary)
-
-- **T13** RED DAO/service tests → GREEN GenerationPreferenceDao+Service + barrels
-- **T14** RED hook/component tests → GREEN resolveGenerationSelection + async preselect + write-on-generate
-
-## Slice-3 review rework (R1)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 types.mdc | RED generation-preference.types.test.ts → GREEN *.types.ts + barrel re-export |
-| F2 scope | reverted new-lesson-dialog.tsx format-only change |
-
-## Full review rework (R1 — CI)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 lint | GREEN new-lesson-dialog.tsx Biome single-line destructuring |
-| F2 hooks TS | GREEN rerender(undefined as never) + renderHook<UseLessonResult, LessonIdProps> |
-| F3 test timeouts | GREEN jest-setup-after: GenerationPreferenceService mock + cleanup(); split app-chrome act; sign-in-form press in act |
-
-## Full review rework (R2 — CI)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 lint | GREEN `pnpm format` — localization/activities/components/pdf-upload-extraction Biome fixes |
-| F2 activities TS | GREEN SlideProgressSlide `{ type: 'lesson'|'activity' }` + OpenEndedSlide `kind`/`activityType` shape |
-
-## Full review rework (R2b — study-buddy check-types)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 ApiKeyStatus | GREEN mocks/stories/tests → `{ keys: SavedProviderKey[] }`; hook mock exposes derived `hasKey` |
-
-## Full review rework (R2c — lint)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 import order | GREEN biome check --write api-key-settings.stories.tsx |
-
-## Engineering review rework (R1)
-
-| Finding | Cycle |
-|---------|-------|
-| F1 picker race | RED use-lesson-generation.test.ts → GREEN hasPickerSelection gates canGenerate |
-| F2 validation i18n | RED api-key-settings.test.ts → GREEN validation_error → settings.apiKey.error.empty |
-| F3 blank key edge | RED handle-save.test.ts → GREEN trim rejection before storeApiKey |
-| F4 DAO round-trip | RED api-key.dao.test.ts → GREEN invoke returns keys; edge fn lists once server-side |
+Slice 1–2 @s map: api-key dao/service/hook/manager/form; lesson-generation panel/pickers/platform gate (see git history / prior tdd if needed).
