@@ -5,9 +5,7 @@ import { IconButton } from './icon-button';
 describe('IconButton', () => {
   it('renders an accessible button that fires onPress', async () => {
     const onPress = jest.fn();
-    await render(
-      <IconButton icon="close" accessibilityLabel="Dismiss" onPress={onPress} />,
-    );
+    await render(<IconButton icon="close" accessibilityLabel="Dismiss" onPress={onPress} />);
 
     fireEvent.press(screen.getByRole('button', { name: 'Dismiss' }));
     expect(onPress).toHaveBeenCalledTimes(1);

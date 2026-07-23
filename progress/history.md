@@ -102,7 +102,15 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Jest for OpenEndedBody + LessonPlayerNavigator.
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Rules audit fixes (excl. screen-container). Worktree .worktrees/rules-compliance-fixes, branch feat/rules-compliance-fixes.
 2026-07-22 | rules-compliance-fixes (ad hoc) | done | — | Merged into feature-entrega3-HernanLaura; worktree removed.
+2026-07-22 | native-bottom-tabs | in_review | docs/features/native-bottom-tabs/ | CI: SF Symbol sf: glyphs excluded from i18n dotted-key scanner.
+2026-07-22 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | NativeTabs 2-tab shell; New Lesson CTA; MobileBar removed
+
+2026-07-23 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | Post-DoD: WebBottomTabs in @helsoft/components for narrow web; docs aligned.
+
+2026-07-23 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | 3 tabs + DesktopBar PDF; retire /upload→/pdf-files; PdfDocuments prop-less; docs synced.
 
 2026-07-23 | orchestrator-improvements (ad hoc) | n/a | — | Applied ORCHESTRATOR_IMPROVEMENTS.md backlog: hardened run-mutation.sh + JSON report parser, baked inPlace into all stryker configs, escalate-only mutation gate, durable review history, ops scripts, orchestrator-run-retro skill (e4210362a).
 2026-07-23 | activities (ad hoc) | n/a | — | Added storybook/start scripts to libs/activities/package.json (7629d2c96).
 2026-07-23 | user-stories (ad hoc) | n/a | — | Retired locale-save-failure-notice; added multi-provider-ai-keys pending story (1915e1cdb).
+
+2026-07-23 | native-bottom-tabs | done | docs/features/native-bottom-tabs/ | Merged into feature-entrega3-HernanLaura; worktree removed.

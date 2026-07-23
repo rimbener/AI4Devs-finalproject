@@ -26,8 +26,12 @@ import { OpenEndedBody } from './open-ended-body';
 
 const slide: OpenEndedSlide = {
   id: 's1',
-  type: 'open-ended',
+  lessonId: 'lesson-1',
+  title: 'Explain',
   content: 'What is photosynthesis?',
+  position: 0,
+  kind: 'activity',
+  activityType: 'open-ended',
   modelAnswer: 'Conversion of light to chemical energy',
 };
 

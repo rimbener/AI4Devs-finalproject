@@ -10,7 +10,7 @@ test('Content story loads the signed-in chrome', async ({ page }) => {
 
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
   await expect(canvas.getByText('My lessons', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('New lesson', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('New lesson', { exact: true })).toHaveCount(0);
   await expect(canvas.getByText('AL', { exact: true })).toBeVisible();
 });
 

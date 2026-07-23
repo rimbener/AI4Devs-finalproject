@@ -7,12 +7,13 @@ import { DesktopBar } from './desktop-bar';
 const baseProps = {
   brandLabel: 'AI Study Buddy',
   avatar: <Text>HL</Text>,
-  home: { label: 'Home', onPress: jest.fn() },
-  newLesson: { label: 'New lesson', onPress: jest.fn() },
+  home: { label: 'My lessons', onPress: jest.fn() },
+  pdfFiles: { label: 'My PDF files', onPress: jest.fn() },
 };
 
 describe('DesktopBar', () => {
-  it('renders the desktop brand, primary destinations, visual alerts, and avatar slot', async () => {
+  // Wide web desktop bar: My lessons + My PDF files; no New lesson / Settings destinations.
+  it('renders the desktop brand, primary nav, visual alerts, and avatar slot', async () => {
     await render(<DesktopBar {...baseProps} />);
 
     expect(screen.getByText('AI Study Buddy')).toBeOnTheScreen();
@@ -20,8 +21,11 @@ describe('DesktopBar', () => {
       color: lightColors.onSurface,
       fontSize: expect.any(Number),
     });
-    expect(screen.getByRole('link', { name: 'Home' })).toBeOnTheScreen();
-    expect(screen.getByRole('link', { name: 'New lesson' })).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'My lessons' })).toBeOnTheScreen();
+    expect(screen.getByRole('link', { name: 'My PDF files' })).toBeOnTheScreen();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
+    expect(screen.queryByRole('link', { name: 'New lesson' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     expect(screen.getByTestId('desktop-alerts', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Alerts' })).toBeNull();
     expect(screen.getByText('HL')).toBeOnTheScreen();
@@ -51,7 +55,7 @@ describe('DesktopBar', () => {
       flexDirection: 'row',
       gap: spacing.s2,
     });
-    expect(screen.getByRole('link', { name: 'Home' }).parent?.props.style).toMatchObject({
+    expect(screen.getByRole('link', { name: 'My lessons' }).parent?.props.style).toMatchObject({
       alignItems: 'center',
       flexDirection: 'row',
       gap: spacing.s1,
@@ -65,22 +69,22 @@ describe('DesktopBar', () => {
     });
   });
 
-  it('forwards primary destination presses to its injected handlers', async () => {
+  it('forwards Home and PDF files presses to their injected handlers', async () => {
     const onHomePress = jest.fn();
-    const onNewLessonPress = jest.fn();
+    const onPdfPress = jest.fn();
 
     await render(
       <DesktopBar
         {...baseProps}
-        home={{ label: 'Home', onPress: onHomePress }}
-        newLesson={{ label: 'New lesson', onPress: onNewLessonPress }}
+        home={{ label: 'My lessons', onPress: onHomePress }}
+        pdfFiles={{ label: 'My PDF files', onPress: onPdfPress }}
       />,
     );
 
-    fireEvent.press(screen.getByRole('link', { name: 'Home' }));
-    fireEvent.press(screen.getByRole('link', { name: 'New lesson' }));
+    fireEvent.press(screen.getByRole('link', { name: 'My lessons' }));
+    fireEvent.press(screen.getByRole('link', { name: 'My PDF files' }));
 
     expect(onHomePress).toHaveBeenCalledTimes(1);
-    expect(onNewLessonPress).toHaveBeenCalledTimes(1);
+    expect(onPdfPress).toHaveBeenCalledTimes(1);
   });
 });

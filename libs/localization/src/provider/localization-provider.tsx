@@ -33,8 +33,7 @@ export const LocalizationProvider = ({
     let active = true;
 
     const resolve = async () => {
-      const next =
-        initialLocale ?? (await getStoredLocale()) ?? resolveInitialLocale(deviceLocale);
+      const next = initialLocale ?? (await getStoredLocale()) ?? resolveInitialLocale(deviceLocale);
       await i18n.changeLanguage(next);
       if (active) setReady(true);
     };

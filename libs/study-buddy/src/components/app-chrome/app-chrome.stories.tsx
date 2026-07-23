@@ -12,7 +12,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Content — signed-in chrome with primary navigation and account identity. */
+/** Content — desktop bar with My lessons + account menu (Settings / Sign out). */
 export const Content: Story = {
   render: () => {
     configureSessionMock({

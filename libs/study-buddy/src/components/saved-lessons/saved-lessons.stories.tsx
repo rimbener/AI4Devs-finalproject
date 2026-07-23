@@ -32,17 +32,17 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Content — heading, count, and open/delete list rows. */
+/** Content — heading, New Lesson CTA, count, and open/delete list rows. */
 export const Content: Story = {
   decorators: [withLessonsMock({ lessons: SAMPLE_LESSONS })],
 };
 
-/** Loading — spinner while useLessons fetches. */
+/** Loading — spinner while useLessons fetches (CTA still in header). */
 export const Loading: Story = {
   decorators: [withLessonsMock({ isLoading: true })],
 };
 
-/** Empty — no saved lessons yet. */
+/** Empty — no saved lessons yet; New Lesson CTA remains. */
 export const Empty: Story = {
   decorators: [withLessonsMock({ lessons: [] })],
 };

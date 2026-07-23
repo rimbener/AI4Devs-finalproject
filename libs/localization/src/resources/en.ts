@@ -13,6 +13,7 @@ export const en = {
     },
     nav: {
       myLessons: 'My lessons',
+      myPdfFiles: 'My PDF files',
       newLesson: 'New lesson',
       settings: 'Settings',
       openAccountMenu: 'Open {{label}} account menu',

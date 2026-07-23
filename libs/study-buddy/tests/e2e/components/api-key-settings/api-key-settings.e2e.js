@@ -55,11 +55,11 @@ test('Paid story hides key settings with a saved key', async ({ page }) => {
   await expect(canvas.locator('text=Groq key saved')).toHaveCount(0);
 });
 
-test('EntitlementsError story renders retry and hides key settings', async ({ page }) => {
-  await page.goto(story('entitlements-error'));
+test('ProfileError story renders retry and hides key settings', async ({ page }) => {
+  await page.goto(story('profile-error'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
-  await expect(canvas.getByText("We couldn't load your plan.", { exact: true })).toBeVisible();
+  await expect(canvas.getByRole('alert')).toContainText("We couldn't load your plan.");
   await expect(canvas.getByText('Try again', { exact: true })).toBeVisible();
   await expect(canvas.locator('[aria-label="API key"]')).toHaveCount(0);
 });

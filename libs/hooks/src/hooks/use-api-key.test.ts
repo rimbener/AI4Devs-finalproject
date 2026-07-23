@@ -104,7 +104,7 @@ describe('useApiKey', () => {
     expect(result.current.isLoading).toBe(true);
 
     mockUseSession.mockReturnValue(authenticatedSession);
-    rerender();
+    rerender(undefined);
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status).toEqual(status);
@@ -131,7 +131,7 @@ describe('useApiKey', () => {
 
     const refreshedSessionSameUser = { access_token: 'tok-2', user: { id: 'user-1' } };
     mockUseSession.mockReturnValue({ session: refreshedSessionSameUser, isLoading: false });
-    rerender();
+    rerender(undefined);
 
     expect(service.getApiKeyStatus).toHaveBeenCalledTimes(1);
   });
@@ -321,7 +321,7 @@ describe('useApiKey', () => {
     const { result, rerender } = renderHook(() => useApiKey());
 
     mockUseSession.mockReturnValue({ session: null, isLoading: false });
-    rerender();
+    rerender(undefined);
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status).toEqual({ hasKey: false });

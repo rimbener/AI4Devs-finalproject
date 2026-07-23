@@ -23,16 +23,17 @@ describe('useAppChrome', () => {
     });
   });
 
-  it('derives identity, navigation, and controlled sign-out state', async () => {
-    const { result } = await renderHook(() => useAppChrome('/upload'));
+  it('derives identity, Home nav, and controlled sign-out state without newLesson/mobile title', async () => {
+    const { result } = await renderHook(() => useAppChrome('/settings'));
 
     expect(result.current.identity).toMatchObject({
       email: 'ada@example.com',
       label: 'Ada Lovelace',
     });
     expect(result.current.home).toEqual({ active: false, labelKey: 'nav.myLessons' });
-    expect(result.current.newLesson).toEqual({ active: true, labelKey: 'nav.newLesson' });
-    expect(result.current.mobileTitleKey).toBe('nav.newLesson');
+    expect(result.current.pdfFiles).toEqual({ active: false, labelKey: 'nav.myPdfFiles' });
+    expect(result.current).not.toHaveProperty('newLesson');
+    expect(result.current).not.toHaveProperty('mobileTitleKey');
     expect(result.current.signOutOpen).toBe(false);
 
     await act(async () => {
@@ -42,7 +43,7 @@ describe('useAppChrome', () => {
     expect(result.current.signOutOpen).toBe(true);
   });
 
-  it('marks Home active only at the root pathname', async () => {
+  it('marks Home active only at the root pathname and PDF files at /pdf-files', async () => {
     const { result, rerender } = await renderHook<
       ReturnType<typeof useAppChrome>,
       { pathname: string }
@@ -51,22 +52,28 @@ describe('useAppChrome', () => {
     });
 
     expect(result.current.home).toEqual({ active: true, labelKey: 'nav.myLessons' });
+    expect(result.current.pdfFiles).toEqual({ active: false, labelKey: 'nav.myPdfFiles' });
+
+    await rerender({ pathname: '/pdf-files' });
+
+    expect(result.current.home).toEqual({ active: false, labelKey: 'nav.myLessons' });
+    expect(result.current.pdfFiles).toEqual({ active: true, labelKey: 'nav.myPdfFiles' });
 
     await rerender({ pathname: '/lesson/123' });
 
     expect(result.current.home).toEqual({ active: false, labelKey: 'nav.myLessons' });
-    expect(result.current.newLesson).toEqual({ active: false, labelKey: 'nav.newLesson' });
+    expect(result.current.pdfFiles).toEqual({ active: false, labelKey: 'nav.myPdfFiles' });
   });
 
   it('keeps navigation props stable for unrelated chrome state changes', async () => {
     const { result } = await renderHook(() => useAppChrome('/'));
-    const { home, newLesson } = result.current;
+    const { home, pdfFiles } = result.current;
 
     await act(async () => {
       result.current.setSignOutOpen(true);
     });
 
     expect(result.current.home).toBe(home);
-    expect(result.current.newLesson).toBe(newLesson);
+    expect(result.current.pdfFiles).toBe(pdfFiles);
   });
 });

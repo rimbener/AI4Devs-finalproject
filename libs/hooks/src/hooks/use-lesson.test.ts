@@ -7,8 +7,11 @@ import type { Lesson } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { useLesson } from './use-lesson';
+import type { UseLessonResult } from './use-lesson.types';
 
 const service = LessonsService as jest.Mocked<typeof LessonsService>;
+
+type LessonIdProps = { id: string };
 
 const lesson: Lesson = {
   id: 'lesson-1',
@@ -161,9 +164,10 @@ describe('useLesson', () => {
     const other: Lesson = { ...lesson, id: 'lesson-2', title: 'Other' };
     service.getLesson.mockResolvedValueOnce(lesson).mockResolvedValueOnce(other);
 
-    const { result, rerender } = renderHook(({ id }) => useLesson(id), {
-      initialProps: { id: 'lesson-1' },
-    });
+    const { result, rerender } = renderHook<UseLessonResult, LessonIdProps>(
+      ({ id }) => useLesson(id),
+      { initialProps: { id: 'lesson-1' } },
+    );
 
     await waitFor(() => expect(result.current.lesson).toEqual(lesson));
 
@@ -183,9 +187,10 @@ describe('useLesson', () => {
       .mockResolvedValueOnce(other)
       .mockResolvedValueOnce(otherAgain);
 
-    const { result, rerender } = renderHook(({ id }) => useLesson(id), {
-      initialProps: { id: 'lesson-1' },
-    });
+    const { result, rerender } = renderHook<UseLessonResult, LessonIdProps>(
+      ({ id }) => useLesson(id),
+      { initialProps: { id: 'lesson-1' } },
+    );
     await waitFor(() => expect(result.current.lesson).toEqual(lesson));
 
     rerender({ id: 'lesson-2' });

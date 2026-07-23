@@ -1,7 +1,9 @@
 # Current session
 
-**Active feature:** _(none)_
-**Last feature:** activity-image-split-layout
-**Phase:** done
-**Status:** Merged into `feature-entrega3-HernanLaura`. Worktree removed.
-**Notes:** Branch `feat/activity-image-split-layout` deleted locally. Delivery branch is 14 commits ahead of origin (not pushed).
+**Active feature:** native-bottom-tabs
+**Folder:** `docs/features/native-bottom-tabs/`
+**Branch:** `feat/native-bottom-tabs`
+**Worktree:** `.worktrees/native-bottom-tabs`
+**Phase:** pr_ready
+**Status:** DoD PASS. Docs compacted; risks landed; story → done. Human opens/merges PR.
+**Notes:** Base = `feature-entrega3-HernanLaura`.

@@ -16,20 +16,12 @@ export const NewLessonDialog = ({
   onGenerateHandled,
 }: NewLessonDialogProps) => {
   const { t } = useLocalization();
-  const {
-    open,
-    step,
-    documentId,
-    panelProps,
-    chooseFile,
-    resetUpload,
-    openUpload,
-    close,
-  } = useNewLessonDialog({
-    onExtracted,
-    generateDocumentId,
-    onGenerateHandled,
-  });
+  const { open, step, documentId, panelProps, chooseFile, resetUpload, openUpload, close } =
+    useNewLessonDialog({
+      onExtracted,
+      generateDocumentId,
+      onGenerateHandled,
+    });
 
   const handleUploadPress = () => {
     resetUpload();

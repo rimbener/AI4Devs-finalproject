@@ -1,43 +1,38 @@
 import { PdfDocumentList } from '@helsoft/components';
-import { usePdfDocuments } from '@helsoft/hooks';
+import { usePdfDocuments, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { NewLessonDialog } from '../new-lesson-dialog/new-lesson-dialog';
 import { toPdfDocumentListItems, toPdfDocumentListState } from './pdf-documents.helpers';
-import type { PdfDocumentsProps } from './pdf-documents.types';
 
 /**
- * PdfDocuments — upload-screen wiring: usePdfDocuments + t()/date format → PdfDocumentList.
- * Raises onGenerate/onOpenLesson to the screen; delete stays in the hook (@s5/@s6/@s7/@s11–@s13).
+ * PdfDocuments — PDF list wiring: usePdfDocuments + t() → PdfDocumentList.
+ * Self-contained like SavedLessons: router for open lesson, profile for create,
+ * NewLessonDialog for upload/generate; delete stays in the hook.
  */
-export const PdfDocuments = ({ onGenerate, onOpenLesson, reloadToken }: PdfDocumentsProps) => {
-  const { documents, isLoading, error, refetch, deleteDocument } = usePdfDocuments();
+export const PdfDocuments = () => {
+  const router = useRouter();
   const { t } = useLocalization();
+  const { profile } = useProfile();
+  const { documents, isLoading, error, refetch, deleteDocument } = usePdfDocuments();
 
+  const [generateDocumentId, setGenerateDocumentId] = useState<string | undefined>();
+
+  const canCreate = Boolean(profile?.canCreate);
   const state = toPdfDocumentListState(isLoading, error, documents.length);
   const items = useMemo(() => toPdfDocumentListItems(documents), [documents]);
-
-  // Skip the initial mount — usePdfDocuments already loads once. Refetch only on later bumps.
-  const isFirstTokenEffect = useRef(true);
-  useEffect(() => {
-    if (isFirstTokenEffect.current) {
-      isFirstTokenEffect.current = false;
-      return;
-    }
-    // reloadToken is the intentional trigger (screen bumps on extract/generate).
-    if (reloadToken === undefined) return;
-    refetch();
-  }, [reloadToken, refetch]);
 
   const handleOpenLesson = useCallback(
     (documentId: string) => {
       const lessonId = documents.find((doc) => doc.id === documentId)?.lessonId?.trim();
       if (!lessonId) return;
-      onOpenLesson(lessonId);
+      router.push({ pathname: '/lesson/[id]/player', params: { id: lessonId } });
     },
-    [documents, onOpenLesson],
+    [documents, router],
   );
 
   const handleDelete = useCallback(
@@ -48,6 +43,10 @@ export const PdfDocuments = ({ onGenerate, onOpenLesson, reloadToken }: PdfDocum
     [deleteDocument],
   );
 
+  const handleRefetch = useCallback(() => {
+    void refetch();
+  }, [refetch]);
+
   // accessibilityLiveRegion covers Android/Web; iOS needs announceForAccessibility (WCAG 4.1.3).
   useEffect(() => {
     if (state === 'content' && error) {
@@ -57,13 +56,21 @@ export const PdfDocuments = ({ onGenerate, onOpenLesson, reloadToken }: PdfDocum
 
   return (
     <View style={styles.root}>
+      {canCreate ? (
+        <NewLessonDialog
+          onExtracted={handleRefetch}
+          onGenerated={handleRefetch}
+          generateDocumentId={generateDocumentId}
+          onGenerateHandled={() => setGenerateDocumentId(undefined)}
+        />
+      ) : null}
       <Text accessibilityRole="header" style={styles.heading}>
         {t('pdfList.heading')}
       </Text>
       <PdfDocumentList
         state={state}
         documents={items}
-        onGenerate={onGenerate}
+        onGenerate={canCreate ? setGenerateDocumentId : undefined}
         onOpenLesson={handleOpenLesson}
         onRetry={refetch}
         onDelete={handleDelete}

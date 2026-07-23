@@ -10,11 +10,12 @@ test('Content story loads', async ({ page }) => {
   expect(page.url()).toContain('features-savedlessons--content');
 });
 
-test('Content story renders heading, count, and lessons', async ({ page }) => {
+test('Content story renders heading, New Lesson CTA, count, and lessons', async ({ page }) => {
   await page.goto(story('content'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
   await expect(canvas.getByText('Saved lessons', { exact: true })).toBeVisible();
+  await expect(canvas.getByRole('button', { name: 'New lesson' })).toBeVisible();
   await expect(canvas.getByText('2 lessons', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Photosynthesis basics', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Cell division', { exact: true })).toBeVisible();
@@ -27,13 +28,14 @@ test('Loading story loads', async ({ page }) => {
   expect(page.url()).toContain('features-savedlessons--loading');
 });
 
-test('Empty story shows the empty-state message', async ({ page }) => {
+test('Empty story shows empty-state message and New Lesson CTA', async ({ page }) => {
   await page.goto(story('empty'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
   await expect(
     canvas.getByText('No saved lessons yet. Create one to get started.', { exact: true }),
   ).toBeVisible();
+  await expect(canvas.getByRole('button', { name: 'New lesson' })).toBeVisible();
 });
 
 test('LoadError story shows error + retry', async ({ page }) => {

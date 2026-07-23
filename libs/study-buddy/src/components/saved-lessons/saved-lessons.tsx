@@ -1,4 +1,4 @@
-import { LessonList } from '@helsoft/components';
+import { Button, LessonList } from '@helsoft/components';
 import { useLessons } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,7 @@ import { toLessonListItems, toLessonListState } from './saved-lessons.helpers';
 
 /**
  * SavedLessons — Home wiring: useLessons + t()/date format → LessonList + reopen/delete.
+ * Persistent New Lesson CTA (content + empty) opens the PDF files tab.
  */
 export const SavedLessons = () => {
   const { lessons, isLoading, error, refetch, deleteLesson } = useLessons();
@@ -26,6 +27,10 @@ export const SavedLessons = () => {
     },
     [router],
   );
+
+  const onNewLesson = useCallback(() => {
+    router.push('/pdf-files');
+  }, [router]);
 
   const onDelete = useCallback(
     (id: string) => {
@@ -44,9 +49,12 @@ export const SavedLessons = () => {
 
   return (
     <View style={styles.root}>
-      <Text accessibilityRole="header" style={styles.heading}>
-        {t('home.savedLessons')}
-      </Text>
+      <View style={styles.header}>
+        <Text accessibilityRole="header" style={styles.heading}>
+          {t('home.savedLessons')}
+        </Text>
+        <Button onPress={onNewLesson}>{t('nav.newLesson')}</Button>
+      </View>
       {state === 'content' ? (
         <Text style={styles.count}>{t('lessons.count', { count: lessons.length })}</Text>
       ) : null}
@@ -71,9 +79,16 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     gap: theme.spacing.s3,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.s3,
+  },
   heading: {
     ...theme.typography.headlineSmall,
     color: theme.colors.onSurface,
+    flexShrink: 1,
   },
   count: {
     ...theme.typography.bodyMedium,

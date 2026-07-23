@@ -8,8 +8,8 @@ const meta = {
   args: {
     brandLabel: 'AI Study Buddy',
     avatar: <Text>HL</Text>,
-    home: { label: 'Home', active: true, onPress: () => undefined },
-    newLesson: { label: 'New lesson', onPress: () => undefined },
+    home: { label: 'My lessons', active: true, onPress: () => undefined },
+    pdfFiles: { label: 'My PDF files', onPress: () => undefined },
   },
 } satisfies Meta<typeof DesktopBar>;
 
@@ -29,4 +29,11 @@ export const DotIndicator: Story = {
 
 export const AlertsBadge: Story = {
   args: { alertsBadgeCount: 2 },
+};
+
+export const PdfFilesActive: Story = {
+  args: {
+    home: { label: 'My lessons', onPress: () => undefined },
+    pdfFiles: { label: 'My PDF files', active: true, onPress: () => undefined },
+  },
 };

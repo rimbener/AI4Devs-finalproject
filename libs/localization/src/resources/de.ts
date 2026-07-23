@@ -8,6 +8,7 @@ export const de: TranslationResource = {
     },
     nav: {
       myLessons: 'Meine Lektionen',
+      myPdfFiles: 'Meine PDF-Dateien',
       newLesson: 'Neue Lektion',
       settings: 'Einstellungen',
       openAccountMenu: 'Kontomenü von {{label}} öffnen',

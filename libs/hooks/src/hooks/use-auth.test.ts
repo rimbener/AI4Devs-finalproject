@@ -197,7 +197,7 @@ describe('useAuth', () => {
     const firstSignIn = result.current.signIn;
     const firstSignOut = result.current.signOut;
 
-    rerender();
+    rerender(undefined);
 
     expect(result.current.signIn).toBe(firstSignIn);
     expect(result.current.signOut).toBe(firstSignOut);
@@ -215,7 +215,7 @@ describe('useAuth', () => {
     const { result, rerender } = renderHook(() => useAuth());
     const signInFromFirstRender = result.current.signIn;
 
-    rerender();
+    rerender(undefined);
 
     let signInPromise!: Promise<void>;
     act(() => {

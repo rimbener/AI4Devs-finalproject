@@ -7,8 +7,8 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { LessonPlayerNavigator } from './lesson-player-navigator';
 
 const slides = [
-  { id: '1', type: 'instruction' as const },
-  { id: '2', type: 'multiple-choice' as const },
+  { id: '1', type: 'lesson' as const },
+  { id: '2', type: 'activity' as const },
 ];
 
 describe('LessonPlayerNavigator', () => {

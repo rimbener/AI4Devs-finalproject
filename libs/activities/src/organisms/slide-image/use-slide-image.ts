@@ -25,8 +25,7 @@ export const useSlideImage = ({ image, layout = 'stacked' }: UseSlideImageArgs) 
     wasOpen.current = open;
   }, [open]);
 
-  const aspectRatio =
-    image && image.width > 0 && image.height > 0 ? image.width / image.height : 1;
+  const aspectRatio = image && image.width > 0 && image.height > 0 ? image.width / image.height : 1;
   const containedSize =
     layout === 'split' && paneSize ? getContainedImageSize(aspectRatio, paneSize) : undefined;
 
@@ -43,5 +42,6 @@ export const useSlideImage = ({ image, layout = 'stacked' }: UseSlideImageArgs) 
     aspectRatio,
     containedSize,
     onPaneLayout,
+    layout,
   };
 };
