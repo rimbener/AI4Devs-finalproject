@@ -20,7 +20,7 @@ paths:
 ---
 
 ## Goal
-Two coupled desktop-chrome trims now that New Lesson is a CTA (task-3) and native/narrow nav is `NativeTabs`:
+Two coupled desktop-chrome trims now that New Lesson is a CTA (task-3) and native/narrow nav is `NativeTabs` / `WebBottomTabs`:
 1. **Remove the New lesson nav item from `DesktopBar`** — drop its `NavItem`, remove the `newLesson` prop from `DesktopBarProps`, update stories + tests. `DesktopBar` keeps brand, **My lessons**, alerts placeholder, and the avatar/`AccountMenu`.
 2. **Slim `AppChrome` to desktop-only** — remove the `MobileBar` branch/import, the mobile-title path (`getMobileTitleKey`) + mobile safe-area bits, and the now-unused New lesson handler/props. It renders only `DesktopBar` + `AccountMenu` (Settings + Sign out) via the controlled `SignOut`.
 

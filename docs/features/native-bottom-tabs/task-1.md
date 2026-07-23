@@ -34,4 +34,4 @@ Restructure `(app)` so `_layout.tsx` is a `Stack` whose children are a new **`(t
 - Locks: Q1 adopt `NativeTabs`; Q2 `(tabs)` group + siblings; revision Q1 (2 tabs, `/upload` sibling) + Q4 (immersive `/upload` + header/back, My lessons stays active).
 - **Delete the originals** `(app)/index.tsx` + `(app)/settings.tsx` when moving their bodies into `(tabs)/` — leaving them would register duplicate routes for `/` and `/settings` (both `(app)/index` and `(app)/(tabs)/index` resolve to `/`) and break navigation.
 - `upload.tsx` stays a direct `(app)` child (moved out of the tab group).
-- Web layout (≥768 desktop vs <768 tabs) is **task-2** (`(tabs)/_layout.web.tsx`).
+- Web layout (≥768 DesktopBar vs <768 WebBottomTabs) is **task-2** (`(tabs)/_layout.web.tsx` + `@helsoft/components` organism).

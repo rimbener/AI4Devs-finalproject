@@ -21,5 +21,5 @@ None.
 - **[types]** `mobile-bar.types.ts` deleted with component; no orphan type exports.
 - **[i18n]** No new user-facing strings.
 - **[tdd]** @s2 → `tabs-layout-web.test.tsx` (no `mobile-top-bar` / `mobile-bottom-bar`); @s17 → `mobile-bar-retired.test.ts` (barrel/folder/e2e gone, AccountMenu remains); slice integration via AppChrome source assert; Red→Green logged; `tdd.md` ~2.5KB; no production beyond deletion.
-- **[design]** Matches Q6 / task-6: MobileBar gone; NativeTabs is narrow/native nav; AccountMenu kept for DesktopBar.
-- **[a11y]** N/A for new UI (deletion). Product nav a11y remains NativeTabs path from earlier slices; no new unlabeled controls.
+- **[design]** Matches Q6 / task-6: MobileBar gone; NativeTabs (native) / WebBottomTabs (narrow web); AccountMenu kept for DesktopBar.
+- **[a11y]** N/A for new UI (deletion). Product nav a11y: NativeTabs path + WebBottomTabs tab roles; no new unlabeled controls.

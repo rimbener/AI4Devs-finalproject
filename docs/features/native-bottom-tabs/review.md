@@ -4,9 +4,12 @@
 **Verdict:** APPROVED  
 
 **Lenses N/A:**
-- **performance** — UI/nav chrome only (2-tab NativeTabs, breakpoint switch); no lists/queries.
+- **performance** — UI/nav chrome only (2-tab NativeTabs / WebBottomTabs, breakpoint switch); no lists/queries.
 - **security** — no new service/DAO/network/storage trust boundary; no secrets.
 
 ## Open findings
 
 _(none)_
+
+## Post-review code note
+Narrow web ships `WebBottomTabs` (`@helsoft/components`) instead of NativeTabs — see `spec.md` Q3 amendment + `task-2.md`.

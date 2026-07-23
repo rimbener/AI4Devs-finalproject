@@ -104,3 +104,5 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | done | — | Merged into feature-entrega3-HernanLaura; worktree removed.
 2026-07-22 | native-bottom-tabs | in_review | docs/features/native-bottom-tabs/ | CI: SF Symbol sf: glyphs excluded from i18n dotted-key scanner.
 2026-07-22 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | NativeTabs 2-tab shell; New Lesson CTA; MobileBar removed
+
+2026-07-23 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | Post-DoD: WebBottomTabs in @helsoft/components for narrow web; docs aligned.

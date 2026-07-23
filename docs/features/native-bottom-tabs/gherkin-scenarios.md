@@ -5,10 +5,11 @@ each maps to ≥ 1 concrete test. Every acceptance criterion maps to ≥ 1 scena
 
 ```gherkin
 Feature: Native bottom tabs navigation
-  As a signed-in learner, I want system-native bottom tabs on iOS, Android, and
-  narrow web, with the existing desktop top bar on wide web, so that primary
-  navigation feels platform-native. New Lesson is an action launched from My
-  lessons, not a tab, so the tab bar holds only durable destinations.
+  As a signed-in learner, I want system-native bottom tabs on iOS/Android and a
+  Material-style bottom tab bar on narrow web, with the existing desktop top
+  bar on wide web, so that primary navigation feels platform-native. New Lesson
+  is an action launched from My lessons, not a tab, so the tab bar holds only
+  durable destinations.
 
   Background:
     Given I am a signed-in learner
@@ -23,11 +24,12 @@ Feature: Native bottom tabs navigation
     And there is no New lesson tab
 
   @s2
-  Scenario: Narrow web shows the native tab bar, not the old mobile chrome
+  Scenario: Narrow web shows a Material bottom tab bar, not the old mobile chrome
     Given my web viewport width is below 768
     When the app shell renders
-    Then I see the native bottom tab bar with My lessons and Settings
+    Then I see a Material-style bottom tab bar with My lessons and Settings
     And I do not see the retired custom mobile bar
+    And I do not see NativeTabs web top chrome
 
   @s3
   Scenario: Wide web shows the desktop top bar with no New lesson or Settings nav items
@@ -91,12 +93,13 @@ Feature: Native bottom tabs navigation
 
   @s10
   Scenario: Tab labels and icons come from existing copy and platform glyphs
-    Given the native tab bar renders
+    Given the tab bar renders
     Then My lessons uses "nav.myLessons" with a library glyph
     And Settings uses "nav.settings" with a settings glyph
     And no New lesson glyph appears in the tab bar
     And no new product copy keys are required
-    And where a web glyph is unavailable the tab falls back to a label only
+    And native uses SF / Material Symbols on NativeTabs
+    And narrow web uses Material Symbols via WebBottomTabs
 
   @s11
   Scenario: Settings stays reachable on wide web via the account menu
@@ -133,11 +136,11 @@ Feature: Native bottom tabs navigation
     Then I see the "<pattern>" navigation
 
     Examples:
-      | platform | viewport     | pattern     |
-      | web      | width >= 768 | desktop bar |
-      | web      | width < 768  | native tabs |
-      | ios      | any          | native tabs |
-      | android  | any          | native tabs |
+      | platform | viewport     | pattern               |
+      | web      | width >= 768 | desktop bar           |
+      | web      | width < 768  | material bottom tabs  |
+      | ios      | any          | native tabs           |
+      | android  | any          | native tabs           |
 
   @s16
   Scenario: Existing routes and deep links are unchanged by the restructure
