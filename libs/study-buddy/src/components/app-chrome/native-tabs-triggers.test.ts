@@ -15,12 +15,14 @@ describe('NATIVE_TAB_TRIGGERS', () => {
     expect(NATIVE_TAB_TRIGGERS).toEqual([
       {
         name: 'index',
+        href: '/',
         labelKey: 'nav.myLessons',
         sf: 'books.vertical',
         md: 'menu_book',
       },
       {
         name: 'settings',
+        href: '/settings',
         labelKey: 'nav.settings',
         sf: 'gearshape',
         md: 'settings',

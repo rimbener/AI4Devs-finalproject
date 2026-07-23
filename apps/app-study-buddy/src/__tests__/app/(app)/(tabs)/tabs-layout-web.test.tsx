@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 let mockBreakpoint: 'desktop' | 'mobile' = 'desktop';
 
 jest.mock('@helsoft/hooks', () => ({
@@ -10,15 +8,35 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: () => ({ t: (k: string) => k }),
 }));
 
+jest.mock('@helsoft/components', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    WebBottomTabs: () => React.createElement(View, { testID: 'web-bottom-tabs' }),
+  };
+});
+
 jest.mock('@helsoft/study-buddy', () => {
   const React = require('react');
   const { View } = require('react-native');
-  const { NATIVE_TAB_TRIGGERS } = jest.requireActual(
-    '@helsoft/study-buddy/src/components/app-chrome/native-tabs-triggers',
-  );
   return {
     AppChrome: () => React.createElement(View, { testID: 'app-chrome' }),
-    NATIVE_TAB_TRIGGERS,
+    NATIVE_TAB_TRIGGERS: [
+      {
+        name: 'index',
+        href: '/',
+        labelKey: 'nav.myLessons',
+        sf: 'books.vertical',
+        md: 'menu_book',
+      },
+      {
+        name: 'settings',
+        href: '/settings',
+        labelKey: 'nav.settings',
+        sf: 'gearshape',
+        md: 'settings',
+      },
+    ],
   };
 });
 
@@ -28,32 +46,6 @@ jest.mock('expo-router', () => {
   return {
     Slot: () => React.createElement(View, { testID: 'slot' }),
   };
-});
-
-jest.mock('expo-router/unstable-native-tabs', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-
-  const Trigger = Object.assign(
-    ({ name, children }: { name: string; children?: ReactNode }) =>
-      React.createElement(View, { testID: `trigger-${name}` }, children),
-    {
-      Label: ({ children }: { children?: ReactNode }) => {
-        const React = require('react');
-        const { Text } = require('react-native');
-        return React.createElement(Text, null, children);
-      },
-      Icon: () => null,
-    },
-  );
-
-  const NativeTabs = Object.assign(
-    ({ children }: { children?: ReactNode }) =>
-      React.createElement(View, { testID: 'native-tabs' }, children),
-    { Trigger },
-  );
-
-  return { NativeTabs };
 });
 
 import { render, screen } from '@testing-library/react-native';
@@ -75,27 +67,20 @@ describe('@s3 @s15 wide web (≥768) — desktop top bar', () => {
     expect(screen.getByTestId('slot')).toBeTruthy();
   });
 
-  it('does NOT render NativeTabs bottom bar (@s3)', async () => {
+  it('does NOT render the Material web bottom tabs (@s3)', async () => {
     await render(<TabsWebLayout />);
-    expect(screen.queryByTestId('native-tabs')).toBeNull();
+    expect(screen.queryByTestId('web-bottom-tabs')).toBeNull();
   });
 });
 
-describe('@s2 @s15 narrow web (<768) — native tab bar', () => {
+describe('@s2 @s15 narrow web (<768) — Material bottom tabs', () => {
   beforeEach(() => {
     mockBreakpoint = 'mobile';
   });
 
-  it('renders NativeTabs bottom bar', async () => {
+  it('renders WebBottomTabs Material bottom bar', async () => {
     await render(<TabsWebLayout />);
-    expect(screen.getByTestId('native-tabs')).toBeTruthy();
-  });
-
-  it('renders My lessons and Settings triggers — no New lesson (@s2)', async () => {
-    await render(<TabsWebLayout />);
-    expect(screen.getByTestId('trigger-index')).toBeTruthy();
-    expect(screen.getByTestId('trigger-settings')).toBeTruthy();
-    expect(screen.queryByTestId('trigger-upload')).toBeNull();
+    expect(screen.getByTestId('web-bottom-tabs')).toBeTruthy();
   });
 
   it('does NOT render AppChrome', async () => {

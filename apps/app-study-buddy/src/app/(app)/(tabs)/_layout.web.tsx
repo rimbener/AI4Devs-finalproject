@@ -1,8 +1,8 @@
+import { WebBottomTabs } from '@helsoft/components';
 import { useBreakpoint } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { AppChrome, NATIVE_TAB_TRIGGERS } from '@helsoft/study-buddy';
 import { Slot } from 'expo-router';
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function TabsWebLayout() {
   const breakpoint = useBreakpoint();
@@ -17,14 +17,15 @@ export default function TabsWebLayout() {
     );
   }
 
+  // NativeTabs on web renders a top chrome; use headless Tabs + Material bottom bar.
   return (
-    <NativeTabs>
-      {NATIVE_TAB_TRIGGERS.map((tab) => (
-        <NativeTabs.Trigger key={tab.name} name={tab.name}>
-          <NativeTabs.Trigger.Label>{t(tab.labelKey)}</NativeTabs.Trigger.Label>
-          <NativeTabs.Trigger.Icon sf={tab.sf} md={tab.md} />
-        </NativeTabs.Trigger>
-      ))}
-    </NativeTabs>
+    <WebBottomTabs
+      triggers={NATIVE_TAB_TRIGGERS.map((tab) => ({
+        name: tab.name,
+        href: tab.href,
+        label: t(tab.labelKey),
+        icon: tab.md,
+      }))}
+    />
   );
 }
