@@ -14,7 +14,7 @@ export default {
   jest: { projectType: 'custom', configFile: 'jest.config.js' },
   checkers: ['typescript'],
   tsconfigFile: 'tsconfig.json',
-  reporters: ['html', 'clear-text', 'progress'],
+  reporters: ['clear-text', 'json', 'html'], // no 'progress' — non-TTY/agent/CI safe; 'json' feeds parse-mutation-report.mjs
   coverageAnalysis: 'perTest',
   mutate: [
     'src/**/*.ts',

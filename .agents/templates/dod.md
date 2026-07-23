@@ -38,7 +38,8 @@ _Only **minor** findings left after the 2-round review loop, explicitly risk-acc
 
 ## Testing rigor
 - [ ] Every `@s` scenario covered
-- [ ] Mutation score threshold met on changed source (`.tsx` included) — _link mutation.md_
+- [ ] Mutation score threshold met on changed source (`.tsx` included) — _link mutation.md_ — genuinely earned (no rewritten survivors / `human-excluded` fabrication; error mutants not propping up the score)
+- [ ] Review history retained — `review.md` (+ any `review-engineering.md`/`review-slice.md`/`review-spec.md`) non-empty durable trails, findings marked resolved/open
 
 ## Observability & i18n
 - [ ] Analytics events per spec; feature flag wrapping (if applicable)

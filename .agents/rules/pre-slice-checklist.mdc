@@ -1,0 +1,27 @@
+---
+description: recurring pre-slice self-check — apply before each slice review (barrels, helpers, a11y, atom ban, Modal, e2e, layout, i18n, test cmd)
+alwaysApply: false
+---
+
+# Pre-slice checklist
+
+The recurring review findings from past runs, codified. The `implementer` self-checks these **before handing a slice to `reviewer_slice`**; `reviewer_slice` enforces them (it globs `.agents/rules/*.mdc`).
+
+- New public symbols → **barrel exports** (`index.ts`).
+- New pure helpers → `*.helpers.ts`, not the component body (see `component-split.mdc`).
+- Loading UI → **announced status** for a11y (not a silent spinner).
+- Overlay/button over imagery → `size={layout.touchTarget}`, `variant="filled"`, dialog **name + focus in/out**.
+- **Never change a shared atom for a feature's a11y/focus** — wrap locally (`View`/dialog container). This is the **atom ban** (a non-owned atom edit floods the mutation gate and is a review major).
+- Modal: use the **real** `Modal` + `fireEvent(node, 'requestClose')` — **never** `jest.mock('react-native')` for Modal.
+- E2E that claims expand/lightbox must assert the thing is **open**, not just visible.
+- Don't spy on global `React.useRef`. No regex-as-"integration" over SQL/Edge source text.
+- Layout features: assert **containment/behavior**, not only style objects (`flattenStyle` alone won't kill layout mutants).
+- i18n keys that reach a11y props must be asserted (kills `t("")` mutants).
+- `AccessibilityInfo.*` only via the platform helper (`@helsoft/rn-utils`), never called directly (breaks on RN Web).
+- Run tests the monorepo way: `pnpm --filter <ws> test -- <file>` — **never** `yarn test-ci`.
+
+## Mutation-kill discipline
+
+- Style / `flattenStyle` asserts alone ≠ a killed layout mutant — prefer **behavioral** tests.
+- Don't claim a mutant killed until a Stryker **re-run** confirms it.
+- Exclude an *equivalent* mutant only with a written justification in `mutation.md`.

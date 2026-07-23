@@ -15,7 +15,7 @@ export default {
   // resolving in the runner child process, so it is named explicitly.
   plugins: ['@stryker-mutator/jest-runner'],
   jest: { projectType: 'custom', configFile: 'jest.config.js' },
-  reporters: ['html', 'clear-text', 'progress'],
+  reporters: ['clear-text', 'json', 'html'], // no 'progress' — non-TTY/agent/CI safe; 'json' feeds parse-mutation-report.mjs
   coverageAnalysis: 'perTest',
   mutate: [
     'src/**/*.ts',

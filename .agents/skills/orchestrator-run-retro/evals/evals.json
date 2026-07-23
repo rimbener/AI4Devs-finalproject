@@ -1,0 +1,23 @@
+{
+  "skill_name": "orchestrator-run-retro",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Analyze the last 3 /ticket-orchestrator runs and find repeated patterns, commands, prompts. I want improvements: clearer agent instructions, scripts, implementer prompt updates from repeated review findings. Research the entire run not just mutation. Write findings to .agents/ORCHESTRATOR_IMPROVEMENTS.md.",
+      "expected_output": "Backlog markdown covering whole pipeline with evidence, classified improvements (scripts/prompts/gates), gap analysis vs current .agents/, unresolved questions. Does not implement fixes.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Retro just plan-entitlements-key-routing and activity-image-sizing for mutation friction only — TTY, inPlace, ad-hoc python/node parsers. Append to ORCHESTRATOR_IMPROVEMENTS.md; don't wipe locked Decisions.",
+      "expected_output": "Scoped mutation-ops findings with evidence; preserves existing Decisions section; proposes parse script / inPlace / continue-on-fail style tooling.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "What keeps going wrong in the orchestrator? Last 2 pr_ready features. Prefer scripts when agents reinvent the same workaround.",
+      "expected_output": "Short chat summary + written backlog; prioritizes script bucket for repeated improvisation; cites transcripts/docs.",
+      "files": []
+    }
+  ]
+}

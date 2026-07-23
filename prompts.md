@@ -434,3 +434,42 @@ These prompts drove refinement, reconciliation and review across the documents r
    move the Accessibility review from @reviewer_standards to @reviewer_slice
    move the Security review from @reviewer_standards to @reviewer_engineering
    finally remove @reviewer_standards
+
+---
+
+## Anexo — Prompts de la sesión: analizar las últimas 3 ejecuciones de `/ticket-orchestrator` y encontrar patrones repetidos, comandos, prompts, etc.
+
+> Prompts del usuario (verbatim, en orden) de la sesión que analizó las últimas 3 ejecuciones de `/ticket-orchestrator` y encontró patrones repetidos, comandos, prompts, etc.
+
+1. Analyze the last 3 /ticket-orchestrator runs and find repeated patterns, commands, prompts, etc.
+   What I want is to try to find possible improvements, for example:
+   - I've saw that once run-mutation.sh failed because it was saying something like "failed to run in TTY, running with CI"
+   - I've also saw python code that was created on the fly to parse the mutation results
+
+   So, I want you to research the entire run, not just mutation, and find possible improvements, for example:
+   - settings clear run instructions for an agent
+   - adding scripts
+   - modifying the implementer prompt with repeated review findings
+   - etc.
+
+   write the prompts of this session into prompts.md.
+2. Write everything into a .md file
+
+--  
+## Anexo — Prompts de la sesión: crear una skill para el orquestador
+
+> Prompts del usuario (verbatim, en orden) de la sesión que creó una skill para el orquestador
+
+1. /skill-creator convert my initial prompt into a skill, add anything you think it could improve the skill
+
+---
+
+## Anexo — Prompts de la sesión: aplicar el backlog de mejoras del orquestador + extraer el checklist a una regla
+
+> Prompts del usuario (verbatim, en orden) de la sesión que analizó `.agents/ORCHESTRATOR_IMPROVEMENTS.md` y aplicó todo el backlog P0–P4 (endurecer `run-mutation.sh` + reporte JSON `parse-mutation-report.mjs`, reporters non-TTY + `inPlace` en los stryker configs, scripts `bootstrap-worktree.sh`/`set-feature-phase.sh`, mutación escalate-only, atom mutate ban, mantener el historial de reviews para siempre, checklist de recurring-findings del implementer, mini-gate post-`pr_ready`, etc.), y luego movió el pre-slice checklist a una regla `.agents/rules/pre-slice-checklist.mdc`.
+
+1. Analyze the file ORCHESTRATOR_IMPROVEMENTS.md and apply the improvements
+
+2. move the pre-slice checklist into a file in .agents/rules
+
+3. write these prompts into history.md

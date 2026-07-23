@@ -11,7 +11,7 @@ Act as **`orchestrator_lead`** and drive the full pipeline for ONE feature. Stor
 
 1. **Read the source of truth:** `.agents/ORCHESTRATOR.md` (roles, gates, state machine, DoD). It governs everything below; the canonical code rules in `.agents/rules/*` govern how code is written.
 2. **Resolve the story:** open `user-stories/pending/$ARGUMENTS.md` (accept the name with or without `.md`; if not in `pending/`, check `user-stories/in-progress/` for a resume). If it doesn't exist, list `user-stories/pending/*.md` and stop. Derive a kebab `<name>`.
-3. **Create the worktree + mark in-progress:** `git worktree add .worktrees/<name> -b feat/<name>` from the up-to-date default branch, and `cd` into it — **all** work (docs + code + commits) happens there. **Move the story:** `git mv user-stories/pending/<story>.md user-stories/in-progress/<story>.md` + commit. `pnpm install` if the worktree lacks `node_modules`. Then create `docs/features/<name>/` from `.agents/templates/` (**spec.md, tasks.md, task.md — not risks.md**) and point `progress/current.md` at it. `risks.md` is written to a gitignored `tmp/<name>/` folder, never re-read into context; it's landed in `docs/` at PR time (step 5).
+3. **Create the worktree + mark in-progress:** run `.agents/scripts/bootstrap-worktree.sh <name> [delivery-branch]` — it bases the worktree on the **delivery branch** (`feature-entrega*`, never a blind `main`), `pnpm install`s inside it, seeds `docs/features/<name>/` from templates (spec/tasks/task-1, not risks.md), and prints the worktree path; `cd` there — **all** work (docs + code + commits) happens there. `export ORCHESTRATOR_BASE_REF=<delivery-branch>` and `ORCHESTRATOR_FEATURE=<name>`. **Move the story:** `git mv user-stories/pending/<story>.md user-stories/in-progress/<story>.md` + commit; set phase with `.agents/scripts/set-feature-phase.sh <name> pending` (no hand-edited frontmatter). Point `progress/current.md` at the folder. `risks.md` → gitignored `tmp/<name>/`, never re-read; landed in `docs/` at PR time (step 5).
 
 ## Run the phases (guard every gate; state on disk)
 
@@ -19,7 +19,7 @@ Act as **`orchestrator_lead`** and drive the full pipeline for ONE feature. Stor
 2. `implementer` → strict TDD, one vertical slice at a time; **after each slice, invoke `reviewer_slice` directly (ONE agent: checks the slice against all `.agents/rules/` + design)** → fix findings → next slice.
 3. After all slices — **quality gate: full review → mutation**:
    a. `reviews_lead` in **`full` mode** → runs CI **once**, then invokes the **sole full reviewer `reviewer_engineering`** (code · architecture · performance · security) → consolidated `review.md` → `implementer` fixes every finding (≤ 2 rounds; any severity incl. minor). Design & accessibility were already covered per slice by `reviewer_slice`.
-   b. `mutation_tester` → StrykerJS **once**, on the feature's changed files vs `main` (covers the review's fixes too) → `implementer` kills every survivor (≤ 2 rounds; unresolved → escalate).
+   b. `mutation_tester` → StrykerJS **once** (via `run-mutation.sh`), on the feature's changed files vs the **delivery branch** (covers the review's fixes too) → `implementer` kills every survivor (≤ 2 rounds; unresolved → **ESCALATE**, never a fabricated PASS).
 4. `dod_validator` → `dod.md` (validate only) → **`pr_ready`**.
 5. **Mark done + land risks + compact:** move `tmp/<name>/risks.md` → `docs/features/<name>/risks.md` (`mkdir -p` if needed) so it ships in the PR; `git mv user-stories/in-progress/<story>.md user-stories/done/<story>.md`; `git add docs/features/<name>/risks.md` + commit; run the compact-docs **script** (`.agents/skills/compact-docs/scripts/compact-docs.sh <name>`) — **script only, no agent trimming**.
 
@@ -30,3 +30,7 @@ At `pr_ready`, tell me the feature is ready and that opening & merging the PR is
 - Stop and wait at the human gate. Never skip it. One feature at a time.
 - Subagents write to `docs/features/<name>/` and return one reference line — read the file if you need detail; don't relay walls of text.
 - `implementer` is the only agent that edits feature code.
+- Worktree + mutation base = the **delivery branch** (`feature-entrega*`), never a blind `main`. Flip phase via `set-feature-phase.sh`; never bulk `python3`/`sed` rewrites (ApplyPatch or a checked-in script).
+- Never edit `.agents/skills/**` or other harness files inside a feature commit.
+- **Mutation is escalate-only** — unmet after ≤ 2 rounds → `ESCALATE`; never rewrite `mutation.md` to a PASS. Keep `review*.md` as durable history (never empty).
+- **Post-`pr_ready` AC/API/product change → mini-gate:** update gherkin + scoped tests + re-run mutation (and full review if code changed) before returning to `pr_ready`.

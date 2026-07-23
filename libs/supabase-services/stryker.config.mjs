@@ -14,7 +14,11 @@ export default {
   jest: { projectType: 'custom', configFile: 'jest.config.js' },
   checkers: ['typescript'],
   tsconfigFile: 'tsconfig.json',
-  reporters: ['html', 'clear-text', 'progress'],
+  reporters: ['clear-text', 'json', 'html'], // no 'progress' — non-TTY/agent/CI safe; 'json' feeds parse-mutation-report.mjs
+  // Edge-relative imports don't resolve in Stryker's sandbox copy, so mutate in place.
+  // Baked here so agents never hand-roll `stryker --inPlace` (regression from the
+  // entitlements run). See .agents/skills/mutation-testing/SKILL.md §Tooling notes.
+  inPlace: true,
   coverageAnalysis: 'perTest',
   // Default scope (overridden per-feature via --mutate). Never mutate tests or barrels.
   mutate: [

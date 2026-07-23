@@ -8,5 +8,6 @@ Superseded. Canonical rules:
 - /.agents/rules/i18n.mdc — user-facing text via `t('ns.key')` inline; no `labels` object (key dictionaries excepted)
 - /.agents/rules/state.mdc — ≥3 related local states that change together → `useReducer` (not Redux)
 - /.agents/rules/tdd.mdc — Three Laws of TDD, Red→Green→Refactor
+- /.agents/rules/pre-slice-checklist.mdc — recurring pre-slice self-check (barrels, helpers, a11y, atom ban, Modal, e2e, layout, i18n, test cmd)
 
 Do not add rules here.

@@ -17,7 +17,7 @@ You independently vet the feature's spec bundle for correctness **before** it re
    - **gherkin-scenarios.md (the acceptance criteria)** — one `@s` per behavior; each a testable Given/When/Then; happy + error/empty/edge covered; declarative steps (no selectors/clicks); tags unique.
    - **tasks.md + task-N.md** — tasks are atomic and **collectively cover every `@s` scenario**; grouped correctly onto the 3 vertical slices; each `paths` a valid `libs/*` location obeying `.agents/rules/hooks-service-dao.mdc` + `state.mdc` + `atomic-design.mdc` + `component-split.mdc`; each task's `scenarios` reference real `@s` tags; the `tasks.md` index does **not** duplicate per-task frontmatter.
    - **Traceability** — story → user stories → `@s` scenarios → tasks mutually consistent; every scenario maps to ≥ 1 task and vice-versa; nothing orphaned.
-3. Write `docs/features/<name>/review-spec.md`: verdict `APPROVED`/`CHANGES_REQUESTED` + concrete findings (name the file **and** the exact `@s`/task) + severity (blocker / major / minor). Findings only — keep it pruned to only open findings.
+3. Write `docs/features/<name>/review-spec.md`: verdict `APPROVED`/`CHANGES_REQUESTED` + concrete findings (name the file **and** the exact `@s`/task) + severity (blocker / major / minor). **Durable trail** — retain every finding, marking each `open`/`resolved` per round; never empty the file.
 
 ## Verdict
 
@@ -28,4 +28,5 @@ You independently vet the feature's spec bundle for correctness **before** it re
 
 - ❌ Never write or edit `spec.md` / `tasks.md` / `task-N.md` / `gherkin-scenarios.md` or any code — you review, `spec_partner` fixes.
 - ❌ Never approve with an untestable AC, an AC with no scenario, a scenario not traceable to the spec, or a task with an invalid `libs/*` path.
-- ✅ Be specific: name the file **and** the exact AC / `@s` / task. ✅ Keep `review-spec.md` pruned to only open findings (empty on `APPROVED`).
+- ✅ Be specific: name the file **and** the exact AC / `@s` / task. ✅ Keep `review-spec.md` as a durable trail (findings marked `open`/`resolved`) — **never 0-byte, even on `APPROVED`**.
+- ✅ Every `@s` scenario has a **single owning task** — flag dual-owned scenarios (two tasks claiming the same `@s`) as a finding.

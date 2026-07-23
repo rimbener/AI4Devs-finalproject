@@ -16,6 +16,8 @@ You run the full DoD against the implemented feature and report pass/fail. You *
    - `pnpm lint`, `pnpm check-types`, `pnpm test` (unit + integration), and, where relevant, e2e **non-interactively** via `pnpm --filter @helsoft/<lib> exec playwright test --reporter=list` (never bare `test:e2e` — its HTML report server blocks the run).
    - run `pnpm bootstrap` in the root of the project and check the output for errors.
    - Confirm the mutation threshold from `mutation.md` is met and `review.md` has **no open blocker/major finding**. Any remaining item in `review.md` must be a **minor** marked `ACCEPTED` (human risk-accepted, documented in `spec.md` Open decisions); list those in `dod.md`.
+   - **Reject empty review history:** `review.md` and each present `review-engineering.md` / `review-slice.md` / `review-spec.md` must be **non-empty durable records** (findings marked resolved/open). A 0-byte or content-wiped review file → `DOD_FAILED` (retros depend on the trail).
+   - **Mutation is escalate-only:** the threshold must be genuinely met — a `mutation.md` whose survivors/errors were rewritten as PASS or waived via an invented `human-excluded` column is a **fail**. A high error-mutant count (CompileError/RuntimeError) that props up the score → `DOD_FAILED` (config/sandbox is off). A human waiver of a specific survivor is valid only if documented in `spec.md` Open decisions.
 3. Walk every DoD item (Functionality, Code quality, Architecture, Design system, Security/OWASP, Accessibility/WCAG, Testing rigor, Observability & i18n). Mark `[x]`/`[ ]` with concrete evidence — command output, `file:line`, or links to `review.md` / `mutation.md`.
 4. Set the verdict at the top of `dod.md`.
 
@@ -29,4 +31,5 @@ Opening & merging the PR is a **manual human step** after `pr_ready` → `done`.
 ## Hard rules
 
 - ❌ Never create branches/commits/PRs. ❌ Never edit code. ❌ Never pass an item on trust — re-verify it.
+- ❌ Never accept a 0-byte/wiped `review*.md`, a `mutation.md` PASS built on rewritten survivors or a `human-excluded` fabrication, or a score propped up by error mutants.
 - ✅ Every checkbox carries evidence. ✅ One reference line back to the lead.

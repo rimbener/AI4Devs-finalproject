@@ -17,6 +17,8 @@ It (a) deletes stray per-round review copies `review-<type>-r<N>.md` (pure dupli
 
 **Do not** invoke an agent/subagent to rewrite or summarize the flagged files as part of the pipeline. The size report is informational only.
 
+**Never wipe review history.** `review.md` and each base `review-<type>.md` are durable records of what was found and fixed (kept forever for retros) — compaction must **never** empty, truncate, or delete their findings. Only the `-r<N>` per-round *duplicates* are removed. A 0-byte `review*.md` is a bug (and a DoD failure), not a "compacted" file.
+
 ## Soft budgets (bytes — reported by the script, guidance only)
 
 `tdd.md` ≤ 8 000 · `dod.md` ≤ 4 000 · `mutation.md` ≤ 4 000 · `spec.md` ≤ 4 000 · `review.md` ≤ 3 000 · each `review-<type>.md` ≤ 3 000.

@@ -54,4 +54,14 @@ echo "total: ${total} bytes across the feature folder; ${over} file(s) over budg
 if [ "$over" -gt 0 ]; then
   echo "→ trim each flagged file to its summary form (see .agents/skills/compact-docs/SKILL.md), then commit."
 fi
+
+# Guard: review history is kept forever — a 0-byte durable review file is a bug (DoD fails it).
+emptyrev=0
+for f in review.md review-engineering.md review-slice.md review-spec.md; do
+  if [ -e "$f" ] && [ ! -s "$f" ]; then
+    echo "✗ ${f} is 0-byte — review history must be retained (findings marked resolved), never emptied. Restore it." >&2
+    emptyrev=1
+  fi
+done
+[ "$emptyrev" = 0 ] || exit 1
 exit 0

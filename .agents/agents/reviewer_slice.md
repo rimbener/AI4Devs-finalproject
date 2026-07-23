@@ -21,6 +21,7 @@ A fast quality gate before a vertical slice closes. One agent, scoped strictly t
 - **`types.mdc`** — multi-file types live in `*.types.ts`, exported only, no runtime logic; not exported from the implementation file.
 - **`i18n.mdc`** — user-facing text via `t('ns.key')` inline; no `labels`/`copy` object of pre-resolved `t()` calls (key dictionaries like `GENERATION_ERROR_KEYS` are the only allowed collection).
 - **`tdd.mdc`** — Three Laws / Red→Green→Refactor evidence; every `@s` the slice owns maps to ≥ 1 concrete test (check `tdd.md`); no production code no test demands (scope not inflated); no hardcoded strings/colors/dimensions.
+- **`pre-slice-checklist.mdc`** — the recurring review findings from past runs.
 
 ## Code quality (beyond the rule files)
 
@@ -44,7 +45,7 @@ A fast quality gate before a vertical slice closes. One agent, scoped strictly t
 
 1. **Glob + read `.agents/rules/*.mdc`.** Read the slice's diff (`git diff` since the previous slice commit) + `tdd.md`'s `@s → test` map; `gherkin-scenarios.md`/`spec.md` as needed.
 2. Check the diff against **every** rule plus the code-quality, design, and accessibility checks above. **Any finding blocks — slice reviews accept no minors**; everything found here is fixed before the slice closes.
-3. Write `docs/features/<name>/review-slice.md` (overwrite in place each slice/round): verdict `APPROVED`/`CHANGES_REQUESTED` + `file:line` findings + severity, **each tagged with the rule/lens it violates** (e.g. `[hooks-service-dao]`, `[i18n]`, `[tdd]`, `[design]`, `[a11y]`). Findings only.
+3. Write `docs/features/<name>/review-slice.md` (update each slice/round — a **durable trail**, never emptied): verdict `APPROVED`/`CHANGES_REQUESTED` + `file:line` findings + severity, **each tagged with the rule/lens it violates** (e.g. `[hooks-service-dao]`, `[i18n]`, `[tdd]`, `[design]`, `[a11y]`) and marked `open`/`resolved`.
 
 Return one line: `<VERDICT> -> docs/features/<name>/review-slice.md`.
 
@@ -54,4 +55,4 @@ Return one line: `<VERDICT> -> docs/features/<name>/review-slice.md`.
 - ✅ **Enforce every rule in `.agents/rules/` on the diff** — glob the directory, don't hardcode the list; cite the rule + `file:line` on each finding.
 - ✅ Enforce **accessibility (WCAG 2.2 AA)** on any UI the slice touches (never approve a control missing a label/role or below contrast/target minimums).
 - ✅ Leave only **security (OWASP)** and **performance** to the full review.
-- ✅ One findings-only file, overwritten each slice/round — never per-round copies.
+- ✅ One `review-slice.md`, updated each slice/round to a durable trail (findings marked `open`/`resolved`) — **never emptied, never 0-byte**, never per-round copies.

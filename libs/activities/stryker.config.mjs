@@ -17,7 +17,7 @@ export default {
   testRunner: 'jest',
   plugins: ['@stryker-mutator/jest-runner'],
   jest: { projectType: 'custom', configFile: 'jest.config.js' },
-  reporters: ['html', 'clear-text', 'progress'],
+  reporters: ['clear-text', 'json', 'html'], // no 'progress' — non-TTY/agent/CI safe; 'json' feeds parse-mutation-report.mjs
   coverageAnalysis: 'perTest',
   inPlace: true,
   mutate: [
