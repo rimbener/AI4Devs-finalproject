@@ -1,19 +1,21 @@
-# Engineering review — native-bottom-tabs
+# Engineering review — native-bottom-tabs (round 2)
 
-**Verdict:** CHANGES_REQUESTED  
-**CI:** green @ `1043d827d57af2838e3eece620747b01ce0b7443`  
+**Verdict:** APPROVED  
+**CI:** green @ `c6b3b3619b467a1b44cad12e579a7b25e076de1b`  
 **Base:** `feature-entrega3-HernanLaura`
 
 ## Lenses N/A
 
-None. Diff ships UI/nav chrome + `SettingsSignOut` (auth session UX) — both performance and security in scope; no findings under those lenses beyond the items below.
+- **performance:** UI/nav chrome only (2-tab `NativeTabs`, breakpoint switch, no lists/queries). No findings.
+- **security:** No new service/DAO/network/storage trust boundary; SignOut reposition only; no secrets. No findings. (OWASP: N/A)
+
+## Prior r1 findings — verified resolved
+
+1. **major [code]** Dead `isNativeTabSelected` removed (no remaining refs). `@s5` → `tabs-layout.native.test.tsx` renders real `(tabs)/_layout.tsx` and asserts Trigger `accessibilityState.selected` (mock mirrors Expo name↔route selection).
+2. **major [code]** `(app)/_layout.tsx:7-9` exports `unstable_settings.initialRouteName: '(tabs)'`; concrete assert in `app-layout-settings.test.ts:24-26` + source check in `tabs-layout.test.ts:68-79`.
+3. **minor [code]** Shared `NATIVE_TAB_TRIGGERS` (`native-tabs-triggers.ts`); both `_layout.tsx` / `_layout.web.tsx` consume it; both files asserted in `tabs-layout.test.ts:12-38`.
+4. **minor [arch]** Structure suite moved to `apps/app-study-buddy/src/__tests__/app/(app)/tabs-layout.test.ts` (gone from study-buddy lib).
 
 ## Findings
 
-1. **major [code]** `libs/study-buddy/src/components/app-chrome/native-tab-selected.ts:8` (+ barrel `libs/study-buddy/src/index.ts:8-9`) — `isNativeTabSelected` is dead production code (zero call sites outside its unit test). `@s5` is asserted only against this unused helper (`native-tab-selected.test.ts:6-22`), not against `NativeTabs` wiring in `(tabs)/_layout.tsx` / `_layout.web.tsx`. Violates YAGNI / “no production code that no test demands”; leaves AT-selected tab contract unproven on the real path. Drop the export (and helper) or wire selection into production; cover `@s5` against the actual selected path Expo owns (or an integration that observes it).
-
-2. **major [code]** `apps/app-study-buddy/src/app/(app)/_layout.tsx:13-15` — `@s7` / `@s16` require a header back from a **directly opened** `/upload` that returns to My lessons. Layout only sets `headerShown: true` + title; no `unstable_settings.initialRouteName: '(tabs)'` (or equivalent stack anchor). Expo Router docs: deep links into a stack need `initialRouteName` for a consistent back stack. Tests only regex `headerShown` (`tabs-layout.test.ts:58-61`) — do not prove destination `/`. Add the settings (or explicit back → `/`) and a concrete test for deep-link back → My lessons.
-
-3. **minor [code]** `apps/app-study-buddy/src/app/(app)/(tabs)/_layout.tsx:8-17` vs `_layout.web.tsx:20-30` — duplicated NativeTabs trigger trees (labels, glyphs, names). `tabs-layout.test.ts` locks only the native file for `@s1`/`@s10`; web layout can drift (wrong glyph/key/extra trigger) without failing those checks. Extract shared trigger config or assert both files.
-
-4. **minor [arch]** `libs/study-buddy/src/components/app-chrome/tabs-layout.test.ts:4-7` — feature-lib suite reads `apps/app-study-buddy` sources via `../../../../../apps/...`. Cross-package filesystem coupling; prefer co-located app tests (as with `tabs-layout-web.test.tsx`) or a shared contract module in `@helsoft/study-buddy` that the app imports.
+None.
