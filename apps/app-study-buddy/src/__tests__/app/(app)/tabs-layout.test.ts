@@ -61,10 +61,13 @@ describe('(app)/_layout.tsx Stack structure', () => {
     expect(existsSync(appRoute('upload.tsx'))).toBe(false);
   });
 
-  it('lesson routes are Stack siblings so tab bar is absent on lesson screens (@s9)', () => {
+  // @s9 structural proof (lesson routes rendered as Stack.Screen siblings of (tabs), so
+  // the tab bar is absent on lesson screens) lives in the rendering test in
+  // `app-layout-settings.test.tsx` ("renders (tabs) then the three lesson screens, in
+  // LESSON_STACK_SCREENS order"), which asserts actual render output/order rather than
+  // source text. Kept here only as a cheap source-presence guard.
+  it('imports LESSON_STACK_SCREENS from @helsoft/study-buddy for the lesson Stack.Screen list', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
-    // Route names live in the shared LESSON_STACK_SCREENS factory (@helsoft/study-buddy);
-    // the layout maps over it rather than hardcoding each Stack.Screen name.
     expect(src).toMatch(/LESSON_STACK_SCREENS/);
     expect(src).toMatch(/@helsoft\/study-buddy/);
   });

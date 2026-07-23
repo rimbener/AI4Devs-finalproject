@@ -36,10 +36,17 @@ manually-rendered header.
   `screenOptions={{ headerShown: false }}` that suppresses them; the change is to
   invert the default (bare Stack, hide only `(tabs)`) and source the screen list
   from the lib factory.
-- The app workspace has no test runner, so scenarios s1–s7 are verified by
-  check-types + lint + reviewer + manual/visual check (called out in risks R2).
-  The header is applied at the Stack level, so the player's four states (s6) and
-  cross-platform rendering (s5) come for free from a single config.
+- `apps/app-study-buddy` **does** have jest + `@testing-library/react-native`
+  (already used by `tabs-layout.native.test.tsx` / `tabs-layout-web.test.tsx`).
+  `apps/app-study-buddy/src/__tests__/app/(app)/app-layout-settings.test.tsx`
+  renders `AppLayout` with `Stack`/`Stack.Screen` mocked to capture `name`/
+  `options` and asserts, per route: `(tabs)` has `headerShown: false` (s7); each
+  lesson screen's `options.title` resolves via the mocked `t(titleKey)` with no
+  `headerShown: false` override (s1–s3); and the render order matches
+  `LESSON_STACK_SCREENS` (s8 wiring). The header is applied at the Stack level
+  (not per-screen chrome), so the player's four states (s6) and cross-platform
+  rendering (s5) come for free from that single config — no separate test needed
+  for s5/s6 once the above pass.
 - Results (s3) renders a `<Redirect>` today, so its header is practically
   invisible; still configured for AC completeness.
 - Do not add safe-area handling to screens/`ScreenContainer` — the native header
