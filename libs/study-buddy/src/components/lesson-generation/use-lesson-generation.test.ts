@@ -171,4 +171,46 @@ describe('useLessonGenerationForm', () => {
       expect(result.current.selectedModel).toBe('gpt-5.6-luna');
     });
   });
+
+  // Engineering review — block Generate until async picker preselect finishes (@s20 race).
+  it('blocks canGenerate until picker preselect completes', async () => {
+    let resolvePref!: (value: null) => void;
+    mockGetStoredPreference.mockReturnValue(
+      new Promise<null>((resolve) => {
+        resolvePref = resolve;
+      }),
+    );
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01' }],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    expect(result.current.showPickers).toBe(true);
+    expect(result.current.canGenerate).toBe(false);
+    expect(result.current.buildGenerateRequest()).toEqual({
+      documentId: 'doc-1',
+      composition: 'both',
+    });
+
+    await act(async () => {
+      resolvePref(null);
+    });
+
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('groq');
+      expect(result.current.canGenerate).toBe(true);
+    });
+    expect(result.current.buildGenerateRequest()).toEqual({
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    });
+  });
 });

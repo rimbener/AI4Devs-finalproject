@@ -31,6 +31,7 @@ const GUIDANCE_URLS: Partial<Record<AiProvider, string>> = {
  */
 const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
   network_error: 'settings.apiKey.error.network',
+  validation_error: 'settings.apiKey.error.empty',
 };
 
 /**

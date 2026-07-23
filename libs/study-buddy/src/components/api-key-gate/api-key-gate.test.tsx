@@ -9,6 +9,7 @@ jest.mock('@helsoft/localization', () => ({
 
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import type { ApiKeyStatus } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, Text } from 'react-native';
 
@@ -24,10 +25,16 @@ const CanCreateProbe = () => {
   return <Text>{profile?.canCreate ? 'creation enabled' : 'creation disabled'}</Text>;
 };
 
+const emptyStatus: ApiKeyStatus = { keys: [] };
+const groqStatus: ApiKeyStatus = {
+  keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
+};
+
 const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => ({
-  status: { hasKey: false },
+  status: emptyStatus,
   isLoading: false,
   isSubmitting: false,
+  hasKey: false,
   error: null,
   saveApiKey: jest.fn(),
   removeApiKey: jest.fn(),
@@ -173,7 +180,7 @@ describe('ApiKeyGate', () => {
 
   // @s10 (guard facet) — notice when gated; children remain for open/play (@s13).
   it('renders the cannot-create message when there is no key', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: { hasKey: false } }));
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: emptyStatus, hasKey: false }));
 
     await render(
       <ApiKeyGate>
@@ -239,7 +246,8 @@ describe('ApiKeyGate', () => {
   it('disables create via useProfile when current entitlements disallow creation', async () => {
     mockUseApiKey.mockReturnValue(
       apiKeyValue({
-        status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+        status: groqStatus,
+        hasKey: true,
       }),
     );
 

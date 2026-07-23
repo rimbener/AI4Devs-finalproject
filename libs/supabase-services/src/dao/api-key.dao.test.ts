@@ -15,32 +15,23 @@ describe('ApiKeyDao', () => {
     mockGetSupabase.mockReturnValue({ functions: { invoke }, from });
   });
 
-  // @s2 (client half) — saveApiKey invokes the manage-api-key Edge Function with the save
-  // action + the given provider/key, then selects all rows to return the full keys status.
-  it('saveApiKey invokes manage-api-key save then selects all rows for the full keys status', async () => {
-    const rows = [
-      { provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' },
-      { provider: 'openai', updated_at: '2026-02-01T00:00:00.000Z' },
-    ];
-    invoke.mockResolvedValue({
-      data: { hasKey: true, provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
-      error: null,
-    });
-    select.mockResolvedValue({ data: rows, error: null });
+  // @s2 (client half) — saveApiKey invokes manage-api-key and returns keys from the response body.
+  it('saveApiKey returns keys from invoke response without a client re-select', async () => {
+    const status = {
+      keys: [
+        { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
+      ],
+    };
+    invoke.mockResolvedValue({ data: status, error: null });
 
     const result = await ApiKeyDao.saveApiKey({ provider: 'openai', apiKey: 'sk-test' });
 
     expect(invoke).toHaveBeenCalledWith('manage-api-key', {
       body: { action: 'save', provider: 'openai', apiKey: 'sk-test' },
     });
-    expect(from).toHaveBeenCalledWith('user_ai_keys');
-    expect(select).toHaveBeenCalledWith('provider, updated_at');
-    expect(result).toEqual({
-      keys: [
-        { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
-        { provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
-      ],
-    });
+    expect(select).not.toHaveBeenCalled();
+    expect(result).toEqual(status);
   });
 
   // @s2 (failure path) — a structured Edge Function error is thrown as-is
@@ -104,21 +95,18 @@ describe('ApiKeyDao', () => {
     }
   });
 
-  // @s5 — removeApiKey invokes manage-api-key with the remove action + provider,
-  // then selects remaining rows for the updated keys status.
-  it('removeApiKey invokes manage-api-key remove with provider then selects remaining rows', async () => {
-    const remainingRows = [{ provider: 'openai', updated_at: '2026-02-01T00:00:00.000Z' }];
-    invoke.mockResolvedValue({ data: { hasKey: false }, error: null });
-    select.mockResolvedValue({ data: remainingRows, error: null });
+  // @s5 — removeApiKey invokes manage-api-key and returns keys from the response body.
+  it('removeApiKey returns keys from invoke response without a client re-select', async () => {
+    const status = { keys: [{ provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' }] };
+    invoke.mockResolvedValue({ data: status, error: null });
 
     const result = await ApiKeyDao.removeApiKey('groq');
 
     expect(invoke).toHaveBeenCalledWith('manage-api-key', {
       body: { action: 'remove', provider: 'groq' },
     });
-    expect(result).toEqual({
-      keys: [{ provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' }],
-    });
+    expect(select).not.toHaveBeenCalled();
+    expect(result).toEqual(status);
   });
 
   // @s5 (failure path)

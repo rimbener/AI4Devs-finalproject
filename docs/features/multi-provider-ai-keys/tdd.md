@@ -113,3 +113,39 @@ Manual live-verify (task-9/10): Deno `@ai-sdk/*` factory + vision calls — not 
 |---------|-------|
 | F1 types.mdc | RED generation-preference.types.test.ts → GREEN *.types.ts + barrel re-export |
 | F2 scope | reverted new-lesson-dialog.tsx format-only change |
+
+## Full review rework (R1 — CI)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 lint | GREEN new-lesson-dialog.tsx Biome single-line destructuring |
+| F2 hooks TS | GREEN rerender(undefined as never) + renderHook<UseLessonResult, LessonIdProps> |
+| F3 test timeouts | GREEN jest-setup-after: GenerationPreferenceService mock + cleanup(); split app-chrome act; sign-in-form press in act |
+
+## Full review rework (R2 — CI)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 lint | GREEN `pnpm format` — localization/activities/components/pdf-upload-extraction Biome fixes |
+| F2 activities TS | GREEN SlideProgressSlide `{ type: 'lesson'|'activity' }` + OpenEndedSlide `kind`/`activityType` shape |
+
+## Full review rework (R2b — study-buddy check-types)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 ApiKeyStatus | GREEN mocks/stories/tests → `{ keys: SavedProviderKey[] }`; hook mock exposes derived `hasKey` |
+
+## Full review rework (R2c — lint)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 import order | GREEN biome check --write api-key-settings.stories.tsx |
+
+## Engineering review rework (R1)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 picker race | RED use-lesson-generation.test.ts → GREEN hasPickerSelection gates canGenerate |
+| F2 validation i18n | RED api-key-settings.test.ts → GREEN validation_error → settings.apiKey.error.empty |
+| F3 blank key edge | RED handle-save.test.ts → GREEN trim rejection before storeApiKey |
+| F4 DAO round-trip | RED api-key.dao.test.ts → GREEN invoke returns keys; edge fn lists once server-side |

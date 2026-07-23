@@ -34,7 +34,8 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
   const isFreeByok = profile?.keySource === 'user';
   const showPickers = isFreeByok && savedProviders.length > 0;
   const showMissingKeyGate = isFreeByok && !hasKey;
-  const canGenerate = Boolean(documentId) && !showMissingKeyGate;
+  const hasPickerSelection = !showPickers || (Boolean(selectedProvider) && Boolean(selectedModel));
+  const canGenerate = Boolean(documentId) && !showMissingKeyGate && hasPickerSelection;
 
   useEffect(() => {
     if (!showPickers || savedProviders.length === 0) return;

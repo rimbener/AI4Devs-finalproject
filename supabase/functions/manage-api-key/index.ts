@@ -8,7 +8,7 @@ import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
 import { handleRemoveApiKey, type RemoveApiKeyResult } from './handle-remove.ts';
-import { handleSaveApiKey, type SaveApiKeyResult } from './handle-save.ts';
+import { handleSaveApiKey, type ApiKeyStatus, type SaveApiKeyResult } from './handle-save.ts';
 import { logEvent } from './logger.ts';
 import { isAiProvider, type AiProvider } from './provider.ts';
 
@@ -27,14 +27,37 @@ type RequestBody = SaveRequestBody | RemoveRequestBody;
 
 type DispatchResult = { status: number; body: SaveApiKeyResult | RemoveApiKeyResult };
 
+type UserAiKeyRow = { provider: string; updated_at: string };
+
 const jsonResponse = (request: Request, status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders(request), 'Content-Type': 'application/json' },
   });
 
-const errorStatus = (result: SaveApiKeyResult | RemoveApiKeyResult): number =>
-  'code' in result ? 502 : 200;
+const errorStatus = (result: SaveApiKeyResult | RemoveApiKeyResult): number => {
+  if ('code' in result) {
+    return result.code === 'validation_error' ? 400 : 502;
+  }
+  return 200;
+};
+
+const listUserApiKeys = async (
+  adminClient: SupabaseClient,
+  userId: string,
+): Promise<ApiKeyStatus> => {
+  const { data, error } = await adminClient
+    .from('user_ai_keys')
+    .select('provider, updated_at')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return {
+    keys: (data ?? []).map((row: UserAiKeyRow) => ({
+      provider: row.provider as AiProvider,
+      updatedAt: row.updated_at,
+    })),
+  };
+};
 
 /**
  * Authenticates the caller from the request's own JWT -- user_id is derived here, never
@@ -83,6 +106,7 @@ const dispatch = async (
             p_provider: provider,
           });
           if (error) throw error;
+          return listUserApiKeys(adminClient, id);
         },
         log: logEvent,
       },
@@ -98,14 +122,13 @@ const dispatch = async (
     { userId, provider: body.provider, apiKey: body.apiKey },
     {
       storeApiKey: async ({ userId: id, provider, apiKey }) => {
-        const { data, error } = await adminClient.rpc('save_api_key', {
+        const { error } = await adminClient.rpc('save_api_key', {
           p_user_id: id,
           p_provider: provider,
           p_api_key: apiKey,
         });
         if (error) throw error;
-        const row = Array.isArray(data) ? data[0] : data;
-        return { provider: row.provider, updatedAt: row.updated_at };
+        return listUserApiKeys(adminClient, id);
       },
       log: logEvent,
     },

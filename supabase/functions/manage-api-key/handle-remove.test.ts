@@ -3,21 +3,24 @@ import { assertEquals } from 'jsr:@std/assert@1';
 import { handleRemoveApiKey } from './handle-remove.ts';
 
 const params = { userId: 'user-1', provider: 'groq' as const };
+const remainingStatus = {
+  keys: [{ provider: 'openai' as const, updatedAt: '2026-02-01T00:00:00.000Z' }],
+};
 
 // @s5 (server half) — a successful remove deletes the provider's Vault secret + row and
-// replies with the no-key status.
-Deno.test('handleRemoveApiKey removes the stored key and returns hasKey: false on success', async () => {
+// replies with the updated multi-key status.
+Deno.test('handleRemoveApiKey removes the stored key and returns the updated keys status', async () => {
   const removeCalls: unknown[] = [];
   const result = await handleRemoveApiKey(params, {
     removeApiKey: (args) => {
       removeCalls.push(args);
-      return Promise.resolve();
+      return Promise.resolve(remainingStatus);
     },
     log: () => {},
   });
 
   assertEquals(removeCalls, [params]);
-  assertEquals(result, { hasKey: false });
+  assertEquals(result, remainingStatus);
 });
 
 // @s5 (failure) — a failed remove normalizes to network_error
@@ -34,7 +37,7 @@ Deno.test('handleRemoveApiKey returns network_error when the removal fails', asy
 Deno.test('handleRemoveApiKey logs only { action, outcome, userId } on success', async () => {
   const logCalls: unknown[] = [];
   await handleRemoveApiKey(params, {
-    removeApiKey: () => Promise.resolve(),
+    removeApiKey: () => Promise.resolve({ keys: [] }),
     log: (event) => logCalls.push(event),
   });
 
@@ -47,7 +50,7 @@ Deno.test('handleRemoveApiKey passes the provider to the injected removeApiKey',
   await handleRemoveApiKey({ userId: 'u1', provider: 'openai' }, {
     removeApiKey: (args) => {
       removeCalls.push(args);
-      return Promise.resolve();
+      return Promise.resolve({ keys: [] });
     },
     log: () => {},
   });

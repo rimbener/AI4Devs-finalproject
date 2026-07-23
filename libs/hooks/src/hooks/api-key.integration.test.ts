@@ -53,17 +53,10 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
 
   // @s1 — saving a key end-to-end reflects the new multi-key status.
   it('saves a key end-to-end and reflects the masked status the Edge Function returns', async () => {
-    // Initial load → no keys; post-save re-select → Groq row
-    const selectEmpty = jest.fn().mockResolvedValue({ data: [], error: null });
-    const selectWithGroq = jest.fn().mockResolvedValue({ data: [groqRow], error: null });
-    let callCount = 0;
     jest.spyOn(client, 'from').mockReturnValue({
-      select: (...args: unknown[]) => {
-        callCount++;
-        return callCount === 1 ? selectEmpty(...args) : selectWithGroq(...args);
-      },
+      select: jest.fn().mockResolvedValue({ data: [], error: null }),
     } as never);
-    const invoke = mockInvoke(() => Promise.resolve({ data: { success: true }, error: null }));
+    const invoke = mockInvoke(() => Promise.resolve({ data: groqKeyStatus, error: null }));
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -82,18 +75,20 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
   // @s4 — replacing one provider leaves the other provider's key unchanged.
   it('leaves the other provider key unchanged when replacing one provider', async () => {
     const openaiRow = { provider: 'openai', updated_at: '2026-02-01T00:00:00.000Z' };
-    const updatedGroqRow = { provider: 'groq', updated_at: '2026-03-01T00:00:00.000Z' };
-    let callCount = 0;
     jest.spyOn(client, 'from').mockReturnValue({
-      select: jest.fn().mockImplementation(() => {
-        callCount++;
-        return Promise.resolve({
-          data: callCount === 1 ? [groqRow, openaiRow] : [updatedGroqRow, openaiRow],
-          error: null,
-        });
-      }),
+      select: jest.fn().mockResolvedValue({ data: [groqRow, openaiRow], error: null }),
     } as never);
-    mockInvoke(() => Promise.resolve({ data: { success: true }, error: null }));
+    mockInvoke(() =>
+      Promise.resolve({
+        data: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-03-01T00:00:00.000Z' },
+            { provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
+          ],
+        },
+        error: null,
+      }),
+    );
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -115,18 +110,15 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
 
   // @s4 — replacing an already-saved key reflects the updated status.
   it('replaces an already-saved key end-to-end and reflects the updated masked status', async () => {
-    const updatedRow = { provider: 'groq', updated_at: '2026-03-01T00:00:00.000Z' };
-    let callCount = 0;
     jest.spyOn(client, 'from').mockReturnValue({
-      select: jest.fn().mockImplementation(() => {
-        callCount++;
-        return Promise.resolve({
-          data: callCount === 1 ? [groqRow] : [updatedRow],
-          error: null,
-        });
-      }),
+      select: jest.fn().mockResolvedValue({ data: [groqRow], error: null }),
     } as never);
-    mockInvoke(() => Promise.resolve({ data: { success: true }, error: null }));
+    mockInvoke(() =>
+      Promise.resolve({
+        data: { keys: [{ provider: 'groq', updatedAt: '2026-03-01T00:00:00.000Z' }] },
+        error: null,
+      }),
+    );
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -141,17 +133,10 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
 
   // @s8 — removing a saved key end-to-end reflects the no-key status.
   it('removes a saved key end-to-end and reflects the no-key status', async () => {
-    let callCount = 0;
     jest.spyOn(client, 'from').mockReturnValue({
-      select: jest.fn().mockImplementation(() => {
-        callCount++;
-        return Promise.resolve({
-          data: callCount === 1 ? [groqRow] : [],
-          error: null,
-        });
-      }),
+      select: jest.fn().mockResolvedValue({ data: [groqRow], error: null }),
     } as never);
-    const invoke = mockInvoke(() => Promise.resolve({ data: { success: true }, error: null }));
+    const invoke = mockInvoke(() => Promise.resolve({ data: { keys: [] }, error: null }));
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));

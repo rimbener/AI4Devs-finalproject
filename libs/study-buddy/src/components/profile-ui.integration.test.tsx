@@ -24,7 +24,10 @@ describe('profile UI integration', () => {
   beforeEach(() => {
     mockUseLocalization.mockReturnValue(localizationValue());
     mockUseApiKey.mockReturnValue({
-      status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+      status: {
+        keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
+      },
+      hasKey: true,
       isLoading: false,
       isSubmitting: false,
       error: null,

@@ -1,3 +1,4 @@
+import type { ApiKeyStatus } from '@helsoft/types';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { configureApiKeyMock, configureProfileMock } from '../../../.storybook/mocks/hooks';
@@ -34,11 +35,16 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+const emptyApiKeyStatus: ApiKeyStatus = { keys: [] };
+const groqApiKeyStatus: ApiKeyStatus = {
+  keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
+};
+
 /** Empty — no key saved; Save disabled until a non-blank key is entered. */
 export const Empty: Story = {
   decorators: [
     withProfileMock({ profile: FREE_PROFILE }),
-    withApiKeyMock({ status: { hasKey: false } }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };
 
@@ -49,7 +55,7 @@ export const Saved: Story = {
       profile: { ...FREE_PROFILE, canCreate: true },
     }),
     withApiKeyMock({
-      status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+      status: groqApiKeyStatus,
     }),
   ],
 };
@@ -58,7 +64,7 @@ export const Saved: Story = {
 export const Loading: Story = {
   decorators: [
     withProfileMock({ profile: null, isLoading: true }),
-    withApiKeyMock({ status: { hasKey: false } }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };
 
@@ -66,7 +72,7 @@ export const Loading: Story = {
 export const NetworkError: Story = {
   decorators: [
     withProfileMock({ profile: FREE_PROFILE }),
-    withApiKeyMock({ status: { hasKey: false }, error: 'network_error' }),
+    withApiKeyMock({ status: emptyApiKeyStatus, error: 'network_error' }),
   ],
 };
 
@@ -83,7 +89,7 @@ export const Paid: Story = {
       },
     }),
     withApiKeyMock({
-      status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+      status: groqApiKeyStatus,
     }),
   ],
 };
@@ -95,6 +101,6 @@ export const ProfileError: Story = {
       profile: null,
       error: new globalThis.Error('read failed'),
     }),
-    withApiKeyMock({ status: { hasKey: false } }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };

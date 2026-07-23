@@ -40,7 +40,9 @@ describe('SignInForm (study-buddy wiring)', () => {
     await act(async () => {
       fireEvent.changeText(screen.getByLabelText('auth.password'), 'secret1');
     });
-    fireEvent.press(screen.getByRole('button', { name: 'auth.submit' }));
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'auth.submit' }));
+    });
 
     expect(signIn).toHaveBeenCalledWith('user@example.com', 'secret1');
   });

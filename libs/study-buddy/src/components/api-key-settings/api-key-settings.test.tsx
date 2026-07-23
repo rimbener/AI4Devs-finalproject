@@ -258,6 +258,16 @@ describe('ApiKeySettings', () => {
     expect(screen.getByText('settings.apiKey.error.network')).toBeTruthy();
   });
 
+  // @s8 — validation_error maps to the empty-key banner (service-layer backstop).
+  it('maps a validation_error to the empty-key message', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ error: 'validation_error' }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettings />);
+
+    expect(screen.getByText('settings.apiKey.error.empty')).toBeTruthy();
+  });
+
   // @s8 — confirming removal calls useApiKey().removeApiKey with the provider.
   it('calls removeApiKey with the provider when the removal is confirmed', async () => {
     const removeApiKey = jest.fn().mockResolvedValue(undefined);
