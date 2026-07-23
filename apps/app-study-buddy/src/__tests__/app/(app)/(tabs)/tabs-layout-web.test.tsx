@@ -30,6 +30,13 @@ jest.mock('@helsoft/study-buddy', () => {
         md: 'menu_book',
       },
       {
+        name: 'pdf-files',
+        href: '/pdf-files',
+        labelKey: 'nav.myPdfFiles',
+        sf: 'doc.text',
+        md: 'picture_as_pdf',
+      },
+      {
         name: 'settings',
         href: '/settings',
         labelKey: 'nav.settings',

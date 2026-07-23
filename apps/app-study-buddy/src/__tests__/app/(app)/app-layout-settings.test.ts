@@ -21,7 +21,7 @@ import { unstable_settings } from '../../../app/(app)/_layout';
 
 // @s7 @s16 — concrete deep-link back destination (not only headerShown)
 describe('(app)/_layout unstable_settings', () => {
-  it('initialRouteName is (tabs) so /upload back returns to My lessons at /', () => {
+  it('initialRouteName is (tabs) so lesson deep-links return to the tab shell', () => {
     expect(unstable_settings).toEqual({ initialRouteName: '(tabs)' });
   });
 });

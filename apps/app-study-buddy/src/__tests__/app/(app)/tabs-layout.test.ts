@@ -21,11 +21,21 @@ describe('NativeTabs trigger wiring (native + web)', () => {
 
   it.each([
     '_layout.tsx',
-    '_layout.web.tsx',
   ] as const)('%s uses NativeTabs from expo-router/unstable-native-tabs', (file) => {
     const src = readTabsLayout(file);
     expect(src).toMatch(/expo-router\/unstable-native-tabs/);
     expect(src).toMatch(/NativeTabs/);
+  });
+
+  it('_layout.web.tsx uses WebBottomTabs for narrow web', () => {
+    const src = readTabsLayout('_layout.web.tsx');
+    expect(src).toMatch(/WebBottomTabs/);
+    expect(src).toMatch(/NATIVE_TAB_TRIGGERS/);
+    expect(src).not.toMatch(/unstable-native-tabs/);
+  });
+
+  it('(tabs)/pdf-files.tsx exists — PDF files tab screen', () => {
+    expect(existsSync(tabsRoute('pdf-files.tsx'))).toBe(true);
   });
 
   it.each([
@@ -38,26 +48,17 @@ describe('NativeTabs trigger wiring (native + web)', () => {
   });
 });
 
-// @s7 @s9 @s16 — upload + lesson outside tabs; deep-link back → My lessons
+// @s9 @s16 — lesson outside tabs; stack anchors on (tabs)
 describe('(app)/_layout.tsx Stack structure', () => {
   it('lists (tabs) group as a Stack.Screen child', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
     expect(src).toMatch(/name="\(tabs\)"/);
   });
 
-  it('lists upload as a Stack sibling — not inside (tabs) — so no tab bar (@s7 @s9)', () => {
+  it('does not register a retired upload Stack screen', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/name="upload"/);
-  });
-
-  it('upload screen has headerShown: true so a back control is present (@s7)', () => {
-    const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/headerShown[^;]*true/);
-  });
-
-  it('upload title comes from nav.newLesson locale key — no hardcoded string (@s7 @s10)', () => {
-    const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/nav\.newLesson/);
+    expect(src).not.toMatch(/name="upload"/);
+    expect(existsSync(appRoute('upload.tsx'))).toBe(false);
   });
 
   it('lesson routes are Stack siblings so tab bar is absent on lesson screens (@s9)', () => {
@@ -65,17 +66,12 @@ describe('(app)/_layout.tsx Stack structure', () => {
     expect(src).toMatch(/lesson\/\[id\]/);
   });
 
-  it('anchors stack with initialRouteName (tabs) so deep-link /upload back → / My lessons (@s7 @s16)', () => {
+  it('anchors stack with initialRouteName (tabs) (@s16)', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
     expect(src).toMatch(/unstable_settings/);
     expect(src).toMatch(/initialRouteName:\s*['"]\(tabs\)['"]/);
-    // (tabs)/index is My lessons at URL /
     expect(existsSync(tabsRoute('index.tsx'))).toBe(true);
-    // upload is a sibling after (tabs): back pops to (tabs) → /
-    const tabsIdx = src.indexOf('name="(tabs)"');
-    const uploadIdx = src.indexOf('name="upload"');
-    expect(tabsIdx).toBeGreaterThan(-1);
-    expect(uploadIdx).toBeGreaterThan(tabsIdx);
+    expect(existsSync(tabsRoute('pdf-files.tsx'))).toBe(true);
   });
 });
 
