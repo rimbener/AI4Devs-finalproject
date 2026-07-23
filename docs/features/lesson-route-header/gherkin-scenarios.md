@@ -47,18 +47,18 @@ Feature: Lesson-route header
       | desktop web |
 
   @s6
-  Scenario Outline: Player keeps its header across every state
+  Scenario Outline: Player keeps its header across every state without altering in-screen actions
     Given I am on the lesson player screen
     When the player is in the <state> state
     Then the header with the "nav.study" title and back button is still shown
-    And the existing in-screen "Back" / "Retake" / "Back to my lessons" actions are unchanged
+    And that state's existing in-screen actions are exactly <unchanged in-screen actions>
 
     Examples:
-      | state   |
-      | loading |
-      | empty   |
-      | error   |
-      | loaded  |
+      | state   | unchanged in-screen actions                              |
+      | loading | none (loading indicator only, no in-screen action)       |
+      | empty   | "Back" (player.back) only                                |
+      | error   | "Retry" (player.error.retry) + "Back" (player.back)      |
+      | loaded  | "Retake" (onRetake) + "Back to my lessons" (onBackToLessons) |
 
   @s7
   Scenario Outline: Root tab screens stay headerless on every platform
