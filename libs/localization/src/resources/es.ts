@@ -110,6 +110,12 @@ export const es: TranslationResource = {
     },
     generation: {
       dialogHeadline: 'Generar lección',
+      provider: {
+        heading: 'Proveedor de IA',
+      },
+      model: {
+        heading: 'Modelo',
+      },
       composition: {
         heading: 'Contenido de la lección',
         instructionalOnly: 'Solo instructivo',
@@ -136,6 +142,7 @@ export const es: TranslationResource = {
       error: {
         missingKey: 'Se requiere una clave de API para generar lecciones.',
         invalidKey: 'Tu clave de API fue rechazada. Revísala en Ajustes.',
+        invalidModel: 'Ese proveedor o modelo ya no está disponible. Elige otro e inténtalo de nuevo.',
         platformKeyUnavailable:
           'La generación de lecciones no está disponible temporalmente. Inténtalo de nuevo.',
         rateLimited: 'Alcanzaste el límite del proveedor. Vuelve a intentarlo en un momento.',
@@ -150,6 +157,33 @@ export const es: TranslationResource = {
           settings: 'Ir a Ajustes',
           signIn: 'Iniciar sesión',
         },
+      },
+    },
+    aiModel: {
+      groq: {
+        gptOss20b: 'GPT-OSS 20B',
+        gptOss120b: 'GPT-OSS 120B',
+        qwen36_27b: 'Qwen 3.6 27B',
+      },
+      openai: {
+        gpt56Luna: 'GPT-5.6 Luna',
+        gpt56Terra: 'GPT-5.6 Terra',
+      },
+      anthropic: {
+        claudeHaiku45: 'Claude Haiku 4.5',
+        claudeSonnet5: 'Claude Sonnet 5',
+      },
+      google: {
+        gemini36Flash: 'Gemini 3.6 Flash',
+        gemini25Flash: 'Gemini 2.5 Flash',
+      },
+      xai: {
+        grok43: 'Grok 4.3',
+        grok45: 'Grok 4.5',
+      },
+      deepseek: {
+        v4Flash: 'DeepSeek V4 Flash',
+        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {

@@ -25,6 +25,46 @@
 | @s1-9 | api-key-settings.test.tsx | ApiKeySettings → ApiKeyManager wiring |
 | @s1-9 | api-key.integration.test.ts | hook→service→DAO chain multi-key integration |
 
+## Slice 2 (@s10–@s19)
+
+| @s | Test file | Description |
+|----|-----------|-------------|
+| @s18 | lesson-generation.test.ts | GenerationErrorCode += invalid_model (11 codes) |
+| @s18 | lesson-generation.helpers.test.ts | invalid_model i18n key + none recovery |
+| @s18 | lesson-generation.service.test.ts | invalid_model server normalization |
+| @s12 | lesson-generation.test.ts | GenerateLessonRequest optional provider/model |
+| @s12 | lesson-generation.dao.test.ts | DAO forwards provider/model in invoke body |
+| @s12 | lesson-generation.service.test.ts | service delegates provider/model unchanged |
+| @s12/@s17/@s18 | lesson-generation.validation.test.ts | BYOK validate + missing_key + invalid_model |
+| @s12/@s17/@s18 | lesson-generation.key-routing.integration.test.ts | route BYOK/platform key paths |
+| @s13/@s14/@s15 | lesson-generation.vision-model.test.ts | vision auto-select + null degrade |
+| @s10/@s11/@s16/@s19 | lesson-generation-panel.test.tsx | pickers free-BYOK-only + controlled |
+| @s10/@s11/@s16/@s19 | lesson-generation-panel.e2e.js | Storybook e2e pickers visible/hidden |
+| @s10/@s11/@s16/@s19 | lesson-generation.test.tsx | wiring saved providers + platform gate |
+| @s16 | lesson-generation.test.tsx | missing-key gate blocks generate + settings path |
+| @s16 | use-lesson-generation.test.ts | showMissingKeyGate + null generate request |
+| @s10–@s12 | lesson-generation.integration.test.tsx | full stack sends provider/model BYOK |
+
+## Slice-2 review rework (R1)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 @s16 gate | RED wiring test → GREEN showMissingKeyGate + canGenerate guard + ApiKeyRequiredNotice |
+| F2 @s16 tdd | RED use-lesson-generation.test.ts → GREEN buildGenerateRequest null when gated |
+| F3 task-11 story | RED e2e FreeByokMissingKey → GREEN story + panel showMissingKeyGate prop |
+| F4 component-split | RED hook test file → GREEN useLessonGenerationForm co-located hook |
+
+## Slice-2 cycles (summary)
+
+- **T7** RED invalid_model tests → GREEN types/service/helpers/i18n (422, none recovery)
+- **T8** RED optional provider/model tests → GREEN types/DAO/Deno mirror pass-through
+- **T9** RED validation tests → GREEN registry mirror + factory + route BYOK resolve
+- **T10** RED vision-model tests → GREEN resolveVisionModelForPlacement + index seam
+- **T11** RED panel picker tests → GREEN RadioGroups + stories + e2e + i18n
+- **T12** RED wiring tests → GREEN useApiKey/useProfile + selection reset + generate body
+
+Manual live-verify (task-9/10): Deno `@ai-sdk/*` factory + vision calls — not run in sandbox.
+
 ## Slice-1 review rework (R2)
 
 | Finding | Cycle |

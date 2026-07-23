@@ -1,6 +1,11 @@
 import type { LessonGenerationPanelState } from '@helsoft/components';
 import type { LessonGenerationStage } from '@helsoft/hooks';
-import type { GenerationErrorCode, LessonComposition } from '@helsoft/types';
+import type { AiProvider, GenerationErrorCode, LessonComposition } from '@helsoft/types';
+import { AI_PROVIDERS } from '@helsoft/types';
+
+/** Narrow runtime guard for provider RadioGroup values. */
+export const isAiProvider = (value: string): value is AiProvider =>
+  (AI_PROVIDERS as readonly string[]).includes(value);
 
 /** Narrow runtime guard: `LessonGenerationPanel.onCompositionChange` hands back a plain string
  * (RadioGroup's own contract) — only forward it to `setComposition` when it is actually a member
@@ -22,6 +27,7 @@ export const toPanelState = (stage: LessonGenerationStage): LessonGenerationPane
 export const GENERATION_ERROR_KEYS: Record<GenerationErrorCode, string> = {
   missing_key: 'generation.error.missingKey',
   invalid_key: 'generation.error.invalidKey',
+  invalid_model: 'generation.error.invalidModel',
   platform_key_unavailable: 'generation.error.platformKeyUnavailable',
   rate_limited: 'generation.error.rateLimited',
   timeout: 'generation.error.timeout',
@@ -40,6 +46,7 @@ export type GenerationErrorRecovery = 'retry' | 'settings' | 'signIn' | 'none';
 export const GENERATION_ERROR_RECOVERY: Record<GenerationErrorCode, GenerationErrorRecovery> = {
   missing_key: 'settings',
   invalid_key: 'settings',
+  invalid_model: 'none',
   platform_key_unavailable: 'retry',
   rate_limited: 'retry',
   timeout: 'retry',

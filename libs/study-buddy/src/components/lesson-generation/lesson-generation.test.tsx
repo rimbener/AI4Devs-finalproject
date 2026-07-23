@@ -1,6 +1,8 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useLessonGeneration: jest.fn(),
+  useApiKey: jest.fn(),
+  useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
@@ -26,7 +28,7 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
-import { useLessonGeneration } from '@helsoft/hooks';
+import { useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
@@ -35,8 +37,35 @@ import { localizationValue } from '../../test-utils/auth-test-factories';
 import { LessonGeneration } from './lesson-generation';
 
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
+const mockUseApiKey = useApiKey as jest.Mock;
+const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
+
+const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => ({
+  status: { keys: [] },
+  isLoading: false,
+  isSubmitting: false,
+  error: null,
+  hasKey: false,
+  saveApiKey: jest.fn(),
+  removeApiKey: jest.fn(),
+  ...overrides,
+});
+
+const profileValue = (overrides: Partial<ReturnType<typeof useProfile>> = {}) => ({
+  profile: {
+    plan: 'free',
+    keySource: 'user' as const,
+    showKeySettings: true,
+    showAds: true,
+    canCreate: true,
+  },
+  isLoading: false,
+  error: null,
+  retry: jest.fn(),
+  ...overrides,
+});
 
 const hookValue = (overrides: Partial<ReturnType<typeof useLessonGeneration>> = {}) => ({
   stage: 'idle' as const,
@@ -53,11 +82,157 @@ describe('LessonGeneration', () => {
     jest.clearAllMocks();
     mockUseRouter.mockReturnValue({ push: jest.fn() });
     mockUseLocalization.mockReturnValue(localizationValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+        hasKey: true,
+      }),
+    );
+    mockUseProfile.mockReturnValue(profileValue());
+  });
+
+  // @s16 — free-BYOK with no saved keys shows missing-key gate; generate blocked, no invalid_model request.
+  it('shows the missing-key gate and blocks generate when free-BYOK has no saved keys', async () => {
+    const generate = jest.fn();
+    const push = jest.fn();
+    mockUseRouter.mockReturnValue({ push });
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: { keys: [] }, hasKey: false }));
+    mockUseProfile.mockReturnValue(profileValue());
+
+    await render(<LessonGeneration documentId="doc-1" />);
+
+    expect(screen.getByText('upload.apiKeyRequired.message')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'generation.generate', disabled: true }),
+    ).toBeTruthy();
+    fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: true }));
+    expect(generate).not.toHaveBeenCalled();
+    fireEvent.press(screen.getByRole('button', { name: 'upload.apiKeyRequired.action' }));
+    expect(push).toHaveBeenCalledWith('/settings');
+  });
+
+  // @s19 — paid/platform learners do not see provider or model pickers.
+  it('hides provider and model pickers for platform keySource', async () => {
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+        hasKey: true,
+      }),
+    );
+    mockUseProfile.mockReturnValue(
+      profileValue({ profile: { ...profileValue().profile!, keySource: 'platform' } }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+
+    expect(screen.queryByText('generation.provider.heading')).toBeNull();
+    expect(screen.queryByText('generation.model.heading')).toBeNull();
+  });
+
+  // @s10 — free-BYOK shows saved providers and curated models.
+  it('shows saved provider and model pickers for free-BYOK users', async () => {
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-01-01' },
+            { provider: 'openai', updatedAt: '2026-01-02' },
+          ],
+        },
+        hasKey: true,
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+
+    expect(screen.getByText('generation.provider.heading')).toBeTruthy();
+    expect(screen.getByText('generation.model.heading')).toBeTruthy();
+    expect(
+      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
+    ).toBeTruthy();
+  });
+
+  // @s11 — switching provider resets model to that provider's first curated model.
+  it('resets the model when the provider changes', async () => {
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-01-01' },
+            { provider: 'openai', updatedAt: '2026-01-02' },
+          ],
+        },
+        hasKey: true,
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
+    });
+
+    expect(
+      screen.getByRole('radio', { name: 'aiModel.openai.gpt56Luna', checked: true }),
+    ).toBeTruthy();
+  });
+
+  // @s12/@s19 — free-BYOK sends provider+model; platform omits them.
+  it('includes provider and model in the generate request for free-BYOK', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: { keys: [{ provider: 'anthropic', updatedAt: '2026-01-01' }] },
+        hasKey: true,
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: false }));
+
+    expect(generate).toHaveBeenCalledWith({
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+    });
+  });
+
+  it('omits provider and model from the generate request on the platform path', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+        hasKey: true,
+      }),
+    );
+    mockUseProfile.mockReturnValue(
+      profileValue({ profile: { ...profileValue().profile!, keySource: 'platform' } }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: false }));
+
+    expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
   });
 
   // @s1 — composition state defaults to "both".
   it('defaults the composition selection to both', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+        hasKey: true,
+      }),
+    );
 
     await render(<LessonGeneration documentId="doc-1" />);
 
@@ -132,7 +307,12 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
     fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: false }));
 
-    expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+    expect(generate).toHaveBeenCalledWith({
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    });
   });
 
   // @s14 — the Loading state shows the progress stepper.

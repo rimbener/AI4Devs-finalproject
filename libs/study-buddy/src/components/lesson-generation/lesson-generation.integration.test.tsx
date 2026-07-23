@@ -1,5 +1,29 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('@helsoft/hooks', () => ({
+  ...jest.requireActual('@helsoft/hooks'),
+  useApiKey: jest.fn(() => ({
+    status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+    isLoading: false,
+    isSubmitting: false,
+    error: null,
+    hasKey: true,
+    saveApiKey: jest.fn(),
+    removeApiKey: jest.fn(),
+  })),
+  useProfile: jest.fn(() => ({
+    profile: {
+      plan: 'free',
+      keySource: 'user',
+      showKeySettings: true,
+      showAds: true,
+      canCreate: true,
+    },
+    isLoading: false,
+    error: null,
+    retry: jest.fn(),
+  })),
+}));
 
 import { useLocalization } from '@helsoft/localization';
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
@@ -79,7 +103,12 @@ describe('ai-lesson-generation integration (component -> hook -> service -> DAO)
     );
     expect(t).toHaveBeenCalledWith('generation.ready.slideCount', { count: 4 });
     expect(invoke).toHaveBeenCalledWith('generate-lesson', {
-      body: { documentId: 'doc-1', composition: 'both' },
+      body: {
+        documentId: 'doc-1',
+        composition: 'both',
+        provider: 'groq',
+        model: 'openai/gpt-oss-20b',
+      },
     });
   });
 
@@ -116,7 +145,12 @@ describe('ai-lesson-generation integration (component -> hook -> service -> DAO)
 
     expect(invoke).toHaveBeenCalledTimes(2);
     expect(invoke).toHaveBeenNthCalledWith(2, 'generate-lesson', {
-      body: { documentId: 'doc-1', composition: 'both' },
+      body: {
+        documentId: 'doc-1',
+        composition: 'both',
+        provider: 'groq',
+        model: 'openai/gpt-oss-20b',
+      },
     });
   });
 });

@@ -1,3 +1,4 @@
+import type { AiProvider } from './ai-provider';
 import type { Slide } from './lesson';
 
 /**
@@ -14,6 +15,10 @@ export type LessonComposition = 'instructional-only' | 'activity-only' | 'both';
 export type GenerateLessonRequest = {
   documentId: string;
   composition: LessonComposition;
+  /** Free-BYOK only — omitted on the platform path (@s19). */
+  provider?: AiProvider;
+  /** Curated model id from `AI_MODEL_REGISTRY`; free-BYOK only (@s12). */
+  model?: string;
 };
 
 /**
@@ -54,6 +59,7 @@ export const GENERATION_PROGRESS_STEPS = [
 export type GenerationErrorCode =
   | 'missing_key'
   | 'invalid_key'
+  | 'invalid_model'
   | 'platform_key_unavailable'
   | 'rate_limited'
   | 'timeout'

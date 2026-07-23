@@ -3,7 +3,7 @@ id: task-10
 title: Edge vision auto-selection + null-vision degrade
 slice: 2
 scenarios: [s13, s14, s15]
-status: todo
+status: done
 paths: [supabase/functions/generate-lesson/index.ts, supabase/functions/generate-lesson/_shared/models.ts]
 ---
 

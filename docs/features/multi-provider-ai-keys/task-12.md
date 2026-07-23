@@ -3,7 +3,7 @@ id: task-12
 title: LessonGeneration wiring — saved providers + registry, free-BYOK gating
 slice: 2
 scenarios: [s10, s11, s16, s19]
-status: todo
+status: done
 paths: [libs/study-buddy/src/components/lesson-generation/lesson-generation.tsx, libs/study-buddy/src/components/lesson-generation/lesson-generation.types.ts]
 ---
 

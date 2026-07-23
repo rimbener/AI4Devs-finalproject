@@ -3,7 +3,7 @@ id: task-11
 title: LessonGenerationPanel provider + model RadioGroups (free-BYOK only) + i18n
 slice: 2
 scenarios: [s10, s11, s16, s19]
-status: todo
+status: done
 paths: [libs/components/src/organisms/lesson-generation-panel/, libs/localization/src/resources/]
 ---
 

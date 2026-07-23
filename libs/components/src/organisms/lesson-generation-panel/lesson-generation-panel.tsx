@@ -8,6 +8,7 @@ import { Card } from '../../atoms/card/card';
 import { GenerationProgress } from '../../molecules/generation-progress/generation-progress';
 import type { GenerationProgressStepStatus } from '../../molecules/generation-progress/generation-progress.types';
 import { RadioGroup } from '../../molecules/radio-group/radio-group';
+import { ApiKeyRequiredNotice } from '../api-key-required-notice/api-key-required-notice';
 
 import { COMPOSITION_OPTION_VALUES, stepToIndex } from './lesson-generation-panel.helpers';
 import type { LessonGenerationPanelProps } from './lesson-generation-panel.types';
@@ -43,6 +44,16 @@ const STATUS_LABEL_KEYS: Record<GenerationProgressStepStatus, string> = {
  */
 export const LessonGenerationPanel = ({
   state,
+  showPickers = false,
+  showMissingKeyGate = false,
+  onMissingKeyAction,
+  savedProviders = [],
+  modelOptions = [],
+  selectedProvider,
+  selectedModel,
+  onProviderChange,
+  onModelChange,
+  providerNameKeys,
   composition,
   onCompositionChange,
   canGenerate,
@@ -60,6 +71,42 @@ export const LessonGenerationPanel = ({
   return (
     <Card>
       <View style={styles.root}>
+        {showMissingKeyGate && onMissingKeyAction ? (
+          <ApiKeyRequiredNotice onNavigateToAccount={onMissingKeyAction} />
+        ) : null}
+        {showPickers && savedProviders.length > 0 && providerNameKeys ? (
+          <>
+            <View style={styles.section}>
+              <Text style={styles.heading}>{t('generation.provider.heading')}</Text>
+              <RadioGroup
+                options={savedProviders.map((provider) => ({
+                  value: provider,
+                  label: t(providerNameKeys[provider]),
+                }))}
+                value={selectedProvider ?? savedProviders[0]}
+                onChange={onProviderChange ?? (() => {})}
+                disabled={disabled}
+                accessibilityLabel={t('generation.provider.heading')}
+              />
+            </View>
+            {modelOptions.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={styles.heading}>{t('generation.model.heading')}</Text>
+                <RadioGroup
+                  options={modelOptions.map((model) => ({
+                    value: model.id,
+                    label: t(model.labelKey),
+                  }))}
+                  value={selectedModel ?? modelOptions[0]?.id ?? ''}
+                  onChange={onModelChange ?? (() => {})}
+                  disabled={disabled}
+                  accessibilityLabel={t('generation.model.heading')}
+                />
+              </View>
+            ) : null}
+          </>
+        ) : null}
+
         <View style={styles.section}>
           <Text style={styles.heading}>{t('generation.composition.heading')}</Text>
           <RadioGroup

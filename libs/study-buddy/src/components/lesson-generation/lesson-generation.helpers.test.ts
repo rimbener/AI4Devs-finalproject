@@ -46,6 +46,7 @@ describe('GENERATION_ERROR_KEYS (task-13)', () => {
     expect(GENERATION_ERROR_KEYS).toEqual({
       missing_key: 'generation.error.missingKey',
       invalid_key: 'generation.error.invalidKey',
+      invalid_model: 'generation.error.invalidModel',
       platform_key_unavailable: 'generation.error.platformKeyUnavailable',
       rate_limited: 'generation.error.rateLimited',
       timeout: 'generation.error.timeout',
@@ -64,6 +65,7 @@ describe('GENERATION_ERROR_RECOVERY (task-13)', () => {
     expect(GENERATION_ERROR_RECOVERY).toEqual({
       missing_key: 'settings',
       invalid_key: 'settings',
+      invalid_model: 'none',
       platform_key_unavailable: 'retry',
       rate_limited: 'retry',
       timeout: 'retry',

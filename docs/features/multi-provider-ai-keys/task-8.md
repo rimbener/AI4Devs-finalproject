@@ -3,7 +3,7 @@ id: task-8
 title: GenerateLessonRequest += provider?/model? (client + Deno mirror + service/DAO)
 slice: 2
 scenarios: [s12]
-status: todo
+status: done
 paths: [libs/types/src/lesson-generation.ts, libs/supabase-services/src/services/lesson-generation.service.ts, libs/supabase-services/src/dao/lesson-generation.dao.ts, supabase/functions/generate-lesson/_shared/types.ts]
 ---
 

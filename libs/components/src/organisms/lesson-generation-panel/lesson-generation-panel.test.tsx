@@ -1,6 +1,7 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
 import { useLocalization } from '@helsoft/localization';
+import type { AiProvider } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { LessonGenerationPanel } from './lesson-generation-panel';
@@ -16,10 +17,98 @@ const localizationValue = (overrides: Partial<ReturnType<typeof useLocalization>
   ...overrides,
 });
 
+const PROVIDER_NAME_KEYS = {
+  groq: 'settings.apiKey.provider.groq',
+  openai: 'settings.apiKey.provider.openai',
+  anthropic: 'settings.apiKey.provider.anthropic',
+  google: 'settings.apiKey.provider.google',
+  xai: 'settings.apiKey.provider.xai',
+  deepseek: 'settings.apiKey.provider.deepseek',
+} as const;
+
 describe('LessonGenerationPanel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseLocalization.mockReturnValue(localizationValue());
+  });
+
+  describe('Provider/model pickers (Slice 2)', () => {
+    const pickerProps = {
+      state: 'empty' as const,
+      composition: 'both' as const,
+      onCompositionChange: jest.fn(),
+      canGenerate: true,
+      onGenerate: jest.fn(),
+      showPickers: true,
+      savedProviders: ['groq', 'openai'] as AiProvider[],
+      modelOptions: [
+        { id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' },
+        { id: 'openai/gpt-oss-120b', labelKey: 'aiModel.groq.gptOss120b' },
+      ],
+      selectedProvider: 'groq' as AiProvider,
+      selectedModel: 'openai/gpt-oss-20b',
+      onProviderChange: jest.fn(),
+      onModelChange: jest.fn(),
+      providerNameKeys: PROVIDER_NAME_KEYS,
+    };
+
+    // @s10 — saved providers and curated models render above composition.
+    it('renders provider and model pickers when showPickers is true', async () => {
+      await render(<LessonGenerationPanel {...pickerProps} />);
+
+      expect(screen.getByText('generation.provider.heading')).toBeTruthy();
+      expect(screen.getByText('generation.model.heading')).toBeTruthy();
+      expect(
+        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
+      ).toBeTruthy();
+    });
+
+    // @s19 — pickers hidden when showPickers is false (platform path).
+    it('hides provider and model pickers when showPickers is false', async () => {
+      await render(<LessonGenerationPanel {...pickerProps} showPickers={false} />);
+
+      expect(screen.queryByText('generation.provider.heading')).toBeNull();
+      expect(screen.queryByText('generation.model.heading')).toBeNull();
+    });
+
+    // @s11 — provider change callback fires with the new provider value.
+    it('calls onProviderChange when a different provider is chosen', async () => {
+      const onProviderChange = jest.fn();
+      await render(<LessonGenerationPanel {...pickerProps} onProviderChange={onProviderChange} />);
+
+      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
+
+      expect(onProviderChange).toHaveBeenCalledWith('openai');
+    });
+
+    // @s16 — free-BYOK missing-key gate replaces pickers; generate stays disabled.
+    it('shows the missing-key gate when showMissingKeyGate is true', async () => {
+      const onMissingKeyAction = jest.fn();
+      await render(
+        <LessonGenerationPanel
+          {...pickerProps}
+          showPickers={false}
+          showMissingKeyGate
+          savedProviders={[]}
+          canGenerate={false}
+          onMissingKeyAction={onMissingKeyAction}
+        />,
+      );
+
+      expect(screen.getByText('upload.apiKeyRequired.message')).toBeTruthy();
+      expect(screen.queryByText('generation.provider.heading')).toBeNull();
+      fireEvent.press(screen.getByRole('button', { name: 'upload.apiKeyRequired.action' }));
+      expect(onMissingKeyAction).toHaveBeenCalledTimes(1);
+    });
+
+    // @s16 — empty saved providers hides pickers even when showPickers is true.
+    it('hides pickers when there are no saved providers', async () => {
+      await render(
+        <LessonGenerationPanel {...pickerProps} savedProviders={[]} showPickers={true} />,
+      );
+
+      expect(screen.queryByText('generation.provider.heading')).toBeNull();
+    });
   });
 
   describe('Empty state', () => {

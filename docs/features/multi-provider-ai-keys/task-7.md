@@ -3,7 +3,7 @@ id: task-7
 title: New `invalid_model` error code across mirrored contract + i18n
 slice: 2
 scenarios: [s18]
-status: todo
+status: done
 paths: [libs/types/src/lesson-generation.ts, libs/supabase-services/src/services/lesson-generation.service.ts, supabase/functions/generate-lesson/_shared/types.ts, supabase/functions/generate-lesson/_shared/lesson-generation.errors.ts, libs/study-buddy/src/components/lesson-generation/lesson-generation.helpers.ts, libs/localization/src/resources/]
 ---
 

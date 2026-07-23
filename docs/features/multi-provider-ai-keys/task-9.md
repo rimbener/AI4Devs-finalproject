@@ -3,7 +3,7 @@ id: task-9
 title: Edge provider→createX factory (5 @ai-sdk pkgs) + registry mirror + model select + validation
 slice: 2
 scenarios: [s12, s17, s18]
-status: todo
+status: done
 paths: [supabase/functions/generate-lesson/index.ts, supabase/functions/generate-lesson/_shared/models.ts, supabase/functions/generate-lesson/deno.json]
 ---
 

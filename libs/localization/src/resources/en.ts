@@ -125,6 +125,12 @@ export const en = {
     // (`generation.error.*`) is Slice-2/task-13, added with the Error state itself.
     generation: {
       dialogHeadline: 'Generate lesson',
+      provider: {
+        heading: 'AI provider',
+      },
+      model: {
+        heading: 'Model',
+      },
       composition: {
         heading: 'Lesson content',
         instructionalOnly: 'Instructional only',
@@ -155,6 +161,7 @@ export const en = {
       error: {
         missingKey: 'An API key is required to generate lessons.',
         invalidKey: 'Your API key was rejected. Check it in Settings.',
+        invalidModel: 'That provider or model is no longer available. Choose another and try again.',
         platformKeyUnavailable: 'Lesson generation is temporarily unavailable. Try again.',
         rateLimited: "You've hit the provider's rate limit. Try again in a moment.",
         timeout: 'Generation took too long. Try again.',
@@ -168,6 +175,33 @@ export const en = {
           settings: 'Go to Settings',
           signIn: 'Sign in',
         },
+      },
+    },
+    aiModel: {
+      groq: {
+        gptOss20b: 'GPT-OSS 20B',
+        gptOss120b: 'GPT-OSS 120B',
+        qwen36_27b: 'Qwen 3.6 27B',
+      },
+      openai: {
+        gpt56Luna: 'GPT-5.6 Luna',
+        gpt56Terra: 'GPT-5.6 Terra',
+      },
+      anthropic: {
+        claudeHaiku45: 'Claude Haiku 4.5',
+        claudeSonnet5: 'Claude Sonnet 5',
+      },
+      google: {
+        gemini36Flash: 'Gemini 3.6 Flash',
+        gemini25Flash: 'Gemini 2.5 Flash',
+      },
+      xai: {
+        grok43: 'Grok 4.3',
+        grok45: 'Grok 4.5',
+      },
+      deepseek: {
+        v4Flash: 'DeepSeek V4 Flash',
+        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
