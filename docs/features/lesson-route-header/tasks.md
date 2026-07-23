@@ -1,6 +1,6 @@
 ---
 feature: lesson-route-header
-phase: mutation # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
+phase: pr_ready # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
 review_round: 0     # incremented by reviews_lead; cap 2
 ---
 
