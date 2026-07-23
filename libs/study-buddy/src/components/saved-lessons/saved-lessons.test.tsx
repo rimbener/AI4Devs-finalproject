@@ -5,6 +5,7 @@ jest.mock('@helsoft/hooks', () => ({
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
+import { lightTheme } from '@helsoft/components/theme';
 import { useLessons } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
@@ -401,5 +402,124 @@ describe('SavedLessons', () => {
 
     expect(screen.getByText('Delete this lesson?')).toBeTruthy();
     expect(screen.getByText('This permanently removes the lesson and its progress.')).toBeTruthy();
+  });
+
+  // Mutation — StyleSheet.create / header row literals → {} / "".
+  it('lays out the New Lesson header as a space-between row', async () => {
+    mockUseLessons.mockReturnValue(lessonsValue());
+
+    await render(<SavedLessons />);
+
+    const heading = screen.getByText('Saved lessons');
+    expect(heading).toHaveStyle({
+      ...lightTheme.typography.headlineSmall,
+      color: lightTheme.colors.onSurface,
+      flexShrink: 1,
+    });
+    expect(heading.parent).toHaveStyle({
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: lightTheme.spacing.s3,
+    });
+    expect(heading.parent?.parent).toHaveStyle({
+      flex: 1,
+      gap: lightTheme.spacing.s3,
+    });
+  });
+
+  // Mutation — count / deleteError style objects → {}.
+  it('styles the lesson count and delete-error banner from the theme', async () => {
+    mockUseLessons.mockReturnValue(
+      lessonsValue({
+        lessons: [
+          {
+            id: 'lesson-42',
+            title: 'Capitals',
+            createdAt: '2026-07-13T12:00:00.000Z',
+          },
+        ],
+        error: new Error('delete failed'),
+      }),
+    );
+
+    await render(<SavedLessons />);
+
+    expect(screen.getByText('1 lessons')).toHaveStyle({
+      ...lightTheme.typography.bodyMedium,
+      color: lightTheme.colors.onSurfaceVariant,
+    });
+    expect(screen.getByText("We couldn't delete that lesson.")).toHaveStyle({
+      ...lightTheme.typography.bodyMedium,
+      color: lightTheme.colors.error,
+    });
+  });
+
+  // Mutation — a11y effect deps → `[]`: announce when delete error appears after mount.
+  it('announces delete failure when error appears after mount', async () => {
+    const announceSpy = jest
+      .spyOn(AccessibilityInfo, 'announceForAccessibility')
+      .mockImplementation(() => {});
+    const lesson = {
+      id: 'lesson-42',
+      title: 'Capitals',
+      createdAt: '2026-07-13T12:00:00.000Z',
+    };
+    const deleteFailed = "We couldn't delete that lesson.";
+
+    mockUseLessons.mockReturnValue(lessonsValue({ lessons: [lesson] }));
+    const { rerender } = await render(<SavedLessons />);
+    expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
+
+    announceSpy.mockClear();
+    mockUseLessons.mockReturnValue(
+      lessonsValue({ lessons: [lesson], error: new Error('delete failed') }),
+    );
+    await rerender(<SavedLessons />);
+
+    expect(announceSpy).toHaveBeenCalledWith(deleteFailed);
+    announceSpy.mockRestore();
+  });
+
+  // Mutation — useCallback deps `[router]`/`[deleteLesson]` → `[]`.
+  it('uses the latest router.push and deleteLesson after identities change', async () => {
+    const push1 = jest.fn();
+    const push2 = jest.fn();
+    const delete1 = jest.fn().mockResolvedValue(undefined);
+    const delete2 = jest.fn().mockResolvedValue(undefined);
+    const lesson = {
+      id: 'lesson-42',
+      title: 'Capitals',
+      createdAt: '2026-07-13T12:00:00.000Z',
+    };
+
+    mockUseRouter.mockReturnValue({ push: push1 });
+    mockUseLessons.mockReturnValue(lessonsValue({ lessons: [lesson], deleteLesson: delete1 }));
+
+    const { rerender } = await render(<SavedLessons />);
+    mockUseRouter.mockReturnValue({ push: push2 });
+    mockUseLessons.mockReturnValue(lessonsValue({ lessons: [lesson], deleteLesson: delete2 }));
+    await rerender(<SavedLessons />);
+
+    fireEvent.press(screen.getByRole('button', { name: 'New lesson' }));
+    expect(push2).toHaveBeenCalledWith('/upload');
+    expect(push1).not.toHaveBeenCalled();
+
+    push2.mockClear();
+    fireEvent.press(screen.getByRole('button', { name: 'Open Capitals' }));
+    expect(push2).toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-42' },
+    });
+    expect(push1).not.toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Delete Capitals' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Delete' }));
+    });
+    expect(delete2).toHaveBeenCalledWith('lesson-42');
+    expect(delete1).not.toHaveBeenCalled();
   });
 });

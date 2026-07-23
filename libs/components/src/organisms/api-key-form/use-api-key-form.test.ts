@@ -58,6 +58,18 @@ describe('useApiKeyForm', () => {
     expect(result.current?.showInput).toBe(true);
   });
 
+  // Mutation — `if (isReplacing)` → `if (true)`: false must not dispatch start-replace.
+  it('does not start replace when setIsReplacing(false)', async () => {
+    const { result } = await renderFormHook({ status: { hasKey: true } });
+
+    await act(async () => {
+      result.current?.setIsReplacing(false);
+    });
+
+    expect(result.current?.isReplacing).toBe(false);
+    expect(result.current?.showInput).toBe(false);
+  });
+
   // Mutation-kill — `.trim()` on save-disabled; whitespace-only must stay disabled.
   it('keeps save disabled for whitespace-only keys', async () => {
     const { result } = await renderFormHook({ status: { hasKey: false } });

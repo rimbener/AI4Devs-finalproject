@@ -38,6 +38,12 @@
 ### Full-review rework r2 (CI)
 - localization RED→GREEN: ignore `sf:` SF Symbol glyphs in dotted-key scanner (`books.vertical` ≠ `t()` key)
 
+### Mutation round 1
+- use-api-key-form: setIsReplacing(false) must not start-replace
+- use-slide-image: default layout `'stacked'`; stacked ignores paneSize
+- new-lesson-dialog: upload/generate headlines+panels; close → close()
+- saved-lessons: callback/effect deps; header/count/deleteError StyleSheet values
+
 ## Gate
 - study-buddy: 256 tests; app: 29; lint + check-types clean on both
 - localization migration-coverage green (app-chrome)
