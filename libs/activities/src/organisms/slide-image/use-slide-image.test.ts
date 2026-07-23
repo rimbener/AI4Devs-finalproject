@@ -25,7 +25,10 @@ const imageRef: SlideImageRef = {
 describe('useSlideImage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseSlideImageUrl.mockReturnValue({ url: 'https://example.com/signed.png', isLoading: false });
+    mockUseSlideImageUrl.mockReturnValue({
+      url: 'https://example.com/signed.png',
+      isLoading: false,
+    });
   });
 
   // Mutation — default `layout = 'stacked'` → `layout = ""` (must stay stacked).

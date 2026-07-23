@@ -70,9 +70,7 @@ describe('NewLessonDialog', () => {
     const chooseFile = jest.fn();
     const resetUpload = jest.fn();
     const openUpload = jest.fn();
-    mockUseNewLessonDialog.mockReturnValue(
-      dialogValue({ chooseFile, resetUpload, openUpload }),
-    );
+    mockUseNewLessonDialog.mockReturnValue(dialogValue({ chooseFile, resetUpload, openUpload }));
 
     await render(<NewLessonDialog />);
     fireEvent.press(screen.getByText('upload.chooseFile'));
@@ -112,9 +110,7 @@ describe('NewLessonDialog', () => {
 
   // Mutation — step/ternary/t() headline + upload panel guard on upload step.
   it('shows upload headline and PdfUploadPanel on the upload step', async () => {
-    mockUseNewLessonDialog.mockReturnValue(
-      dialogValue({ open: true, step: 'upload' }),
-    );
+    mockUseNewLessonDialog.mockReturnValue(dialogValue({ open: true, step: 'upload' }));
 
     await render(<NewLessonDialog />);
 
@@ -141,9 +137,7 @@ describe('NewLessonDialog', () => {
   // Mutation — handleClose body → {}; dialogClose t("").
   it('closes the dialog when the close action is pressed', async () => {
     const close = jest.fn();
-    mockUseNewLessonDialog.mockReturnValue(
-      dialogValue({ open: true, step: 'upload', close }),
-    );
+    mockUseNewLessonDialog.mockReturnValue(dialogValue({ open: true, step: 'upload', close }));
 
     await render(<NewLessonDialog />);
 
