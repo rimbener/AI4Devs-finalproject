@@ -90,3 +90,26 @@ Manual live-verify (task-9/10): Deno `@ai-sdk/*` factory + vision calls — not 
 ## Cycles summary
 
 - **T1–T6** see R1 table; slice-1 tasks 1–6 done
+
+## Slice 3 (@s20–@s21)
+
+| @s | Test file | Description |
+|----|-----------|-------------|
+| @s20 | generation-preference.dao.test.ts | stable key + JSON read/write |
+| @s20 | generation-preference.service.test.ts | parse/write provider+model; corrupt→null |
+| @s20/@s21 | lesson-generation.helpers.test.ts | resolveGenerationSelection valid/fallback |
+| @s20/@s21 | use-lesson-generation.test.ts | async preselect + invalid fallback |
+| @s20/@s21 | lesson-generation.test.tsx | UI preselect, write-on-generate, fallback |
+| @s20 | lesson-generation.integration.test.tsx | full stack persists preference on generate |
+
+## Slice-3 cycles (summary)
+
+- **T13** RED DAO/service tests → GREEN GenerationPreferenceDao+Service + barrels
+- **T14** RED hook/component tests → GREEN resolveGenerationSelection + async preselect + write-on-generate
+
+## Slice-3 review rework (R1)
+
+| Finding | Cycle |
+|---------|-------|
+| F1 types.mdc | RED generation-preference.types.test.ts → GREEN *.types.ts + barrel re-export |
+| F2 scope | reverted new-lesson-dialog.tsx format-only change |

@@ -1,3 +1,10 @@
+jest.mock('@helsoft/services', () => ({
+  GenerationPreferenceService: {
+    getStoredPreference: jest.fn(),
+    setStoredPreference: jest.fn(),
+  },
+}));
+
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useApiKey: jest.fn(),
@@ -5,16 +12,19 @@ jest.mock('@helsoft/hooks', () => ({
 }));
 
 import { useApiKey, useProfile } from '@helsoft/hooks';
-import { act, renderHook } from '@testing-library/react-native';
+import { GenerationPreferenceService } from '@helsoft/services';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { useLessonGenerationForm } from './use-lesson-generation';
 
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
+const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
 
 describe('useLessonGenerationForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetStoredPreference.mockResolvedValue(null);
     mockUseProfile.mockReturnValue({
       profile: { keySource: 'user', canCreate: false },
     });
@@ -52,11 +62,113 @@ describe('useLessonGenerationForm', () => {
       useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
     );
 
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('groq');
+    });
+
     await act(async () => {
       result.current.selectProvider('openai');
     });
 
     expect(result.current.selectedProvider).toBe('openai');
     expect(result.current.selectedModel).toBe('gpt-5.6-luna');
+  });
+
+  // @s20 — valid stored preference preselects provider and model on open.
+  it('preselects a valid stored provider and model on open', async () => {
+    mockGetStoredPreference.mockResolvedValue({
+      provider: 'openai',
+      model: 'gpt-5.6-terra',
+    });
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01' },
+          { provider: 'openai', updatedAt: '2026-01-02' },
+        ],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('openai');
+      expect(result.current.selectedModel).toBe('gpt-5.6-terra');
+    });
+  });
+
+  // @s21 — deleted-key preference falls back to first saved provider + first curated model.
+  it('falls back when the stored provider key was deleted', async () => {
+    mockGetStoredPreference.mockResolvedValue({
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+    });
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01' },
+          { provider: 'openai', updatedAt: '2026-01-02' },
+        ],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('groq');
+      expect(result.current.selectedModel).toBe('openai/gpt-oss-20b');
+    });
+  });
+
+  // @s21 — retired model falls back quietly.
+  it('falls back when the stored model is no longer in the registry', async () => {
+    mockGetStoredPreference.mockResolvedValue({
+      provider: 'openai',
+      model: 'retired-model',
+    });
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01' },
+          { provider: 'openai', updatedAt: '2026-01-02' },
+        ],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('groq');
+      expect(result.current.selectedModel).toBe('openai/gpt-oss-20b');
+    });
+  });
+
+  // @s21 — missing/corrupt preference falls back without crashing.
+  it('falls back when no preference is stored', async () => {
+    mockGetStoredPreference.mockResolvedValue(null);
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [{ provider: 'openai', updatedAt: '2026-01-02' }],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.selectedProvider).toBe('openai');
+      expect(result.current.selectedModel).toBe('gpt-5.6-luna');
+    });
   });
 });

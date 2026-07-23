@@ -1,6 +1,7 @@
 import { LessonGenerationPanel } from '@helsoft/components';
 import { useLessonGeneration } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import { GenerationPreferenceService } from '@helsoft/services';
 import type { AiProvider, LessonComposition } from '@helsoft/types';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -69,8 +70,14 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
   const handleGenerate = useCallback(() => {
     const request = buildGenerateRequest();
     if (!request) return;
+    if (showPickers && selectedProvider && selectedModel) {
+      void GenerationPreferenceService.setStoredPreference({
+        provider: selectedProvider,
+        model: selectedModel,
+      });
+    }
     void generate(request);
-  }, [buildGenerateRequest, generate]);
+  }, [buildGenerateRequest, generate, selectedModel, selectedProvider, showPickers]);
 
   const handleOpenInPlayer = useCallback(() => {
     const lessonId = result?.lessonId?.trim();

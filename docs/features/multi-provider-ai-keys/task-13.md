@@ -3,7 +3,7 @@ id: task-13
 title: GenerationPreferenceDao + Service (@helsoft/services)
 slice: 3
 scenarios: [s20, s21]
-status: todo
+status: done
 paths: [libs/services/src/dao/generation-preference.dao.ts, libs/services/src/services/generation-preference.service.ts, libs/services/src/dao/index.ts, libs/services/src/services/index.ts]
 ---
 

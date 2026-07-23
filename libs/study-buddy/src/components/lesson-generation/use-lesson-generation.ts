@@ -1,4 +1,5 @@
 import { useApiKey, useProfile } from '@helsoft/hooks';
+import { GenerationPreferenceService } from '@helsoft/services';
 import {
   AI_MODEL_REGISTRY,
   AI_PROVIDERS,
@@ -7,6 +8,8 @@ import {
   type LessonComposition,
 } from '@helsoft/types';
 import { useEffect, useMemo, useState } from 'react';
+
+import { resolveGenerationSelection } from './lesson-generation.helpers';
 
 type UseLessonGenerationArgs = {
   documentId?: string;
@@ -34,13 +37,23 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
   const canGenerate = Boolean(documentId) && !showMissingKeyGate;
 
   useEffect(() => {
-    if (!showPickers) return;
-    if (!selectedProvider || !savedProviders.includes(selectedProvider)) {
-      const firstProvider = savedProviders[0];
-      setSelectedProvider(firstProvider);
-      setSelectedModel(AI_MODEL_REGISTRY[firstProvider].models[0]?.id);
-    }
-  }, [showPickers, savedProviders, selectedProvider]);
+    if (!showPickers || savedProviders.length === 0) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const stored = await GenerationPreferenceService.getStoredPreference();
+      if (cancelled) return;
+
+      const { provider, model } = resolveGenerationSelection(savedProviders, stored);
+      setSelectedProvider(provider);
+      setSelectedModel(model);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showPickers, savedProviders]);
 
   const modelOptions = selectedProvider ? AI_MODEL_REGISTRY[selectedProvider].models : [];
 

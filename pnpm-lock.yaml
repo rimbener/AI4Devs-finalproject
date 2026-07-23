@@ -691,6 +691,9 @@ importers:
       '@helsoft/pdf-upload-extraction':
         specifier: workspace:*
         version: link:../pdf-upload-extraction
+      '@helsoft/services':
+        specifier: workspace:*
+        version: link:../services
       '@helsoft/supabase-services':
         specifier: workspace:*
         version: link:../supabase-services

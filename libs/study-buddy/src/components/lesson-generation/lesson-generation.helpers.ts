@@ -1,11 +1,42 @@
 import type { LessonGenerationPanelState } from '@helsoft/components';
 import type { LessonGenerationStage } from '@helsoft/hooks';
 import type { AiProvider, GenerationErrorCode, LessonComposition } from '@helsoft/types';
-import { AI_PROVIDERS } from '@helsoft/types';
+import { AI_MODEL_REGISTRY, AI_PROVIDERS } from '@helsoft/types';
 
 /** Narrow runtime guard for provider RadioGroup values. */
 export const isAiProvider = (value: string): value is AiProvider =>
   (AI_PROVIDERS as readonly string[]).includes(value);
+
+/** Whether `model` is still listed for `provider` in the curated registry. */
+export const isCuratedModel = (provider: AiProvider, model: string): boolean =>
+  AI_MODEL_REGISTRY[provider].models.some((entry) => entry.id === model);
+
+type GenerationSelection = {
+  provider: AiProvider;
+  model: string;
+};
+
+/**
+ * Resolve picker defaults from saved keys + optional stored preference (@s20/@s21).
+ * Valid stored preference wins; otherwise first saved provider (fixed order) + first curated model.
+ */
+export const resolveGenerationSelection = (
+  savedProviders: readonly AiProvider[],
+  stored: GenerationSelection | null,
+): GenerationSelection => {
+  const fallbackProvider = savedProviders[0];
+  const fallbackModel = AI_MODEL_REGISTRY[fallbackProvider].models[0]?.id ?? '';
+
+  if (
+    stored &&
+    savedProviders.includes(stored.provider) &&
+    isCuratedModel(stored.provider, stored.model)
+  ) {
+    return stored;
+  }
+
+  return { provider: fallbackProvider, model: fallbackModel };
+};
 
 /** Narrow runtime guard: `LessonGenerationPanel.onCompositionChange` hands back a plain string
  * (RadioGroup's own contract) — only forward it to `setComposition` when it is actually a member

@@ -1,4 +1,10 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
+jest.mock('@helsoft/services', () => ({
+  GenerationPreferenceService: {
+    getStoredPreference: jest.fn(),
+    setStoredPreference: jest.fn(),
+  },
+}));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
@@ -26,6 +32,7 @@ jest.mock('@helsoft/hooks', () => ({
 }));
 
 import { useLocalization } from '@helsoft/localization';
+import { GenerationPreferenceService } from '@helsoft/services';
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
 import { FunctionsHttpError, initSupabase } from '@helsoft/supabase-services';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
@@ -36,6 +43,8 @@ import { LessonGeneration } from './lesson-generation';
 
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
+const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
+const mockSetStoredPreference = GenerationPreferenceService.setStoredPreference as jest.Mock;
 
 /**
  * Integration (ai-lesson-generation): LessonGeneration -> useLessonGeneration ->
@@ -59,6 +68,8 @@ describe('ai-lesson-generation integration (component -> hook -> service -> DAO)
   });
 
   beforeEach(() => {
+    mockGetStoredPreference.mockResolvedValue(null);
+    mockSetStoredPreference.mockResolvedValue(undefined);
     mockUseLocalization.mockReturnValue(localizationValue());
     mockUseRouter.mockReturnValue({ push: jest.fn() });
     jest.spyOn(client.auth, 'getSession').mockResolvedValue({
@@ -109,6 +120,10 @@ describe('ai-lesson-generation integration (component -> hook -> service -> DAO)
         provider: 'groq',
         model: 'openai/gpt-oss-20b',
       },
+    });
+    expect(mockSetStoredPreference).toHaveBeenCalledWith({
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
     });
   });
 

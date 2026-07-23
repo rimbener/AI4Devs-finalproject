@@ -5,6 +5,12 @@ jest.mock('@helsoft/hooks', () => ({
   useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
+jest.mock('@helsoft/services', () => ({
+  GenerationPreferenceService: {
+    getStoredPreference: jest.fn(),
+    setStoredPreference: jest.fn(),
+  },
+}));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
 /** Capture panel props so tests can invoke handlers even when UI gates them. */
@@ -30,7 +36,8 @@ jest.mock('@helsoft/components', () => {
 
 import { useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { GenerationPreferenceService } from '@helsoft/services';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
@@ -41,6 +48,8 @@ const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
+const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
+const mockSetStoredPreference = GenerationPreferenceService.setStoredPreference as jest.Mock;
 
 const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => ({
   status: { keys: [] },
@@ -80,6 +89,8 @@ const hookValue = (overrides: Partial<ReturnType<typeof useLessonGeneration>> = 
 describe('LessonGeneration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetStoredPreference.mockResolvedValue(null);
+    mockSetStoredPreference.mockResolvedValue(undefined);
     mockUseRouter.mockReturnValue({ push: jest.fn() });
     mockUseLocalization.mockReturnValue(localizationValue());
     mockUseApiKey.mockReturnValue(
@@ -148,14 +159,111 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
 
+    await waitFor(() => {
+      expect(
+        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
+      ).toBeTruthy();
+    });
+
     expect(screen.getByText('generation.provider.heading')).toBeTruthy();
     expect(screen.getByText('generation.model.heading')).toBeTruthy();
     expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-    ).toBeTruthy();
-    expect(
       screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
     ).toBeTruthy();
+  });
+
+  // @s20 — valid stored preference preselects provider and model on reopen.
+  it('preselects the last-used provider and model when still valid', async () => {
+    mockGetStoredPreference.mockResolvedValue({
+      provider: 'openai',
+      model: 'gpt-5.6-terra',
+    });
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-01-01' },
+            { provider: 'openai', updatedAt: '2026-01-02' },
+          ],
+        },
+        hasKey: true,
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('radio', { name: 'settings.apiKey.provider.openai', checked: true }),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole('radio', { name: 'aiModel.openai.gpt56Terra', checked: true }),
+      ).toBeTruthy();
+    });
+  });
+
+  // @s20 — generate persists the current provider and model on device.
+  it('writes the current provider and model when Generate is pressed', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-01-01' },
+            { provider: 'openai', updatedAt: '2026-01-02' },
+          ],
+        },
+        hasKey: true,
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    await waitFor(() => {
+      expect(
+        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
+      ).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: false }));
+
+    expect(mockSetStoredPreference).toHaveBeenCalledWith({
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    });
+    expect(generate).toHaveBeenCalled();
+  });
+
+  // @s21 — invalid stored preference falls back to first saved provider and model.
+  it('falls back to the first saved provider when the stored preference is invalid', async () => {
+    mockGetStoredPreference.mockResolvedValue({
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+    });
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    mockUseApiKey.mockReturnValue(
+      apiKeyValue({
+        status: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-01-01' },
+            { provider: 'openai', updatedAt: '2026-01-02' },
+          ],
+        },
+        hasKey: true,
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
+      ).toBeTruthy();
+      expect(
+        screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
+      ).toBeTruthy();
+    });
   });
 
   // @s11 — switching provider resets model to that provider's first curated model.

@@ -24,6 +24,7 @@
     "@helsoft/localization": "workspace:*",
     "@helsoft/logging-in-out": "workspace:*",
     "@helsoft/pdf-upload-extraction": "workspace:*",
+    "@helsoft/services": "workspace:*",
     "@helsoft/supabase-services": "workspace:*",
     "@helsoft/types": "workspace:*"
   },

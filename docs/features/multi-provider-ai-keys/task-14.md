@@ -3,7 +3,7 @@ id: task-14
 title: LessonGeneration preselect-on-open (validated fallback) + write-on-generate
 slice: 3
 scenarios: [s20, s21]
-status: todo
+status: done
 paths: [libs/study-buddy/src/components/lesson-generation/lesson-generation.tsx]
 ---
 
