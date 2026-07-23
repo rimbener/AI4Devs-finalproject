@@ -4,6 +4,6 @@
 **Folder:** `docs/features/lesson-route-header/`
 **Branch:** `feat/lesson-route-header`
 **Worktree:** `.worktrees/lesson-route-header`
-**Phase:** in_progress
-**Status:** Spec approved + spec_ready (spec_reviewer round 2 APPROVED). Starting implementer on Slice 1 (task-1 + task-2).
+**Phase:** in_review
+**Status:** Slice 1 built + reviewer_slice APPROVED (round 2). Starting reviews_lead full review.
 **Notes:** Base = `feature-entrega3-HernanLaura`.
