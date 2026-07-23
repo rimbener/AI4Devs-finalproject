@@ -102,3 +102,7 @@
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Jest for OpenEndedBody + LessonPlayerNavigator.
 2026-07-22 | rules-compliance-fixes (ad hoc) | n/a | — | Rules audit fixes (excl. screen-container). Worktree .worktrees/rules-compliance-fixes, branch feat/rules-compliance-fixes.
 2026-07-22 | rules-compliance-fixes (ad hoc) | done | — | Merged into feature-entrega3-HernanLaura; worktree removed.
+
+2026-07-23 | orchestrator-improvements (ad hoc) | n/a | — | Applied ORCHESTRATOR_IMPROVEMENTS.md backlog: hardened run-mutation.sh + JSON report parser, baked inPlace into all stryker configs, escalate-only mutation gate, durable review history, ops scripts, orchestrator-run-retro skill (e4210362a).
+2026-07-23 | activities (ad hoc) | n/a | — | Added storybook/start scripts to libs/activities/package.json (7629d2c96).
+2026-07-23 | user-stories (ad hoc) | n/a | — | Retired locale-save-failure-notice; added multi-provider-ai-keys pending story (1915e1cdb).
