@@ -8,10 +8,10 @@ status: approved
 _Terse overview. ACs → `gherkin-scenarios.md`; tasks → `task-N.md`; risks → `tmp/native-bottom-tabs/risks.md`._
 
 ## Summary
-Replace the MVP custom mobile chrome with Expo Router **`NativeTabs`** on iOS/Android, a Material-style **`WebBottomTabs`** organism (`@helsoft/components`, headless `expo-router/ui`) on narrow web (<768), and the existing **`DesktopBar`** on wide web (≥768). The tab bar holds only durable destinations — **My lessons** + **Settings**; **New Lesson** is a CTA on My lessons (not a tab), and `/upload` + lesson flows are immersive (no tab bar).
+Replace the MVP custom mobile chrome with Expo Router **`NativeTabs`** on iOS/Android, a Material-style **`WebBottomTabs`** organism (`@helsoft/components`) on narrow web (<768), and **`DesktopBar`** on wide web (≥768). Primary destinations are **My lessons**, **My PDF files**, and **Settings**. **New Lesson** is a CTA on My lessons that opens the **PDF files** tab (`/pdf-files`); there is no separate `/upload` route. Lesson flows remain Stack siblings (no tab bar).
 
 ## User stories
-- As a **signed-in learner**, I want bottom tabs (My lessons, Settings) on native/narrow web and the desktop top bar on wide web, so that navigation feels platform-native and New Lesson opens as a focused task from My lessons.
+- As a **signed-in learner**, I want bottom tabs (My lessons, PDF files, Settings) on native/narrow web and the desktop top bar on wide web, so that navigation feels platform-native and creating a lesson starts from the PDF files surface.
 
 ## Acceptance criteria
 → **`gherkin-scenarios.md`** — each `@s` scenario is an AC (Given/When/Then).
@@ -19,8 +19,8 @@ Replace the MVP custom mobile chrome with Expo Router **`NativeTabs`** on iOS/An
 ## UI states (nav chrome)
 | State | Trigger | Notes |
 |---|---|---|
-| Content | Signed-in; session known | NativeTabs (iOS/Android) / WebBottomTabs (web <768) / DesktopBar (web ≥768); current tab marked selected for AT; My lessons shows the New Lesson CTA (@s1–@s6) |
-| Loading | `useSession().isLoading` | Gated upstream — root layout renders nothing until session resolves; tabs mount only when authed. No separate tab spinner |
+| Content | Signed-in; session known | NativeTabs (iOS/Android) / WebBottomTabs (web <768) / DesktopBar (web ≥768); current tab marked selected; My lessons shows New Lesson CTA (@s1–@s6) |
+| Loading | `useSession().isLoading` | Gated upstream — tabs mount only when authed |
 | Empty | My lessons has no lessons | List empty state still shows the persistent New Lesson CTA (@s6) |
 | Error | N/A for nav | No fetch in nav; sign-out keeps existing `SignOut` `onSignOutError` no-op |
 
@@ -31,19 +31,20 @@ None — MVP.
 None.
 
 ## Out of scope / non-goals
-- Redesigning `DesktopBar` visuals (beyond removing the New lesson nav item); guest/marketing nav; real notifications
-- Changing lesson player / upload internals beyond keeping the tab bar + desktop chrome off those routes
+- Redesigning `DesktopBar` visuals beyond primary nav destinations; guest/marketing nav; real notifications
+- Changing lesson player internals beyond keeping the tab bar off lesson routes
 - Deleting `AccountMenu` (still used by the desktop avatar)
 
 ## Open decisions (resolved, with rationale)
-- **Adopt `expo-router/unstable-native-tabs` `NativeTabs` on iOS/Android** — only in-ecosystem system tab bar; no new package; `unstable-` risk isolated to native `(tabs)/_layout.tsx`, accepted. (Q1)
-- **Route restructure: `(app)/_layout` Stack → `(tabs)` group (`index` + `settings`) + `upload` and `lesson/[id]/*` as siblings** — tab bar mounts only inside `(tabs)`, so `/upload` + lesson flows never show it by construction; `(tabs)` groupless → URLs unchanged. (Q2 + rev Q1)
-- **Two tabs only (My lessons + Settings); New Lesson is an action, not a tab** — `/upload` is a pushed immersive Stack sibling with header/back; My lessons stays selected while open — create is a transient task, native convention pushes it. (rev Q1 + Q4)
-- **Persistent New Lesson CTA in `SavedLessons` header (content + empty), shared `Button` + `nav.newLesson`, pushes `/upload`** — create must be reachable in any list state; wiring in feature-lib, button presentational; reuses existing label. (rev Q2)
-- **Remove New lesson nav item from `DesktopBar`; My lessons CTA is the sole create entry everywhere** — keeping top-nav contradicts "action, not destination" and doubles the entry; DesktopBar otherwise unchanged. (rev Q3, amends Q5)
-- **Web split via platform-specific layouts** — native `_layout.tsx` = `NativeTabs`; `_layout.web.tsx` branches on `useBreakpoint()` (≥768 `AppChrome`/`DesktopBar`+`Slot`, <768 `WebBottomTabs` with injected `triggers`) — NativeTabs web chrome sits at the top and looks wrong, so narrow web uses headless `expo-router/ui` + Material bottom bar in `@helsoft/components`; resize-across-768 remount accepted. (Q3, amended post-impl)
-- **Reuse labels + platform glyphs** — `nav.myLessons` (sf `books.vertical` / md `menu_book`), `nav.settings` (sf `gearshape` / md `settings`); shared `NATIVE_TAB_TRIGGERS` in `@helsoft/study-buddy`; native layout uses sf+md on `NativeTabs.Trigger`; web maps to `{ name, href, label, icon }` for `WebBottomTabs`. (Q4)
-- **`DesktopBar` avatar `AccountMenu` (Settings + Sign out) unchanged on wide web** — it is wide web's only Settings/sign-out path. (Q5)
-- **Delete `MobileBar` (+ stories/tests/e2e); keep `AccountMenu`; slim `AppChrome` to desktop-only** — bar superseded by NativeTabs / WebBottomTabs; removing dead code keeps the system honest; `AccountMenu` still serves the desktop avatar. (Q6)
-- **Sign-out placement** — `AccountMenu` on wide web; uncontrolled `SignOut` on Settings only where there is no `AccountMenu` (`breakpoint === 'mobile'`); no wide-web duplicate — else native/narrow sign-out is stranded. (Q7)
-- **`WebBottomTabs` + `WebBottomTabButton` live in `@helsoft/components`** — organism + molecule (atomic design); prop-driven `triggers`; stories + Jest + Playwright e2e; `expo-router` peerDep for `expo-router/ui`. App layout maps `NATIVE_TAB_TRIGGERS` + `t()` into props. (post-impl)
+- **Adopt `expo-router/unstable-native-tabs` `NativeTabs` on iOS/Android** — in-ecosystem system tab bar; `unstable-` isolated to native `(tabs)/_layout.tsx`. (Q1)
+- **Route restructure: `(app)/_layout` Stack → `(tabs)` (`index`, `pdf-files`, `settings`) + `lesson/[id]/*` siblings** — tab bar only inside `(tabs)`; groupless URLs unchanged. **No `/upload` Stack screen** — PDF upload/generate lives on the PDF files tab via self-contained `PdfDocuments`. (Q2, amended)
+- **Three tabs (My lessons, My PDF files, Settings); New Lesson is a CTA, not a tab** — CTA pushes `/pdf-files` where `NewLessonDialog` + list live. (rev Q1/Q4, amended)
+- **Persistent New Lesson CTA in `SavedLessons` → `/pdf-files`** — create reachable from content + empty; label `nav.newLesson`. (rev Q2, amended)
+- **DesktopBar primary nav: My lessons + My PDF files** — Settings stays in `AccountMenu` only; no New lesson bar item. (rev Q3 / Q5, amended)
+- **Web split via platform-specific layouts** — native `_layout.tsx` = `NativeTabs`; `_layout.web.tsx` ≥768 `AppChrome`+`Slot`, <768 `WebBottomTabs` + `triggers` from `NATIVE_TAB_TRIGGERS`. (Q3)
+- **Reuse labels + glyphs** — `nav.myLessons` / `nav.myPdfFiles` / `nav.settings`; shared `NATIVE_TAB_TRIGGERS` (`sf`/`md`/`href`); web maps to `{ name, href, label, icon }`. (Q4, amended)
+- **`DesktopBar` avatar `AccountMenu` (Settings + Sign out) on wide web** — only Settings/sign-out path on desktop. (Q5)
+- **Delete `MobileBar`; keep `AccountMenu`; desktop-only `AppChrome`**. (Q6)
+- **Sign-out** — `AccountMenu` on wide web; Settings `SignOut` when `breakpoint === 'mobile'`. (Q7)
+- **`WebBottomTabs` + `WebBottomTabButton` in `@helsoft/components`** — prop-driven `triggers`; stories/Jest/e2e; `expo-router` peer. (post-impl)
+- **`PdfDocuments` self-contained** — no props; owns router, profile gate, `NewLessonDialog`; used by `(tabs)/pdf-files`. (post-impl)

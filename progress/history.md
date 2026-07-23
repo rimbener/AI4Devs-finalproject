@@ -106,3 +106,5 @@
 2026-07-22 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | NativeTabs 2-tab shell; New Lesson CTA; MobileBar removed
 
 2026-07-23 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | Post-DoD: WebBottomTabs in @helsoft/components for narrow web; docs aligned.
+
+2026-07-23 | native-bottom-tabs | pr_ready | docs/features/native-bottom-tabs/ | 3 tabs + DesktopBar PDF; retire /upload→/pdf-files; PdfDocuments prop-less; docs synced.

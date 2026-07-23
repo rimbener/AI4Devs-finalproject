@@ -1,6 +1,6 @@
 ---
 id: task-4
-title: Trim desktop chrome — remove New lesson, slim AppChrome to desktop-only
+title: Desktop chrome — My lessons + PDF files; slim AppChrome
 slice: 2
 scenarios: [s3, s11, s12]
 status: done
@@ -12,29 +12,20 @@ paths:
     libs/components/src/organisms/desktop-bar/desktop-bar.test.tsx,
     libs/study-buddy/src/components/app-chrome/app-chrome.tsx,
     libs/study-buddy/src/components/app-chrome/use-app-chrome.ts,
-    libs/study-buddy/src/components/app-chrome/app-chrome.helpers.ts,
-    libs/study-buddy/src/components/app-chrome/app-chrome.helpers.test.ts,
     libs/study-buddy/src/components/app-chrome/app-chrome.test.tsx,
     libs/study-buddy/src/components/app-chrome/use-app-chrome.test.ts,
   ]
 ---
 
 ## Goal
-Two coupled desktop-chrome trims now that New Lesson is a CTA (task-3) and native/narrow nav is `NativeTabs` / `WebBottomTabs`:
-1. **Remove the New lesson nav item from `DesktopBar`** — drop its `NavItem`, remove the `newLesson` prop from `DesktopBarProps`, update stories + tests. `DesktopBar` keeps brand, **My lessons**, alerts placeholder, and the avatar/`AccountMenu`.
-2. **Slim `AppChrome` to desktop-only** — remove the `MobileBar` branch/import, the mobile-title path (`getMobileTitleKey`) + mobile safe-area bits, and the now-unused New lesson handler/props. It renders only `DesktopBar` + `AccountMenu` (Settings + Sign out) via the controlled `SignOut`.
+1. **`DesktopBar`** — `home` + **`pdfFiles`** nav items; no New lesson / Settings bar items.
+2. **`AppChrome`** desktop-only — wires both destinations; `AccountMenu` keeps Settings + Sign out.
 
 ## Done criteria
-- [x] Scenario(s) s3, s11, s12 covered by concrete test(s)
-- [x] `DesktopBar` shows My lessons only (no New lesson, no Settings nav item); `newLesson` prop removed; stories/tests updated (s3)
-- [x] `AppChrome` renders `DesktopBar` + `AccountMenu` with no `MobileBar` reference; `getMobileTitleKey`/mobile bits deleted
-- [x] Settings reachable from the desktop avatar `AccountMenu`, not a bar item (s11)
-- [x] Sign out available from the desktop `AccountMenu` via the existing confirm flow (s12)
-- [x] No remaining importers of the removed `newLesson` prop / mobile-title helper repo-wide
-- [x] `pnpm lint` + `pnpm check-types` + `pnpm test` green
-- [x] No hardcoded strings/colors/dimensions
+- [x] DesktopBar shows My lessons + My PDF files; no New lesson / Settings (s3)
+- [x] AppChrome navigates `/` and `/pdf-files`; marks active from pathname
+- [x] Settings via AccountMenu only (s11); Sign out via AccountMenu (s12)
+- [x] stories / unit / e2e updated; lint / types / tests green
 
 ## Notes
-- Locks: Q5 DesktopBar otherwise unchanged; Q6 strip dead app wiring; revision Q3 remove New lesson from DesktopBar (CTA is the sole create entry).
-- `AccountMenu` stays in `@helsoft/components` (still used here); only `MobileBar` is deleted (task-6).
-- `nav.newLesson` is no longer a chrome nav label — it is the CTA label (task-3).
+- `nav.newLesson` remains the My lessons CTA label (task-3), not a bar item.

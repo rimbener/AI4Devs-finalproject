@@ -8,34 +8,33 @@ Feature: Native bottom tabs navigation
   As a signed-in learner, I want system-native bottom tabs on iOS/Android and a
   Material-style bottom tab bar on narrow web, with the existing desktop top
   bar on wide web, so that primary navigation feels platform-native. New Lesson
-  is an action launched from My lessons, not a tab, so the tab bar holds only
-  durable destinations.
+  is a CTA on My lessons that opens the PDF files tab (not its own tab).
 
   Background:
     Given I am a signed-in learner
     And I am inside the protected app shell
 
   @s1
-  Scenario: Native platforms show the system tab bar with two tabs
+  Scenario: Native platforms show the system tab bar with three tabs
     Given I am on iOS or Android
     When the app shell renders
     Then I see a system-native bottom tab bar
-    And it shows two tabs: My lessons and Settings
+    And it shows three tabs: My lessons, My PDF files, and Settings
     And there is no New lesson tab
 
   @s2
   Scenario: Narrow web shows a Material bottom tab bar, not the old mobile chrome
     Given my web viewport width is below 768
     When the app shell renders
-    Then I see a Material-style bottom tab bar with My lessons and Settings
+    Then I see a Material-style bottom tab bar with My lessons, My PDF files, and Settings
     And I do not see the retired custom mobile bar
     And I do not see NativeTabs web top chrome
 
   @s3
-  Scenario: Wide web shows the desktop top bar with no New lesson or Settings nav items
+  Scenario: Wide web shows the desktop top bar with My lessons and PDF files
     Given my web viewport width is at least 768
     When the app shell renders
-    Then I see the existing desktop top bar with My lessons
+    Then I see the existing desktop top bar with My lessons and My PDF files
     And New lesson is not a destination in the desktop top bar
     And Settings is not a destination in the desktop top bar
     And I do not see a bottom tab bar
@@ -47,22 +46,23 @@ Feature: Native bottom tabs navigation
     Then I navigate to <route>
 
     Examples:
-      | tab        | route     |
-      | My lessons | /         |
-      | Settings   | /settings |
+      | tab          | route       |
+      | My lessons   | /           |
+      | My PDF files | /pdf-files  |
+      | Settings     | /settings   |
 
   @s5
   Scenario: The current tab is marked selected for assistive tech and visuals
     Given the native tab bar is visible
-    When I am on My lessons or Settings
+    When I am on My lessons, My PDF files, or Settings
     Then the matching tab is the selected tab
     And it is exposed as selected to assistive technology
 
   @s6
-  Scenario Outline: New Lesson call to action opens the upload flow
+  Scenario Outline: New Lesson call to action opens the PDF files tab
     Given I am on My lessons and the list is in the "<state>" state
     When I activate the New Lesson action
-    Then I navigate to "/upload"
+    Then I navigate to "/pdf-files"
     And the action is labelled from "nav.newLesson"
 
     Examples:
@@ -71,19 +71,17 @@ Feature: Native bottom tabs navigation
       | empty   |
 
   @s7
-  Scenario: The upload flow is immersive with a way back
-    Given I open New Lesson from My lessons
-    When the upload screen is shown
-    Then there is no bottom tab bar
-    And there is no desktop top bar
-    And a header back control returns me to My lessons
+  Scenario: PDF files hosts upload and generate
+    Given I open New Lesson from My lessons or open the PDF files tab
+    When the PDF files screen is shown
+    Then I see the PDF documents surface (list and/or Choose PDF)
+    And there is no separate "/upload" route
 
   @s8
-  Scenario: My lessons stays the selected tab while the upload flow is open
+  Scenario: PDF files becomes the selected tab after New Lesson
     Given I open New Lesson from My lessons
-    When the upload screen is pushed and then dismissed
-    Then My lessons remains the selected tab throughout
-    And dismissing returns me to My lessons
+    When I land on "/pdf-files"
+    Then My PDF files is the selected tab
 
   @s9
   Scenario: Lesson flows do not show the tab bar
@@ -95,9 +93,9 @@ Feature: Native bottom tabs navigation
   Scenario: Tab labels and icons come from existing copy and platform glyphs
     Given the tab bar renders
     Then My lessons uses "nav.myLessons" with a library glyph
+    And My PDF files uses "nav.myPdfFiles" with a document glyph
     And Settings uses "nav.settings" with a settings glyph
     And no New lesson glyph appears in the tab bar
-    And no new product copy keys are required
     And native uses SF / Material Symbols on NativeTabs
     And narrow web uses Material Symbols via WebBottomTabs
 
@@ -143,12 +141,12 @@ Feature: Native bottom tabs navigation
       | android  | any          | native tabs           |
 
   @s16
-  Scenario: Existing routes and deep links are unchanged by the restructure
+  Scenario: Tab and lesson routes resolve without an upload Stack screen
     Given the tabs live in a route group that adds no URL segment
-    When I open "/", "/upload", "/settings", or a "/lesson/[id]" route directly
-    Then each resolves to the same screen as before
-    And opening "/upload" directly shows no tab bar
-    And a back control from a directly-opened "/upload" returns me to My lessons
+    When I open "/", "/pdf-files", "/settings", or a "/lesson/[id]" route directly
+    Then each resolves to the matching screen
+    And there is no "/upload" app route
+    And lesson routes show no tab bar
 
   @s17
   Scenario: The retired mobile bar is removed from the design system

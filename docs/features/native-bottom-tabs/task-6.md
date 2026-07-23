@@ -20,7 +20,7 @@ Remove the MVP custom `MobileBar` now that native nav is `NativeTabs` and narrow
 - [x] `MobileBar` component, `.types.ts`, `.stories.tsx`, `.test.tsx`, and its e2e are deleted (s17)
 - [x] `organisms/index.ts` no longer exports `MobileBar`; no remaining importers repo-wide (s17)
 - [x] `AccountMenu` untouched and still exported (s17)
-- [x] Narrow/native primary nav is `NativeTabs` (iOS/Android) / `WebBottomTabs` (web <768); the old bar is no longer the product nav (s2)
+- [x] Narrow/native primary nav is `NativeTabs` (iOS/Android) / `WebBottomTabs` (web <768) with My lessons + PDF files + Settings; old bar gone (s2)
 - [x] `pnpm lint` + `pnpm check-types` + `pnpm test` green (component + Storybook build)
 - [x] No hardcoded strings/colors/dimensions introduced
 

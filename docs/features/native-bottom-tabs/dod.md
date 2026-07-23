@@ -26,9 +26,9 @@ _Only **minor** findings left after the 2-round review loop, explicitly risk-acc
 - [x] No unapproved dependencies — `expo-router/unstable-native-tabs` (native Q1); `expo-router` peer on `@helsoft/components` for `expo-router/ui` / `WebBottomTabs`
 
 ## Design system
-- [x] Tokens/existing components reused; correct atomic-design placement — DesktopBar/AccountMenu/Button/SignOut; NativeTabs in native app layout; `WebBottomTabs` organism + `WebBottomTabButton` molecule in `@helsoft/components`
-- [x] Storybook story per shared component (4 states) — `desktop-bar.stories.tsx`; `web-bottom-tabs.stories.tsx` Content/SingleTab; `web-bottom-tab-button.stories.tsx` Unfocused/Focused/SettingsFocused; AppChrome Content+Loading; SettingsSignOut Mobile/Desktop/Content
-- [x] Every component has a Jest unit test (`<name>.test.tsx`) — `app-chrome.test.tsx`, `desktop-bar.test.tsx`, `settings-sign-out.test.tsx`, `native-tabs-triggers.test.ts`, `web-bottom-tabs.test.tsx`, `web-bottom-tab-button.test.tsx`
+- [x] Tokens/existing components reused; correct atomic-design placement — DesktopBar (home+pdfFiles)/AccountMenu/Button/SignOut; NativeTabs native; `WebBottomTabs` + `WebBottomTabButton`; self-contained `PdfDocuments`
+- [x] Storybook story per shared component — desktop-bar (+ PdfFilesActive); web-bottom-tabs / web-bottom-tab-button; pdf-documents stories
+- [x] Every component has a Jest unit test — app-chrome, desktop-bar, settings-sign-out, native-tabs-triggers, web-bottom-tabs, pdf-documents, saved-lessons
 
 ## Security (OWASP)
 - [x] No secrets/keys in code or logs; inputs validated — `review.md` security lens N/A; no new trust boundary
@@ -43,9 +43,9 @@ _Only **minor** findings left after the 2-round review loop, explicitly risk-acc
 
 ## Observability & i18n
 - [x] Analytics events per spec; feature flag wrapping (if applicable) — `spec.md`: none / none
-- [x] No hardcoded strings — `NATIVE_TAB_TRIGGERS` + `t('nav.*')` in native layout; web maps triggers via `t()` into `WebBottomTabs`; no new copy keys (`@s10`)
+- [x] No hardcoded strings — `NATIVE_TAB_TRIGGERS` + `t('nav.*')` incl. `nav.myPdfFiles`; web maps into `WebBottomTabs`; New Lesson CTA → `/pdf-files`
 
 ---
 **If PASS → `pr_ready`.** Opening & merging the PR is a manual human step → `done`.
 
-**Lead:** DoD PASS after Biome format fix. Phase → `pr_ready`. Human opens/merges PR. Post-DoD: narrow web → `WebBottomTabs` in `@helsoft/components` (docs updated).
+**Lead:** DoD PASS. Post-DoD: WebBottomTabs; 3 tabs + DesktopBar PDF files; retire `/upload` → `/pdf-files` + prop-less `PdfDocuments` (docs aligned to current diff).

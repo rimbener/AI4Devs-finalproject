@@ -1,30 +1,27 @@
 ---
 id: task-3
-title: New Lesson CTA on My lessons
+title: New Lesson CTA on My lessons → PDF files tab
 slice: 2
-scenarios: [s6]
+scenarios: [s6, s7, s8]
 status: done
 paths:
   [
     libs/study-buddy/src/components/saved-lessons/saved-lessons.tsx,
     libs/study-buddy/src/components/saved-lessons/saved-lessons.test.tsx,
     libs/study-buddy/src/components/saved-lessons/saved-lessons.stories.tsx,
+    apps/app-study-buddy/src/app/(app)/(tabs)/pdf-files.tsx,
+    libs/study-buddy/src/components/pdf-documents/pdf-documents.tsx,
   ]
 ---
 
 ## Goal
-Add a persistent **New Lesson** call to action to `SavedLessons` (the My lessons wiring). Render a shared `Button` (`@helsoft/components`) labelled from `nav.newLesson` in the header area, visible in **both content and empty** list states, that does `router.push('/upload')`. Navigation stays in the study-buddy wiring; the button itself is a presentational atom.
+Persistent **New Lesson** CTA on `SavedLessons` (content + empty) labelled `nav.newLesson`, pushing **`/pdf-files`**. PDF upload/generate is hosted by self-contained **`PdfDocuments`** on the PDF files screen (no `/upload` route).
 
 ## Done criteria
-- [x] Scenario s6 covered by concrete test(s)
-- [x] CTA visible in `content` and `empty` states; pushes `/upload` (s6)
-- [x] CTA label from `nav.newLesson` — no new i18n keys
-- [x] Uses the shared `Button` atom; no bespoke button
-- [x] Component unit test asserts CTA present in content + empty and calls `router.push('/upload')`
-- [x] Storybook story updated to show the CTA in content + empty states (no stale story)
-- [x] `pnpm lint` + `pnpm check-types` + `pnpm test` green
-- [x] No hardcoded strings/colors/dimensions
+- [x] CTA in content + empty; `router.push('/pdf-files')` (s6, s8)
+- [x] `(tabs)/pdf-files` renders `ApiKeyGate` + `PdfDocuments` (s7)
+- [x] `PdfDocuments` owns navigation, profile gate, `NewLessonDialog` (no props)
+- [x] Unit tests updated; lint / types / tests green
 
 ## Notes
-- Revision Q2 lock (option A): persistent CTA in `SavedLessons` header across content + empty states.
-- `/upload` is a Stack sibling (task-1), so pushing it is immersive with a header/back.
+- Label stays `nav.newLesson`; destination is the PDF files tab.
