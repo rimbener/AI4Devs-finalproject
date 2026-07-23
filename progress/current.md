@@ -1,9 +1,9 @@
 # Current session
 
-**Active feature:** native-bottom-tabs
-**Folder:** `docs/features/native-bottom-tabs/`
-**Branch:** `feat/native-bottom-tabs`
-**Worktree:** `.worktrees/native-bottom-tabs`
-**Phase:** pr_ready
-**Status:** DoD PASS. Docs compacted; risks landed; story → done. Human opens/merges PR.
+**Active feature:** lesson-route-header
+**Folder:** `docs/features/lesson-route-header/`
+**Branch:** `feat/lesson-route-header`
+**Worktree:** `.worktrees/lesson-route-header`
+**Phase:** pending
+**Status:** Worktree bootstrapped; story moved to in-progress. Starting spec_partner plan phase.
 **Notes:** Base = `feature-entrega3-HernanLaura`.
