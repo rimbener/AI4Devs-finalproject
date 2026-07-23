@@ -83,12 +83,13 @@ describe('native-bottom-tabs slice 2 integration', () => {
       </View>,
     );
 
-    // @s6 — My lessons CTA → /upload
+    // @s6 — My lessons CTA → /pdf-files
     fireEvent.press(screen.getByRole('button', { name: 'New lesson' }));
-    expect(push).toHaveBeenCalledWith('/upload');
+    expect(push).toHaveBeenCalledWith('/pdf-files');
 
-    // @s3 — DesktopBar: My lessons only
+    // @s3 — DesktopBar: My lessons + PDF files; no New lesson bar item
     expect(screen.getByRole('link', { name: 'nav.myLessons' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'nav.myPdfFiles' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'nav.newLesson' })).toBeNull();
 
     // @s11 / @s12 — Settings + Sign out via AccountMenu

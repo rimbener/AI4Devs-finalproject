@@ -1,24 +1,23 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useLessonGeneration: jest.fn(),
+  useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
-import { useLessonGeneration } from '@helsoft/hooks';
+import { useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
 
-import { LessonGeneration } from '../lesson-generation/lesson-generation';
 import { PdfDocuments } from './pdf-documents';
 
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
+const mockUseProfile = useProfile as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
 
 const t = (key: string, options?: Record<string, unknown>) => {
@@ -45,45 +44,11 @@ const t = (key: string, options?: Record<string, unknown>) => {
   }
   if (key === 'pdfList.delete.confirmAction') return 'Delete';
   if (key === 'pdfList.delete.cancelAction') return 'Cancel';
+  if (key === 'upload.chooseFile') return 'Choose PDF';
+  if (key === 'upload.dialogHeadline') return 'Upload PDF';
+  if (key === 'upload.dialogClose') return 'Close';
+  if (key === 'generation.dialogHeadline') return 'Generate lesson';
   return key;
-};
-
-/**
- * Mirrors upload.tsx composition glue (task-12): lifted documentId + reloadToken.
- * Kept here so the screen stays a thin shell with no business logic to unit-test.
- */
-const UploadScreenGlue = ({ onOpenLesson }: { onOpenLesson: (lessonId: string) => void }) => {
-  const [documentId, setDocumentId] = useState<string | undefined>(undefined);
-  const [reloadToken, setReloadToken] = useState(0);
-
-  const bumpReload = useCallback(() => {
-    setReloadToken((n) => n + 1);
-  }, []);
-
-  const handleExtracted = useCallback(
-    (id: string) => {
-      setDocumentId(id);
-      bumpReload();
-    },
-    [bumpReload],
-  );
-
-  return (
-    <View>
-      {/* Stand-in for PdfUpload.onExtracted — press to simulate extract success (@s10). */}
-      <Pressable accessibilityRole="button" onPress={() => handleExtracted('doc-from-upload')}>
-        <Text>simulate-extract</Text>
-      </Pressable>
-      <PdfDocuments
-        onGenerate={setDocumentId}
-        onOpenLesson={onOpenLesson}
-        reloadToken={reloadToken}
-      />
-      <LessonGeneration documentId={documentId} onGenerated={bumpReload} />
-      <Text>{documentId ? `active:${documentId}` : 'active:none'}</Text>
-      <Text>{`token:${reloadToken}`}</Text>
-    </View>
-  );
 };
 
 const mockUserDocumentsOrder = (rows: unknown[]) => {
@@ -94,9 +59,9 @@ const mockUserDocumentsOrder = (rows: unknown[]) => {
 
 /**
  * Integration: PdfDocuments → usePdfDocuments → PdfDocumentsService → PdfDocumentsDao
- * + upload-screen composition glue (@s1/@s5/@s6/@s9/@s10).
+ * (self-contained wiring with NewLessonDialog + router).
  */
-describe('PdfDocuments integration (wiring → hook → service → DAO + upload glue)', () => {
+describe('PdfDocuments integration (wiring → hook → service → DAO)', () => {
   let client: SupabaseClient;
 
   beforeAll(() => {
@@ -106,6 +71,18 @@ describe('PdfDocuments integration (wiring → hook → service → DAO + upload
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseRouter.mockReturnValue({ push: jest.fn() });
+    mockUseProfile.mockReturnValue({
+      profile: {
+        plan: 'paid',
+        keySource: 'platform',
+        showKeySettings: false,
+        showAds: false,
+        canCreate: true,
+      },
+      isLoading: false,
+      error: null,
+      retry: jest.fn(),
+    });
     mockUseLocalization.mockReturnValue({
       t,
       locale: 'en',
@@ -118,131 +95,28 @@ describe('PdfDocuments integration (wiring → hook → service → DAO + upload
       result: undefined,
       error: undefined,
       generate: jest.fn(),
-      retry: jest.fn(),
+      reset: jest.fn(),
     });
   });
 
-  afterEach(() => jest.restoreAllMocks());
-
-  // @s1 — list loads through the real chain alongside the upload-screen heading.
-  it('loads documents from Supabase and renders filenames newest-first', async () => {
+  it('renders documents from the DAO through the hook', async () => {
     const { select } = mockUserDocumentsOrder([
-      {
-        id: 'doc-2',
-        filename: 'newer.pdf',
-        page_count: 5,
-        created_at: '2026-07-14T12:00:00.000Z',
-        generation_error_code: null,
-        lesson_id: null,
-      },
       {
         id: 'doc-1',
-        filename: 'older.pdf',
-        page_count: 2,
-        created_at: '2026-07-13T12:00:00.000Z',
-        generation_error_code: null,
-        lesson_id: 'lesson-1',
-      },
-    ]);
-    jest.spyOn(client, 'from').mockReturnValue({ select } as never);
-
-    await render(<PdfDocuments onGenerate={jest.fn()} onOpenLesson={jest.fn()} />);
-
-    await waitFor(() => expect(screen.getByText('newer.pdf')).toBeTruthy());
-    expect(screen.getByText('older.pdf')).toBeTruthy();
-    expect(screen.getByText('Your PDFs')).toBeTruthy();
-    expect(client.from).toHaveBeenCalledWith('user_documents');
-  });
-
-  // @s5 — Generate sets the active documentId that feeds LessonGeneration (shared panel).
-  it('Generate on a ready row sets the active documentId for the shared panel', async () => {
-    const { select } = mockUserDocumentsOrder([
-      {
-        id: 'doc-ready',
         filename: 'notes.pdf',
         page_count: 12,
         created_at: '2026-07-13T12:00:00.000Z',
-        generation_error_code: null,
+        status: 'ready',
         lesson_id: null,
       },
     ]);
-    jest.spyOn(client, 'from').mockReturnValue({ select } as never);
+    // biome-ignore lint/suspicious/noExplicitAny: test double
+    jest.spyOn(client, 'from' as any).mockReturnValue({ select } as any);
 
-    await render(<UploadScreenGlue onOpenLesson={jest.fn()} />);
+    await render(<PdfDocuments />);
 
-    await waitFor(() => expect(screen.getByText('notes.pdf')).toBeTruthy());
-    expect(screen.getByText('active:none')).toBeTruthy();
-
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Generate notes.pdf' }));
+    await waitFor(() => {
+      expect(screen.getByText('notes.pdf')).toBeTruthy();
     });
-
-    expect(screen.getByText('active:doc-ready')).toBeTruthy();
-  });
-
-  // @s6 — Retry also targets that document via the same onGenerate path.
-  it('Retry on a failed row sets the active documentId for the shared panel', async () => {
-    const { select } = mockUserDocumentsOrder([
-      {
-        id: 'doc-failed',
-        filename: 'failed.pdf',
-        page_count: 4,
-        created_at: '2026-07-12T12:00:00.000Z',
-        generation_error_code: 'timeout',
-        lesson_id: null,
-      },
-    ]);
-    jest.spyOn(client, 'from').mockReturnValue({ select } as never);
-
-    await render(<UploadScreenGlue onOpenLesson={jest.fn()} />);
-
-    await waitFor(() => expect(screen.getByText('failed.pdf')).toBeTruthy());
-
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Retry failed.pdf' }));
-    });
-
-    expect(screen.getByText('active:doc-failed')).toBeTruthy();
-  });
-
-  // @s10 — extract success bumps reloadToken (list refetch is covered in unit tests).
-  it('bumps reloadToken when a new upload extracts successfully', async () => {
-    const { select } = mockUserDocumentsOrder([]);
-    jest.spyOn(client, 'from').mockReturnValue({ select } as never);
-
-    await render(<UploadScreenGlue onOpenLesson={jest.fn()} />);
-
-    await waitFor(() => expect(screen.getByText('token:0')).toBeTruthy());
-
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'simulate-extract' }));
-    });
-
-    expect(screen.getByText('token:1')).toBeTruthy();
-    expect(screen.getByText('active:doc-from-upload')).toBeTruthy();
-  });
-
-  // @s9 — generation success bumps reloadToken so the list can flip to lesson ready.
-  it('bumps reloadToken when LessonGeneration fires onGenerated', async () => {
-    const { select } = mockUserDocumentsOrder([]);
-    jest.spyOn(client, 'from').mockReturnValue({ select } as never);
-
-    mockUseLessonGeneration.mockReturnValue({
-      stage: 'content',
-      currentStep: 'reading',
-      result: {
-        lessonId: 'lesson-new',
-        title: 'Ready',
-        composition: 'both',
-        slides: [],
-      },
-      error: undefined,
-      generate: jest.fn(),
-      retry: jest.fn(),
-    });
-
-    await render(<UploadScreenGlue onOpenLesson={jest.fn()} />);
-
-    await waitFor(() => expect(screen.getByText('token:1')).toBeTruthy());
   });
 });

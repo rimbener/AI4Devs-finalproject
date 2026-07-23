@@ -47,13 +47,14 @@ describe('AppChrome', () => {
     mockUseSession.mockReturnValue(sessionValue);
   });
 
-  // @s3 — desktop-only chrome: DesktopBar with My lessons; no New lesson; no MobileBar.
-  it('renders desktop bar with My lessons only and no mobile chrome', async () => {
+  // @s3 — desktop-only chrome: DesktopBar with My lessons + PDF files; no New lesson; no MobileBar.
+  it('renders desktop bar with My lessons and PDF files and no mobile chrome', async () => {
     await render(<AppChrome />);
 
     expect(screen.getByText('brand.name')).toBeOnTheScreen();
     expect(screen.getByRole('link', { name: 'nav.myLessons' })).toBeOnTheScreen();
-    expect(screen.getAllByRole('link')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: 'nav.myPdfFiles' })).toBeOnTheScreen();
+    expect(screen.getAllByRole('link')).toHaveLength(2);
     expect(screen.queryByRole('link', { name: 'nav.newLesson' })).toBeNull();
     expect(screen.queryByTestId('mobile-top-bar')).toBeNull();
     expect(screen.queryByTestId('mobile-bottom-bar')).toBeNull();
@@ -67,6 +68,16 @@ describe('AppChrome', () => {
     });
 
     expect(navigate).toHaveBeenCalledWith('/');
+  });
+
+  it('navigates PDF files from the desktop bar', async () => {
+    await render(<AppChrome />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('link', { name: 'nav.myPdfFiles' }));
+    });
+
+    expect(navigate).toHaveBeenCalledWith('/pdf-files');
   });
 
   it('uses the latest router for Home navigation after a rerender', async () => {

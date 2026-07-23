@@ -12,11 +12,20 @@ export const AppChrome = (_props: AppChromeProps) => {
   const { t } = useLocalization();
   const pathname = usePathname();
   const router = useRouter();
-  const { home, identity, setSignOutOpen, signOutOpen } = useAppChrome(pathname);
+  const { home, pdfFiles, identity, setSignOutOpen, signOutOpen } = useAppChrome(pathname);
   const navigateHome = useCallback(() => router.navigate('/'), [router]);
+  const navigatePdfFiles = useCallback(() => router.navigate('/pdf-files'), [router]);
   const homeProps = useMemo(
     () => ({ active: home.active, label: t(home.labelKey), onPress: navigateHome }),
     [home, navigateHome, t],
+  );
+  const pdfFilesProps = useMemo(
+    () => ({
+      active: pdfFiles.active,
+      label: t(pdfFiles.labelKey),
+      onPress: navigatePdfFiles,
+    }),
+    [navigatePdfFiles, pdfFiles, t],
   );
   const accountMenu = identity ? (
     <AccountMenu
@@ -40,7 +49,12 @@ export const AppChrome = (_props: AppChromeProps) => {
 
   return (
     <>
-      <DesktopBar avatar={accountMenu} brandLabel={t('brand.name')} home={homeProps} />
+      <DesktopBar
+        avatar={accountMenu}
+        brandLabel={t('brand.name')}
+        home={homeProps}
+        pdfFiles={pdfFilesProps}
+      />
       <SignOut open={signOutOpen} onOpenChange={setSignOutOpen} />
     </>
   );

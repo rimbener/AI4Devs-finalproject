@@ -1,8 +1,40 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   usePdfDocuments: jest.fn(),
+  useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
+jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
+jest.mock('../new-lesson-dialog/new-lesson-dialog', () => {
+  const React = require('react');
+  const { Pressable, Text } = require('react-native');
+  return {
+    NewLessonDialog: ({
+      generateDocumentId,
+      onExtracted,
+      onGenerated,
+    }: {
+      generateDocumentId?: string;
+      onExtracted?: () => void;
+      onGenerated?: () => void;
+    }) =>
+      React.createElement(
+        React.Fragment,
+        null,
+        generateDocumentId ? React.createElement(Text, null, `gen:${generateDocumentId}`) : null,
+        React.createElement(
+          Pressable,
+          { accessibilityRole: 'button', onPress: () => onExtracted?.() },
+          React.createElement(Text, null, 'sim-extract'),
+        ),
+        React.createElement(
+          Pressable,
+          { accessibilityRole: 'button', onPress: () => onGenerated?.() },
+          React.createElement(Text, null, 'sim-generated'),
+        ),
+      ),
+  };
+});
 
 /** Capture list props so mutation tests can invoke onOpenLesson with a missing id. */
 const capturedListProps: {
@@ -19,9 +51,10 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
-import { usePdfDocuments } from '@helsoft/hooks';
+import { usePdfDocuments, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 import { AccessibilityInfo } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
@@ -29,6 +62,8 @@ import { PdfDocuments } from './pdf-documents';
 
 const mockUsePdfDocuments = usePdfDocuments as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
+const mockUseProfile = useProfile as jest.Mock;
+const mockUseRouter = useRouter as jest.Mock;
 
 const t = (key: string, options?: Record<string, unknown>) => {
   if (key === 'pdfList.heading') return 'Your PDFs';
@@ -67,22 +102,42 @@ const docsValue = (overrides: Partial<ReturnType<typeof usePdfDocuments>> = {}) 
   ...overrides,
 });
 
-const noop = () => {};
+const profileValue = (canCreate = true) => ({
+  profile: canCreate
+    ? {
+        plan: 'paid' as const,
+        keySource: 'platform' as const,
+        showKeySettings: false,
+        showAds: false,
+        canCreate: true,
+      }
+    : {
+        plan: 'free' as const,
+        keySource: 'user' as const,
+        showKeySettings: true,
+        showAds: true,
+        canCreate: false,
+      },
+  isLoading: false,
+  error: null,
+  retry: jest.fn(),
+});
 
 describe('PdfDocuments', () => {
-  const onGenerate = jest.fn();
-  const onOpenLesson = jest.fn();
+  const push = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseLocalization.mockReturnValue(localizationValue({ t, locale: 'en' }));
+    mockUseProfile.mockReturnValue(profileValue(true));
+    mockUseRouter.mockReturnValue({ push });
   });
 
   // @s15 — loading.
   it('shows the loading indicator while documents are loading', async () => {
     mockUsePdfDocuments.mockReturnValue(docsValue({ isLoading: true }));
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.getByTestId('pdf-document-list-loading-indicator')).toBeTruthy();
     expect(screen.getByText('Loading your PDFs…')).toBeTruthy();
@@ -92,7 +147,7 @@ describe('PdfDocuments', () => {
   it('shows the empty state when there are no documents', async () => {
     mockUsePdfDocuments.mockReturnValue(docsValue());
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.getByText('No extracted PDFs yet. Upload one to get started.')).toBeTruthy();
   });
@@ -130,7 +185,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.getByText('Your PDFs')).toBeTruthy();
     expect(screen.getByText('notes.pdf')).toBeTruthy();
@@ -157,11 +212,13 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
-    fireEvent.press(screen.getByRole('button', { name: 'Generate notes.pdf' }));
+    await render(<PdfDocuments />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Generate notes.pdf' }));
+    });
 
-    expect(onGenerate).toHaveBeenCalledWith('doc-ready');
-    expect(onOpenLesson).not.toHaveBeenCalled();
+    expect(screen.getByText('gen:doc-ready')).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
   });
 
   // @s6 — Retry raises onGenerate(documentId).
@@ -181,10 +238,12 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
-    fireEvent.press(screen.getByRole('button', { name: 'Retry failed.pdf' }));
+    await render(<PdfDocuments />);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Retry failed.pdf' }));
+    });
 
-    expect(onGenerate).toHaveBeenCalledWith('doc-failed');
+    expect(screen.getByText('gen:doc-failed')).toBeTruthy();
   });
 
   // @s7 — Open lesson raises onOpenLesson(lessonId), not document id.
@@ -204,15 +263,18 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     fireEvent.press(screen.getByRole('button', { name: 'Open lesson for done.pdf' }));
 
-    expect(onOpenLesson).toHaveBeenCalledWith('lesson-42');
-    expect(onGenerate).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-42' },
+    });
   });
 
   // @s13 — disabling creation keeps existing generated lessons openable.
-  it('hides Generate while preserving Open lesson when onGenerate is omitted', async () => {
+  it('hides Generate while preserving Open lesson when canCreate is false', async () => {
+    mockUseProfile.mockReturnValue(profileValue(false));
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -236,11 +298,15 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.queryByRole('button', { name: 'Generate notes.pdf' })).toBeNull();
+    expect(screen.queryByText('sim-extract')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: 'Open lesson for done.pdf' }));
-    expect(onOpenLesson).toHaveBeenCalledWith('lesson-42');
+    expect(push).toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-42' },
+    });
   });
 
   // @s16 — error + retry wired to refetch.
@@ -248,7 +314,7 @@ describe('PdfDocuments', () => {
     const refetch = jest.fn();
     mockUsePdfDocuments.mockReturnValue(docsValue({ error: new Error('network'), refetch }));
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.getByText("We couldn't load your PDFs.")).toBeTruthy();
     fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
@@ -274,7 +340,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Delete notes.pdf' }));
     });
@@ -304,7 +370,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Delete notes.pdf' }));
     });
@@ -332,47 +398,30 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.queryByRole('button', { name: 'Delete done.pdf' })).toBeNull();
   });
 
-  // @s9/@s10 — reloadToken change triggers refetch (skips initial mount).
-  it('calls refetch when reloadToken changes after mount', async () => {
+  // @s9/@s10 — extract/generate success refetches the list via NewLessonDialog.
+  it('calls refetch when NewLessonDialog reports extract success', async () => {
     const refetch = jest.fn();
     mockUsePdfDocuments.mockReturnValue(docsValue({ refetch }));
 
-    const { rerender } = await render(
-      <PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} reloadToken={0} />,
-    );
+    await render(<PdfDocuments />);
     expect(refetch).not.toHaveBeenCalled();
 
-    await act(async () => {
-      rerender(
-        <PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} reloadToken={1} />,
-      );
-    });
-
+    fireEvent.press(screen.getByRole('button', { name: 'sim-extract' }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  // Mutation: `if (reloadToken === undefined) return` → `if (false) return`.
-  it('does not refetch when reloadToken stays omitted even if refetch identity changes', async () => {
-    const refetch1 = jest.fn();
-    const refetch2 = jest.fn();
-    mockUsePdfDocuments.mockReturnValue(docsValue({ refetch: refetch1 }));
+  it('calls refetch when NewLessonDialog reports generate success', async () => {
+    const refetch = jest.fn();
+    mockUsePdfDocuments.mockReturnValue(docsValue({ refetch }));
 
-    const { rerender } = await render(
-      <PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />,
-    );
-
-    mockUsePdfDocuments.mockReturnValue(docsValue({ refetch: refetch2 }));
-    await act(async () => {
-      rerender(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
-    });
-
-    expect(refetch1).not.toHaveBeenCalled();
-    expect(refetch2).not.toHaveBeenCalled();
+    await render(<PdfDocuments />);
+    fireEvent.press(screen.getByRole('button', { name: 'sim-generated' }));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 
   // Mutation: drop `.trim()` / `if (!lessonId)` / find predicate / optional chaining.
@@ -392,10 +441,10 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     fireEvent.press(screen.getByRole('button', { name: 'Open lesson for done.pdf' }));
 
-    expect(onOpenLesson).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
   });
 
   // Mutation: `?.lessonId.trim()` without optional on lessonId — null must not throw.
@@ -415,11 +464,11 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(() => {
       fireEvent.press(screen.getByRole('button', { name: 'Open lesson for done.pdf' }));
     }).not.toThrow();
-    expect(onOpenLesson).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('does not throw when Open lesson is pressed for an unknown document id', async () => {
@@ -438,11 +487,11 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(() => {
       capturedListProps.current?.onOpenLesson('missing-id');
     }).not.toThrow();
-    expect(onOpenLesson).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
   });
 
   it('opens the lessonId of the pressed row, not the first document', async () => {
@@ -469,17 +518,24 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     fireEvent.press(screen.getByRole('button', { name: 'Open lesson for second.pdf' }));
 
-    expect(onOpenLesson).toHaveBeenCalledWith('lesson-b');
-    expect(onOpenLesson).not.toHaveBeenCalledWith('lesson-a');
+    expect(push).toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-b' },
+    });
+    expect(push).not.toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-a' },
+    });
   });
 
-  // Mutation: empty useCallback deps — must see the latest onOpenLesson after rerender.
-  it('calls the latest onOpenLesson after the prop updates', async () => {
-    const first = jest.fn();
-    const second = jest.fn();
+  // Mutation: empty useCallback deps — must see the latest router after rerender.
+  it('navigates with the latest router after it updates', async () => {
+    const firstPush = jest.fn();
+    const secondPush = jest.fn();
+    mockUseRouter.mockReturnValue({ push: firstPush });
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -495,16 +551,18 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    const { rerender } = await render(
-      <PdfDocuments onGenerate={onGenerate} onOpenLesson={first} />,
-    );
+    const { rerender } = await render(<PdfDocuments />);
+    mockUseRouter.mockReturnValue({ push: secondPush });
     await act(async () => {
-      rerender(<PdfDocuments onGenerate={onGenerate} onOpenLesson={second} />);
+      rerender(<PdfDocuments />);
     });
     fireEvent.press(screen.getByRole('button', { name: 'Open lesson for done.pdf' }));
 
-    expect(second).toHaveBeenCalledWith('lesson-1');
-    expect(first).not.toHaveBeenCalled();
+    expect(secondPush).toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-1' },
+    });
+    expect(firstPush).not.toHaveBeenCalled();
   });
 
   // Mutation: empty deleteDocument deps — must call the latest deleteDocument.
@@ -527,9 +585,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    const { rerender } = await render(
-      <PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />,
-    );
+    const { rerender } = await render(<PdfDocuments />);
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -546,7 +602,7 @@ describe('PdfDocuments', () => {
       }),
     );
     await act(async () => {
-      rerender(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+      rerender(<PdfDocuments />);
     });
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Delete notes.pdf' }));
@@ -562,7 +618,7 @@ describe('PdfDocuments', () => {
   // Mutation: emptied StyleSheet root/heading — layout tokens must remain.
   it('applies row layout styles on the heading container', async () => {
     mockUsePdfDocuments.mockReturnValue(docsValue());
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     const heading = screen.getByText('Your PDFs');
     const flat = Object.assign(
@@ -575,7 +631,7 @@ describe('PdfDocuments', () => {
   // Mutation: `root: {}` — wiring root must flex to fill the screen column.
   it('applies flex:1 on the PdfDocuments root container', async () => {
     mockUsePdfDocuments.mockReturnValue(docsValue());
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     const root = screen.getByText('Your PDFs').parent;
     const flat = Object.assign(
       {},
@@ -606,7 +662,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={noop} onOpenLesson={noop} />);
+    await render(<PdfDocuments />);
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Delete notes.pdf' }));
     });
@@ -640,7 +696,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(screen.getByText('notes.pdf')).toBeTruthy();
     expect(screen.queryByText("We couldn't load your PDFs.")).toBeNull();
@@ -668,7 +724,7 @@ describe('PdfDocuments', () => {
       }),
     );
 
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
 
     expect(announceSpy).toHaveBeenCalledWith("We couldn't delete that PDF.");
     announceSpy.mockRestore();
@@ -692,16 +748,14 @@ describe('PdfDocuments', () => {
     ];
 
     mockUsePdfDocuments.mockReturnValue(docsValue({ documents: contentDocs }));
-    const { rerender } = await render(
-      <PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />,
-    );
+    const { rerender } = await render(<PdfDocuments />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     mockUsePdfDocuments.mockReturnValue(
       docsValue({ documents: contentDocs, error: new Error('delete failed') }),
     );
     await act(async () => {
-      rerender(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+      rerender(<PdfDocuments />);
     });
 
     expect(announceSpy).toHaveBeenCalledWith(deleteFailed);
@@ -712,13 +766,13 @@ describe('PdfDocuments', () => {
     mockUsePdfDocuments.mockReturnValue(
       docsValue({ isLoading: true, error: new Error('delete failed') }),
     );
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(screen.queryByText("We couldn't delete that PDF.")).toBeNull();
 
     mockUsePdfDocuments.mockReturnValue(
       docsValue({ error: new Error('load failed'), documents: [] }),
     );
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(screen.queryByText("We couldn't delete that PDF.")).toBeNull();
     expect(screen.getByText("We couldn't load your PDFs.")).toBeTruthy();
   });
@@ -743,21 +797,21 @@ describe('PdfDocuments', () => {
         ],
       }),
     );
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockClear();
     mockUsePdfDocuments.mockReturnValue(
       docsValue({ isLoading: true, error: new Error('delete failed') }),
     );
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockClear();
     mockUsePdfDocuments.mockReturnValue(
       docsValue({ error: new Error('load failed'), documents: [] }),
     );
-    await render(<PdfDocuments onGenerate={onGenerate} onOpenLesson={onOpenLesson} />);
+    await render(<PdfDocuments />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockRestore();

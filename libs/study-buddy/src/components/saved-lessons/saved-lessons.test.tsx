@@ -80,7 +80,7 @@ describe('SavedLessons', () => {
     expect(screen.getByText('No saved lessons yet. Create one to get started.')).toBeTruthy();
   });
 
-  // @s6 — persistent New Lesson CTA in content + empty; label from nav.newLesson → /upload.
+  // @s6 — persistent New Lesson CTA in content + empty; label from nav.newLesson → /pdf-files.
   it.each([
     ['empty', [] as ReturnType<typeof useLessons>['lessons']],
     [
@@ -93,7 +93,7 @@ describe('SavedLessons', () => {
         },
       ],
     ],
-  ])('shows New Lesson CTA labelled from nav.newLesson and pushes /upload in %s state', async (_state, lessons) => {
+  ])('shows New Lesson CTA labelled from nav.newLesson and pushes /pdf-files in %s state', async (_state, lessons) => {
     mockUseLessons.mockReturnValue(lessonsValue({ lessons }));
 
     await render(<SavedLessons />);
@@ -101,7 +101,7 @@ describe('SavedLessons', () => {
     const cta = screen.getByRole('button', { name: 'New lesson' });
     expect(cta).toBeTruthy();
     fireEvent.press(cta);
-    expect(push).toHaveBeenCalledWith('/upload');
+    expect(push).toHaveBeenCalledWith('/pdf-files');
   });
 
   // @s4 — content shows title + locale-formatted date; newest-first comes from hook order.
@@ -502,7 +502,7 @@ describe('SavedLessons', () => {
     await rerender(<SavedLessons />);
 
     fireEvent.press(screen.getByRole('button', { name: 'New lesson' }));
-    expect(push2).toHaveBeenCalledWith('/upload');
+    expect(push2).toHaveBeenCalledWith('/pdf-files');
     expect(push1).not.toHaveBeenCalled();
 
     push2.mockClear();

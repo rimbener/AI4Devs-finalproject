@@ -6,16 +6,23 @@ import { getSessionIdentity } from '../../helpers/session-identity.helpers';
 export const useAppChrome = (pathname: string) => {
   const { session } = useSession();
   const [signOutOpen, setSignOutOpen] = useState(false);
-  const home = useMemo(
+  const { home, pdfFiles } = useMemo(
     () => ({
-      active: pathname === '/',
-      labelKey: 'nav.myLessons' as const,
+      home: {
+        active: pathname === '/',
+        labelKey: 'nav.myLessons' as const,
+      },
+      pdfFiles: {
+        active: pathname === '/pdf-files',
+        labelKey: 'nav.myPdfFiles' as const,
+      },
     }),
     [pathname],
   );
 
   return {
     home,
+    pdfFiles,
     identity: getSessionIdentity(session?.user),
     setSignOutOpen,
     signOutOpen,

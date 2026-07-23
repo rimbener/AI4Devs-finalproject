@@ -10,7 +10,7 @@ import { toLessonListItems, toLessonListState } from './saved-lessons.helpers';
 
 /**
  * SavedLessons — Home wiring: useLessons + t()/date format → LessonList + reopen/delete.
- * Persistent New Lesson CTA (content + empty) pushes immersive /upload.
+ * Persistent New Lesson CTA (content + empty) opens the PDF files tab.
  */
 export const SavedLessons = () => {
   const { lessons, isLoading, error, refetch, deleteLesson } = useLessons();
@@ -29,7 +29,7 @@ export const SavedLessons = () => {
   );
 
   const onNewLesson = useCallback(() => {
-    router.push('/upload');
+    router.push('/pdf-files');
   }, [router]);
 
   const onDelete = useCallback(

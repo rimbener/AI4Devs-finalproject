@@ -25,7 +25,6 @@ export type * from './components/new-lesson-dialog/new-lesson-dialog.types';
 export * from './components/open-ended-activity/open-ended-activity';
 export type * from './components/open-ended-activity/open-ended-activity.types';
 export * from './components/pdf-documents/pdf-documents';
-export type * from './components/pdf-documents/pdf-documents.types';
 export * from './components/pdf-upload/pdf-upload';
 export type * from './components/pdf-upload/pdf-upload.types';
 export * from './components/player-loading/player-loading';

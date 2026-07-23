@@ -1,6 +1,6 @@
 import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 
-import { configurePdfDocumentsMock } from '../../../.storybook/mocks/hooks';
+import { configurePdfDocumentsMock, configureProfileMock } from '../../../.storybook/mocks/hooks';
 import { PdfDocuments } from './pdf-documents';
 
 const SAMPLE_DOCUMENTS = [
@@ -30,50 +30,75 @@ const SAMPLE_DOCUMENTS = [
   },
 ];
 
-const withPdfDocumentsMock =
-  (config: Parameters<typeof configurePdfDocumentsMock>[0]): Decorator =>
+const withMocks =
+  (config: {
+    documents?: Parameters<typeof configurePdfDocumentsMock>[0];
+    profile?: Parameters<typeof configureProfileMock>[0];
+  }): Decorator =>
   (StoryFn) => {
-    configurePdfDocumentsMock(config);
+    if (config.documents) configurePdfDocumentsMock(config.documents);
+    if (config.profile) configureProfileMock(config.profile);
     return <StoryFn />;
   };
 
 const meta = {
   title: 'Features/PdfDocuments',
   component: PdfDocuments,
-  args: {
-    onGenerate: () => {},
-    onOpenLesson: () => {},
-  },
 } satisfies Meta<typeof PdfDocuments>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Content — heading + ready/failed/generated rows. */
+/** Content — heading + ready/failed/generated rows + upload trigger. */
 export const Content: Story = {
-  decorators: [withPdfDocumentsMock({ documents: SAMPLE_DOCUMENTS })],
+  decorators: [
+    withMocks({
+      documents: { documents: SAMPLE_DOCUMENTS },
+      profile: {
+        profile: {
+          plan: 'paid',
+          keySource: 'platform',
+          showKeySettings: false,
+          showAds: false,
+          canCreate: true,
+        },
+      },
+    }),
+  ],
 };
 
 /** Creation disabled — generated lessons remain openable while Generate/Retry stay hidden. */
 export const CreationDisabled: Story = {
-  args: {
-    onGenerate: undefined,
-  },
-  decorators: [withPdfDocumentsMock({ documents: SAMPLE_DOCUMENTS })],
+  decorators: [
+    withMocks({
+      documents: { documents: SAMPLE_DOCUMENTS },
+      profile: {
+        profile: {
+          plan: 'free',
+          keySource: 'user',
+          showKeySettings: true,
+          showAds: true,
+          canCreate: false,
+        },
+      },
+    }),
+  ],
 };
 
 /** Loading — spinner while usePdfDocuments fetches. */
 export const Loading: Story = {
-  decorators: [withPdfDocumentsMock({ isLoading: true })],
+  decorators: [withMocks({ documents: { isLoading: true } })],
 };
 
 /** Empty — no extracted PDFs yet. */
 export const Empty: Story = {
-  decorators: [withPdfDocumentsMock({ documents: [] })],
+  decorators: [withMocks({ documents: { documents: [] } })],
 };
 
 /** Load failure — retry affordance (list empty). */
 export const LoadError: Story = {
-  decorators: [withPdfDocumentsMock({ documents: [], error: new globalThis.Error('load failed') })],
+  decorators: [
+    withMocks({ documents: { documents: [], error: new globalThis.Error('load failed') } }),
+  ],
 };
