@@ -39,6 +39,7 @@ import type { WebBottomTabTrigger } from './web-bottom-tabs.types';
 
 const triggers: readonly WebBottomTabTrigger[] = [
   { name: 'index', href: '/', label: 'My lessons', icon: 'menu_book' },
+  { name: 'pdf-files', href: '/pdf-files', label: 'My PDF files', icon: 'picture_as_pdf' },
   { name: 'settings', href: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
@@ -53,9 +54,11 @@ describe('WebBottomTabs', () => {
   it('renders injected triggers — no New lesson', async () => {
     await render(<WebBottomTabs triggers={triggers} />);
     expect(screen.getByTestId('trigger-index')).toBeTruthy();
+    expect(screen.getByTestId('trigger-pdf-files')).toBeTruthy();
     expect(screen.getByTestId('trigger-settings')).toBeTruthy();
     expect(screen.queryByTestId('trigger-upload')).toBeNull();
     expect(screen.getByText('My lessons')).toBeTruthy();
+    expect(screen.getByText('My PDF files')).toBeTruthy();
     expect(screen.getByText('Settings')).toBeTruthy();
   });
 });

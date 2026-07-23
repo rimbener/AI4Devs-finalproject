@@ -5,6 +5,7 @@ export type DesktopBarProps = {
   brandLabel: string;
   avatar: ReactNode;
   home: Omit<NavItemProps, 'indicatorVariant'>;
+  pdfFiles: Omit<NavItemProps, 'indicatorVariant'>;
   indicatorVariant?: NavIndicatorVariant;
   alertsBadgeCount?: number;
 };

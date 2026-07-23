@@ -7,7 +7,8 @@ test('Content story renders desktop navigation chrome', async ({ page }) => {
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
   await expect(canvas.locator('text=AI Study Buddy').first()).toBeVisible();
-  await expect(canvas.locator('text=Home').first()).toBeVisible();
+  await expect(canvas.locator('text=My lessons').first()).toBeVisible();
+  await expect(canvas.locator('text=My PDF files').first()).toBeVisible();
   await expect(canvas.locator('text=New lesson')).toHaveCount(0);
   await expect(canvas.locator('text=HL').first()).toBeVisible();
 });

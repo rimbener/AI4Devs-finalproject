@@ -8,6 +8,7 @@ test('Content story renders Material bottom tabs', async ({ page }) => {
 
   await expect(canvas.getByTestId('web-bottom-tabs')).toBeVisible({ timeout: 15000 });
   await expect(canvas.getByTestId('web-tab-menu_book')).toBeVisible();
+  await expect(canvas.getByTestId('web-tab-picture_as_pdf')).toBeVisible();
   await expect(canvas.getByTestId('web-tab-settings')).toBeVisible();
   await expect(
     canvas.getByTestId('web-tab-menu_book').getByText('My lessons', { exact: true }),

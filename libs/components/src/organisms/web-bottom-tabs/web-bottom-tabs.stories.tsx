@@ -5,6 +5,7 @@ import { WebBottomTabs } from './web-bottom-tabs';
 
 const sampleTriggers = [
   { name: 'index', href: '/', label: 'My lessons', icon: 'menu_book' },
+  { name: 'pdf-files', href: '/pdf-files', label: 'My PDF files', icon: 'picture_as_pdf' },
   { name: 'settings', href: '/settings', label: 'Settings', icon: 'settings' },
 ] as const;
 
