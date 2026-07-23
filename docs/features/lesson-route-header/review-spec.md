@@ -1,15 +1,15 @@
 ---
 feature: lesson-route-header
-round: 1
+round: 2
 ---
 
 # Spec review — lesson-route-header
 
-## Verdict: CHANGES_REQUESTED
+## Round 1 — Verdict: CHANGES_REQUESTED
 
-## Findings
+### Findings
 
-1. **[minor, open]** `gherkin-scenarios.md` `@s6` (Scenario Outline: "Player keeps its header across every state") — the shared
+1. **[minor, resolved]** `gherkin-scenarios.md` `@s6` (Scenario Outline: "Player keeps its header across every state") — the shared
    `And the existing in-screen "Back" / "Retake" / "Back to my lessons" actions are unchanged` step is applied identically to
    all four Examples rows (loading, empty, error, loaded), but the actual CTA set differs per state and doesn't union that way:
    - `loading` (`PlayerLoading`, `libs/study-buddy/src/components/player-loading/player-loading.tsx`): no in-screen action at all.
@@ -20,8 +20,15 @@ round: 1
    three CTA labels could apply to any row). Fix: either (a) add a per-row "expected unchanged action(s)" column to the Examples
    table, or (b) split `@s6` into state-specific scenarios/steps that name only the CTA(s) that actually exist in that state.
    Owning task: `task-2.md` (scenarios: s1–s7).
+   **Round 2: resolved.** `@s6`'s Examples table now has a per-row "unchanged in-screen actions" column: `loading` → "none
+   (loading indicator only, no in-screen action)"; `empty` → `"Back" (player.back) only`; `error` → `"Retry"
+   (player.error.retry) + "Back" (player.back)`; `loaded` → `"Retake" (onRetake) + "Back to my lessons"
+   (onBackToLessons)`. Verified against source: `PlayerLoading` renders no action; `LessonPlayerEmpty` /
+   `LessonPlayerError` in `libs/activities/src/organisms/lesson-player/lesson-player.tsx` render exactly the stated
+   labels/props; `ResultsSummary` in `libs/components/src/organisms/results-summary/results-summary.tsx` renders
+   `onRetake` (`results.retake`) + `onBackToLessons` (`results.backHome`) with no plain "Back". Matches.
 
-## Passed checks (no finding)
+### Passed checks (no finding) — round 1
 - spec.md: terse (~2.5 KB), no AC/behavior duplication (links to gherkin-scenarios.md), UI states table present (4 states for
   the player), non-goals present, analytics/flags correctly "none" (matches story), D1–D4 all carry rationale, scope matches
   the story with no gold-plating.
@@ -42,3 +49,12 @@ round: 1
   and are already used, unmodified, in the current `_layout.tsx` — "no new i18n keys" claim verified.
 - `(tabs)/_layout.tsx` / `NativeTabs` usage is untouched and isolated from this feature's routes — s7/non-goal verified
   against the actual tree.
+
+## Round 2 — Verdict: APPROVED
+
+No new findings. Round 1's sole finding (`@s6` per-state CTA imprecision) is resolved and verified against
+`PlayerLoading`, `LessonPlayerEmpty`/`LessonPlayerError` (`libs/activities/src/organisms/lesson-player/lesson-player.tsx`),
+and `ResultsSummary` (`libs/components/src/organisms/results-summary/results-summary.tsx`). No regressions found
+elsewhere in the bundle: `spec.md`, `tasks.md`, `task-1.md`, `task-2.md`, and the rest of `gherkin-scenarios.md`
+(`@s1`–`@s5`, `@s7`, `@s8`) are unchanged from round 1 and still pass. Traceability (story ACs → scenarios → tasks)
+remains intact with no orphans and no dual-owned scenarios.
