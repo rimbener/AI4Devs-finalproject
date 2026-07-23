@@ -4,6 +4,6 @@
 **Folder:** `docs/features/lesson-route-header/`
 **Branch:** `feat/lesson-route-header`
 **Worktree:** `.worktrees/lesson-route-header`
-**Phase:** pending
-**Status:** Worktree bootstrapped; story moved to in-progress. Starting spec_partner plan phase.
+**Phase:** in_progress
+**Status:** Spec approved + spec_ready (spec_reviewer round 2 APPROVED). Starting implementer on Slice 1 (task-1 + task-2).
 **Notes:** Base = `feature-entrega3-HernanLaura`.
