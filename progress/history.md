@@ -114,3 +114,4 @@
 2026-07-23 | user-stories (ad hoc) | n/a | — | Retired locale-save-failure-notice; added multi-provider-ai-keys pending story (1915e1cdb).
 
 2026-07-23 | native-bottom-tabs | done | docs/features/native-bottom-tabs/ | Merged into feature-entrega3-HernanLaura; worktree removed.
+2026-07-23 | lesson-route-header | pr_ready | docs/features/lesson-route-header/ | Native header (back+title) on lesson index/player/results via bare Stack; lesson-stack-screens.ts factory. 1 slice, reviews+mutation 100%, DoD PASS.
