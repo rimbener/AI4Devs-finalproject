@@ -19,3 +19,5 @@ export * from './pdf-upload-panel/pdf-upload-panel';
 export type * from './pdf-upload-panel/pdf-upload-panel.types';
 export * from './results-summary/results-summary';
 export type * from './results-summary/results-summary.types';
+export * from './web-bottom-tabs/web-bottom-tabs';
+export type * from './web-bottom-tabs/web-bottom-tabs.types';
