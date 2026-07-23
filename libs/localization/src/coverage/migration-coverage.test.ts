@@ -206,6 +206,12 @@ const findViolations = (roots: string[]): string[] => {
  * at its own call site. */
 const DOTTED_KEY_LITERAL = /['"]([A-Za-z][\w]*(?:\.[A-Za-z][\w]*)+)['"]/g;
 
+/**
+ * NativeTabs / expo-router Icon SF Symbol props (`sf: 'books.vertical'` / unions). Glyph ids are
+ * dotted like i18n keys but must not be treated as `t()` references.
+ */
+const SF_SYMBOL_PROP = /\bsf:\s*[^,;\n]+/g;
+
 /** i18next's plural-form key suffixes (`count_one`/`count_other`/…, see `en.ts`'s
  * `lessons.count_*`/`pdf.imageCount_*`/`generation.ready.slideCount_*`) — `t(key, { count })`
  * looks up `${key}_${plural rule}` at runtime, so code only ever references the bare `key`
@@ -227,11 +233,16 @@ const flattenKeys = (node: unknown, prefix = ''): Set<string> => {
   return keys;
 };
 
+/** Collect dotted string literals from source (candidates for `t()` keys). */
+const extractDottedKeyLiterals = (source: string): string[] => {
+  const withoutSfGlyphs = source.replace(SF_SYMBOL_PROP, 'sf: ""');
+  return [...withoutSfGlyphs.matchAll(DOTTED_KEY_LITERAL)].map((match) => match[1]);
+};
+
 const findDottedKeyLiterals = (dir: string): string[] => {
   const keys: string[] = [];
   for (const file of collectSourceFiles(dir)) {
-    const source = readFileSync(file, 'utf8');
-    for (const match of source.matchAll(DOTTED_KEY_LITERAL)) keys.push(match[1]);
+    keys.push(...extractDottedKeyLiterals(readFileSync(file, 'utf8')));
   }
   return keys;
 };
@@ -292,6 +303,19 @@ describe('t() key existence coverage — detector sanity', () => {
     expect([..."t('auth.error.email')".matchAll(DOTTED_KEY_LITERAL)].map((m) => m[1])).toEqual([
       'auth.error.email',
     ]);
+  });
+
+  // native-bottom-tabs CI — SF Symbol glyph ids are dotted (`books.vertical`) but are Icon
+  // props (`sf:`), not `t()` keys. Must not be reported as missing i18n keys.
+  it('ignores SF Symbol glyph literals assigned to sf:', () => {
+    const source = [
+      "labelKey: 'nav.myLessons',",
+      "sf: 'books.vertical',",
+      "md: 'menu_book',",
+      "t('nav.settings')",
+    ].join('\n');
+
+    expect(extractDottedKeyLiterals(source)).toEqual(['nav.myLessons', 'nav.settings']);
   });
 
   // ai-lesson-generation task-14 — a plural-form key (`generation.ready.slideCount_one`/

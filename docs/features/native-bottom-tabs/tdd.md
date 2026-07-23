@@ -35,5 +35,9 @@
 - minor: extract `NATIVE_TAB_TRIGGERS`; both layouts consume it; assert native+web
 - minor: move structure suite → `apps/app-study-buddy/src/__tests__/…` (+ `@types/node`)
 
+### Full-review rework r2 (CI)
+- localization RED→GREEN: ignore `sf:` SF Symbol glyphs in dotted-key scanner (`books.vertical` ≠ `t()` key)
+
 ## Gate
 - study-buddy: 256 tests; app: 29; lint + check-types clean on both
+- localization migration-coverage green (app-chrome)
