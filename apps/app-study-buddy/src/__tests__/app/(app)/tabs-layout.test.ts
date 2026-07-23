@@ -63,7 +63,10 @@ describe('(app)/_layout.tsx Stack structure', () => {
 
   it('lesson routes are Stack siblings so tab bar is absent on lesson screens (@s9)', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
-    expect(src).toMatch(/lesson\/\[id\]/);
+    // Route names live in the shared LESSON_STACK_SCREENS factory (@helsoft/study-buddy);
+    // the layout maps over it rather than hardcoding each Stack.Screen name.
+    expect(src).toMatch(/LESSON_STACK_SCREENS/);
+    expect(src).toMatch(/@helsoft\/study-buddy/);
   });
 
   it('anchors stack with initialRouteName (tabs) (@s16)', () => {

@@ -3,7 +3,7 @@ id: task-2
 title: Wire the lesson-route header into (app)/_layout.tsx
 slice: 1
 scenarios: [s1, s2, s3, s4, s5, s6, s7]
-status: todo
+status: done
 paths:
   - apps/app-study-buddy/src/app/(app)/_layout.tsx
 ---
@@ -15,21 +15,21 @@ the root tab screens headerless — using the `Stack.Screen` header API only, no
 manually-rendered header.
 
 ## Done criteria
-- [ ] Scenarios {s1, s2, s3, s4, s5, s6, s7} satisfied by the layout config
-- [ ] Parent `<Stack>` is bare (default `headerShown: true`), mirroring
+- [x] Scenarios {s1, s2, s3, s4, s5, s6, s7} satisfied by the layout config
+- [x] Parent `<Stack>` is bare (default `headerShown: true`), mirroring
       `(auth)/_layout.tsx`; `headerShown: false` set **only** on the `(tabs)`
       `<Stack.Screen>`
-- [ ] The three lesson `<Stack.Screen>`s are rendered by mapping the task-1 factory
+- [x] The three lesson `<Stack.Screen>`s are rendered by mapping the task-1 factory
       (`libs/study-buddy` `lesson-stack-screens`), resolving each `titleKey` via
       `t(...)` from `useLocalization()`
-- [ ] Default back button and default `router.back()` pop — no custom
+- [x] Default back button and default `router.back()` pop — no custom
       `headerLeft` / label / icon / colors / title alignment (matches `(auth)`)
-- [ ] `unstable_settings.initialRouteName = '(tabs)'` retained so deep-link back
+- [x] `unstable_settings.initialRouteName = '(tabs)'` retained so deep-link back
       lands on the tab shell (s4)
-- [ ] No `<Stack>` nested inside any `NativeTabs.Trigger`; `NativeTabs` untouched (s7)
-- [ ] `ApiKeyProvider` / `ProfileProvider` wrapping unchanged
-- [ ] `pnpm lint` + `pnpm check-types` green
-- [ ] No hardcoded strings/colors/dimensions
+- [x] No `<Stack>` nested inside any `NativeTabs.Trigger`; `NativeTabs` untouched (s7)
+- [x] `ApiKeyProvider` / `ProfileProvider` wrapping unchanged
+- [x] `pnpm lint` + `pnpm check-types` green
+- [x] No hardcoded strings/colors/dimensions
 
 ## Notes
 - Current file already carries the three `title` options and the
