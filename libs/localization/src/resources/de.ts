@@ -226,13 +226,24 @@ export const de: TranslationResource = {
         savedStatus: '{{provider}}-Schlüssel gespeichert · Aktualisiert {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        guidanceTemplate: 'Noch keinen Schlüssel? Bei {{provider}} erhalten',
         guidance: 'Noch keinen Schlüssel? Bei Groq erhalten',
         removeConfirmHeadline: 'API-Schlüssel entfernen?',
         removeConfirmBody:
           'Du musst einen neuen Schlüssel hinzufügen, um wieder Lektionen zu erstellen.',
         removeConfirmAction: 'Entfernen bestätigen',
         removeConfirmCancelAction: 'Abbrechen',
+        manager: {
+          addHeading: 'Anbieter hinzufügen',
+          selectProvider: 'Anbieter auswählen',
+          emptyMessage: 'Keine API-Schlüssel konfiguriert',
+        },
         error: {
           network: 'Server nicht erreichbar. Bitte erneut versuchen.',
           empty: 'Gib deinen API-Schlüssel ein.',

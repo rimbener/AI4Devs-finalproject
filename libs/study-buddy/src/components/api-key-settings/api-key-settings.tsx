@@ -1,4 +1,4 @@
-import { ApiKeyForm, Button } from '@helsoft/components';
+import { ApiKeyManager, Button } from '@helsoft/components';
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider, ApiKeyErrorCode } from '@helsoft/types';
@@ -6,23 +6,28 @@ import { useEffect } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-/** Provider brand names via i18n keys (proper nouns; seam open for more AiProvider values). */
-const PROVIDER_DISPLAY_NAME_KEYS: Record<AiProvider, string> = {
+/** Provider brand names via i18n keys. */
+const PROVIDER_NAME_KEYS: Record<AiProvider, string> = {
   groq: 'settings.apiKey.provider.groq',
+  openai: 'settings.apiKey.provider.openai',
+  anthropic: 'settings.apiKey.provider.anthropic',
+  google: 'settings.apiKey.provider.google',
+  xai: 'settings.apiKey.provider.xai',
+  deepseek: 'settings.apiKey.provider.deepseek',
 };
 
-/** Where the Empty state's guidance link sends the user (spec.md Open decision 2 — Groq is
- * the fixed v1 provider, ai-lesson-generation Open decision #1). Owned by the wiring layer
- * (Full-review Round 1, Minor 8) and threaded into ApiKeyForm's `guidanceUrl` prop, rather than
- * hardcoded inside the presentational organism. */
-const GUIDANCE_URL = 'https://console.groq.com/keys';
-export const EMPTY_SAVED_STATUS_LABEL = '';
+/** Per-provider guidance URLs. */
+const GUIDANCE_URLS: Partial<Record<AiProvider, string>> = {
+  groq: 'https://console.groq.com/keys',
+  openai: 'https://platform.openai.com/api-keys',
+  anthropic: 'https://console.anthropic.com/settings/keys',
+  google: 'https://aistudio.google.com/app/apikey',
+  xai: 'https://console.x.ai',
+  deepseek: 'https://platform.deepseek.com/api_keys',
+};
 
 /**
  * Maps useApiKey()'s normalized ApiKeyErrorCode to its i18n banner key (@s7/@s9).
- * validation_error is deliberately absent: ApiKeyForm's Empty-state Save stays disabled until
- * a non-blank key is entered (@s5), so that code can never surface through this form (spec.md
- * Open decision 3 — mirrors SignInForm's AUTH_ERROR_KEYS omitting the same auth code).
  */
 const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
   network_error: 'settings.apiKey.error.network',
@@ -30,9 +35,7 @@ const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
 
 /**
  * ApiKeySettings — feature component wiring useApiKey()/useLocalization() to the
- * presentational ApiKeyForm. Builds the masked saved-status copy via `t()` interpolation so
- * ApiKeyForm stays free of i18n/date-formatting concerns. Keeps the Settings screen a thin
- * shell (mirrors LanguageSettings/SignInForm).
+ * presentational ApiKeyManager. Keeps the Settings screen a thin shell.
  */
 export const ApiKeySettings = () => {
   const { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey } = useApiKey();
@@ -66,33 +69,30 @@ export const ApiKeySettings = () => {
 
   if (!profile?.showKeySettings) return null;
 
-  const keySavedStatusLabel = status.hasKey
-    ? t('settings.apiKey.savedStatus', {
-        provider: status.provider ? t(PROVIDER_DISPLAY_NAME_KEYS[status.provider]) : '',
-        date: status.updatedAt ? new Date(status.updatedAt).toLocaleDateString(locale) : '',
-      })
-    : EMPTY_SAVED_STATUS_LABEL;
+  const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
+    t('settings.apiKey.savedStatus', {
+      provider: t(PROVIDER_NAME_KEYS[provider]),
+      date: new Date(updatedAt).toLocaleDateString(locale),
+    });
 
   const errorKey = error ? API_KEY_ERROR_KEYS[error] : undefined;
   const errorMessage = errorKey ? t(errorKey) : undefined;
 
   return (
-    <ApiKeyForm
-      status={status}
-      isLoadingStatus={isLoading}
+    <ApiKeyManager
+      savedKeys={status.keys}
+      isLoading={isLoading}
       isSubmitting={isSubmitting}
-      onSave={(rawKey) => {
-        void saveApiKey(rawKey).catch(() => {});
-      }}
-      onRemove={() => {
-        // useApiKey().removeApiKey already records the failure via `error` state before it
-        // rejects — the rejection itself must still be observed here so it never becomes an
-        // unhandled promise rejection (mirrors SignInForm's handleSubmit).
-        void removeApiKey().catch(() => {});
-      }}
-      guidanceUrl={GUIDANCE_URL}
       errorMessage={errorMessage}
-      keySavedStatusLabel={keySavedStatusLabel}
+      onSave={(provider, rawKey) => {
+        void saveApiKey(provider, rawKey).catch(() => {});
+      }}
+      onRemove={(provider) => {
+        void removeApiKey(provider).catch(() => {});
+      }}
+      guidanceUrls={GUIDANCE_URLS}
+      getSavedStatusLabel={getSavedStatusLabel}
+      providerNameKeys={PROVIDER_NAME_KEYS}
     />
   );
 };

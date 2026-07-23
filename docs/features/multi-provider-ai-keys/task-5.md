@@ -3,7 +3,7 @@ id: task-5
 title: useApiKey multi-key hook + derived hasKey
 slice: 1
 scenarios: [s1, s4, s5, s7, s8]
-status: todo
+status: done
 paths: [libs/hooks/src/hooks/use-api-key.ts, libs/hooks/src/hooks/use-api-key.reducer.ts, libs/hooks/src/hooks/use-api-key.types.ts]
 ---
 

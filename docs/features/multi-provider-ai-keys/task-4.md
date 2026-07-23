@@ -3,7 +3,7 @@ id: task-4
 title: manage-api-key Edge — widen allow-list + provider-scoped remove
 slice: 1
 scenarios: [s2, s4, s5, s9]
-status: todo
+status: done
 paths: [supabase/functions/manage-api-key/provider.ts, supabase/functions/manage-api-key/handle-remove.ts, supabase/functions/manage-api-key/index.ts]
 ---
 

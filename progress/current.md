@@ -6,4 +6,4 @@
 **Phase:** in_progress
 **Folder:** `docs/features/multi-provider-ai-keys/`
 **Story:** `user-stories/in-progress/multi-provider-ai-keys.md`
-**Notes:** Human approved. Building Slice 1 (tasks 1–6).
+**Notes:** Slice 1 APPROVED + committed. Building Slice 2 (tasks 7–12).

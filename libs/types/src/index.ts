@@ -1,5 +1,6 @@
 export * from './activity-answer';
 export * from './activity-type';
+export * from './ai-provider';
 export * from './api-key';
 export * from './api-key-error';
 export * from './auth-error';

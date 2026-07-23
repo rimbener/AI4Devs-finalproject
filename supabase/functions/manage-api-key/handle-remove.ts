@@ -1,5 +1,8 @@
+import type { AiProvider } from './provider.ts';
+
 export type RemoveApiKeyParams = {
   userId: string;
+  provider: AiProvider;
 };
 
 export type RemoveApiKeyErrorResult = { code: 'network_error' };
@@ -12,10 +15,9 @@ export type RemoveApiKeyDeps = {
 };
 
 /**
- * Deletes the caller's stored key (Vault secret + metadata row, via the injected
- * `removeApiKey`) and replies with the no-key status. A failure normalizes to
- * `network_error` and leaves the stored key untouched -- there is no separate store/delete
- * step here for the caller to accidentally trigger on the failure branch (task-9 Goal).
+ * Deletes the named provider's stored key (Vault secret + metadata row, via the injected
+ * `removeApiKey`) and replies with the no-key status. A failure normalizes to `network_error`
+ * and leaves the stored key untouched.
  */
 export const handleRemoveApiKey = async (
   params: RemoveApiKeyParams,

@@ -3,7 +3,7 @@ id: task-3
 title: Multi-key api-key DAO + Service
 slice: 1
 scenarios: [s2, s4, s5, s9]
-status: todo
+status: done
 paths: [libs/supabase-services/src/dao/api-key.dao.ts, libs/supabase-services/src/services/api-key.service.ts]
 ---
 

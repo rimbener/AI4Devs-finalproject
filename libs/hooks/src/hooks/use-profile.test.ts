@@ -24,7 +24,8 @@ describe('useProfile', () => {
       isLoading: false,
     });
     mockUseApiKey.mockReturnValue({
-      status: { hasKey: true },
+      status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }] },
+      hasKey: true,
       isLoading: false,
       isSubmitting: false,
       error: null,
@@ -57,7 +58,8 @@ describe('useProfile', () => {
   it('@s3 disables creation for a free plan without a saved key', async () => {
     mockUseApiKey.mockReturnValue({
       ...mockUseApiKey(),
-      status: { hasKey: false },
+      status: { keys: [] },
+      hasKey: false,
     });
     service.getProfile.mockResolvedValue({
       plan: 'free',
@@ -140,7 +142,8 @@ describe('useProfile', () => {
   it('@s9 enables paid creation without a user key and hides key settings', async () => {
     mockUseApiKey.mockReturnValue({
       ...mockUseApiKey(),
-      status: { hasKey: false },
+      status: { keys: [] },
+      hasKey: false,
     });
     service.getProfile.mockResolvedValue({
       plan: 'paid',
@@ -194,7 +197,8 @@ describe('useProfile', () => {
   it('@s12 reloads paid to free and disables creation when the user key is absent', async () => {
     mockUseApiKey.mockReturnValue({
       ...mockUseApiKey(),
-      status: { hasKey: false },
+      status: { keys: [] },
+      hasKey: false,
     });
     service.getProfile
       .mockResolvedValueOnce({
@@ -222,7 +226,8 @@ describe('useProfile', () => {
   it('@s17 reloads free to paid and enables creation without a user key', async () => {
     mockUseApiKey.mockReturnValue({
       ...mockUseApiKey(),
-      status: { hasKey: false },
+      status: { keys: [] },
+      hasKey: false,
     });
     service.getProfile
       .mockResolvedValueOnce({

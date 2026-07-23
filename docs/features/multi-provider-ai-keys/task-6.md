@@ -3,7 +3,7 @@ id: task-6
 title: ApiKeyManager organism + ApiKeyForm refactor + ApiKeySettings + i18n
 slice: 1
 scenarios: [s1, s2, s3, s6, s7, s8, s9]
-status: todo
+status: done
 paths: [libs/components/src/organisms/api-key-manager/, libs/components/src/organisms/api-key-form/, libs/study-buddy/src/components/api-key-settings/api-key-settings.tsx, libs/localization/src/resources/]
 ---
 

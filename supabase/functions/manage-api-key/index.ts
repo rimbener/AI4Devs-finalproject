@@ -20,6 +20,7 @@ type SaveRequestBody = {
 
 type RemoveRequestBody = {
   action: 'remove';
+  provider: AiProvider;
 };
 
 type RequestBody = SaveRequestBody | RemoveRequestBody;
@@ -70,11 +71,17 @@ const dispatch = async (
   userId: string,
 ): Promise<DispatchResult | null> => {
   if (body.action === 'remove') {
+    if (!isAiProvider(body.provider)) {
+      return null;
+    }
     const result = await handleRemoveApiKey(
-      { userId },
+      { userId, provider: body.provider },
       {
-        removeApiKey: async ({ userId: id }) => {
-          const { error } = await adminClient.rpc('remove_api_key', { p_user_id: id });
+        removeApiKey: async ({ userId: id, provider }) => {
+          const { error } = await adminClient.rpc('remove_api_key', {
+            p_user_id: id,
+            p_provider: provider,
+          });
           if (error) throw error;
         },
         log: logEvent,

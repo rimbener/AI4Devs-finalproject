@@ -3,7 +3,7 @@ id: task-2
 title: Types — widen AiProvider, AI_MODEL_REGISTRY, ApiKeyStatus reshape
 slice: 1
 scenarios: [s3, s6, s9]
-status: todo
+status: done
 paths: [libs/types/src/ai-provider.ts, libs/types/src/ai-model.ts, libs/types/src/api-key.ts, libs/types/src/index.ts]
 ---
 

@@ -3,7 +3,7 @@ id: task-1
 title: Composite-PK migration + provider-scoped RPCs
 slice: 1
 scenarios: [s4, s5, s9]
-status: todo
+status: done
 paths: [supabase/migrations/]
 ---
 

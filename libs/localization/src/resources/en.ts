@@ -249,7 +249,14 @@ export const en = {
         savedStatus: '{{provider}} key saved · Updated {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        // multi-provider-ai-keys — guidance template used by ApiKeyManager (per-provider).
+        guidanceTemplate: "Don't have a key? Get one from {{provider}}",
         // ai-key-management task-11 (Slice 2) — added ahead of task-13 for the same
         // compiler-parity reason as task-8's original apiKey.* keys: es/pt/de are typed
         // against this exact shape, so ApiKeyForm's new Empty/Error/Remove-confirm labels
@@ -262,6 +269,11 @@ export const en = {
         // a duplicate-accessible-name collision between the two controls.
         removeConfirmAction: 'Confirm removal',
         removeConfirmCancelAction: 'Cancel',
+        manager: {
+          addHeading: 'Add provider',
+          selectProvider: 'Select provider',
+          emptyMessage: 'No API keys configured',
+        },
         error: {
           network: "Couldn't reach the server. Try again.",
           // ai-key-management task-13 (Slice 3) — spec.md Open decision 3: the defensive

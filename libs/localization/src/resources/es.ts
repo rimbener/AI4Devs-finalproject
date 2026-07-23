@@ -223,12 +223,23 @@ export const es: TranslationResource = {
         savedStatus: 'Clave de {{provider}} guardada · Actualizada {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        guidanceTemplate: '¿No tienes una clave? Consíguela en {{provider}}',
         guidance: '¿No tienes una clave? Consíguela en Groq',
         removeConfirmHeadline: '¿Eliminar clave de API?',
         removeConfirmBody: 'Deberás agregar una nueva clave para volver a generar lecciones.',
         removeConfirmAction: 'Confirmar eliminación',
         removeConfirmCancelAction: 'Cancelar',
+        manager: {
+          addHeading: 'Agregar proveedor',
+          selectProvider: 'Seleccionar proveedor',
+          emptyMessage: 'No hay claves de API configuradas',
+        },
         error: {
           network: 'No se pudo conectar con el servidor. Intenta de nuevo.',
           empty: 'Ingresa tu clave de API.',

@@ -223,12 +223,23 @@ export const pt: TranslationResource = {
         savedStatus: 'Chave da {{provider}} salva · Atualizada em {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        guidanceTemplate: 'Não tem uma chave? Obtenha uma na {{provider}}',
         guidance: 'Não tem uma chave? Obtenha uma na Groq',
         removeConfirmHeadline: 'Remover chave de API?',
         removeConfirmBody: 'Você precisará adicionar uma nova chave para gerar lições novamente.',
         removeConfirmAction: 'Confirmar remoção',
         removeConfirmCancelAction: 'Cancelar',
+        manager: {
+          addHeading: 'Adicionar provedor',
+          selectProvider: 'Selecionar provedor',
+          emptyMessage: 'Nenhuma chave de API configurada',
+        },
         error: {
           network: 'Não foi possível conectar ao servidor. Tente novamente.',
           empty: 'Informe sua chave de API.',
