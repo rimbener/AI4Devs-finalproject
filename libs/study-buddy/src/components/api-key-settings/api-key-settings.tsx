@@ -2,6 +2,7 @@ import { ApiKeyManager, Button } from '@helsoft/components';
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider, ApiKeyErrorCode } from '@helsoft/types';
+import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
@@ -37,13 +38,12 @@ const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
 };
 
 /**
- * ApiKeySettings — feature component wiring useApiKey()/useLocalization() to the
- * presentational ApiKeyManager. Keeps the Settings screen a thin shell.
+ * ApiKeySettings — Settings entry: button to open the dedicated API keys screen.
  */
 export const ApiKeySettings = () => {
-  const { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey } = useApiKey();
+  const router = useRouter();
   const { profile, isLoading: isProfileLoading, error: profileError, retry } = useProfile();
-  const { t, locale } = useLocalization();
+  const { t } = useLocalization();
 
   useEffect(() => {
     if (isProfileLoading) {
@@ -72,6 +72,20 @@ export const ApiKeySettings = () => {
 
   if (!profile?.showKeySettings) return null;
 
+  return (
+    <Button onPress={() => router.push('/settings/api-keys')}>
+      {t('settings.apiKey.showSettings')}
+    </Button>
+  );
+};
+
+/**
+ * ApiKeySettingsScreen — dedicated API keys screen (title + ApiKeyManager).
+ */
+export const ApiKeySettingsScreen = () => {
+  const { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey } = useApiKey();
+  const { t, locale } = useLocalization();
+
   const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
     t('settings.apiKey.savedStatus', {
       provider: t(PROVIDER_NAME_KEYS[provider]),
@@ -82,25 +96,37 @@ export const ApiKeySettings = () => {
   const errorMessage = errorKey ? t(errorKey) : undefined;
 
   return (
-    <ApiKeyManager
-      savedKeys={status.keys}
-      isLoading={isLoading}
-      isSubmitting={isSubmitting}
-      errorMessage={errorMessage}
-      onSave={(provider, rawKey) => {
-        void saveApiKey(provider, rawKey).catch(() => {});
-      }}
-      onRemove={(provider) => {
-        void removeApiKey(provider).catch(() => {});
-      }}
-      guidanceUrls={GUIDANCE_URLS}
-      getSavedStatusLabel={getSavedStatusLabel}
-      providerNameKeys={PROVIDER_NAME_KEYS}
-    />
+    <View style={styles.screen}>
+      <Text accessibilityRole="header" style={styles.title}>
+        {t('settings.apiKey.screenTitle')}
+      </Text>
+      <ApiKeyManager
+        savedKeys={status.keys}
+        isLoading={isLoading}
+        isSubmitting={isSubmitting}
+        errorMessage={errorMessage}
+        onSave={(provider, rawKey) => {
+          void saveApiKey(provider, rawKey).catch(() => {});
+        }}
+        onRemove={(provider) => {
+          void removeApiKey(provider).catch(() => {});
+        }}
+        guidanceUrls={GUIDANCE_URLS}
+        getSavedStatusLabel={getSavedStatusLabel}
+        providerNameKeys={PROVIDER_NAME_KEYS}
+      />
+    </View>
   );
 };
 
 export const apiKeySettingsStyles = StyleSheet.create((theme) => ({
+  screen: {
+    gap: theme.spacing.s4,
+  },
+  title: {
+    ...theme.typography.titleLarge,
+    color: theme.colors.onSurface,
+  },
   error: {
     gap: theme.spacing.s4,
   },

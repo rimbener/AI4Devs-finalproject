@@ -87,9 +87,7 @@ describe('LessonGenerationPanel', () => {
       const onModelChange = jest.fn();
       await render(<LessonGenerationPanel {...pickerProps} onModelChange={onModelChange} />);
 
-      fireEvent.press(
-        screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b' }),
-      );
+      fireEvent.press(screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b' }));
 
       expect(onModelChange).toHaveBeenCalledWith('openai/gpt-oss-120b');
     });
@@ -99,11 +97,7 @@ describe('LessonGenerationPanel', () => {
       mockUseLocalization.mockReturnValue(localizationValue({ t }));
 
       await render(
-        <LessonGenerationPanel
-          {...pickerProps}
-          state="loading"
-          currentStep="generating"
-        />,
+        <LessonGenerationPanel {...pickerProps} state="loading" currentStep="generating" />,
       );
 
       expect(t).toHaveBeenCalledWith('generation.provider.heading');

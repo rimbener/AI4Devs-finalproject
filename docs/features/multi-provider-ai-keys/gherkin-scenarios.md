@@ -20,15 +20,15 @@ Feature: Multi-provider AI keys and model picker
   Scenario: Empty key settings invite adding a provider
     Given I am on the free tier
     And I have no saved provider keys
-    When I open key settings
-    Then I see an empty configured-keys list
-    And I see an "add new provider" action
+    When I open the API keys screen
+    Then I see an empty configured-keys message
+    And I see an "Add new" action
 
   @s2
   Scenario: Adding a key for a new provider
     Given I am on the free tier
     And I have no saved key for a chosen provider
-    When I add that provider and submit a key
+    When I open Add new and submit a key for that provider
     Then that provider appears in the configured-keys list as a masked "key saved" row
     And the raw key is never shown after saving
 
@@ -36,7 +36,7 @@ Feature: Multi-provider AI keys and model picker
   Scenario: An already-saved provider is not offered again
     Given I am on the free tier
     And I already have a saved key for a provider
-    When I open the add-new-provider picker
+    When I open the Add-new dialog
     Then that provider is not offered as a choice
 
   @s4
@@ -59,14 +59,14 @@ Feature: Multi-provider AI keys and model picker
   Scenario: Adding is unavailable once every provider is saved
     Given I am on the free tier
     And I have a saved key for all six providers
-    When I open key settings
-    Then the "add new provider" action is hidden
+    When I open the API keys screen
+    Then the "Add new" action is hidden
 
   @s7
   Scenario: Key settings show a loading state while status is fetched
     Given I am on the free tier
     And my saved-keys status request is pending
-    When I open key settings
+    When I open the API keys screen
     Then I see a loading state instead of the list
 
   @s8

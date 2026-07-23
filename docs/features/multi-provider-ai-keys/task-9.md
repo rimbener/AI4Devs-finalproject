@@ -18,4 +18,4 @@ Add the five official `@ai-sdk/*` packages (`openai`, `anthropic`, `google`, `xa
 - [ ] Manual live-verify note recorded (Deno outside Jest/Stryker; live keys unavailable in sandbox)
 
 ## Notes
-Keep `get_api_key` provider-scoped (task-1). Extend the read path in `handleLessonGenerationRoute`/index to pass the requested provider. This is the riskiest task (live provider surface) — see risks.md.
+Keep `get_api_key` provider-scoped (task-1). Extend the read path in `handleLessonGenerationRoute`/index to pass the requested provider. This is the riskiest task (live provider surface) — see risks.md. Pin `npm:@ai-sdk/deepseek@3` in the provider factory (no `@ai-sdk/deepseek@4` on npm; Deno `npm:` major `4` fails worker boot).

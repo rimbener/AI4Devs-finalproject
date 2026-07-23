@@ -93,7 +93,11 @@ describe('@s16 route structure + duplicate route removal', () => {
     expect(existsSync(tabsRoute('index.tsx'))).toBe(true);
   });
 
-  it('(tabs)/settings.tsx exists — Settings screen at /settings', () => {
-    expect(existsSync(tabsRoute('settings.tsx'))).toBe(true);
+  it('(tabs)/settings/index.tsx exists — Settings screen at /settings', () => {
+    expect(existsSync(tabsRoute('settings/index.tsx'))).toBe(true);
+  });
+
+  it('(tabs)/settings/api-keys.tsx exists — API keys screen at /settings/api-keys', () => {
+    expect(existsSync(tabsRoute('settings/api-keys.tsx'))).toBe(true);
   });
 });

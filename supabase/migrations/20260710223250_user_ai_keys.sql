@@ -42,6 +42,8 @@ create policy "user_ai_keys_select_own" on public.user_ai_keys
   using (auth.uid() = user_id);
 
 grant select on public.user_ai_keys to authenticated;
+-- Edge manage-api-key lists keys via the service-role admin client after save/remove.
+grant select on public.user_ai_keys to service_role;
 
 -- save_api_key(): the only way the Vault secret + metadata row are written. security definer
 -- so it can reach the vault schema (not directly grantable to authenticated); execute is

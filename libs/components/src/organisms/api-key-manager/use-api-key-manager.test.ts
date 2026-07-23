@@ -6,14 +6,16 @@ import { useApiKeyManager } from './use-api-key-manager';
 const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' };
 
 describe('useApiKeyManager', () => {
-  it('starts with no active form provider and save disabled', async () => {
+  it('starts with modal closed, no form provider, and save disabled', async () => {
     const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [] }));
 
+    expect(result.current?.modalOpen).toBe(false);
     expect(result.current?.formProvider).toBeNull();
     expect(result.current?.apiKey).toBe('');
     expect(result.current?.confirmingRemove).toBeNull();
     expect(result.current?.isSaveDisabled).toBe(true);
     expect(result.current?.allSaved).toBe(false);
+    expect(result.current?.isEmpty).toBe(true);
   });
 
   it('derives unsaved providers from savedKeys', async () => {
@@ -112,5 +114,56 @@ describe('useApiKeyManager', () => {
     });
 
     expect(result.current?.isSaveDisabled).toBe(true);
+  });
+
+  it('openAddModal opens the modal in add mode with a cleared form', async () => {
+    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [groqKey] }));
+
+    await act(async () => {
+      result.current?.openReplaceModal('groq');
+    });
+    await act(async () => {
+      result.current?.setApiKey('sk-old');
+    });
+    await act(async () => {
+      result.current?.openAddModal();
+    });
+
+    expect(result.current?.modalOpen).toBe(true);
+    expect(result.current?.formMode).toBe('add');
+    expect(result.current?.formProvider).toBeNull();
+    expect(result.current?.apiKey).toBe('');
+  });
+
+  it('openReplaceModal opens the modal with the provider fixed', async () => {
+    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [groqKey] }));
+
+    await act(async () => {
+      result.current?.openReplaceModal('groq');
+    });
+
+    expect(result.current?.modalOpen).toBe(true);
+    expect(result.current?.formMode).toBe('replace');
+    expect(result.current?.formProvider).toBe('groq');
+    expect(result.current?.apiKey).toBe('');
+  });
+
+  it('closeModal clears modal state', async () => {
+    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [] }));
+
+    await act(async () => {
+      result.current?.openAddModal();
+    });
+    await act(async () => {
+      result.current?.setFormProvider('openai');
+    });
+    await act(async () => {
+      result.current?.closeModal();
+    });
+
+    expect(result.current?.modalOpen).toBe(false);
+    expect(result.current?.formProvider).toBeNull();
+    expect(result.current?.apiKey).toBe('');
+    expect(result.current?.formMode).toBe('add');
   });
 });

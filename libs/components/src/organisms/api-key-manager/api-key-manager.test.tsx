@@ -26,8 +26,9 @@ const tMap: Record<string, string> = {
   'settings.apiKey.removeConfirmAction': 'Confirm removal',
   'settings.apiKey.removeConfirmCancelAction': 'Cancel',
   'settings.apiKey.manager.addHeading': 'Add provider',
+  'settings.apiKey.manager.addNew': 'Add new provider',
   'settings.apiKey.manager.selectProvider': 'Select provider',
-  'settings.apiKey.manager.emptyMessage': 'No API keys configured',
+  'settings.apiKey.manager.emptyMessage': 'No API keys saved',
   'settings.apiKey.provider.groq': 'Groq',
   'settings.apiKey.provider.openai': 'OpenAI',
   'settings.apiKey.provider.anthropic': 'Anthropic',
@@ -86,12 +87,13 @@ describe('ApiKeyManager', () => {
     mockUseLocalization.mockReturnValue({ t });
   });
 
-  // @s1 — no keys saved: empty message and Add section visible.
-  it('shows the empty message and Add section when no keys are saved', async () => {
+  // @s1 — no keys saved: empty message and Add button only (no inline radios).
+  it('shows the empty message and Add button when no keys are saved', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
-    expect(screen.getByText('No API keys configured')).toBeTruthy();
-    expect(screen.getByText('Add provider')).toBeTruthy();
+    expect(screen.getByText('No API keys saved')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add new provider' })).toBeTruthy();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 
   // @s3 — a saved key renders as a masked row.
@@ -130,7 +132,7 @@ describe('ApiKeyManager', () => {
     await render(<ApiKeyManager {...defaultProps} isLoading />);
 
     expect(screen.queryByLabelText('API key')).toBeNull();
-    expect(screen.queryByText('No API keys configured')).toBeNull();
+    expect(screen.queryByText('No API keys saved')).toBeNull();
   });
 
   // @s7 — error banner.
@@ -164,10 +166,13 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByText("Couldn't reach the server.")).toBeNull();
   });
 
-  // Add flow: selecting a provider from the radio shows the key input.
-  it('shows the key input after selecting a provider in the Add section', async () => {
+  // Add flow: Add button opens modal; selecting a provider shows the key input.
+  it('shows the key input after opening Add and selecting a provider', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
@@ -181,6 +186,9 @@ describe('ApiKeyManager', () => {
   it('keeps Save disabled until a non-blank key is entered', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
@@ -200,6 +208,9 @@ describe('ApiKeyManager', () => {
     await render(<ApiKeyManager {...defaultProps} onSave={onSave} />);
 
     await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
+    await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
     await act(async () => {
@@ -214,6 +225,9 @@ describe('ApiKeyManager', () => {
   it('disables Save and shows a progress label while isSubmitting', async () => {
     await render(<ApiKeyManager {...defaultProps} isSubmitting />);
 
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
@@ -257,7 +271,7 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByText('Remove API key?')).toBeNull();
   });
 
-  // Replace: pressing Replace on a row shows the key input form.
+  // Replace: pressing Replace on a row opens the modal with key input.
   it('shows the key input when Replace is pressed on a saved row', async () => {
     await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
 
@@ -266,6 +280,8 @@ describe('ApiKeyManager', () => {
     });
 
     expect(screen.getByLabelText('API key')).toBeTruthy();
+    expect(screen.getByText('Groq')).toBeTruthy();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 
   // Replace save: calls onSave with the provider.
@@ -284,8 +300,8 @@ describe('ApiKeyManager', () => {
     expect(onSave).toHaveBeenCalledWith('groq', 'sk-new-key');
   });
 
-  // Add section hidden when all 6 providers are saved.
-  it('hides the Add section when all six providers have saved keys', async () => {
+  // Add button hidden when all 6 providers are saved.
+  it('hides the Add button when all six providers have saved keys', async () => {
     const allKeys: SavedProviderKey[] = [
       { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
       { provider: 'openai', updatedAt: '2026-01-01T00:00:00.000Z' },
@@ -297,22 +313,29 @@ describe('ApiKeyManager', () => {
 
     await render(<ApiKeyManager {...defaultProps} savedKeys={allKeys} />);
 
-    expect(screen.queryByText('Add provider')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add new provider' })).toBeNull();
     expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 
-  // @s6 — unsaved providers radio only shows providers that don't have a saved key.
-  it('shows only unsaved providers in the radio group', async () => {
+  // @s6 — add modal radio only shows providers that don't have a saved key.
+  it('shows only unsaved providers in the add modal radio group', async () => {
     await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
 
     expect(screen.queryByRole('radio', { name: 'Groq' })).toBeNull();
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
   });
 
-  // Guidance link shown when a provider is selected in the add form.
+  // Guidance link shown when a provider is selected in the add modal.
   it('shows the guidance link after selecting a provider with a configured guidanceUrl', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
@@ -333,15 +356,18 @@ describe('ApiKeyManager', () => {
 
     await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
 
-    expect(t).toHaveBeenCalledWith('settings.apiKey.manager.addHeading');
+    expect(t).toHaveBeenCalledWith('settings.apiKey.manager.addNew');
     expect(t).toHaveBeenCalledWith('settings.apiKey.replace');
     expect(t).toHaveBeenCalledWith('settings.apiKey.remove');
     expect(t).toHaveBeenCalledWith('settings.apiKey.provider.groq');
   });
 
-  it('clears the key field when selecting a provider in the add section', async () => {
+  it('clears the key field when selecting a provider in the add modal', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
@@ -369,6 +395,9 @@ describe('ApiKeyManager', () => {
     const view = await render(<ApiKeyManager {...defaultProps} />);
 
     await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
+    await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
 
@@ -395,14 +424,10 @@ describe('ApiKeyManager', () => {
       gap: 12,
     });
     expect(apiKeyManagerStyles.form).toMatchObject({ gap: 12 });
-    expect(apiKeyManagerStyles.addSection).toMatchObject({ gap: 12 });
+    expect(apiKeyManagerStyles.empty).toMatchObject({ gap: 16 });
     expect(apiKeyManagerStyles.savedStatusLabel).toMatchObject({
       ...typography.bodyMedium,
       color: lightColors.onSurfaceVariant,
-    });
-    expect(apiKeyManagerStyles.addHeading).toMatchObject({
-      ...typography.titleSmall,
-      color: lightColors.onSurface,
     });
     expect(apiKeyManagerStyles.emptyMessage).toMatchObject({
       ...typography.bodyMedium,
@@ -422,7 +447,7 @@ describe('ApiKeyManager', () => {
   it('hides the empty message once at least one provider is saved', async () => {
     await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
 
-    expect(screen.queryByText('No API keys configured')).toBeNull();
+    expect(screen.queryByText('No API keys saved')).toBeNull();
   });
 
   it('renders only saved provider rows in registry order', async () => {
@@ -485,6 +510,9 @@ describe('ApiKeyManager', () => {
     );
 
     await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
+    await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
     });
     expect(screen.queryByRole('button', { name: /Don't have a key/ })).toBeNull();
@@ -496,6 +524,9 @@ describe('ApiKeyManager', () => {
     const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
     await render(<ApiKeyManager {...defaultProps} />);
 
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });

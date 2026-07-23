@@ -2,7 +2,7 @@ import type { ApiKeyStatus } from '@helsoft/types';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { configureApiKeyMock, configureProfileMock } from '../../../.storybook/mocks/hooks';
-import { ApiKeySettings } from './api-key-settings';
+import { ApiKeySettings, ApiKeySettingsScreen } from './api-key-settings';
 
 const FREE_PROFILE = {
   plan: 'free' as const,
@@ -40,27 +40,15 @@ const groqApiKeyStatus: ApiKeyStatus = {
   keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
 };
 
-/** Empty — no key saved; Save disabled until a non-blank key is entered. */
-export const Empty: Story = {
+/** Entry — Show API keys settings button (free plan). */
+export const Entry: Story = {
   decorators: [
     withProfileMock({ profile: FREE_PROFILE }),
     withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };
 
-/** Content — masked saved status + Replace/Remove. */
-export const Saved: Story = {
-  decorators: [
-    withProfileMock({
-      profile: { ...FREE_PROFILE, canCreate: true },
-    }),
-    withApiKeyMock({
-      status: groqApiKeyStatus,
-    }),
-  ],
-};
-
-/** Loading — initial status fetch in flight. */
+/** Loading — plan-sensitive entry hidden while entitlements load. */
 export const Loading: Story = {
   decorators: [
     withProfileMock({ profile: null, isLoading: true }),
@@ -68,15 +56,7 @@ export const Loading: Story = {
   ],
 };
 
-/** Error — network failure banner; form stays editable. */
-export const NetworkError: Story = {
-  decorators: [
-    withProfileMock({ profile: FREE_PROFILE }),
-    withApiKeyMock({ status: emptyApiKeyStatus, error: 'network_error' }),
-  ],
-};
-
-/** Paid — BYOK settings stay hidden even if a key remains saved. */
+/** Paid — BYOK entry stays hidden even if a key remains saved. */
 export const Paid: Story = {
   decorators: [
     withProfileMock({
@@ -94,7 +74,7 @@ export const Paid: Story = {
   ],
 };
 
-/** Profile error — key controls hidden with retry. */
+/** Profile error — entry hidden with retry. */
 export const ProfileError: Story = {
   decorators: [
     withProfileMock({
@@ -102,5 +82,36 @@ export const ProfileError: Story = {
       error: new globalThis.Error('read failed'),
     }),
     withApiKeyMock({ status: emptyApiKeyStatus }),
+  ],
+};
+
+/** Screen empty — no keys; Add new provider only. */
+export const ScreenEmpty: Story = {
+  render: () => <ApiKeySettingsScreen />,
+  decorators: [
+    withProfileMock({ profile: FREE_PROFILE }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
+  ],
+};
+
+/** Screen content — masked saved row + Add still available. */
+export const ScreenSaved: Story = {
+  render: () => <ApiKeySettingsScreen />,
+  decorators: [
+    withProfileMock({
+      profile: { ...FREE_PROFILE, canCreate: true },
+    }),
+    withApiKeyMock({
+      status: groqApiKeyStatus,
+    }),
+  ],
+};
+
+/** Screen network error banner. */
+export const ScreenNetworkError: Story = {
+  render: () => <ApiKeySettingsScreen />,
+  decorators: [
+    withProfileMock({ profile: FREE_PROFILE }),
+    withApiKeyMock({ status: emptyApiKeyStatus, error: 'network_error' }),
   ],
 };

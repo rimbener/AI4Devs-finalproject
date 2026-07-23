@@ -23,13 +23,14 @@ describe('composite-pk migration', () => {
     );
   });
 
-  // @s4/@s5 — save_api_key upserts on conflict (user_id, provider) and names vault secret per provider
+  // @s4/@s5 — save_api_key upserts via named PK constraint (column list is ambiguous with
+  // RETURNS TABLE(provider, …) output vars) and names vault secret per provider
   it('redefines save_api_key to upsert on conflict (user_id, provider) with per-provider secret name', () => {
     const content = sql();
     expect(content).toMatch(
       /create.*function public\.save_api_key\(p_user_id uuid, p_provider text, p_api_key text\)/i,
     );
-    expect(content).toMatch(/on conflict \(user_id, provider\) do update/i);
+    expect(content).toMatch(/on conflict on constraint user_ai_keys_pkey do update/i);
     expect(content).toMatch(/user_ai_key_' \|\| p_user_id::text \|\| '_' \|\| p_provider/i);
   });
 
@@ -61,6 +62,7 @@ describe('composite-pk migration', () => {
     const original = readFileSync(originalMigrationPath, 'utf8');
     expect(original).toMatch(/policy "user_ai_keys_select_own"/i);
     expect(original).toMatch(/using \(auth\.uid\(\) = user_id\)/i);
+    expect(original).toMatch(/grant select on public\.user_ai_keys to service_role/i);
   });
 
   // @s9 — service_role-only execute on all three RPCs (no authenticated grant)

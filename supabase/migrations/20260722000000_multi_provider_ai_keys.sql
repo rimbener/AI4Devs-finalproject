@@ -38,6 +38,7 @@ alter table public.user_ai_keys
 -- works unchanged for the multi-row composite-PK table (all rows with the caller's
 -- user_id remain readable; insert/update/delete remain restricted to service_role via
 -- the Edge Functions). No policy change is needed here.
+-- Edge list-after-write uses service_role SELECT (granted in the original migration).
 
 -- save_api_key(): upserts one provider's key, naming the Vault secret per (user, provider).
 -- security definer + service_role-only execute: same model as the original (see original
@@ -70,15 +71,14 @@ begin
 
   insert into public.user_ai_keys as uak (user_id, secret_id, provider, updated_at)
   values (p_user_id, v_secret_id, p_provider, now())
-  on conflict (user_id, provider) do update
+  on conflict on constraint user_ai_keys_pkey do update
     set secret_id  = excluded.secret_id,
         updated_at = now();
 
   return query
     select uak.provider, uak.updated_at
     from public.user_ai_keys uak
-    where uak.user_id = p_user_id
-      and uak.provider = p_provider;
+    where uak.user_id = p_user_id;
 end;
 $$;
 

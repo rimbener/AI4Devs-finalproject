@@ -256,6 +256,8 @@ export const de: TranslationResource = {
         save: 'Speichern',
         saving: 'Wird gespeichert…',
         loadingStatus: 'Status deines API-Schlüssels wird geprüft…',
+        showSettings: 'API-Schlüssel-Einstellungen anzeigen',
+        screenTitle: 'API-Schlüssel-Einstellungen',
         replace: 'Ersetzen',
         remove: 'Entfernen',
         savedStatus: '{{provider}}-Schlüssel gespeichert · Aktualisiert {{date}}',
@@ -276,8 +278,9 @@ export const de: TranslationResource = {
         removeConfirmCancelAction: 'Abbrechen',
         manager: {
           addHeading: 'Anbieter hinzufügen',
+          addNew: 'Neuen Anbieter hinzufügen',
           selectProvider: 'Anbieter auswählen',
-          emptyMessage: 'Keine API-Schlüssel konfiguriert',
+          emptyMessage: 'Keine API-Schlüssel gespeichert',
         },
         error: {
           network: 'Server nicht erreichbar. Bitte erneut versuchen.',

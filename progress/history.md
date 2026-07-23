@@ -114,3 +114,5 @@
 2026-07-23 | user-stories (ad hoc) | n/a | — | Retired locale-save-failure-notice; added multi-provider-ai-keys pending story (1915e1cdb).
 
 2026-07-23 | native-bottom-tabs | done | docs/features/native-bottom-tabs/ | Merged into feature-entrega3-HernanLaura; worktree removed.
+
+2026-07-23 | multi-provider-ai-keys | in-progress | docs/features/multi-provider-ai-keys/ | Settings nested api-keys UI; save_api_key ambiguity+SELECT grant; deepseek@3 pin; docs synced.

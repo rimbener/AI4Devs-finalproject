@@ -253,6 +253,8 @@ export const pt: TranslationResource = {
         save: 'Salvar',
         saving: 'Salvando…',
         loadingStatus: 'Verificando o status da sua chave de API…',
+        showSettings: 'Mostrar configurações de chaves de API',
+        screenTitle: 'Configurações de chaves de API',
         replace: 'Substituir',
         remove: 'Remover',
         savedStatus: 'Chave da {{provider}} salva · Atualizada em {{date}}',
@@ -272,8 +274,9 @@ export const pt: TranslationResource = {
         removeConfirmCancelAction: 'Cancelar',
         manager: {
           addHeading: 'Adicionar provedor',
+          addNew: 'Adicionar novo provedor',
           selectProvider: 'Selecionar provedor',
-          emptyMessage: 'Nenhuma chave de API configurada',
+          emptyMessage: 'Nenhuma chave de API salva',
         },
         error: {
           network: 'Não foi possível conectar ao servidor. Tente novamente.',

@@ -1,7 +1,8 @@
 // Provider → createX(apiKey) factory behind the generation/vision seams (task-9).
 // Live-verify note: npm:@ai-sdk/* imports are Deno-only — not Jest/Stryker-testable here.
 import { createAnthropic } from 'npm:@ai-sdk/anthropic@4';
-import { createDeepSeek } from 'npm:@ai-sdk/deepseek@4';
+// @ai-sdk/deepseek has no v4 package yet — latest is 3.x (ProviderV4-compatible).
+import { createDeepSeek } from 'npm:@ai-sdk/deepseek@3';
 import { createGoogleGenerativeAI } from 'npm:@ai-sdk/google@4';
 import { createGroq } from 'npm:@ai-sdk/groq@4';
 import { createOpenAI } from 'npm:@ai-sdk/openai@4';

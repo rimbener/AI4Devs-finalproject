@@ -279,6 +279,8 @@ export const en = {
         // Full-review Round 1, Major 4 — announced to assistive tech while the initial status
         // fetch is in flight (WCAG 4.1.3); not shown visually (mirrors auth.signingIn).
         loadingStatus: 'Checking your API key status…',
+        showSettings: 'Show API keys settings',
+        screenTitle: 'API keys settings',
         replace: 'Replace',
         remove: 'Remove',
         savedStatus: '{{provider}} key saved · Updated {{date}}',
@@ -306,8 +308,9 @@ export const en = {
         removeConfirmCancelAction: 'Cancel',
         manager: {
           addHeading: 'Add provider',
+          addNew: 'Add new provider',
           selectProvider: 'Select provider',
-          emptyMessage: 'No API keys configured',
+          emptyMessage: 'No API keys saved',
         },
         error: {
           network: "Couldn't reach the server. Try again.",

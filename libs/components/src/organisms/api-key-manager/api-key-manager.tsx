@@ -1,5 +1,6 @@
 import { useLocalization } from '@helsoft/localization';
 import { AI_PROVIDERS, type AiProvider } from '@helsoft/types';
+import { useEffect, useRef } from 'react';
 import { Linking, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -13,8 +14,8 @@ import { useApiKeyManager } from './use-api-key-manager';
 
 /**
  * ApiKeyManager — presentational organism for multi-provider BYOK management.
- * Shows one masked row per saved provider + an add section for unsaved providers.
- * All copy and URLs come from the wiring layer (props + useLocalization).
+ * Empty: message + Add button only. List: masked rows + Add (if not all saved).
+ * Add/Replace open a modal (provider pick for add; fixed provider for replace).
  */
 export const ApiKeyManager = ({
   savedKeys,
@@ -29,6 +30,8 @@ export const ApiKeyManager = ({
 }: ApiKeyManagerProps) => {
   const { t } = useLocalization();
   const {
+    modalOpen,
+    formMode,
     formProvider,
     setFormProvider,
     apiKey,
@@ -38,20 +41,22 @@ export const ApiKeyManager = ({
     savedProviders,
     unsavedProviders,
     allSaved,
+    isEmpty,
     isSaveDisabled,
+    openAddModal,
+    openReplaceModal,
+    closeModal,
   } = useApiKeyManager({ savedKeys, isSubmitting });
 
+  const wasSubmitting = useRef(false);
+  useEffect(() => {
+    if (wasSubmitting.current && !isSubmitting && !errorMessage && modalOpen) {
+      closeModal();
+    }
+    wasSubmitting.current = isSubmitting;
+  }, [isSubmitting, errorMessage, modalOpen, closeModal]);
+
   const providerLabel = (p: AiProvider) => t(providerNameKeys[p]);
-
-  const handleSelectProvider = (p: AiProvider) => {
-    setFormProvider(p);
-    setApiKey('');
-  };
-
-  const handleReplace = (p: AiProvider) => {
-    setFormProvider(p);
-    setApiKey('');
-  };
 
   const handleSave = () => {
     if (formProvider) {
@@ -70,6 +75,10 @@ export const ApiKeyManager = ({
     );
   }
 
+  const addButton = !allSaved ? (
+    <Button onPress={openAddModal}>{t('settings.apiKey.manager.addNew')}</Button>
+  ) : null;
+
   return (
     <View style={styles.container}>
       {errorMessage ? (
@@ -80,39 +89,85 @@ export const ApiKeyManager = ({
         </View>
       ) : null}
 
-      {/* Saved key rows — fixed provider order (groq→openai→anthropic→google→xai→deepseek) */}
-      {AI_PROVIDERS.filter((p) => savedProviders.has(p)).map((p) => {
-        const key = savedKeys.find((k) => k.provider === p);
-        if (!key) return null;
-        const name = providerLabel(p);
-        return (
-          <View key={p} style={styles.row}>
-            <Text style={styles.savedStatusLabel}>{getSavedStatusLabel(p, key.updatedAt)}</Text>
-            <View style={styles.actionsRow}>
-              <Button
-                disabled={isSubmitting}
-                variant="outlined"
-                accessibilityLabel={`${t('settings.apiKey.replace')} ${name}`}
-                onPress={() => handleReplace(p)}
-              >
-                {t('settings.apiKey.replace')}
-              </Button>
-              <Button
-                disabled={isSubmitting}
-                variant="text"
-                accessibilityLabel={`${t('settings.apiKey.remove')} ${name}`}
-                onPress={() => setConfirmingRemove(p)}
-              >
-                {t('settings.apiKey.remove')}
-              </Button>
-            </View>
-          </View>
-        );
-      })}
+      {isEmpty ? (
+        <View style={styles.empty}>
+          <Text style={styles.emptyMessage}>{t('settings.apiKey.manager.emptyMessage')}</Text>
+          {addButton}
+        </View>
+      ) : (
+        <>
+          {AI_PROVIDERS.filter((p) => savedProviders.has(p)).map((p) => {
+            const key = savedKeys.find((k) => k.provider === p);
+            if (!key) return null;
+            const name = providerLabel(p);
+            return (
+              <View key={p} style={styles.row}>
+                <Text style={styles.savedStatusLabel}>{getSavedStatusLabel(p, key.updatedAt)}</Text>
+                <View style={styles.actionsRow}>
+                  <Button
+                    disabled={isSubmitting}
+                    variant="outlined"
+                    accessibilityLabel={`${t('settings.apiKey.replace')} ${name}`}
+                    onPress={() => openReplaceModal(p)}
+                  >
+                    {t('settings.apiKey.replace')}
+                  </Button>
+                  <Button
+                    disabled={isSubmitting}
+                    variant="text"
+                    accessibilityLabel={`${t('settings.apiKey.remove')} ${name}`}
+                    onPress={() => setConfirmingRemove(p)}
+                  >
+                    {t('settings.apiKey.remove')}
+                  </Button>
+                </View>
+              </View>
+            );
+          })}
+          {addButton}
+        </>
+      )}
 
-      {/* Add / replace form — shown when a provider is active */}
-      {formProvider ? (
+      <Dialog
+        open={modalOpen}
+        onClose={closeModal}
+        headline={
+          formMode === 'replace' && formProvider
+            ? `${t('settings.apiKey.replace')} ${providerLabel(formProvider)}`
+            : t('settings.apiKey.manager.addNew')
+        }
+        cancelLabel={t('settings.apiKey.removeConfirmCancelAction')}
+        actions={
+          <View style={styles.actionsRow}>
+            <Button variant="text" onPress={closeModal}>
+              {t('settings.apiKey.removeConfirmCancelAction')}
+            </Button>
+            <Button disabled={isSaveDisabled} onPress={handleSave}>
+              {t('settings.apiKey.save')}
+            </Button>
+            {isSubmitting ? (
+              <Text accessibilityLiveRegion="polite">{t('settings.apiKey.saving')}</Text>
+            ) : null}
+          </View>
+        }
+      >
         <View style={styles.form}>
+          {formMode === 'add' ? (
+            <RadioGroup
+              accessibilityLabel={t('settings.apiKey.manager.selectProvider')}
+              options={unsavedProviders.map((p) => ({
+                value: p,
+                label: providerLabel(p),
+              }))}
+              value={formProvider ?? undefined}
+              onChange={(v) => {
+                setFormProvider(v as AiProvider);
+                setApiKey('');
+              }}
+            />
+          ) : formProvider ? (
+            <Text style={styles.savedStatusLabel}>{providerLabel(formProvider)}</Text>
+          ) : null}
           <TextField
             label={t('settings.apiKey.inputLabel')}
             accessibilityLabel={t('settings.apiKey.inputLabel')}
@@ -123,7 +178,7 @@ export const ApiKeyManager = ({
             secureTextEntry
             autoCapitalize="none"
           />
-          {guidanceUrls[formProvider] && !savedProviders.has(formProvider) ? (
+          {formMode === 'add' && formProvider && guidanceUrls[formProvider] ? (
             <Button
               variant="text"
               onPress={() => {
@@ -136,37 +191,9 @@ export const ApiKeyManager = ({
               })}
             </Button>
           ) : null}
-          <View style={styles.actionsRow}>
-            <Button disabled={isSaveDisabled} onPress={handleSave}>
-              {t('settings.apiKey.save')}
-            </Button>
-            {isSubmitting ? (
-              <Text accessibilityLiveRegion="polite">{t('settings.apiKey.saving')}</Text>
-            ) : null}
-          </View>
         </View>
-      ) : null}
+      </Dialog>
 
-      {/* Add section — hidden when all 6 providers are saved */}
-      {!allSaved ? (
-        <View style={styles.addSection}>
-          <Text style={styles.addHeading}>{t('settings.apiKey.manager.addHeading')}</Text>
-          {savedKeys.length === 0 ? (
-            <Text style={styles.emptyMessage}>{t('settings.apiKey.manager.emptyMessage')}</Text>
-          ) : null}
-          <RadioGroup
-            accessibilityLabel={t('settings.apiKey.manager.selectProvider')}
-            options={unsavedProviders.map((p) => ({
-              value: p,
-              label: providerLabel(p),
-            }))}
-            value={formProvider ?? undefined}
-            onChange={(v) => handleSelectProvider(v as AiProvider)}
-          />
-        </View>
-      ) : null}
-
-      {/* Remove confirmation dialog */}
       <Dialog
         open={confirmingRemove !== null}
         onClose={() => setConfirmingRemove(null)}
@@ -189,6 +216,9 @@ export const apiKeyManagerStyles = StyleSheet.create((theme) => ({
   container: {
     gap: theme.spacing.s4,
   },
+  empty: {
+    gap: theme.spacing.s4,
+  },
   row: {
     gap: theme.spacing.s2,
   },
@@ -199,17 +229,11 @@ export const apiKeyManagerStyles = StyleSheet.create((theme) => ({
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: theme.spacing.s3,
   },
   form: {
     gap: theme.spacing.s3,
-  },
-  addSection: {
-    gap: theme.spacing.s3,
-  },
-  addHeading: {
-    ...theme.typography.titleSmall,
-    color: theme.colors.onSurface,
   },
   emptyMessage: {
     ...theme.typography.bodyMedium,

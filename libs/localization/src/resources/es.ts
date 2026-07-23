@@ -253,6 +253,8 @@ export const es: TranslationResource = {
         save: 'Guardar',
         saving: 'Guardando…',
         loadingStatus: 'Verificando el estado de tu clave de API…',
+        showSettings: 'Mostrar configuración de claves de API',
+        screenTitle: 'Configuración de claves de API',
         replace: 'Reemplazar',
         remove: 'Eliminar',
         savedStatus: 'Clave de {{provider}} guardada · Actualizada {{date}}',
@@ -272,8 +274,9 @@ export const es: TranslationResource = {
         removeConfirmCancelAction: 'Cancelar',
         manager: {
           addHeading: 'Agregar proveedor',
+          addNew: 'Agregar nuevo proveedor',
           selectProvider: 'Seleccionar proveedor',
-          emptyMessage: 'No hay claves de API configuradas',
+          emptyMessage: 'No hay claves de API guardadas',
         },
         error: {
           network: 'No se pudo conectar con el servidor. Intenta de nuevo.',

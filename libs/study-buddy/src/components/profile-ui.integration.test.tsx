@@ -6,10 +6,14 @@ jest.mock('@helsoft/hooks', () => ({
 jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
+jest.mock('expo-router', () => ({
+  useRouter: jest.fn(),
+}));
 
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { render, screen } from '@testing-library/react-native';
+import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
 import { localizationValue } from '../test-utils/auth-test-factories';
@@ -19,10 +23,12 @@ import { ApiKeySettings } from './api-key-settings/api-key-settings';
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
+const mockUseRouter = useRouter as jest.Mock;
 
 describe('profile UI integration', () => {
   beforeEach(() => {
     mockUseLocalization.mockReturnValue(localizationValue());
+    mockUseRouter.mockReturnValue({ push: jest.fn() });
     mockUseApiKey.mockReturnValue({
       status: {
         keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
@@ -61,7 +67,6 @@ describe('profile UI integration', () => {
     );
 
     expect(screen.getByText('create lesson')).toBeTruthy();
-    expect(screen.queryByLabelText('settings.apiKey.inputLabel')).toBeNull();
-    expect(screen.queryByText('settings.apiKey.savedStatus')).toBeNull();
+    expect(screen.queryByText('settings.apiKey.showSettings')).toBeNull();
   });
 });

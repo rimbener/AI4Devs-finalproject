@@ -19,13 +19,7 @@ jest.mock('./use-lesson-generation', () => ({
 
 /** Capture panel props so tests can invoke handlers even when UI gates them. */
 const capturedPanelProps: {
-  current?: {
-    onGenerate: () => void;
-    canGenerate: boolean;
-    onCompositionChange: (value: string) => void;
-    onErrorAction?: () => void;
-    errorActionLabel?: string;
-  };
+  current?: Parameters<typeof import('@helsoft/components')['LessonGenerationPanel']>[0];
 } = {};
 jest.mock('@helsoft/components', () => {
   const actual = jest.requireActual('@helsoft/components') as typeof import('@helsoft/components');
@@ -54,9 +48,10 @@ const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
 const mockUseLessonGenerationForm = useLessonGenerationForm as jest.Mock;
-const actualUseLessonGenerationForm = jest.requireActual<typeof import('./use-lesson-generation')>(
-  './use-lesson-generation',
-).useLessonGenerationForm;
+const actualUseLessonGenerationForm =
+  jest.requireActual<typeof import('./use-lesson-generation')>(
+    './use-lesson-generation',
+  ).useLessonGenerationForm;
 const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
 const mockSetStoredPreference = GenerationPreferenceService.setStoredPreference as jest.Mock;
 
@@ -130,7 +125,7 @@ describe('LessonGeneration', () => {
     fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: true }));
     expect(generate).not.toHaveBeenCalled();
     fireEvent.press(screen.getByRole('button', { name: 'upload.apiKeyRequired.action' }));
-    expect(push).toHaveBeenCalledWith('/settings');
+    expect(push).toHaveBeenCalledWith('/settings/api-keys');
   });
 
   // @s19 — paid/platform learners do not see provider or model pickers.
@@ -540,7 +535,7 @@ describe('LessonGeneration', () => {
       fireEvent.press(screen.getByRole('button', { name: 'generation.error.action.settings' }));
 
       expect(screen.getByText('generation.error.missingKey')).toBeTruthy();
-      expect(push).toHaveBeenCalledWith('/settings');
+      expect(push).toHaveBeenCalledWith('/settings/api-keys');
     });
 
     // unauthenticated -> sign in.
@@ -1041,7 +1036,7 @@ describe('LessonGeneration', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'upload.apiKeyRequired.action' }));
 
-    expect(push2).toHaveBeenCalledWith('/settings');
+    expect(push2).toHaveBeenCalledWith('/settings/api-keys');
     expect(push).not.toHaveBeenCalled();
   });
 

@@ -89,7 +89,7 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
 
   const handleErrorAction = useCallback(() => {
     if (recovery === 'retry') void retry();
-    else if (recovery === 'settings') router.push('/settings');
+    else if (recovery === 'settings') router.push('/settings/api-keys');
     else if (recovery === 'signIn') router.push('/login');
   }, [recovery, retry, router]);
 
@@ -112,7 +112,7 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
   );
 
   const handleMissingKeyAction = useCallback(() => {
-    router.push('/settings');
+    router.push('/settings/api-keys');
   }, [router]);
 
   return (

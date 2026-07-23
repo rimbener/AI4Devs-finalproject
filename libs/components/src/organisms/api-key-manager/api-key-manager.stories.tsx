@@ -56,17 +56,17 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Empty — no keys saved: empty message + provider picker + Add section visible.
+/** Empty — message + Add new provider button only. */
 export const Empty: Story = {};
 
-// Content — one saved key (Groq), additional providers available to add.
+/** Content — one saved key + Add new provider still available. */
 export const Content: Story = {
   args: {
     savedKeys: [groqKey],
   },
 };
 
-// All saved — all 6 providers configured; Add section is hidden.
+/** All saved — Add button hidden. */
 export const AllSaved: Story = {
   args: {
     savedKeys: [
@@ -80,14 +80,14 @@ export const AllSaved: Story = {
   },
 };
 
-// Loading — initial status fetch in flight.
+/** Loading — initial status fetch in flight. */
 export const Loading: Story = {
   args: {
     isLoading: true,
   },
 };
 
-// Error — save/remove failure banner with saved row still visible (@s8/@s9).
+/** Error — banner with saved row still visible. */
 export const Error: Story = {
   args: {
     savedKeys: [groqKey],

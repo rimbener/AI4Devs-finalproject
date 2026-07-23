@@ -146,7 +146,9 @@ describe('ApiKeyForm', () => {
   });
 
   it('requests the input label via the settings.apiKey.inputLabel i18n key', async () => {
-    const t = jest.fn((key: string) => (key === 'settings.apiKey.inputLabel' ? labels.inputLabel : key));
+    const t = jest.fn((key: string) =>
+      key === 'settings.apiKey.inputLabel' ? labels.inputLabel : key,
+    );
     mockUseLocalization.mockReturnValue({ t });
 
     await render(
