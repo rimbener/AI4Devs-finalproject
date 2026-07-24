@@ -14,6 +14,7 @@ export * from './dialog/dialog';
 export type * from './dialog/dialog.types';
 export * from './language-settings/language-settings';
 export * from './lesson-generation-panel/lesson-generation-panel';
+export { LessonGenerationPanelProvider } from './lesson-generation-panel/lesson-generation-panel.context';
 export type * from './lesson-generation-panel/lesson-generation-panel.types';
 export * from './lesson-list/lesson-list';
 export type * from './lesson-list/lesson-list.types';

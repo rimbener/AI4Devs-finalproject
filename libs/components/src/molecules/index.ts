@@ -17,6 +17,8 @@ export type * from './nav-item/nav-item.types';
 export * from './pdf-document-list-item/pdf-document-list-item';
 export type * from './pdf-document-list-item/pdf-document-list-item.types';
 export * from './radio-group/radio-group';
+export * from './radio-group-section/radio-group-section';
+export type * from './radio-group-section/radio-group-section.types';
 export * from './slide-progress/slide-progress';
 export type * from './slide-progress/slide-progress.types';
 export * from './text-field/text-field';

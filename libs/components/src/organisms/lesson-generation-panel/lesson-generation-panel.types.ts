@@ -1,13 +1,20 @@
 import type { AiProvider, GenerationProgressStep, LessonComposition } from '@helsoft/types';
 
-export type LessonGenerationPanelState = 'empty' | 'loading' | 'content' | 'error';
+export const COMPOSITION_LABEL_KEYS: Record<LessonComposition, string> = {
+  'instructional-only': 'generation.composition.instructionalOnly',
+  'activity-only': 'generation.composition.activityOnly',
+  both: 'generation.composition.both',
+};
+
+export type LessonGenerationPanelState = 'empty' | 'loading' | 'content' | 'error' | 'missing-key';
 
 export type LessonGenerationModelOption = {
   id: string;
   labelKey: string;
 };
 
-export type LessonGenerationPanelProps = {
+/** Context value for `LessonGenerationPanel` — provided above the panel by wiring / stories. */
+export type LessonGenerationPanelValue = {
   state: LessonGenerationPanelState;
   /** When true, provider + model pickers render above composition (free-BYOK only, @s10/@s19). */
   showPickers?: boolean;
@@ -19,12 +26,8 @@ export type LessonGenerationPanelProps = {
   selectedModel?: string;
   onProviderChange?: (value: string) => void;
   onModelChange?: (value: string) => void;
-  /** When true (free-BYOK, no saved keys), show ApiKeyRequiredNotice instead of pickers (@s16). */
-  showMissingKeyGate?: boolean;
   /** Handler for the missing-key notice action — wiring navigates to Settings. */
   onMissingKeyAction?: () => void;
-  /** i18n keys for provider display names (mirrors ApiKeyManager). */
-  providerNameKeys?: Record<AiProvider, string>;
   /** The selected composition — 'both' is pre-selected by the wiring layer (@s1). */
   composition: LessonComposition;
   /** RadioGroup's own contract is a plain string; the wiring layer narrows it back to

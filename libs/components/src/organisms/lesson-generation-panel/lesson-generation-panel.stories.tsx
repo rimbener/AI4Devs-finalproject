@@ -2,16 +2,29 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { useState } from 'react';
 
 import { LessonGenerationPanel } from './lesson-generation-panel';
+import { LessonGenerationPanelProvider } from './lesson-generation-panel.context';
+import type { LessonGenerationPanelValue } from './lesson-generation-panel.types';
+
+const defaultValue: LessonGenerationPanelValue = {
+  state: 'empty',
+  composition: 'both',
+  onCompositionChange: () => {},
+  canGenerate: false,
+  onGenerate: () => {},
+};
 
 const meta = {
   title: 'Organisms/LessonGenerationPanel',
   component: LessonGenerationPanel,
-  args: {
-    composition: 'both',
-    onCompositionChange: () => {},
-    onGenerate: () => {},
-  },
-} satisfies Meta<typeof LessonGenerationPanel>;
+  render: (args) => (
+    <LessonGenerationPanelProvider
+      value={{ ...defaultValue, ...(args as LessonGenerationPanelValue) }}
+    >
+      <LessonGenerationPanel />
+    </LessonGenerationPanelProvider>
+  ),
+  args: defaultValue,
+} satisfies Meta<LessonGenerationPanelValue>;
 
 export default meta;
 
@@ -73,14 +86,6 @@ export const FreeByokWithPickers: Story = {
     selectedModel: 'openai/gpt-oss-20b',
     onProviderChange: () => {},
     onModelChange: () => {},
-    providerNameKeys: {
-      groq: 'settings.apiKey.provider.groq',
-      openai: 'settings.apiKey.provider.openai',
-      anthropic: 'settings.apiKey.provider.anthropic',
-      google: 'settings.apiKey.provider.google',
-      xai: 'settings.apiKey.provider.xai',
-      deepseek: 'settings.apiKey.provider.deepseek',
-    },
   },
 };
 
@@ -92,10 +97,9 @@ export const PlatformNoPickers: Story = {
 // Free-BYOK, no saved keys — missing-key gate (@s16).
 export const FreeByokMissingKey: Story = {
   args: {
-    state: 'empty',
+    state: 'missing-key',
     canGenerate: false,
     showPickers: false,
-    showMissingKeyGate: true,
     savedProviders: [],
     onMissingKeyAction: () => {},
   },
@@ -109,13 +113,17 @@ const InteractivePickerDemo = () => {
   );
 
   return (
-    <LessonGenerationPanel
-      state="empty"
-      composition={composition}
-      onCompositionChange={(value) => setComposition(value as typeof composition)}
-      canGenerate={true}
-      onGenerate={() => {}}
-    />
+    <LessonGenerationPanelProvider
+      value={{
+        state: 'empty',
+        composition,
+        onCompositionChange: (value) => setComposition(value as typeof composition),
+        canGenerate: true,
+        onGenerate: () => {},
+      }}
+    >
+      <LessonGenerationPanel />
+    </LessonGenerationPanelProvider>
   );
 };
 

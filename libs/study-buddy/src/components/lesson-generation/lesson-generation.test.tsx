@@ -17,17 +17,24 @@ jest.mock('./use-lesson-generation', () => ({
   useLessonGenerationForm: jest.fn(),
 }));
 
-/** Capture panel props so tests can invoke handlers even when UI gates them. */
-const capturedPanelProps: {
-  current?: Parameters<typeof import('@helsoft/components')['LessonGenerationPanel']>[0];
+/** Capture panel context value so tests can invoke handlers even when UI gates them. */
+const capturedPanelValue: {
+  current?: import('@helsoft/components').LessonGenerationPanelValue;
 } = {};
 jest.mock('@helsoft/components', () => {
+  const React = require('react') as typeof import('react');
   const actual = jest.requireActual('@helsoft/components') as typeof import('@helsoft/components');
   return {
     ...actual,
-    LessonGenerationPanel: (props: Parameters<typeof actual.LessonGenerationPanel>[0]) => {
-      capturedPanelProps.current = props;
-      return actual.LessonGenerationPanel(props);
+    LessonGenerationPanelProvider: ({
+      value,
+      children,
+    }: {
+      value: import('@helsoft/components').LessonGenerationPanelValue;
+      children?: import('react').ReactNode;
+    }) => {
+      capturedPanelValue.current = value;
+      return React.createElement(actual.LessonGenerationPanelProvider, { value, children });
     },
   };
 });
@@ -107,7 +114,7 @@ describe('LessonGeneration', () => {
     mockUseProfile.mockReturnValue(profileValue());
   });
 
-  // @s16 — free-BYOK with no saved keys shows missing-key gate; generate blocked, no invalid_model request.
+  // @s16 — free-BYOK with no saved keys → missing-key panel state (notice only).
   it('shows the missing-key gate and blocks generate when free-BYOK has no saved keys', async () => {
     const generate = jest.fn();
     const push = jest.fn();
@@ -118,11 +125,10 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
 
+    expect(capturedPanelValue.current?.state).toBe('missing-key');
     expect(screen.getByText('upload.apiKeyRequired.message')).toBeTruthy();
-    expect(
-      screen.getByRole('button', { name: 'generation.generate', disabled: true }),
-    ).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: true }));
+    expect(screen.queryByRole('button', { name: 'generation.generate' })).toBeNull();
+    expect(screen.queryByText('generation.composition.heading')).toBeNull();
     expect(generate).not.toHaveBeenCalled();
     fireEvent.press(screen.getByRole('button', { name: 'upload.apiKeyRequired.action' }));
     expect(push).toHaveBeenCalledWith('/settings/api-keys');
@@ -391,9 +397,9 @@ describe('LessonGeneration', () => {
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
 
     await render(<LessonGeneration documentId={undefined} />);
-    expect(capturedPanelProps.current?.canGenerate).toBe(false);
+    expect(capturedPanelValue.current?.canGenerate).toBe(false);
     await act(async () => {
-      capturedPanelProps.current?.onGenerate();
+      capturedPanelValue.current?.onGenerate();
     });
     expect(generate).not.toHaveBeenCalled();
   });
@@ -404,9 +410,9 @@ describe('LessonGeneration', () => {
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
 
     await render(<LessonGeneration documentId="" />);
-    expect(capturedPanelProps.current?.canGenerate).toBe(false);
+    expect(capturedPanelValue.current?.canGenerate).toBe(false);
     await act(async () => {
-      capturedPanelProps.current?.onGenerate();
+      capturedPanelValue.current?.onGenerate();
     });
     expect(generate).not.toHaveBeenCalled();
   });
@@ -843,7 +849,7 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await act(async () => {
-      capturedPanelProps.current?.onCompositionChange('not-a-composition');
+      capturedPanelValue.current?.onCompositionChange('not-a-composition');
     });
 
     expect(
@@ -855,13 +861,13 @@ describe('LessonGeneration', () => {
   it('keeps a stable onCompositionChange identity across rerenders', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
     const { rerender } = await render(<LessonGeneration documentId="doc-1" />);
-    const first = capturedPanelProps.current?.onCompositionChange;
+    const first = capturedPanelValue.current?.onCompositionChange;
 
     await act(async () => {
       rerender(<LessonGeneration documentId="doc-1" />);
     });
 
-    expect(capturedPanelProps.current?.onCompositionChange).toBe(first);
+    expect(capturedPanelValue.current?.onCompositionChange).toBe(first);
   });
 
   // Mutation: recovery default `""` / `recovery === 'none'` label guard / signIn `else if (true)`.
@@ -882,9 +888,9 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
 
-    expect(capturedPanelProps.current?.errorActionLabel).toBeUndefined();
+    expect(capturedPanelValue.current?.errorActionLabel).toBeUndefined();
     await act(async () => {
-      capturedPanelProps.current?.onErrorAction?.();
+      capturedPanelValue.current?.onErrorAction?.();
     });
     expect(push).not.toHaveBeenCalled();
   });
@@ -901,7 +907,7 @@ describe('LessonGeneration', () => {
     mockUseLessonGeneration.mockReturnValue(hookValue({ stage: 'idle' }));
 
     await expect(render(<LessonGeneration documentId="doc-1" />)).resolves.toBeTruthy();
-    expect(capturedPanelProps.current?.errorActionLabel).toBeUndefined();
+    expect(capturedPanelValue.current?.errorActionLabel).toBeUndefined();
   });
 
   it('ignores invalid provider values from the picker', async () => {
@@ -926,7 +932,7 @@ describe('LessonGeneration', () => {
     });
 
     await act(async () => {
-      capturedPanelProps.current?.onProviderChange?.('not-a-provider');
+      capturedPanelValue.current?.onProviderChange?.('not-a-provider');
     });
 
     expect(
@@ -945,7 +951,7 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await act(async () => {
-      capturedPanelProps.current?.onModelChange?.('openai/gpt-oss-120b');
+      capturedPanelValue.current?.onModelChange?.('openai/gpt-oss-120b');
     });
 
     expect(
@@ -987,7 +993,7 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await act(async () => {
-      capturedPanelProps.current?.onGenerate();
+      capturedPanelValue.current?.onGenerate();
     });
 
     expect(mockSetStoredPreference).not.toHaveBeenCalled();
@@ -1076,7 +1082,7 @@ describe('LessonGeneration', () => {
     await rerender(<LessonGeneration documentId="doc-1" />);
 
     await act(async () => {
-      capturedPanelProps.current?.onProviderChange?.('anthropic');
+      capturedPanelValue.current?.onProviderChange?.('anthropic');
     });
 
     expect(

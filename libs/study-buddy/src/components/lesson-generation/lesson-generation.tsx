@@ -1,8 +1,8 @@
-import { LessonGenerationPanel } from '@helsoft/components';
+import { LessonGenerationPanel, LessonGenerationPanelProvider } from '@helsoft/components';
 import { useLessonGeneration } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
-import { type LessonComposition, PROVIDER_NAME_KEYS } from '@helsoft/types';
+import type { LessonComposition } from '@helsoft/types';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -106,30 +106,31 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
   }, [router]);
 
   return (
-    <LessonGenerationPanel
-      state={toPanelState(stage)}
-      showPickers={showPickers}
-      showMissingKeyGate={showMissingKeyGate}
-      onMissingKeyAction={handleMissingKeyAction}
-      savedProviders={savedProviders}
-      modelOptions={modelOptions}
-      selectedProvider={selectedProvider}
-      selectedModel={selectedModel}
-      onProviderChange={handleProviderChange}
-      onModelChange={handleModelChange}
-      providerNameKeys={PROVIDER_NAME_KEYS}
-      composition={composition}
-      onCompositionChange={handleCompositionChange}
-      canGenerate={canGenerate}
-      onGenerate={handleGenerate}
-      currentStep={currentStep}
-      slideCount={result?.slides.length}
-      onOpenInPlayer={handleOpenInPlayer}
-      errorMessage={error ? t(GENERATION_ERROR_KEYS[error]) : undefined}
-      errorActionLabel={
-        recovery === 'none' ? undefined : t(GENERATION_ERROR_ACTION_LABEL_KEYS[recovery])
-      }
-      onErrorAction={handleErrorAction}
-    />
+    <LessonGenerationPanelProvider
+      value={{
+        state: showMissingKeyGate ? 'missing-key' : toPanelState(stage),
+        showPickers,
+        onMissingKeyAction: handleMissingKeyAction,
+        savedProviders,
+        modelOptions,
+        selectedProvider,
+        selectedModel,
+        onProviderChange: handleProviderChange,
+        onModelChange: handleModelChange,
+        composition,
+        onCompositionChange: handleCompositionChange,
+        canGenerate,
+        onGenerate: handleGenerate,
+        currentStep,
+        slideCount: result?.slides.length,
+        onOpenInPlayer: handleOpenInPlayer,
+        errorMessage: error ? t(GENERATION_ERROR_KEYS[error]) : undefined,
+        errorActionLabel:
+          recovery === 'none' ? undefined : t(GENERATION_ERROR_ACTION_LABEL_KEYS[recovery]),
+        onErrorAction: handleErrorAction,
+      }}
+    >
+      <LessonGenerationPanel />
+    </LessonGenerationPanelProvider>
   );
 };
