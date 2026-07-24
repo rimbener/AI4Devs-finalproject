@@ -11,6 +11,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "lint": "biome check .",
+    "format": "biome check --write .",
     "test": "jest --coverage=false --passWithNoTests --watchman=false",
     "test:watch": "jest --watch",
     "mutation": "stryker run"

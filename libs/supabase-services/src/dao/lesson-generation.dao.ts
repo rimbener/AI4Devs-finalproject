@@ -11,9 +11,16 @@ export abstract class LessonGenerationDao {
   static async generateLesson({
     documentId,
     composition,
+    provider,
+    model,
   }: GenerateLessonRequest): Promise<GeneratedLesson> {
     const { data, error } = await getSupabase().functions.invoke('generate-lesson', {
-      body: { documentId, composition },
+      body: {
+        documentId,
+        composition,
+        ...(provider ? { provider } : {}),
+        ...(model ? { model } : {}),
+      },
     });
     if (error) throw error;
     return data as GeneratedLesson;

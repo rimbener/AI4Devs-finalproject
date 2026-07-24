@@ -53,7 +53,7 @@ describe('OpenEndedBody', () => {
   it('marks empty content as unavailable', async () => {
     await render(
       <OpenEndedBody
-        slide={{ ...slide, content: '   ', modelAnswer: 'x' }}
+        slide={{ ...slide, content: '   ', modelAnswer: 'x', title: 'Empty' }}
         onAnswered={jest.fn()}
       />,
     );

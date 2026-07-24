@@ -1,6 +1,6 @@
 import type { ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
 
-const NO_KEY_STATUS: ApiKeyStatus = { hasKey: false };
+const EMPTY_STATUS: ApiKeyStatus = { keys: [] };
 
 type State = {
   status: ApiKeyStatus;
@@ -18,7 +18,7 @@ type Action =
   | { type: 'mutation/failure'; error: ApiKeyErrorCode };
 
 export const useApiKeyInitialState: State = {
-  status: NO_KEY_STATUS,
+  status: EMPTY_STATUS,
   isLoading: true,
   isSubmitting: false,
   error: null,

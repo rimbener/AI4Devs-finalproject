@@ -2,16 +2,29 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { useState } from 'react';
 
 import { LessonGenerationPanel } from './lesson-generation-panel';
+import { LessonGenerationPanelProvider } from './lesson-generation-panel.context';
+import type { LessonGenerationPanelValue } from './lesson-generation-panel.types';
+
+const defaultValue: LessonGenerationPanelValue = {
+  state: 'empty',
+  composition: 'both',
+  onCompositionChange: () => {},
+  canGenerate: false,
+  onGenerate: () => {},
+};
 
 const meta = {
   title: 'Organisms/LessonGenerationPanel',
   component: LessonGenerationPanel,
-  args: {
-    composition: 'both',
-    onCompositionChange: () => {},
-    onGenerate: () => {},
-  },
-} satisfies Meta<typeof LessonGenerationPanel>;
+  render: (args) => (
+    <LessonGenerationPanelProvider
+      value={{ ...defaultValue, ...(args as LessonGenerationPanelValue) }}
+    >
+      <LessonGenerationPanel />
+    </LessonGenerationPanelProvider>
+  ),
+  args: defaultValue,
+} satisfies Meta<LessonGenerationPanelValue>;
 
 export default meta;
 
@@ -58,6 +71,40 @@ export const ErrorNoAction: Story = {
   },
 };
 
+// Free-BYOK with provider/model pickers (@s10).
+export const FreeByokWithPickers: Story = {
+  args: {
+    state: 'empty',
+    canGenerate: true,
+    showPickers: true,
+    savedProviders: ['groq', 'openai'],
+    modelOptions: [
+      { id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' },
+      { id: 'openai/gpt-oss-120b', labelKey: 'aiModel.groq.gptOss120b' },
+    ],
+    selectedProvider: 'groq',
+    selectedModel: 'openai/gpt-oss-20b',
+    onProviderChange: () => {},
+    onModelChange: () => {},
+  },
+};
+
+// Paid/platform — no pickers (@s19).
+export const PlatformNoPickers: Story = {
+  args: { state: 'empty', canGenerate: true, showPickers: false },
+};
+
+// Free-BYOK, no saved keys — missing-key gate (@s16).
+export const FreeByokMissingKey: Story = {
+  args: {
+    state: 'missing-key',
+    canGenerate: false,
+    showPickers: false,
+    savedProviders: [],
+    onMissingKeyAction: () => {},
+  },
+};
+
 /** Interactive demo purely so the Playwright e2e can exercise choosing a composition, not just
  * assert each state's static markup like the stories above. */
 const InteractivePickerDemo = () => {
@@ -66,13 +113,17 @@ const InteractivePickerDemo = () => {
   );
 
   return (
-    <LessonGenerationPanel
-      state="empty"
-      composition={composition}
-      onCompositionChange={(value) => setComposition(value as typeof composition)}
-      canGenerate={true}
-      onGenerate={() => {}}
-    />
+    <LessonGenerationPanelProvider
+      value={{
+        state: 'empty',
+        composition,
+        onCompositionChange: (value) => setComposition(value as typeof composition),
+        canGenerate: true,
+        onGenerate: () => {},
+      }}
+    >
+      <LessonGenerationPanel />
+    </LessonGenerationPanelProvider>
   );
 };
 

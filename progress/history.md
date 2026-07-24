@@ -118,3 +118,16 @@
 2026-07-24 | agents-rules (ad hoc, no story) | n/a | — | Plan-mode gate, 1-round reviews, e2e/state-sharing rules, DESIGN.md.
 
 2026-07-24 | agents-docs-sync (ad hoc) | n/a | — | Sync AGENTS/ORCHESTRATOR/.md agents to plan-mode + state-sharing.
+
+2026-07-23 | multi-provider-ai-keys | in-progress | docs/features/multi-provider-ai-keys/ | Settings nested api-keys UI; save_api_key ambiguity+SELECT grant; deepseek@3 pin; docs synced.
+
+2026-07-24 | multi-provider-ai-keys | in-progress | docs/features/multi-provider-ai-keys/ | Decompose settings UI; shared provider consts; error.network; format scripts.
+
+2026-07-24 | multi-provider-ai-keys | in-progress | docs/features/multi-provider-ai-keys/ | Private StyleSheets; drop style snapshot tests; modal close tweak.
+
+2026-07-24 | multi-provider-ai-keys | in-progress | docs/features/multi-provider-ai-keys/ | Split lesson-generation-panel (states/selectors + RadioGroupSection).
+
+2026-07-24 | multi-provider-ai-keys | in-progress | docs/features/multi-provider-ai-keys/ | Docs re-synced to final settings decomposition (spec/task-2/6/tasks).
+
+2026-07-24 | multi-provider-ai-keys | done | docs/features/multi-provider-ai-keys/ | Merged into feature-entrega3-HernanLaura; worktree removed.
+

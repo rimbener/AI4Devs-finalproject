@@ -6,6 +6,9 @@ export const de: TranslationResource = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Netzwerkfehler. Versuche es erneut.',
+    },
     nav: {
       myLessons: 'Meine Lektionen',
       myPdfFiles: 'Meine PDF-Dateien',
@@ -105,12 +108,17 @@ export const de: TranslationResource = {
           'Dieses PDF scheint gescannt zu sein; wir können den Text noch nicht lesen',
         corrupt: 'Dieses PDF konnte nicht geöffnet werden',
         extractionFailed: 'Beim Lesen deines PDFs ist etwas schiefgelaufen',
-        network: 'Netzwerkfehler',
         unauthenticated: 'Bitte melde dich an, um hochzuladen',
       },
     },
     generation: {
       dialogHeadline: 'Lektion erstellen',
+      provider: {
+        heading: 'KI-Anbieter',
+      },
+      model: {
+        heading: 'Modell',
+      },
       composition: {
         heading: 'Lektionsinhalt',
         instructionalOnly: 'Nur lehrreich',
@@ -137,6 +145,8 @@ export const de: TranslationResource = {
       error: {
         missingKey: 'Zum Generieren von Lektionen ist ein API-Schlüssel erforderlich.',
         invalidKey: 'Dein API-Schlüssel wurde abgelehnt. Überprüfe ihn in den Einstellungen.',
+        invalidModel:
+          'Dieser Anbieter oder dieses Modell ist nicht mehr verfügbar. Wähle ein anderes und versuche es erneut.',
         platformKeyUnavailable:
           'Die Lektionserstellung ist vorübergehend nicht verfügbar. Versuche es erneut.',
         rateLimited:
@@ -145,7 +155,6 @@ export const de: TranslationResource = {
         generationFailed:
           'Beim Generieren deiner Lektion ist etwas schiefgelaufen. Versuche es erneut.',
         documentNotReady: 'Dieses Dokument ist noch nicht bereit. Lade dein PDF erneut hoch.',
-        network: 'Netzwerkfehler. Versuche es erneut.',
         unauthenticated: 'Bitte melde dich an, um eine Lektion zu generieren.',
         persistFailed: 'Deine Lektion konnte nicht gespeichert werden. Versuche es erneut.',
         action: {
@@ -153,6 +162,33 @@ export const de: TranslationResource = {
           settings: 'Zu den Einstellungen',
           signIn: 'Anmelden',
         },
+      },
+    },
+    aiModel: {
+      groq: {
+        gptOss20b: 'GPT-OSS 20B',
+        gptOss120b: 'GPT-OSS 120B',
+        qwen36_27b: 'Qwen 3.6 27B',
+      },
+      openai: {
+        gpt56Luna: 'GPT-5.6 Luna',
+        gpt56Terra: 'GPT-5.6 Terra',
+      },
+      anthropic: {
+        claudeHaiku45: 'Claude Haiku 4.5',
+        claudeSonnet5: 'Claude Sonnet 5',
+      },
+      google: {
+        gemini36Flash: 'Gemini 3.6 Flash',
+        gemini25Flash: 'Gemini 2.5 Flash',
+      },
+      xai: {
+        grok43: 'Grok 4.3',
+        grok45: 'Grok 4.5',
+      },
+      deepseek: {
+        v4Flash: 'DeepSeek V4 Flash',
+        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -207,7 +243,6 @@ export const de: TranslationResource = {
       error: {
         email: 'Bitte gib eine gültige E-Mail-Adresse ein',
         invalidCredentials: 'E-Mail oder Passwort ungültig',
-        network: 'Netzwerkfehler',
       },
     },
     settings: {
@@ -221,20 +256,33 @@ export const de: TranslationResource = {
         save: 'Speichern',
         saving: 'Wird gespeichert…',
         loadingStatus: 'Status deines API-Schlüssels wird geprüft…',
+        showSettings: 'API-Schlüssel-Einstellungen anzeigen',
+        screenTitle: 'API-Schlüssel-Einstellungen',
         replace: 'Ersetzen',
         remove: 'Entfernen',
         savedStatus: '{{provider}}-Schlüssel gespeichert · Aktualisiert {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        guidanceTemplate: 'Noch keinen Schlüssel? Bei {{provider}} erhalten',
         guidance: 'Noch keinen Schlüssel? Bei Groq erhalten',
         removeConfirmHeadline: 'API-Schlüssel entfernen?',
         removeConfirmBody:
           'Du musst einen neuen Schlüssel hinzufügen, um wieder Lektionen zu erstellen.',
         removeConfirmAction: 'Entfernen bestätigen',
         removeConfirmCancelAction: 'Abbrechen',
+        manager: {
+          addHeading: 'Anbieter hinzufügen',
+          addNew: 'Neuen Anbieter hinzufügen',
+          selectProvider: 'Anbieter auswählen',
+          emptyMessage: 'Keine API-Schlüssel gespeichert',
+        },
         error: {
-          network: 'Server nicht erreichbar. Bitte erneut versuchen.',
           empty: 'Gib deinen API-Schlüssel ein.',
         },
       },

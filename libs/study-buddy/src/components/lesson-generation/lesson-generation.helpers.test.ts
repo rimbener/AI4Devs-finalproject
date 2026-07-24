@@ -1,7 +1,10 @@
+import { AI_MODEL_REGISTRY } from '@helsoft/types';
+
 import {
   GENERATION_ERROR_KEYS,
   GENERATION_ERROR_RECOVERY,
   isLessonComposition,
+  resolveGenerationSelection,
   toPanelState,
 } from './lesson-generation.helpers';
 
@@ -46,12 +49,13 @@ describe('GENERATION_ERROR_KEYS (task-13)', () => {
     expect(GENERATION_ERROR_KEYS).toEqual({
       missing_key: 'generation.error.missingKey',
       invalid_key: 'generation.error.invalidKey',
+      invalid_model: 'generation.error.invalidModel',
       platform_key_unavailable: 'generation.error.platformKeyUnavailable',
       rate_limited: 'generation.error.rateLimited',
       timeout: 'generation.error.timeout',
       generation_failed: 'generation.error.generationFailed',
       document_not_ready: 'generation.error.documentNotReady',
-      network_error: 'generation.error.network',
+      network_error: 'error.network',
       unauthenticated: 'generation.error.unauthenticated',
       persist_failed: 'generation.error.persistFailed',
     });
@@ -64,6 +68,7 @@ describe('GENERATION_ERROR_RECOVERY (task-13)', () => {
     expect(GENERATION_ERROR_RECOVERY).toEqual({
       missing_key: 'settings',
       invalid_key: 'settings',
+      invalid_model: 'none',
       platform_key_unavailable: 'retry',
       rate_limited: 'retry',
       timeout: 'retry',
@@ -81,5 +86,72 @@ describe('GENERATION_ERROR_RECOVERY (task-13)', () => {
       'generation.error.platformKeyUnavailable',
     );
     expect(GENERATION_ERROR_RECOVERY.platform_key_unavailable).toBe('retry');
+  });
+});
+
+describe('resolveGenerationSelection (@s20/@s21)', () => {
+  const savedProviders = ['groq', 'openai'] as const;
+
+  // @s20 — valid stored preference wins.
+  it('returns the stored provider and model when still valid', () => {
+    expect(
+      resolveGenerationSelection(savedProviders, {
+        provider: 'openai',
+        model: 'gpt-5.6-terra',
+      }),
+    ).toEqual({ provider: 'openai', model: 'gpt-5.6-terra' });
+  });
+
+  // @s21 — deleted provider key falls back to first saved + first curated model.
+  it('falls back when the stored provider is not saved', () => {
+    expect(
+      resolveGenerationSelection(savedProviders, {
+        provider: 'anthropic',
+        model: 'claude-haiku-4-5',
+      }),
+    ).toEqual({ provider: 'groq', model: 'openai/gpt-oss-20b' });
+  });
+
+  // @s21 — retired model falls back quietly.
+  it('falls back when the stored model is not in the registry', () => {
+    expect(
+      resolveGenerationSelection(savedProviders, {
+        provider: 'openai',
+        model: 'retired-model',
+      }),
+    ).toEqual({ provider: 'groq', model: 'openai/gpt-oss-20b' });
+  });
+
+  // @s21 — missing preference falls back without crashing.
+  it('falls back when no preference is stored', () => {
+    expect(resolveGenerationSelection(savedProviders, null)).toEqual({
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    });
+  });
+
+  it('falls back safely when the saved provider has no models registered', () => {
+    expect(resolveGenerationSelection(['openai'] as const, null)).toEqual({
+      provider: 'openai',
+      model: 'gpt-5.6-luna',
+    });
+  });
+
+  it('falls back to an empty model id when the registry entry has no models', () => {
+    const original = AI_MODEL_REGISTRY.openai.models;
+    Object.defineProperty(AI_MODEL_REGISTRY.openai, 'models', {
+      configurable: true,
+      value: [],
+    });
+
+    expect(resolveGenerationSelection(['openai'] as const, null)).toEqual({
+      provider: 'openai',
+      model: '',
+    });
+
+    Object.defineProperty(AI_MODEL_REGISTRY.openai, 'models', {
+      configurable: true,
+      value: original,
+    });
   });
 });

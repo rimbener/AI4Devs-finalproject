@@ -8,7 +8,7 @@ import type { AuthErrorCode } from '@helsoft/types';
  */
 export const AUTH_ERROR_KEYS: Partial<Record<AuthErrorCode, string>> = {
   invalid_credentials: 'auth.error.invalidCredentials',
-  network_error: 'auth.error.network',
+  network_error: 'error.network',
 };
 
 export const resolveAuthErrorMessage = (

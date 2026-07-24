@@ -1,6 +1,7 @@
-import { LessonGenerationPanel } from '@helsoft/components';
+import { LessonGenerationPanel, LessonGenerationPanelProvider } from '@helsoft/components';
 import { useLessonGeneration } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import { GenerationPreferenceService } from '@helsoft/services';
 import type { LessonComposition } from '@helsoft/types';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -9,10 +10,12 @@ import {
   GENERATION_ERROR_ACTION_LABEL_KEYS,
   GENERATION_ERROR_KEYS,
   GENERATION_ERROR_RECOVERY,
+  isAiProvider,
   isLessonComposition,
   toPanelState,
 } from './lesson-generation.helpers';
 import type { LessonGenerationProps } from './lesson-generation.types';
+import { useLessonGenerationForm } from './use-lesson-generation';
 
 /**
  * LessonGeneration — feature component that puts the composition picker on the upload screen
@@ -31,6 +34,18 @@ import type { LessonGenerationProps } from './lesson-generation.types';
 export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationProps) => {
   const [composition, setComposition] = useState<LessonComposition>('both');
   const { stage, currentStep, result, error, generate, retry } = useLessonGeneration();
+  const {
+    savedProviders,
+    showPickers,
+    showMissingKeyGate,
+    canGenerate,
+    modelOptions,
+    selectedProvider,
+    selectedModel,
+    setSelectedModel,
+    selectProvider,
+    buildGenerateRequest,
+  } = useLessonGenerationForm({ documentId, composition });
   const { t } = useLocalization();
   const router = useRouter();
   const lastAnnouncedLessonId = useRef<string | undefined>(undefined);
@@ -42,12 +57,17 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
     onGenerated?.();
   }, [result?.lessonId, onGenerated]);
 
-  // review.md round-1 finding #7 (minor) — stable callback identities across re-renders (a
-  // perf-only refactor, no behavior change).
   const handleGenerate = useCallback(() => {
-    if (!documentId) return;
-    void generate({ documentId, composition });
-  }, [documentId, composition, generate]);
+    const request = buildGenerateRequest();
+    if (!request) return;
+    if (showPickers && selectedProvider && selectedModel) {
+      void GenerationPreferenceService.setStoredPreference({
+        provider: selectedProvider,
+        model: selectedModel,
+      });
+    }
+    void generate(request);
+  }, [buildGenerateRequest, generate, selectedModel, selectedProvider, showPickers]);
 
   const handleOpenInPlayer = useCallback(() => {
     const lessonId = result?.lessonId?.trim();
@@ -59,7 +79,7 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
 
   const handleErrorAction = useCallback(() => {
     if (recovery === 'retry') void retry();
-    else if (recovery === 'settings') router.push('/settings');
+    else if (recovery === 'settings') router.push('/settings/api-keys');
     else if (recovery === 'signIn') router.push('/login');
   }, [recovery, retry, router]);
 
@@ -67,21 +87,50 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
     if (isLessonComposition(value)) setComposition(value);
   }, []);
 
+  const handleProviderChange = useCallback(
+    (value: string) => {
+      if (isAiProvider(value)) selectProvider(value);
+    },
+    [selectProvider],
+  );
+
+  const handleModelChange = useCallback(
+    (value: string) => {
+      setSelectedModel(value);
+    },
+    [setSelectedModel],
+  );
+
+  const handleMissingKeyAction = useCallback(() => {
+    router.push('/settings/api-keys');
+  }, [router]);
+
   return (
-    <LessonGenerationPanel
-      state={toPanelState(stage)}
-      composition={composition}
-      onCompositionChange={handleCompositionChange}
-      canGenerate={!!documentId}
-      onGenerate={handleGenerate}
-      currentStep={currentStep}
-      slideCount={result?.slides.length}
-      onOpenInPlayer={handleOpenInPlayer}
-      errorMessage={error ? t(GENERATION_ERROR_KEYS[error]) : undefined}
-      errorActionLabel={
-        recovery === 'none' ? undefined : t(GENERATION_ERROR_ACTION_LABEL_KEYS[recovery])
-      }
-      onErrorAction={handleErrorAction}
-    />
+    <LessonGenerationPanelProvider
+      value={{
+        state: showMissingKeyGate ? 'missing-key' : toPanelState(stage),
+        showPickers,
+        onMissingKeyAction: handleMissingKeyAction,
+        savedProviders,
+        modelOptions,
+        selectedProvider,
+        selectedModel,
+        onProviderChange: handleProviderChange,
+        onModelChange: handleModelChange,
+        composition,
+        onCompositionChange: handleCompositionChange,
+        canGenerate,
+        onGenerate: handleGenerate,
+        currentStep,
+        slideCount: result?.slides.length,
+        onOpenInPlayer: handleOpenInPlayer,
+        errorMessage: error ? t(GENERATION_ERROR_KEYS[error]) : undefined,
+        errorActionLabel:
+          recovery === 'none' ? undefined : t(GENERATION_ERROR_ACTION_LABEL_KEYS[recovery]),
+        onErrorAction: handleErrorAction,
+      }}
+    >
+      <LessonGenerationPanel />
+    </LessonGenerationPanelProvider>
   );
 };

@@ -73,10 +73,10 @@ describe('usePdfUploadPanel', () => {
     expect(announceSpy).not.toHaveBeenCalled();
 
     await act(async () => {
-      await rerender({ state: 'error', errorMessage: 'upload.error.network' });
+      await rerender({ state: 'error', errorMessage: 'error.network' });
     });
 
-    await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('upload.error.network'));
+    await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('error.network'));
     announceSpy.mockRestore();
   });
 

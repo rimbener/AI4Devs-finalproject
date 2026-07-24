@@ -154,7 +154,7 @@ describe('SignInForm', () => {
   it('renders the network banner when error is network_error, form stays interactive', async () => {
     await renderSignInForm({ error: 'network_error' });
 
-    expect(screen.getByText('auth.error.network')).toBeTruthy();
+    expect(screen.getByText('error.network')).toBeTruthy();
     expect(screen.queryByText('auth.error.invalidCredentials')).toBeNull();
 
     await act(async () => {
@@ -197,6 +197,6 @@ describe('SignInForm', () => {
     await renderSignInForm({ error: null });
 
     expect(screen.queryByText('auth.error.invalidCredentials')).toBeNull();
-    expect(screen.queryByText('auth.error.network')).toBeNull();
+    expect(screen.queryByText('error.network')).toBeNull();
   });
 });

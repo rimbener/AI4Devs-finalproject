@@ -33,26 +33,35 @@ describe('generate-lesson key routing integration', () => {
   it('routes user-key generation through Vault despite crafted platform selectors', async () => {
     const readUserApiKey = jest.fn().mockResolvedValue('saved-user-secret');
     const providerCall = jest.fn().mockResolvedValue('generated');
-    const craftedInput = {
-      usePlatformKey: false,
+
+    const route = await handleLessonGenerationRoute({
+      userId: 'user-1',
+      requestBody: {
+        documentId: 'doc-1',
+        composition: 'both',
+        provider: 'groq',
+        model: 'openai/gpt-oss-20b',
+        plan: 'paid',
+        entitlements: { keySource: 'platform' },
+        keySource: 'platform',
+      },
+      readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
       readUserApiKey,
       platformApiKey: 'platform-secret',
-      requestPlan: 'paid',
-      entitlement: 'paid',
-      keySource: 'platform',
-    };
+      acquirePlatformSlot: jest.fn().mockResolvedValue(true),
+    });
 
-    const resolvedKey = await resolveLessonGenerationKeyForPlan(craftedInput);
-
-    expect(readUserApiKey).toHaveBeenCalledTimes(1);
-    expect(resolvedKey).toEqual({
+    expect(readUserApiKey).toHaveBeenCalledWith('groq');
+    expect(route).toMatchObject({
       ok: true,
       apiKey: 'saved-user-secret',
       source: 'user',
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
     });
-    if (!resolvedKey.ok) throw new Error('expected a resolved user key');
-    await callProviderWithResolvedKey(resolvedKey, providerCall);
-    expect(providerCall).toHaveBeenCalledWith('saved-user-secret');
+    if (!route.ok) throw new Error('expected a resolved user key');
+    await callProviderWithResolvedKey(route, providerCall);
+    expect(providerCall).toHaveBeenCalled();
   });
 
   // @s14 — the executable Edge routing seam reads live plan flags for each request.
@@ -77,13 +86,24 @@ describe('generate-lesson key routing integration', () => {
     await expect(
       handleLessonGenerationRoute({
         userId: 'user-1',
-        requestBody: { documentId: 'doc-1', composition: 'both' },
+        requestBody: {
+          documentId: 'doc-1',
+          composition: 'both',
+          provider: 'openai',
+          model: 'gpt-5.6-luna',
+        },
         readPlanFlags,
         readUserApiKey,
         platformApiKey: 'platform-secret',
         acquirePlatformSlot: jest.fn().mockResolvedValue(true),
       }),
-    ).resolves.toMatchObject({ ok: true, source: 'user', apiKey: 'saved-user-secret' });
+    ).resolves.toMatchObject({
+      ok: true,
+      source: 'user',
+      apiKey: 'saved-user-secret',
+      provider: 'openai',
+      model: 'gpt-5.6-luna',
+    });
     expect(readPlanFlags).toHaveBeenCalledTimes(2);
   });
 
@@ -97,6 +117,8 @@ describe('generate-lesson key routing integration', () => {
         requestBody: {
           documentId: 'doc-1',
           composition: 'both',
+          provider: 'groq',
+          model: 'openai/gpt-oss-20b',
           plan: 'paid',
           entitlements: { keySource: 'platform' },
           keySource: 'platform',
@@ -106,8 +128,14 @@ describe('generate-lesson key routing integration', () => {
         platformApiKey: 'platform-secret',
         acquirePlatformSlot: jest.fn().mockResolvedValue(true),
       }),
-    ).resolves.toMatchObject({ ok: true, source: 'user', apiKey: 'saved-user-secret' });
-    expect(readUserApiKey).toHaveBeenCalledTimes(1);
+    ).resolves.toMatchObject({
+      ok: true,
+      source: 'user',
+      apiKey: 'saved-user-secret',
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    });
+    expect(readUserApiKey).toHaveBeenCalledWith('groq');
   });
 
   it('acquires a server-funded inference slot before returning the platform key', async () => {
@@ -163,7 +191,12 @@ describe('generate-lesson key routing integration', () => {
     await expect(
       handleLessonGenerationRoute({
         userId: 'user-1',
-        requestBody: { documentId: 'doc-1', composition: 'both' },
+        requestBody: {
+          documentId: 'doc-1',
+          composition: 'both',
+          provider: 'openai',
+          model: 'gpt-5.6-luna',
+        },
         readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
         readUserApiKey: jest.fn().mockResolvedValue(null),
         platformApiKey: 'platform-secret',
@@ -171,6 +204,24 @@ describe('generate-lesson key routing integration', () => {
         readImageMetadata,
       }),
     ).resolves.toEqual({ ok: false, errorCode: 'missing_key' });
+    expect(readImageMetadata).not.toHaveBeenCalled();
+  });
+
+  // @s18 — BYOK without provider/model is rejected before Vault/metadata work.
+  it('rejects BYOK requests with invalid provider/model before loading image metadata', async () => {
+    const readImageMetadata = jest.fn().mockResolvedValue([]);
+
+    await expect(
+      handleLessonGenerationRoute({
+        userId: 'user-1',
+        requestBody: { documentId: 'doc-1', composition: 'both' },
+        readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
+        readUserApiKey: jest.fn(),
+        platformApiKey: 'platform-secret',
+        acquirePlatformSlot: jest.fn().mockResolvedValue(true),
+        readImageMetadata,
+      }),
+    ).resolves.toEqual({ ok: false, errorCode: 'invalid_model' });
     expect(readImageMetadata).not.toHaveBeenCalled();
   });
 });

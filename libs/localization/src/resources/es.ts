@@ -6,6 +6,9 @@ export const es: TranslationResource = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Error de red. Vuelve a intentarlo.',
+    },
     nav: {
       myLessons: 'Mis lecciones',
       myPdfFiles: 'Mis archivos PDF',
@@ -104,12 +107,17 @@ export const es: TranslationResource = {
         scannedNotSupported: 'Este PDF parece escaneado; todavía no podemos leer su texto',
         corrupt: 'No se pudo abrir este PDF',
         extractionFailed: 'Ocurrió un error al leer tu PDF',
-        network: 'Error de red',
         unauthenticated: 'Inicia sesión para subir el archivo',
       },
     },
     generation: {
       dialogHeadline: 'Generar lección',
+      provider: {
+        heading: 'Proveedor de IA',
+      },
+      model: {
+        heading: 'Modelo',
+      },
       composition: {
         heading: 'Contenido de la lección',
         instructionalOnly: 'Solo instructivo',
@@ -136,13 +144,14 @@ export const es: TranslationResource = {
       error: {
         missingKey: 'Se requiere una clave de API para generar lecciones.',
         invalidKey: 'Tu clave de API fue rechazada. Revísala en Ajustes.',
+        invalidModel:
+          'Ese proveedor o modelo ya no está disponible. Elige otro e inténtalo de nuevo.',
         platformKeyUnavailable:
           'La generación de lecciones no está disponible temporalmente. Inténtalo de nuevo.',
         rateLimited: 'Alcanzaste el límite del proveedor. Vuelve a intentarlo en un momento.',
         timeout: 'La generación tardó demasiado. Vuelve a intentarlo.',
         generationFailed: 'Algo salió mal al generar tu lección. Vuelve a intentarlo.',
         documentNotReady: 'Este documento aún no está listo. Vuelve a subir tu PDF.',
-        network: 'Error de red. Vuelve a intentarlo.',
         unauthenticated: 'Inicia sesión para generar una lección.',
         persistFailed: 'No se pudo guardar tu lección. Vuelve a intentarlo.',
         action: {
@@ -150,6 +159,33 @@ export const es: TranslationResource = {
           settings: 'Ir a Ajustes',
           signIn: 'Iniciar sesión',
         },
+      },
+    },
+    aiModel: {
+      groq: {
+        gptOss20b: 'GPT-OSS 20B',
+        gptOss120b: 'GPT-OSS 120B',
+        qwen36_27b: 'Qwen 3.6 27B',
+      },
+      openai: {
+        gpt56Luna: 'GPT-5.6 Luna',
+        gpt56Terra: 'GPT-5.6 Terra',
+      },
+      anthropic: {
+        claudeHaiku45: 'Claude Haiku 4.5',
+        claudeSonnet5: 'Claude Sonnet 5',
+      },
+      google: {
+        gemini36Flash: 'Gemini 3.6 Flash',
+        gemini25Flash: 'Gemini 2.5 Flash',
+      },
+      xai: {
+        grok43: 'Grok 4.3',
+        grok45: 'Grok 4.5',
+      },
+      deepseek: {
+        v4Flash: 'DeepSeek V4 Flash',
+        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -204,7 +240,6 @@ export const es: TranslationResource = {
       error: {
         email: 'Introduce un correo electrónico válido',
         invalidCredentials: 'Correo electrónico o contraseña incorrectos',
-        network: 'Error de red',
       },
     },
     settings: {
@@ -218,19 +253,32 @@ export const es: TranslationResource = {
         save: 'Guardar',
         saving: 'Guardando…',
         loadingStatus: 'Verificando el estado de tu clave de API…',
+        showSettings: 'Mostrar configuración de claves de API',
+        screenTitle: 'Configuración de claves de API',
         replace: 'Reemplazar',
         remove: 'Eliminar',
         savedStatus: 'Clave de {{provider}} guardada · Actualizada {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        guidanceTemplate: '¿No tienes una clave? Consíguela en {{provider}}',
         guidance: '¿No tienes una clave? Consíguela en Groq',
         removeConfirmHeadline: '¿Eliminar clave de API?',
         removeConfirmBody: 'Deberás agregar una nueva clave para volver a generar lecciones.',
         removeConfirmAction: 'Confirmar eliminación',
         removeConfirmCancelAction: 'Cancelar',
+        manager: {
+          addHeading: 'Agregar proveedor',
+          addNew: 'Agregar nuevo proveedor',
+          selectProvider: 'Seleccionar proveedor',
+          emptyMessage: 'No hay claves de API guardadas',
+        },
         error: {
-          network: 'No se pudo conectar con el servidor. Intenta de nuevo.',
           empty: 'Ingresa tu clave de API.',
         },
       },

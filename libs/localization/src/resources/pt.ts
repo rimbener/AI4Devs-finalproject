@@ -6,6 +6,9 @@ export const pt: TranslationResource = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Erro de rede. Tente novamente.',
+    },
     nav: {
       myLessons: 'Minhas lições',
       myPdfFiles: 'Meus arquivos PDF',
@@ -104,12 +107,17 @@ export const pt: TranslationResource = {
         scannedNotSupported: 'Este PDF parece digitalizado; ainda não conseguimos ler o texto',
         corrupt: 'Não foi possível abrir este PDF',
         extractionFailed: 'Algo deu errado ao ler seu PDF',
-        network: 'Erro de rede',
         unauthenticated: 'Faça login para enviar o arquivo',
       },
     },
     generation: {
       dialogHeadline: 'Gerar lição',
+      provider: {
+        heading: 'Provedor de IA',
+      },
+      model: {
+        heading: 'Modelo',
+      },
       composition: {
         heading: 'Conteúdo da lição',
         instructionalOnly: 'Somente instrutivo',
@@ -136,13 +144,14 @@ export const pt: TranslationResource = {
       error: {
         missingKey: 'É necessária uma chave de API para gerar lições.',
         invalidKey: 'Sua chave de API foi rejeitada. Verifique-a em Configurações.',
+        invalidModel:
+          'Esse provedor ou modelo não está mais disponível. Escolha outro e tente novamente.',
         platformKeyUnavailable:
           'A geração de lições está temporariamente indisponível. Tente novamente.',
         rateLimited: 'Você atingiu o limite do provedor. Tente novamente em instantes.',
         timeout: 'A geração demorou demais. Tente novamente.',
         generationFailed: 'Algo deu errado ao gerar sua lição. Tente novamente.',
         documentNotReady: 'Este documento ainda não está pronto. Reenvie seu PDF.',
-        network: 'Erro de rede. Tente novamente.',
         unauthenticated: 'Entre na sua conta para gerar uma lição.',
         persistFailed: 'Não foi possível salvar sua lição. Tente novamente.',
         action: {
@@ -150,6 +159,33 @@ export const pt: TranslationResource = {
           settings: 'Ir para Configurações',
           signIn: 'Entrar',
         },
+      },
+    },
+    aiModel: {
+      groq: {
+        gptOss20b: 'GPT-OSS 20B',
+        gptOss120b: 'GPT-OSS 120B',
+        qwen36_27b: 'Qwen 3.6 27B',
+      },
+      openai: {
+        gpt56Luna: 'GPT-5.6 Luna',
+        gpt56Terra: 'GPT-5.6 Terra',
+      },
+      anthropic: {
+        claudeHaiku45: 'Claude Haiku 4.5',
+        claudeSonnet5: 'Claude Sonnet 5',
+      },
+      google: {
+        gemini36Flash: 'Gemini 3.6 Flash',
+        gemini25Flash: 'Gemini 2.5 Flash',
+      },
+      xai: {
+        grok43: 'Grok 4.3',
+        grok45: 'Grok 4.5',
+      },
+      deepseek: {
+        v4Flash: 'DeepSeek V4 Flash',
+        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -204,7 +240,6 @@ export const pt: TranslationResource = {
       error: {
         email: 'Informe um e-mail válido',
         invalidCredentials: 'E-mail ou senha inválidos',
-        network: 'Erro de rede',
       },
     },
     settings: {
@@ -218,19 +253,32 @@ export const pt: TranslationResource = {
         save: 'Salvar',
         saving: 'Salvando…',
         loadingStatus: 'Verificando o status da sua chave de API…',
+        showSettings: 'Mostrar configurações de chaves de API',
+        screenTitle: 'Configurações de chaves de API',
         replace: 'Substituir',
         remove: 'Remover',
         savedStatus: 'Chave da {{provider}} salva · Atualizada em {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        guidanceTemplate: 'Não tem uma chave? Obtenha uma na {{provider}}',
         guidance: 'Não tem uma chave? Obtenha uma na Groq',
         removeConfirmHeadline: 'Remover chave de API?',
         removeConfirmBody: 'Você precisará adicionar uma nova chave para gerar lições novamente.',
         removeConfirmAction: 'Confirmar remoção',
         removeConfirmCancelAction: 'Cancelar',
+        manager: {
+          addHeading: 'Adicionar provedor',
+          addNew: 'Adicionar novo provedor',
+          selectProvider: 'Selecionar provedor',
+          emptyMessage: 'Nenhuma chave de API salva',
+        },
         error: {
-          network: 'Não foi possível conectar ao servidor. Tente novamente.',
           empty: 'Informe sua chave de API.',
         },
       },

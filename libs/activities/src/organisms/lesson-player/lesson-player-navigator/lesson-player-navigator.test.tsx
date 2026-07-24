@@ -2,14 +2,12 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: () => ({ t: (key: string) => key }),
 }));
 
+import type { SlideProgressSlide } from '@helsoft/components';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { LessonPlayerNavigator } from './lesson-player-navigator';
 
-const slides = [
-  { id: '1', type: 'lesson' as const },
-  { id: '2', type: 'activity' as const },
-];
+const slides: SlideProgressSlide[] = [{ type: 'lesson' }, { type: 'activity' }];
 
 describe('LessonPlayerNavigator', () => {
   it('renders progress and wires back/next when enabled', async () => {

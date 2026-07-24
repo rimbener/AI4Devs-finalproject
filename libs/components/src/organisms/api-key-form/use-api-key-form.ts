@@ -1,12 +1,12 @@
 import { useLocalization } from '@helsoft/localization';
-import type { ApiKeyStatus } from '@helsoft/types';
+import type { SavedProviderKey } from '@helsoft/types';
 import { useEffect, useReducer, useRef } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
 import { apiKeyFormReducer, initialApiKeyFormState } from './use-api-key-form.reducer';
 
 type UseApiKeyFormArgs = {
-  status: ApiKeyStatus;
+  savedKey: SavedProviderKey | null;
   isLoadingStatus?: boolean;
   isSubmitting?: boolean;
   errorMessage?: string;
@@ -17,7 +17,7 @@ type UseApiKeyFormArgs = {
  * for loading/error/submitting transitions (WCAG 4.1.3).
  */
 export const useApiKeyForm = ({
-  status,
+  savedKey,
   isLoadingStatus = false,
   isSubmitting = false,
   errorMessage,
@@ -27,14 +27,14 @@ export const useApiKeyForm = ({
   const wasSubmitting = useRef(isSubmitting);
 
   // @s4 — once a replace-save resolves successfully (isSubmitting flips back to false while
-  // the status still reports a saved key), the form reverts to the masked state instead of
+  // the savedKey still indicates a saved key), the form reverts to the masked state instead of
   // leaving the input open.
   useEffect(() => {
-    if (wasSubmitting.current && !isSubmitting && status.hasKey) {
+    if (wasSubmitting.current && !isSubmitting && savedKey !== null) {
       dispatch({ type: 'replace-save/success' });
     }
     wasSubmitting.current = isSubmitting;
-  }, [isSubmitting, status.hasKey]);
+  }, [isSubmitting, savedKey]);
 
   // @s6/@s9 — announces a save/remove failure to assistive tech (iOS VoiceOver parity;
   // Android/Web get the banner's own accessibilityLiveRegion).
@@ -60,7 +60,7 @@ export const useApiKeyForm = ({
     }
   }, [isSubmitting, t]);
 
-  const showInput = !status.hasKey || state.isReplacing;
+  const showInput = savedKey === null || state.isReplacing;
   // @s5 — a blank/whitespace-only key is never submittable (AC7).
   const isSaveDisabled = isSubmitting || !state.apiKey.trim();
 

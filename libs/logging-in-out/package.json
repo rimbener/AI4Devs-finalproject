@@ -9,6 +9,7 @@
     "build": "storybook build",
     "check-types": "tsc --noEmit",
     "lint": "biome check .",
+    "format": "biome check --write .",
     "test": "jest --coverage=false --passWithNoTests --watchman=false",
     "test:watch": "jest --watch",
     "test:e2e": "npx playwright test",

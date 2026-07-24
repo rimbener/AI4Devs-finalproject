@@ -9,11 +9,12 @@ jest.mock('@helsoft/localization', () => ({
 
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import type { ApiKeyStatus } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, Text } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
-import { ApiKeyGate, apiKeyGateStyles } from './api-key-gate';
+import { ApiKeyGate } from './api-key-gate';
 
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -24,10 +25,16 @@ const CanCreateProbe = () => {
   return <Text>{profile?.canCreate ? 'creation enabled' : 'creation disabled'}</Text>;
 };
 
+const emptyStatus: ApiKeyStatus = { keys: [] };
+const groqStatus: ApiKeyStatus = {
+  keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
+};
+
 const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => ({
-  status: { hasKey: false },
+  status: emptyStatus,
   isLoading: false,
   isSubmitting: false,
+  hasKey: false,
   error: null,
   saveApiKey: jest.fn(),
   removeApiKey: jest.fn(),
@@ -130,25 +137,6 @@ describe('ApiKeyGate', () => {
     expect(screen.queryByText('creation disabled')).toBeNull();
   });
 
-  it('preserves the concrete gate, error, message, and hidden styles', () => {
-    expect(apiKeyGateStyles.gatedContent).toMatchObject({ gap: 16 });
-    expect(apiKeyGateStyles.error).toMatchObject({ gap: 16 });
-    expect(apiKeyGateStyles.message).toMatchObject({
-      color: '#b7191c',
-      fontFamily: 'IBM Plex Sans',
-      fontSize: 14,
-      fontWeight: '400',
-      letterSpacing: 0.25,
-      lineHeight: 20,
-    });
-    expect(apiKeyGateStyles.visuallyHidden).toEqual({
-      position: 'absolute',
-      width: 1,
-      height: 1,
-      overflow: 'hidden',
-    });
-  });
-
   // @s10 (loading facet) — while loading, no notice; children stay mounted with canCreate=false.
   it('announces entitlement loading without the cannot-create message', async () => {
     const announce = jest
@@ -173,7 +161,7 @@ describe('ApiKeyGate', () => {
 
   // @s10 (guard facet) — notice when gated; children remain for open/play (@s13).
   it('renders the cannot-create message when there is no key', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: { hasKey: false } }));
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: emptyStatus, hasKey: false }));
 
     await render(
       <ApiKeyGate>
@@ -239,7 +227,8 @@ describe('ApiKeyGate', () => {
   it('disables create via useProfile when current entitlements disallow creation', async () => {
     mockUseApiKey.mockReturnValue(
       apiKeyValue({
-        status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+        status: groqStatus,
+        hasKey: true,
       }),
     );
 

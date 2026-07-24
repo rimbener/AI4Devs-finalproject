@@ -22,7 +22,7 @@ import { useSession } from './use-session';
 const useProfileState = (skip: boolean): UseProfileResult => {
   const { session, isLoading: isSessionLoading } = useSession();
   const sessionUserId = session?.user?.id;
-  const { status: apiKeyStatus, isLoading: isApiKeyLoading } = useApiKey();
+  const { hasKey, isLoading: isApiKeyLoading } = useApiKey();
   const [state, dispatch] = useReducer(useProfileReducer, useProfileInitialState);
   const requestId = useRef(0);
 
@@ -59,9 +59,9 @@ const useProfileState = (skip: boolean): UseProfileResult => {
     if (!state.data || isLoading || state.error) return null;
     return {
       ...state.data,
-      canCreate: state.data.keySource === 'platform' || apiKeyStatus.hasKey,
+      canCreate: state.data.keySource === 'platform' || hasKey,
     };
-  }, [apiKeyStatus.hasKey, isLoading, state.data, state.error]);
+  }, [hasKey, isLoading, state.data, state.error]);
 
   return useMemo(
     () => ({ profile, isLoading, error: state.error, retry: load }),
