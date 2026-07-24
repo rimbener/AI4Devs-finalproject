@@ -19,7 +19,9 @@ export default function AppLayout() {
         {/* Bare Stack → default header (back button + title) on pushed lesson routes (@s1-@s6);
             (tabs) opts out so the root tabs stay headerless (@s7). */}
         <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          {/* title (unseen here, headerShown: false) becomes the pushed screens' back-button
+              label — without it, the back button falls back to the literal route name "(tabs)". */}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: t('nav.myLessons') }} />
           {LESSON_STACK_SCREENS.map(({ name, titleKey }) => (
             <Stack.Screen key={name} name={name} options={{ title: t(titleKey) }} />
           ))}

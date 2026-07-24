@@ -41,6 +41,12 @@ describe('(app)/_layout.tsx Stack.Screen rendering', () => {
     expect(rtlScreen.getByTestId('screen-(tabs)').props.headerShown).toBe(false);
   });
 
+  it('(tabs) screen has a title so the pushed lesson screens\' back button reads "My lessons", not the route name "(tabs)" (@s4)', async () => {
+    await render(<AppLayout />);
+    // Mocked t(k) => k, so the resolved title is the key itself.
+    expect(rtlScreen.getByTestId('screen-(tabs)').props.title).toBe('nav.myLessons');
+  });
+
   it.each(
     LESSON_STACK_SCREENS,
   )('$name screen resolves its title via t(titleKey) and keeps the default header (@s1 @s2 @s3)', async ({
