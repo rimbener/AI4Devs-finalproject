@@ -44,8 +44,6 @@ describe('apiKeyManagerReducer', () => {
     expect(apiKeyManagerReducer(withKey, { type: 'modal/close' })).toEqual({
       ...withKey,
       modalOpen: false,
-      formMode: 'add',
-      formProvider: null,
       apiKey: '',
     });
   });

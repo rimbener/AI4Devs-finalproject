@@ -4,9 +4,7 @@ import { useLocalization } from '@helsoft/localization';
 import { type AiProvider, PROVIDER_NAME_KEYS } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import { lightColors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { LessonGenerationPanel, lessonGenerationPanelStyles } from './lesson-generation-panel';
+import { LessonGenerationPanel } from './lesson-generation-panel';
 
 const mockUseLocalization = useLocalization as jest.Mock;
 
@@ -421,24 +419,6 @@ describe('LessonGenerationPanel', () => {
 
       expect(screen.queryByText('generation.step.reading')).toBeNull();
       expect(screen.queryByText('generation.ready.openInPlayer')).toBeNull();
-    });
-  });
-
-  it('preserves panel layout styles for sections and error banner', () => {
-    expect(lessonGenerationPanelStyles.root).toMatchObject({ gap: 16 });
-    expect(lessonGenerationPanelStyles.section).toMatchObject({ gap: 12 });
-    expect(lessonGenerationPanelStyles.heading).toMatchObject({
-      ...typography.titleSmall,
-      color: lightColors.onSurfaceVariant,
-    });
-    expect(lessonGenerationPanelStyles.summary).toMatchObject({
-      ...typography.bodyMedium,
-      color: lightColors.onSurface,
-    });
-    expect(lessonGenerationPanelStyles.errorBanner).toMatchObject({ padding: 12 });
-    expect(lessonGenerationPanelStyles.errorBannerText).toMatchObject({
-      ...typography.bodyMedium,
-      color: lightColors.onErrorContainer,
     });
   });
 

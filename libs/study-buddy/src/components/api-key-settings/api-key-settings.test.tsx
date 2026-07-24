@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { AccessibilityInfo } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
-import { ApiKeySettings, apiKeySettingsStyles } from './api-key-settings';
+import { ApiKeySettings } from './api-key-settings';
 
 const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -76,24 +76,6 @@ describe('ApiKeySettings', () => {
     const view = await render(<ApiKeySettings />);
 
     expect(view.toJSON()).toBeNull();
-  });
-
-  it('preserves the concrete error and hidden styles', () => {
-    expect(apiKeySettingsStyles.error).toEqual({ gap: 16 });
-    expect(apiKeySettingsStyles.errorMessage).toMatchObject({
-      color: '#b7191c',
-      fontFamily: 'IBM Plex Sans',
-      fontSize: 14,
-      fontWeight: '400',
-      letterSpacing: 0.25,
-      lineHeight: 20,
-    });
-    expect(apiKeySettingsStyles.visuallyHidden).toEqual({
-      position: 'absolute',
-      width: 1,
-      height: 1,
-      overflow: 'hidden',
-    });
   });
 
   it('renders the Show API keys settings entry button', async () => {

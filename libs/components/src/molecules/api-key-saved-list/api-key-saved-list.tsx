@@ -55,7 +55,7 @@ export const ApiKeySavedList = ({
   );
 };
 
-export const apiKeySavedListStyles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   row: {
     gap: theme.spacing.s2,
   },
@@ -70,5 +70,3 @@ export const apiKeySavedListStyles = StyleSheet.create((theme) => ({
     gap: theme.spacing.s3,
   },
 }));
-
-const styles = apiKeySavedListStyles;

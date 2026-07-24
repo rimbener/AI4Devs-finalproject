@@ -33,7 +33,6 @@ export const ApiKeyFormDialog = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
       headline={
         formMode === 'replace' && formProvider
           ? `${t('settings.apiKey.replace')} ${providerLabel(formProvider)}`
@@ -98,7 +97,7 @@ export const ApiKeyFormDialog = ({
   );
 };
 
-export const apiKeyFormDialogStyles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -113,5 +112,3 @@ export const apiKeyFormDialogStyles = StyleSheet.create((theme) => ({
     color: theme.colors.onSurfaceVariant,
   },
 }));
-
-const styles = apiKeyFormDialogStyles;

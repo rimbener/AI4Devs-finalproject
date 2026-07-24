@@ -54,7 +54,7 @@ export const ApiKeyGate = ({ children }: ApiKeyGateProps) => {
   );
 };
 
-export const apiKeyGateStyles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   gatedContent: {
     gap: theme.spacing.s4,
   },
@@ -76,5 +76,3 @@ export const apiKeyGateStyles = StyleSheet.create((theme) => ({
     overflow: 'hidden',
   },
 }));
-
-const styles = apiKeyGateStyles;

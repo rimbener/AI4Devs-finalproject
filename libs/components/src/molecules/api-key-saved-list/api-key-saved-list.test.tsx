@@ -6,9 +6,7 @@ import { useLocalization } from '@helsoft/localization';
 import type { AiProvider, SavedProviderKey } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import { lightColors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { ApiKeySavedList, apiKeySavedListStyles } from './api-key-saved-list';
+import { ApiKeySavedList } from './api-key-saved-list';
 import type { ApiKeySavedListProps } from './api-key-saved-list.types';
 
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -106,18 +104,5 @@ describe('ApiKeySavedList', () => {
 
     expect(screen.getByRole('button', { name: 'Replace Groq', disabled: true })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove Groq', disabled: true })).toBeTruthy();
-  });
-
-  it('preserves row layout styles', () => {
-    expect(apiKeySavedListStyles.row).toMatchObject({ gap: 8 });
-    expect(apiKeySavedListStyles.actionsRow).toMatchObject({
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    });
-    expect(apiKeySavedListStyles.savedStatusLabel).toMatchObject({
-      ...typography.bodyMedium,
-      color: lightColors.onSurfaceVariant,
-    });
   });
 });

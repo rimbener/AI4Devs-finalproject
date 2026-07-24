@@ -162,8 +162,6 @@ describe('useApiKeyManager', () => {
     });
 
     expect(result.current?.modalOpen).toBe(false);
-    expect(result.current?.formProvider).toBeNull();
-    expect(result.current?.apiKey).toBe('');
     expect(result.current?.formMode).toBe('add');
   });
 

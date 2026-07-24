@@ -1,5 +1,5 @@
 import { AI_PROVIDERS, type AiProvider, type SavedProviderKey } from '@helsoft/types';
-import { useCallback, useMemo, useReducer } from 'react';
+import { useMemo, useReducer } from 'react';
 
 import {
   type ApiKeyFormMode,
@@ -30,37 +30,37 @@ export const useApiKeyManager = ({ savedKeys, isSubmitting = false }: UseApiKeyM
   const isEmpty = savedKeys.length === 0;
   const isSaveDisabled = isSubmitting || !state.formProvider || !state.apiKey.trim();
 
-  const openAddModal = useCallback(() => {
+  const openAddModal = () => {
     dispatch({ type: 'modal/open-add' });
-  }, []);
+  };
 
-  const openReplaceModal = useCallback((provider: AiProvider) => {
+  const openReplaceModal = (provider: AiProvider) => {
     dispatch({ type: 'modal/open-replace', provider });
-  }, []);
+  };
 
-  const closeModal = useCallback(() => {
+  const closeModal = () => {
     dispatch({ type: 'modal/close' });
-  }, []);
+  };
 
-  const setFormProvider = useCallback((provider: AiProvider) => {
+  const setFormProvider = (provider: AiProvider) => {
     dispatch({ type: 'form/set-provider', provider });
-  }, []);
+  };
 
-  const selectProvider = useCallback((provider: AiProvider) => {
+  const selectProvider = (provider: AiProvider) => {
     dispatch({ type: 'form/select-provider', provider });
-  }, []);
+  };
 
-  const setApiKey = useCallback((apiKey: string) => {
+  const setApiKey = (apiKey: string) => {
     dispatch({ type: 'form/set-api-key', apiKey });
-  }, []);
+  };
 
-  const setConfirmingRemove = useCallback((provider: AiProvider | null) => {
+  const setConfirmingRemove = (provider: AiProvider | null) => {
     if (provider === null) {
       dispatch({ type: 'confirm-remove/close' });
       return;
     }
     dispatch({ type: 'confirm-remove/open', provider });
-  }, []);
+  };
 
   return {
     modalOpen: state.modalOpen,

@@ -53,8 +53,6 @@ export const apiKeyManagerReducer = (
       return {
         ...state,
         modalOpen: false,
-        formMode: 'add',
-        formProvider: null,
         apiKey: '',
       };
     case 'form/set-provider':

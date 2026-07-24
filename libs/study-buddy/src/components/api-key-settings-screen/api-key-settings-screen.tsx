@@ -58,7 +58,7 @@ export const ApiKeySettingsScreen = () => {
   );
 };
 
-export const apiKeySettingsScreenStyles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   screen: {
     gap: theme.spacing.s4,
   },
@@ -67,5 +67,3 @@ export const apiKeySettingsScreenStyles = StyleSheet.create((theme) => ({
     color: theme.colors.onSurface,
   },
 }));
-
-const styles = apiKeySettingsScreenStyles;

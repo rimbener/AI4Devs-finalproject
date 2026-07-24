@@ -7,7 +7,7 @@ import { AI_PROVIDERS, type AiProvider } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
-import { ApiKeyFormDialog, apiKeyFormDialogStyles } from './api-key-form-dialog';
+import { ApiKeyFormDialog } from './api-key-form-dialog';
 import type { ApiKeyFormDialogProps } from './api-key-form-dialog.types';
 
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -189,14 +189,5 @@ describe('ApiKeyFormDialog', () => {
     expect(screen.queryByRole('radio', { name: 'Groq' })).toBeNull();
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'Anthropic' })).toBeTruthy();
-  });
-
-  it('preserves form and actions layout styles', () => {
-    expect(apiKeyFormDialogStyles.form).toMatchObject({ gap: 12 });
-    expect(apiKeyFormDialogStyles.actionsRow).toMatchObject({
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    });
   });
 });

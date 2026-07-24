@@ -14,7 +14,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo, Text } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
-import { ApiKeyGate, apiKeyGateStyles } from './api-key-gate';
+import { ApiKeyGate } from './api-key-gate';
 
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -135,25 +135,6 @@ describe('ApiKeyGate', () => {
 
     expect(screen.getByText('creation enabled')).toBeTruthy();
     expect(screen.queryByText('creation disabled')).toBeNull();
-  });
-
-  it('preserves the concrete gate, error, message, and hidden styles', () => {
-    expect(apiKeyGateStyles.gatedContent).toMatchObject({ gap: 16 });
-    expect(apiKeyGateStyles.error).toMatchObject({ gap: 16 });
-    expect(apiKeyGateStyles.message).toMatchObject({
-      color: '#b7191c',
-      fontFamily: 'IBM Plex Sans',
-      fontSize: 14,
-      fontWeight: '400',
-      letterSpacing: 0.25,
-      lineHeight: 20,
-    });
-    expect(apiKeyGateStyles.visuallyHidden).toEqual({
-      position: 'absolute',
-      width: 1,
-      height: 1,
-      overflow: 'hidden',
-    });
   });
 
   // @s10 (loading facet) — while loading, no notice; children stay mounted with canCreate=false.

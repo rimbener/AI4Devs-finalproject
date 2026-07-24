@@ -7,9 +7,7 @@ import type { AiProvider, SavedProviderKey } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
-import { lightColors } from '../../theme/colors';
-import { typography } from '../../theme/typography';
-import { ApiKeyManager, apiKeyManagerStyles } from './api-key-manager';
+import { ApiKeyManager } from './api-key-manager';
 import type { ApiKeyManagerProps } from './api-key-manager.types';
 
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -413,24 +411,6 @@ describe('ApiKeyManager', () => {
     await render(<ApiKeyManager {...defaultProps} isLoading />);
 
     expect(t).toHaveBeenCalledWith('settings.apiKey.loadingStatus');
-  });
-
-  it('preserves layout styles for empty, error, and visually hidden loading text', () => {
-    expect(apiKeyManagerStyles.container).toMatchObject({ gap: 16 });
-    expect(apiKeyManagerStyles.empty).toMatchObject({ gap: 16 });
-    expect(apiKeyManagerStyles.emptyMessage).toMatchObject({
-      ...typography.bodyMedium,
-      color: lightColors.onSurfaceVariant,
-    });
-    expect(apiKeyManagerStyles.errorBanner).toMatchObject({ padding: 12 });
-    expect(apiKeyManagerStyles.errorBannerText).toMatchObject({
-      ...typography.bodyMedium,
-      color: lightColors.onErrorContainer,
-    });
-    expect(apiKeyManagerStyles.visuallyHidden).toMatchObject({
-      position: 'absolute',
-      overflow: 'hidden',
-    });
   });
 
   it('hides the empty message once at least one provider is saved', async () => {

@@ -164,7 +164,7 @@ export const LessonGenerationPanel = ({
   );
 };
 
-export const lessonGenerationPanelStyles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   root: {
     gap: theme.spacing.s4,
   },
@@ -190,5 +190,3 @@ export const lessonGenerationPanelStyles = StyleSheet.create((theme) => ({
     color: theme.colors.onErrorContainer,
   },
 }));
-
-const styles = lessonGenerationPanelStyles;

@@ -48,7 +48,7 @@ export const ApiKeySettings = () => {
   );
 };
 
-export const apiKeySettingsStyles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create((theme) => ({
   error: {
     gap: theme.spacing.s4,
   },
@@ -63,5 +63,3 @@ export const apiKeySettingsStyles = StyleSheet.create((theme) => ({
     overflow: 'hidden',
   },
 }));
-
-const styles = apiKeySettingsStyles;
