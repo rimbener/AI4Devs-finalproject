@@ -136,3 +136,7 @@
 2026-07-24 | lesson-route-header | pr_ready | docs/features/lesson-route-header/ | Synced with feature-entrega3-HernanLaura (multi-provider-ai-keys merge); no conflicts in feature code.
 
 2026-07-24 | safe-area-insets (ad hoc, no story) | n/a | — | SafeAreaProvider at app root; ScreenContainer takes an `edges` prop (SafeAreaView) instead of fixed padding; 4 headered screens exclude top. Built directly on feat/lesson-route-header (worktree).
+
+2026-07-24 | lesson-route-header (ad hoc) | n/a | — | Fixed (app)/_layout.tsx back-button label reading literal "(tabs)" (missing title on the tabs Stack.Screen); back label now "My lessons".
+
+2026-07-24 | tabs-header (ad hoc, no story) | n/a | — | Added @helsoft/components TabsHeader molecule (title + trailing action); wired into SavedLessons and PdfDocuments, replacing per-screen inline heading rows; en/es/pt/de "saved lessons" copy renamed to "my lessons". Built on feat/lesson-route-header (worktree).
