@@ -1,41 +1,10 @@
-import { ApiKeyManager, Button } from '@helsoft/components';
-import { useApiKey, useProfile } from '@helsoft/hooks';
+import { Button } from '@helsoft/components';
+import { useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import type { AiProvider, ApiKeyErrorCode } from '@helsoft/types';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-
-/** Provider brand names via i18n keys. */
-const PROVIDER_NAME_KEYS: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
-
-/** Per-provider guidance URLs. */
-export const API_KEY_SETTINGS_GUIDANCE_URLS: Partial<Record<AiProvider, string>> = {
-  groq: 'https://console.groq.com/keys',
-  openai: 'https://platform.openai.com/api-keys',
-  anthropic: 'https://console.anthropic.com/settings/keys',
-  google: 'https://aistudio.google.com/app/apikey',
-  xai: 'https://console.x.ai',
-  deepseek: 'https://platform.deepseek.com/api_keys',
-};
-
-const GUIDANCE_URLS = API_KEY_SETTINGS_GUIDANCE_URLS;
-
-/**
- * Maps useApiKey()'s normalized ApiKeyErrorCode to its i18n banner key (@s7/@s9).
- */
-const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
-  network_error: 'settings.apiKey.error.network',
-  validation_error: 'settings.apiKey.error.empty',
-};
 
 /**
  * ApiKeySettings — Settings entry: button to open the dedicated API keys screen.
@@ -79,54 +48,7 @@ export const ApiKeySettings = () => {
   );
 };
 
-/**
- * ApiKeySettingsScreen — dedicated API keys screen (title + ApiKeyManager).
- */
-export const ApiKeySettingsScreen = () => {
-  const { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey } = useApiKey();
-  const { t, locale } = useLocalization();
-
-  const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
-    t('settings.apiKey.savedStatus', {
-      provider: t(PROVIDER_NAME_KEYS[provider]),
-      date: new Date(updatedAt).toLocaleDateString(locale),
-    });
-
-  const errorKey = error ? API_KEY_ERROR_KEYS[error] : undefined;
-  const errorMessage = errorKey ? t(errorKey) : undefined;
-
-  return (
-    <View style={styles.screen}>
-      <Text accessibilityRole="header" style={styles.title}>
-        {t('settings.apiKey.screenTitle')}
-      </Text>
-      <ApiKeyManager
-        savedKeys={status.keys}
-        isLoading={isLoading}
-        isSubmitting={isSubmitting}
-        errorMessage={errorMessage}
-        onSave={(provider, rawKey) => {
-          void saveApiKey(provider, rawKey).catch(() => {});
-        }}
-        onRemove={(provider) => {
-          void removeApiKey(provider).catch(() => {});
-        }}
-        guidanceUrls={GUIDANCE_URLS}
-        getSavedStatusLabel={getSavedStatusLabel}
-        providerNameKeys={PROVIDER_NAME_KEYS}
-      />
-    </View>
-  );
-};
-
 export const apiKeySettingsStyles = StyleSheet.create((theme) => ({
-  screen: {
-    gap: theme.spacing.s4,
-  },
-  title: {
-    ...theme.typography.titleLarge,
-    color: theme.colors.onSurface,
-  },
   error: {
     gap: theme.spacing.s4,
   },

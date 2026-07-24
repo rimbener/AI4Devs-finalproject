@@ -2,7 +2,7 @@ import { LessonGenerationPanel } from '@helsoft/components';
 import { useLessonGeneration } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
-import type { AiProvider, LessonComposition } from '@helsoft/types';
+import { type LessonComposition, PROVIDER_NAME_KEYS } from '@helsoft/types';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -16,16 +16,6 @@ import {
 } from './lesson-generation.helpers';
 import type { LessonGenerationProps } from './lesson-generation.types';
 import { useLessonGenerationForm } from './use-lesson-generation';
-
-/** Provider brand names via i18n keys (mirrors ApiKeySettings). */
-const PROVIDER_NAME_KEYS: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
 
 /**
  * LessonGeneration — feature component that puts the composition picker on the upload screen

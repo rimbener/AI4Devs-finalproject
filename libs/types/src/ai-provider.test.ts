@@ -3,7 +3,9 @@ import {
   AI_PROVIDERS,
   type AiProvider,
   type AiProviderModels,
+  API_KEY_SETTINGS_GUIDANCE_URLS,
   type ApiKeyStatus,
+  PROVIDER_NAME_KEYS,
   type SavedProviderKey,
 } from './index';
 
@@ -88,5 +90,22 @@ describe('ai-provider types and registry', () => {
     const savedProviders = new Set(savedKeys.map((k) => k.provider));
     const unsaved = AI_PROVIDERS.filter((p) => !savedProviders.has(p));
     expect(unsaved).toHaveLength(0);
+  });
+
+  it('PROVIDER_NAME_KEYS covers every provider', () => {
+    for (const provider of AI_PROVIDERS) {
+      expect(PROVIDER_NAME_KEYS[provider]).toBe(`settings.apiKey.provider.${provider}`);
+    }
+  });
+
+  it('API_KEY_SETTINGS_GUIDANCE_URLS covers every provider', () => {
+    expect(API_KEY_SETTINGS_GUIDANCE_URLS).toEqual({
+      groq: 'https://console.groq.com/keys',
+      openai: 'https://platform.openai.com/api-keys',
+      anthropic: 'https://console.anthropic.com/settings/keys',
+      google: 'https://aistudio.google.com/app/apikey',
+      xai: 'https://console.x.ai',
+      deepseek: 'https://platform.deepseek.com/api_keys',
+    });
   });
 });

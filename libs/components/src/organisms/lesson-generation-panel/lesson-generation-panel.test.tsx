@@ -1,7 +1,7 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
 import { useLocalization } from '@helsoft/localization';
-import type { AiProvider } from '@helsoft/types';
+import { type AiProvider, PROVIDER_NAME_KEYS } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { lightColors } from '../../theme/colors';
@@ -18,15 +18,6 @@ const localizationValue = (overrides: Partial<ReturnType<typeof useLocalization>
   supportedLocales: ['en', 'es', 'pt', 'de'] as const,
   ...overrides,
 });
-
-const PROVIDER_NAME_KEYS = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-} as const;
 
 describe('LessonGenerationPanel', () => {
   beforeEach(() => {

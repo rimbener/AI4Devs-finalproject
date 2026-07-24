@@ -2,6 +2,8 @@ export * from './account-menu/account-menu';
 export type * from './account-menu/account-menu.types';
 export * from './api-key-form/api-key-form';
 export type * from './api-key-form/api-key-form.types';
+export * from './api-key-form-dialog/api-key-form-dialog';
+export type * from './api-key-form-dialog/api-key-form-dialog.types';
 export * from './api-key-manager/api-key-manager';
 export type * from './api-key-manager/api-key-manager.types';
 export * from './api-key-required-notice/api-key-required-notice';

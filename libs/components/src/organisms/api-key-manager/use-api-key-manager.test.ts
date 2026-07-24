@@ -166,4 +166,21 @@ describe('useApiKeyManager', () => {
     expect(result.current?.apiKey).toBe('');
     expect(result.current?.formMode).toBe('add');
   });
+
+  it('selectProvider sets the provider and clears a draft key', async () => {
+    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [] }));
+
+    await act(async () => {
+      result.current?.openAddModal();
+    });
+    await act(async () => {
+      result.current?.setApiKey('sk-draft');
+    });
+    await act(async () => {
+      result.current?.selectProvider('google');
+    });
+
+    expect(result.current?.formProvider).toBe('google');
+    expect(result.current?.apiKey).toBe('');
+  });
 });

@@ -1,23 +1,25 @@
 import { AI_PROVIDERS, type AiProvider, type SavedProviderKey } from '@helsoft/types';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useReducer } from 'react';
+
+import {
+  type ApiKeyFormMode,
+  apiKeyManagerReducer,
+  initialApiKeyManagerState,
+} from './use-api-key-manager.reducer';
+
+export type { ApiKeyFormMode };
 
 type UseApiKeyManagerArgs = {
   savedKeys: SavedProviderKey[];
   isSubmitting?: boolean;
 };
 
-export type ApiKeyFormMode = 'add' | 'replace';
-
 /**
  * Local add/replace/remove form state + derived provider lists for ApiKeyManager.
  * Add/Replace open a modal; empty screen shows only message + Add button.
  */
 export const useApiKeyManager = ({ savedKeys, isSubmitting = false }: UseApiKeyManagerArgs) => {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formMode, setFormMode] = useState<ApiKeyFormMode>('add');
-  const [formProvider, setFormProvider] = useState<AiProvider | null>(null);
-  const [apiKey, setApiKey] = useState('');
-  const [confirmingRemove, setConfirmingRemove] = useState<AiProvider | null>(null);
+  const [state, dispatch] = useReducer(apiKeyManagerReducer, initialApiKeyManagerState);
 
   const savedProviders = useMemo(() => new Set(savedKeys.map((k) => k.provider)), [savedKeys]);
   const unsavedProviders = useMemo(
@@ -26,37 +28,49 @@ export const useApiKeyManager = ({ savedKeys, isSubmitting = false }: UseApiKeyM
   );
   const allSaved = unsavedProviders.length === 0;
   const isEmpty = savedKeys.length === 0;
-  const isSaveDisabled = isSubmitting || !formProvider || !apiKey.trim();
+  const isSaveDisabled = isSubmitting || !state.formProvider || !state.apiKey.trim();
 
   const openAddModal = useCallback(() => {
-    setFormMode('add');
-    setFormProvider(null);
-    setApiKey('');
-    setModalOpen(true);
+    dispatch({ type: 'modal/open-add' });
   }, []);
 
   const openReplaceModal = useCallback((provider: AiProvider) => {
-    setFormMode('replace');
-    setFormProvider(provider);
-    setApiKey('');
-    setModalOpen(true);
+    dispatch({ type: 'modal/open-replace', provider });
   }, []);
 
   const closeModal = useCallback(() => {
-    setModalOpen(false);
-    setFormProvider(null);
-    setApiKey('');
-    setFormMode('add');
+    dispatch({ type: 'modal/close' });
+  }, []);
+
+  const setFormProvider = useCallback((provider: AiProvider) => {
+    dispatch({ type: 'form/set-provider', provider });
+  }, []);
+
+  const selectProvider = useCallback((provider: AiProvider) => {
+    dispatch({ type: 'form/select-provider', provider });
+  }, []);
+
+  const setApiKey = useCallback((apiKey: string) => {
+    dispatch({ type: 'form/set-api-key', apiKey });
+  }, []);
+
+  const setConfirmingRemove = useCallback((provider: AiProvider | null) => {
+    if (provider === null) {
+      dispatch({ type: 'confirm-remove/close' });
+      return;
+    }
+    dispatch({ type: 'confirm-remove/open', provider });
   }, []);
 
   return {
-    modalOpen,
-    formMode,
-    formProvider,
+    modalOpen: state.modalOpen,
+    formMode: state.formMode,
+    formProvider: state.formProvider,
     setFormProvider,
-    apiKey,
+    selectProvider,
+    apiKey: state.apiKey,
     setApiKey,
-    confirmingRemove,
+    confirmingRemove: state.confirmingRemove,
     setConfirmingRemove,
     savedProviders,
     unsavedProviders,

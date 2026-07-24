@@ -415,20 +415,9 @@ describe('ApiKeyManager', () => {
     expect(t).toHaveBeenCalledWith('settings.apiKey.loadingStatus');
   });
 
-  it('preserves layout styles for rows, actions, and visually hidden loading text', () => {
+  it('preserves layout styles for empty, error, and visually hidden loading text', () => {
     expect(apiKeyManagerStyles.container).toMatchObject({ gap: 16 });
-    expect(apiKeyManagerStyles.row).toMatchObject({ gap: 8 });
-    expect(apiKeyManagerStyles.actionsRow).toMatchObject({
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    });
-    expect(apiKeyManagerStyles.form).toMatchObject({ gap: 12 });
     expect(apiKeyManagerStyles.empty).toMatchObject({ gap: 16 });
-    expect(apiKeyManagerStyles.savedStatusLabel).toMatchObject({
-      ...typography.bodyMedium,
-      color: lightColors.onSurfaceVariant,
-    });
     expect(apiKeyManagerStyles.emptyMessage).toMatchObject({
       ...typography.bodyMedium,
       color: lightColors.onSurfaceVariant,

@@ -3,6 +3,7 @@
 export * from './components/api-key-gate/api-key-gate';
 export type * from './components/api-key-gate/api-key-gate.types';
 export * from './components/api-key-settings/api-key-settings';
+export * from './components/api-key-settings-screen/api-key-settings-screen';
 export * from './components/app-chrome/app-chrome';
 export type * from './components/app-chrome/app-chrome.types';
 export type { NativeTabTriggerConfig } from './components/app-chrome/native-tabs-triggers';
