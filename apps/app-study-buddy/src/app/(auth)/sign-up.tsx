@@ -7,7 +7,8 @@ export default function SignUpScreen() {
   const { t } = useLocalization();
 
   return (
-    <ScreenContainer>
+    // The Stack header already consumes the top inset.
+    <ScreenContainer edges={['left', 'right', 'bottom']}>
       <Text>{t('nav.signUp')}</Text>
       <Link href="/login">
         <Text>{t('auth.toLogIn')}</Text>

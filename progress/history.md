@@ -134,3 +134,5 @@
 2026-07-23 | lesson-route-header | pr_ready | docs/features/lesson-route-header/ | Native header (back+title) on lesson index/player/results via bare Stack; lesson-stack-screens.ts factory. 1 slice, reviews+mutation 100%, DoD PASS.
 
 2026-07-24 | lesson-route-header | pr_ready | docs/features/lesson-route-header/ | Synced with feature-entrega3-HernanLaura (multi-provider-ai-keys merge); no conflicts in feature code.
+
+2026-07-24 | safe-area-insets (ad hoc, no story) | n/a | — | SafeAreaProvider at app root; ScreenContainer takes an `edges` prop (SafeAreaView) instead of fixed padding; 4 headered screens exclude top. Built directly on feat/lesson-route-header (worktree).

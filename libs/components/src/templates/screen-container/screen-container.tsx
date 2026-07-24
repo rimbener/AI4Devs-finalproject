@@ -1,12 +1,19 @@
-import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native-unistyles';
 
 import type { ScreenContainerProps } from './screen-container.types';
 
-export const ScreenContainer = ({ children, style, ...rest }: ScreenContainerProps) => (
-  <View style={[styles.container, style]} {...rest}>
+const ALL_EDGES = ['top', 'right', 'bottom', 'left'] as const;
+
+export const ScreenContainer = ({
+  children,
+  style,
+  edges = ALL_EDGES,
+  ...rest
+}: ScreenContainerProps) => (
+  <SafeAreaView edges={edges} style={[styles.container, style]} {...rest}>
     {children}
-  </View>
+  </SafeAreaView>
 );
 
 const styles = StyleSheet.create((theme) => ({

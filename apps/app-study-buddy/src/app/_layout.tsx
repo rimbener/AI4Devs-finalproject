@@ -9,6 +9,7 @@ import { getLocales } from 'expo-localization';
 import { DarkTheme, DefaultTheme, SplashScreen, Stack, ThemeProvider } from 'expo-router';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '@/lib/supabase';
 
@@ -30,9 +31,11 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) return null;
 
   return (
-    <LocalizationProvider deviceLocale={deviceLocale}>
-      <RootNavigator />
-    </LocalizationProvider>
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <LocalizationProvider deviceLocale={deviceLocale}>
+        <RootNavigator />
+      </LocalizationProvider>
+    </SafeAreaProvider>
   );
 }
 
