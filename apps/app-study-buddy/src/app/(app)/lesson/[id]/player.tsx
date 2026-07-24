@@ -16,9 +16,10 @@ export default function PlayerScreen() {
   }, [router]);
 
   // @s17 — Loading: spinner, no slide content.
+  // The Stack header already consumes the top inset in both branches below.
   if (isLoading) {
     return (
-      <ScreenContainer>
+      <ScreenContainer edges={['left', 'right', 'bottom']}>
         <PlayerLoading />
       </ScreenContainer>
     );
@@ -26,7 +27,7 @@ export default function PlayerScreen() {
 
   // @s15/@s16 — Empty (0 slides) and Error (+ retry) live inside LessonPlayer.
   return (
-    <ScreenContainer>
+    <ScreenContainer edges={['left', 'right', 'bottom']}>
       <LessonPlayer
         lesson={lesson}
         error={error}

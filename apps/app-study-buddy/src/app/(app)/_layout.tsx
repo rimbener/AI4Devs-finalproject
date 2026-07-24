@@ -1,8 +1,9 @@
 import { ApiKeyProvider, ProfileProvider } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import { LESSON_STACK_SCREENS } from '@helsoft/study-buddy';
 import { Stack } from 'expo-router';
 
-// Keep (tabs) as the stack base so lesson deep-links can return to the tab shell (@s16).
+// Keep (tabs) as the stack base so lesson deep-links can return to the tab shell (@s4).
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
@@ -15,11 +16,15 @@ export default function AppLayout() {
   return (
     <ApiKeyProvider>
       <ProfileProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="lesson/[id]/index" options={{ title: t('nav.lesson') }} />
-          <Stack.Screen name="lesson/[id]/player" options={{ title: t('nav.study') }} />
-          <Stack.Screen name="lesson/[id]/results" options={{ title: t('nav.results') }} />
+        {/* Bare Stack → default header (back button + title) on pushed lesson routes (@s1-@s6);
+            (tabs) opts out so the root tabs stay headerless (@s7). */}
+        <Stack>
+          {/* title (unseen here, headerShown: false) becomes the pushed screens' back-button
+              label — without it, the back button falls back to the literal route name "(tabs)". */}
+          <Stack.Screen name="(tabs)" options={{ headerShown: false, title: t('nav.myLessons') }} />
+          {LESSON_STACK_SCREENS.map(({ name, titleKey }) => (
+            <Stack.Screen key={name} name={name} options={{ title: t(titleKey) }} />
+          ))}
         </Stack>
       </ProfileProvider>
     </ApiKeyProvider>

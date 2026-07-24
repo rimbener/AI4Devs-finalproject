@@ -6,6 +6,8 @@ export * from './components/api-key-settings/api-key-settings';
 export * from './components/api-key-settings-screen/api-key-settings-screen';
 export * from './components/app-chrome/app-chrome';
 export type * from './components/app-chrome/app-chrome.types';
+export type { LessonStackScreenConfig } from './components/app-chrome/lesson-stack-screens';
+export { LESSON_STACK_SCREENS } from './components/app-chrome/lesson-stack-screens';
 export type { NativeTabTriggerConfig } from './components/app-chrome/native-tabs-triggers';
 export { NATIVE_TAB_TRIGGERS } from './components/app-chrome/native-tabs-triggers';
 export * from './components/fill-in-the-blank-activity/fill-in-the-blank-activity';

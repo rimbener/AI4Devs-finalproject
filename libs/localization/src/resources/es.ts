@@ -22,10 +22,10 @@ export const es: TranslationResource = {
       signUp: 'Registrarse',
     },
     home: {
-      savedLessons: 'Lecciones guardadas',
+      savedLessons: 'Mis lecciones',
       openDemo: 'Abrir lección de ejemplo',
-      loading: 'Cargando lecciones guardadas…',
-      empty: 'Aún no tienes lecciones guardadas. Crea una para empezar.',
+      loading: 'Cargando mis lecciones…',
+      empty: 'Aún no tienes lecciones. Crea una para empezar.',
       error: 'No pudimos cargar tus lecciones.',
       retry: 'Intentar de nuevo',
       openLesson: 'Abrir {{title}}',

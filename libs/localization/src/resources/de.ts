@@ -22,10 +22,10 @@ export const de: TranslationResource = {
       signUp: 'Registrieren',
     },
     home: {
-      savedLessons: 'Gespeicherte Lektionen',
+      savedLessons: 'Meine Lektionen',
       openDemo: 'Demo-Lektion öffnen',
-      loading: 'Gespeicherte Lektionen werden geladen…',
-      empty: 'Noch keine gespeicherten Lektionen. Erstelle eine, um zu starten.',
+      loading: 'Meine Lektionen werden geladen…',
+      empty: 'Noch keine Lektionen. Erstelle eine, um zu starten.',
       error: 'Deine Lektionen konnten nicht geladen werden.',
       retry: 'Erneut versuchen',
       openLesson: '{{title}} öffnen',

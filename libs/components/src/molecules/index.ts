@@ -21,6 +21,8 @@ export * from './radio-group-section/radio-group-section';
 export type * from './radio-group-section/radio-group-section.types';
 export * from './slide-progress/slide-progress';
 export type * from './slide-progress/slide-progress.types';
+export * from './tabs-header/tabs-header';
+export type * from './tabs-header/tabs-header.types';
 export * from './text-field/text-field';
 export * from './web-bottom-tab-button/web-bottom-tab-button';
 export type * from './web-bottom-tab-button/web-bottom-tab-button.types';

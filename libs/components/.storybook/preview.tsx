@@ -5,6 +5,7 @@ import '../src/theme/unistyles';
 import { LocalizationProvider } from '@helsoft/localization';
 import type { Decorator, Preview } from '@storybook/react-native-web-vite';
 import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UnistylesRuntime } from 'react-native-unistyles';
 
 import { type ThemeScheme, themes } from '../src/theme/unistyles';
@@ -37,6 +38,14 @@ const withLocalizationProvider: Decorator = (Story) => (
   </LocalizationProvider>
 );
 
+// ScreenContainer (and anything else consuming useSafeAreaInsets/SafeAreaView) needs an
+// ancestor provider; Storybook has no real device frame, so insets resolve to 0 here.
+const withSafeAreaProvider: Decorator = (Story) => (
+  <SafeAreaProvider>
+    <Story />
+  </SafeAreaProvider>
+);
+
 const preview: Preview = {
   parameters: {
     controls: {
@@ -63,7 +72,7 @@ const preview: Preview = {
   initialGlobals: {
     theme: 'light',
   },
-  decorators: [withUnistylesTheme, withLocalizationProvider],
+  decorators: [withUnistylesTheme, withLocalizationProvider, withSafeAreaProvider],
 };
 
 export default preview;

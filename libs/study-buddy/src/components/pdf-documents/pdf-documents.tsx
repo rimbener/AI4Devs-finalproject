@@ -1,4 +1,4 @@
-import { PdfDocumentList } from '@helsoft/components';
+import { PdfDocumentList, TabsHeader } from '@helsoft/components';
 import { usePdfDocuments, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { useRouter } from 'expo-router';
@@ -18,11 +18,11 @@ export const PdfDocuments = () => {
   const router = useRouter();
   const { t } = useLocalization();
   const { profile } = useProfile();
+  const canCreate = Boolean(profile?.canCreate);
   const { documents, isLoading, error, refetch, deleteDocument } = usePdfDocuments();
 
   const [generateDocumentId, setGenerateDocumentId] = useState<string | undefined>();
 
-  const canCreate = Boolean(profile?.canCreate);
   const state = toPdfDocumentListState(isLoading, error, documents.length);
   const items = useMemo(() => toPdfDocumentListItems(documents), [documents]);
 
@@ -56,17 +56,17 @@ export const PdfDocuments = () => {
 
   return (
     <View style={styles.root}>
-      {canCreate ? (
-        <NewLessonDialog
-          onExtracted={handleRefetch}
-          onGenerated={handleRefetch}
-          generateDocumentId={generateDocumentId}
-          onGenerateHandled={() => setGenerateDocumentId(undefined)}
-        />
-      ) : null}
-      <Text accessibilityRole="header" style={styles.heading}>
-        {t('pdfList.heading')}
-      </Text>
+      <TabsHeader title={t('pdfList.heading')}>
+        {canCreate ? (
+          <NewLessonDialog
+            onExtracted={handleRefetch}
+            onGenerated={handleRefetch}
+            generateDocumentId={generateDocumentId}
+            onGenerateHandled={() => setGenerateDocumentId(undefined)}
+          />
+        ) : null}
+      </TabsHeader>
+
       <PdfDocumentList
         state={state}
         documents={items}
@@ -89,10 +89,6 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
     gap: theme.spacing.s3,
     marginTop: theme.spacing.s4,
-  },
-  heading: {
-    ...theme.typography.headlineSmall,
-    color: theme.colors.onSurface,
   },
   deleteError: {
     ...theme.typography.bodyMedium,

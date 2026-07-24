@@ -8,7 +8,8 @@ export default function LessonScreen() {
   const { t } = useLocalization();
 
   return (
-    <ScreenContainer>
+    // The Stack header already consumes the top inset.
+    <ScreenContainer edges={['left', 'right', 'bottom']}>
       <Text>{t('lesson.title', { id })}</Text>
       <Link href={{ pathname: '/lesson/[id]/player', params: { id } }}>
         <Text>{t('lesson.start')}</Text>

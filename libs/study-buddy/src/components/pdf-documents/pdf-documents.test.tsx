@@ -632,7 +632,8 @@ describe('PdfDocuments', () => {
   it('applies flex:1 on the PdfDocuments root container', async () => {
     mockUsePdfDocuments.mockReturnValue(docsValue());
     await render(<PdfDocuments />);
-    const root = screen.getByText('Your PDFs').parent;
+    // 'Your PDFs' -> TabsHeader's header row -> PdfDocuments' own root View.
+    const root = screen.getByText('Your PDFs').parent?.parent;
     const flat = Object.assign(
       {},
       ...[root?.props?.style].flat(Infinity).filter(Boolean),
