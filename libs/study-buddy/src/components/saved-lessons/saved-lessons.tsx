@@ -1,4 +1,4 @@
-import { Button, LessonList } from '@helsoft/components';
+import { Button, LessonList, TabsHeader } from '@helsoft/components';
 import { useLessons } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { useRouter } from 'expo-router';
@@ -49,12 +49,9 @@ export const SavedLessons = () => {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.heading}>
-          {t('home.savedLessons')}
-        </Text>
+      <TabsHeader title={t('home.savedLessons')}>
         <Button onPress={onNewLesson}>{t('nav.newLesson')}</Button>
-      </View>
+      </TabsHeader>
       {state === 'content' ? (
         <Text style={styles.count}>{t('lessons.count', { count: lessons.length })}</Text>
       ) : null}
@@ -78,17 +75,6 @@ const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
     gap: theme.spacing.s3,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.s3,
-  },
-  heading: {
-    ...theme.typography.headlineSmall,
-    color: theme.colors.onSurface,
-    flexShrink: 1,
   },
   count: {
     ...theme.typography.bodyMedium,
