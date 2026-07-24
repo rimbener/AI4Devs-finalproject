@@ -31,7 +31,6 @@ const useApiKeyState = (skip: boolean): UseApiKeyResult => {
   const sessionUserId = session?.user?.id;
   const [state, dispatch] = useReducer(useApiKeyReducer, useApiKeyInitialState);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the derived sessionUserId instead of the session object on purpose — see the comment above
   useEffect(() => {
     if (skip) return;
 
@@ -39,7 +38,7 @@ const useApiKeyState = (skip: boolean): UseApiKeyResult => {
 
     if (isSessionLoading) return;
 
-    if (!session) {
+    if (!sessionUserId) {
       dispatch({ type: 'status/unauthenticated' });
       return;
     }
