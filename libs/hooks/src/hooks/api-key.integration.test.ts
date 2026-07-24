@@ -11,7 +11,7 @@ import { useApiKey } from './use-api-key';
  */
 let client: SupabaseClient;
 
-const authenticatedSession = { access_token: 'tok-1' } as Session;
+const authenticatedSession = { access_token: 'tok-1', user: { id: 'user-1' } } as Session;
 
 const mockInvoke = (impl: (...args: unknown[]) => unknown) =>
   jest.spyOn(Object.getPrototypeOf(client.functions), 'invoke').mockImplementation(impl as never);
