@@ -6,4 +6,4 @@
 **Phase:** post-review polish (settings UX + DB/Edge fixes)
 **Folder:** `docs/features/multi-provider-ai-keys/`
 **Story:** `user-stories/in-progress/multi-provider-ai-keys.md`
-**Notes:** Nested settings/api-keys UI; save_api_key ambiguity + service_role SELECT; deepseek@3 pin. Docs synced.
+**Notes:** Spec/tasks synced to final UI split (`ApiKeySavedList` + `ApiKeyFormDialog` + settings screen; types consts; `useReducer`; `error.network`; private StyleSheets).

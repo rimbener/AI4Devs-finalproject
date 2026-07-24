@@ -15,7 +15,7 @@ Index only. **Each `task-N.md` owns its `slice`, `scenarios`, `status`, `paths`.
 | task-3 | Multi-key api-key DAO + Service | s2, s4, s5, s9 |
 | task-4 | manage-api-key Edge: widen allow-list + provider-scoped remove | s2, s4, s5, s9 |
 | task-5 | useApiKey multi-key hook + derived hasKey | s1, s4, s5, s7, s8 |
-| task-6 | ApiKeyManager organism + ApiKeyForm refactor + ApiKeySettings + i18n | s1, s2, s3, s6, s7, s8, s9 |
+| task-6 | ApiKeyManager + form dialog + settings screen + i18n | s1, s2, s3, s6, s7, s8, s9 |
 
 ## Slice 2 — generate pickers, server routing & vision
 | Task | Title | Scenarios |

@@ -36,3 +36,6 @@ R1: services/supabase guards, hooks reducer/session, components i18n/styles, stu
 R2: hooks TS fixes, boolean JSON guards, Linking/guidance, StyleSheet spacing, panel defaults, platform persist guards.
 
 Slice 1–2 @s map: api-key dao/service/hook/manager/form; lesson-generation panel/pickers/platform gate (see git history / prior tdd if needed).
+
+## Post-review polish (docs sync)
+Settings UI split: `api-key-saved-list` (molecule) + `api-key-form-dialog` + `api-key-settings-screen`; `use-api-key-manager.reducer`; `PROVIDER_NAME_KEYS` / guidance URLs in `@helsoft/types`; shared `error.network`.
