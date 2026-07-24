@@ -1,6 +1,6 @@
 ---
 feature: multi-provider-ai-keys
-phase: mutation # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
+phase: done # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
 review_round: 2     # incremented by reviews_lead; cap 2
 ---
 
