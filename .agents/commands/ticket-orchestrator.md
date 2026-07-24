@@ -1,5 +1,5 @@
 ---
-description: Run the agentic orchestrator on a user story — spec → Gherkin → TDD → parallel review → mutation → DoD (PR-ready)
+description: Run the agentic orchestrator on a user story — plan gate → spec + Gherkin → TDD (per-slice review) → full review → mutation → DoD (PR-ready)
 argument-hint: "<story> — the name of a file in user-stories/pending/ (with or without .md), e.g. lesson-list"
 ---
 

@@ -22,7 +22,7 @@ You transform an ambiguous ticket into an unambiguous, testable spec **and** its
    - **Paid / shared-key scope up front.** If the feature calls a paid or shared-key API, pre-decide **rate/quota/cost limits** with the human — don't invent limits mid-review.
 3. **Present the PLAN (do not write files).** Once you've reached a shared understanding, return a concise plan for the human to approve:
    - **Spec overview** — 1–2-sentence summary, user stories, the 4 UI states (if UI), analytics events, feature flags, non-goals, and the resolved decisions (with rationale + any Open decisions, incl. paid/shared-key limits).
-   - **Task / slice breakdown** — the atomic tasks grouped onto the 3 vertical slices, each with its target `libs/*` paths (obeying `hooks-service-dao.mdc` / `state.mdc` / `atomic-design.mdc` / `component-split.mdc`).
+   - **Task / slice breakdown** — the atomic tasks grouped onto the 3 vertical slices, each with its target `libs/*` paths (obeying `hooks-service-dao.mdc` / `state.mdc` / `state-sharing.mdc` / `atomic-design.mdc` / `component-split.mdc`).
    - **Contract outline** — the list of `@s` scenarios (behaviors) you will author: happy path + error/empty/edge, each mapped to a task.
    This is your plan-mode hand-off; the lead takes it to the **human gate**. **Stop here — write nothing yet.**
 

@@ -116,3 +116,5 @@
 2026-07-23 | native-bottom-tabs | done | docs/features/native-bottom-tabs/ | Merged into feature-entrega3-HernanLaura; worktree removed.
 
 2026-07-24 | agents-rules (ad hoc, no story) | n/a | — | Plan-mode gate, 1-round reviews, e2e/state-sharing rules, DESIGN.md.
+
+2026-07-24 | agents-docs-sync (ad hoc) | n/a | — | Sync AGENTS/ORCHESTRATOR/.md agents to plan-mode + state-sharing.

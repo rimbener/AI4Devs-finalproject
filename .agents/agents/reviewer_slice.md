@@ -18,6 +18,7 @@ A fast quality gate before a vertical slice closes. One agent, scoped strictly t
 - **`atomic-design.mdc`** — correct atom/molecule/organism placement; reuse existing tokens/components (no ad-hoc colors/spacing/typography); every component ships a co-located `<name>.stories.tsx` covering its states.
 - **`component-split.mdc`** — non-trivial UI split into `*.tsx` (JSX + handlers) / `*.types.ts` / `use-*.ts` (local state) / `*.helpers.ts` (pure); handlers stay in the component, helpers stay pure.
 - **`state.mdc`** — ≥ 3 related local-state values that change together → `useReducer` (pure reducer in a co-located `*.reducer.ts`), not multiple `useState`; React local state only, no Redux.
+- **`state-sharing.mdc`** — React Context when prop-drilling is deep (≥2–3 pass-through levels) or a large props bag is threaded only to reach a deep child; prefer props for one-hop / shallow cases.
 - **`types.mdc`** — multi-file types live in `*.types.ts`, exported only, no runtime logic; not exported from the implementation file.
 - **`i18n.mdc`** — user-facing text via `t('ns.key')` inline; no `labels`/`copy` object of pre-resolved `t()` calls (key dictionaries like `GENERATION_ERROR_KEYS` are the only allowed collection).
 - **`tdd.mdc`** — Three Laws / Red→Green→Refactor evidence; every `@s` the slice owns maps to ≥ 1 concrete test (check `tdd.md`); no production code no test demands (scope not inflated); no hardcoded strings/colors/dimensions.

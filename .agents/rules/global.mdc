@@ -35,7 +35,7 @@ This is a monorepo for react-native/node/next applications.
     - Storybook dev: port 6009.
   - @helsoft/logging-in-out: prop-driven login/logout organisms (LoginForm, SignInForm, SignOut). Same Storybook/Jest/Playwright/Stryker tooling as @helsoft/components; depends on @helsoft/components for atoms/molecules. No useAuth or router — parents inject callbacks/state via props. Storybook dev: port 6010.
   - @helsoft/hooks: this library should contain the shared hooks between the applications.
-    - Use rules from .agents/rules/hooks-service-dao.mdc and .agents/rules/state.mdc
+    - Use rules from .agents/rules/hooks-service-dao.mdc, .agents/rules/state.mdc, and .agents/rules/state-sharing.mdc
   - @helsoft/services: non-Supabase services + DAOs (`fetch` REST, AsyncStorage, other external/platform stores).
     - Use rules from .agents/rules/hooks-service-dao.mdc
     - Do **not** put Supabase client / DB / auth / storage DAOs here — those live in `@helsoft/supabase-services`.
@@ -60,7 +60,7 @@ This is a monorepo for react-native/node/next applications.
 - Never export styles from a component. If styles need to be shared, create a separate file for the styles.
 - Always 1 exported component/hook/class/service/dao per file.
 - If a file has more than 150-200 lines, it's a code smell and maybe should be split into smaller files. This is a subjective judgment, so you should use your best judgment.
-- Always use functional React. Don't use Redux. Related local state (≥3 fields that change together) → `useReducer` per `.agents/rules/state.mdc`.
+- Always use functional React. Don't use Redux. Related local state (≥3 fields that change together) → `useReducer` per `.agents/rules/state.mdc`. Deep / large prop-drilling → React Context per `.agents/rules/state-sharing.mdc`.
 - Always create a type for React components Props. Types rules: `.agents/rules/types.mdc` (multi-file → `*.types.ts`; only exported types there; no runtime logic).
 - **Comment the *why*, not the *what**.** Be brief and to the point. Never comment the obvious.
 

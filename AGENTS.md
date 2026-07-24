@@ -14,6 +14,7 @@ Canonical agent rules live in `.agents/rules/` and take precedence:
 - `component-split.mdc` — UI co-location split (tsx / types / hook / helpers) for non-trivial components
 - `state.mdc` — ≥3 related local states that change together → `useReducer`
 - `state-sharing.mdc` — React Context to avoid deep / large prop-drilling
+- `e2e.mdc` — Playwright e2e are interaction-only (no render-only presence tests)
 
 Brand/design system (colors, type, voice, MD3 foundations, token↔repo mapping): `.agents/DESIGN.md`.
 
@@ -60,7 +61,7 @@ Turborepo monorepo with three top-level areas:
 - **`libs/*`** — all shared/business code, published as `@helsoft/*` workspace packages: `js-utils` (pure, platform-agnostic TypeScript utilities; see its `AGENTS.md`), `rn-utils` (React Native-specific TypeScript utilities; no components/hooks; see its `AGENTS.md`), `types` (plain TS types, one `type-name.ts` file each), `components` (shared UI + Storybook stories, atomic design), `activities` (activity-slide organisms — multiple choice, fill-in-the-blank, flashcard, matching, open-ended, etc.; Storybook + Jest + Playwright + Stryker like `components`, depends on `components` for shared atoms/molecules/theme), `logging-in-out` (prop-driven login/logout organisms — LoginForm, SignInForm, SignOut; Storybook on 6010; no useAuth/router), `hooks`, `services` (non-Supabase services + DAOs: REST/`fetch`, AsyncStorage, etc.), `supabase-services` (Supabase services + DAOs + client), `study-buddy` (the app's feature lib — business logic for the app lives here, not in the app), `lib-with-storybook` (template for new Storybook-enabled libs; copy its story patterns).
 - **`supabase/`** — backend is Supabase (auth, Postgres, storage, edge functions). CLI config and migrations only.
 
-### Data-flow layering (enforced — see `hooks-service-dao.mdc`; local related state → `state.mdc`)
+### Data-flow layering (enforced — see `hooks-service-dao.mdc`; local related state → `state.mdc`; shared across a subtree → `state-sharing.mdc`)
 
 ```
 Component → Hook → Service → DAO → Supabase / external API
@@ -72,7 +73,7 @@ Two service libs — pick by data source:
 - **`@helsoft/supabase-services`** — Supabase DAOs/services + `initSupabase`/`getSupabase`. Paths: `libs/supabase-services/src/dao|services/{feature}.{dao|service}.ts`.
 - **DAOs** (`{Feature}Dao` abstract class, static methods): raw data access only. One DAO class per data source.
 - **Services** (`{Feature}Service` abstract class): validation + business logic; call DAOs, never fetch directly; no React.
-- **Hooks** (`libs/hooks/src/hooks/use-{feature}.ts`): React integration wrapping services (never DAOs directly). tanstack-query is the intended pattern for data-fetching hooks but is not installed yet — add it to `@helsoft/hooks` when first needed. Related local state ≥3 fields → `useReducer` (`state.mdc`).
+- **Hooks** (`libs/hooks/src/hooks/use-{feature}.ts`): React integration wrapping services (never DAOs directly). tanstack-query is the intended pattern for data-fetching hooks but is not installed yet — add it to `@helsoft/hooks` when first needed. Related local state ≥3 fields → `useReducer` (`state.mdc`). Deep / large prop-drilling → React Context (`state-sharing.mdc`).
 - Each layer exports through its `index.ts` barrel files.
 
 ### Supabase client wiring
@@ -94,6 +95,6 @@ Feature work runs through a gated agentic orchestrator. To build a feature from 
 /ticket-orchestrator <story>        # story = a file in user-stories/pending/<story>.md (moved → in-progress → done as it runs)
 ```
 
-The pipeline: `spec_partner` (spec **and** Gherkin contract) → `spec_reviewer` (vets the bundle) → **one human gate** → `implementer` (strict TDD, vertical slices; per-slice `reviewer_slice` review) → `mutation_tester` (StrykerJS, pre-review) → `reviews_lead` (full review: CI once + the applicable reviewers in parallel — code, design, architecture, security/OWASP, accessibility/WCAG, performance) → `mutation_tester` (post-review, only if the review changed source) → `dod_validator` (Definition of Done). All state lives in `docs/features/<name>/`; session state in `progress/`.
+The pipeline: `spec_partner` (**plan mode**: grill read-only → present plan) → **one human gate** (approve the plan) → `spec_partner` authors the bundle → `spec_reviewer` (1 round) → `implementer` (strict TDD, vertical slices; per-slice `reviewer_slice` 1 round: all `.agents/rules/` + design + a11y) → `reviews_lead` (full review: CI once + sole `reviewer_engineering` — code · architecture · performance · security) → `mutation_tester` (StrykerJS once after full review) → `dod_validator` (Definition of Done). All state lives in `docs/features/<name>/`; session state in `progress/`.
 
 **Source of truth: `.agents/ORCHESTRATOR.md`.** Roles in `.agents/agents/` (each reviewer carries its own rubric), TDD + code rules in `.agents/rules/`, skills in `.agents/skills/`, templates in `.agents/templates/`. Full design + rationale: `/ORCHESTRATOR_PLAN.md`.
