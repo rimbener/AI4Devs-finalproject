@@ -13,6 +13,9 @@ Canonical agent rules live in `.agents/rules/` and take precedence:
 - `atomic-design.mdc` — component structure methodology
 - `component-split.mdc` — UI co-location split (tsx / types / hook / helpers) for non-trivial components
 - `state.mdc` — ≥3 related local states that change together → `useReducer`
+- `state-sharing.mdc` — React Context to avoid deep / large prop-drilling
+
+Brand/design system (colors, type, voice, MD3 foundations, token↔repo mapping): `.agents/DESIGN.md`.
 
 ## Commands
 

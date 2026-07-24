@@ -5,14 +5,22 @@ description: Write Playwright end-to-end tests for Storybook-rendered UI compone
 
 # Storybook + Playwright E2E Tests
 
-Playwright drives a real browser against a running Storybook instance and asserts on rendered
-stories. It's for **Storybook-backed UI components** only.
+Playwright drives a real browser against a running Storybook instance and exercises **real user
+interaction** on a rendered story. It's for **Storybook-backed UI components** only.
+
+> **Interaction-only — `.agents/rules/e2e.mdc`.** An e2e must perform an interaction (press, type,
+> drag, select, open/close, submit, navigate) and assert the **resulting behavior/state change**.
+> **Never** write an e2e that only renders a story and asserts elements are present/visible — Jest
+> unit tests (`<name>.test.tsx`) already own rendering, props, the 4 UI states, and static presence.
+> A component with no meaningful interaction gets **no** e2e file.
 
 ## When not to use this
 
 Hooks, services, DAOs, and any non-visual logic get Jest unit tests
 (`*.service.test.ts`, `*.dao.test.ts`, `use-*.test.ts`), not Playwright. If the thing you're
-testing has no `.stories.tsx`, this skill doesn't apply — stop and use Jest instead.
+testing has no `.stories.tsx`, this skill doesn't apply — stop and use Jest instead. Likewise, if
+the component has no interaction to drive, don't create an e2e just to assert it renders — that's a
+unit-test job (see `.agents/rules/e2e.mdc`).
 
 ## The one tricky part: deriving the story URL
 
@@ -55,14 +63,17 @@ Plain CommonJS `.js` — no TS, no ESM import:
 ```js
 const { test, expect } = require('@playwright/test');
 
-test('Card component renders', async ({ page }) => {
-  await page.goto('/?path=/story/atoms-card--elevated');
+// Interaction-only (.agents/rules/e2e.mdc): drive a real interaction, assert the OUTCOME.
+test('selecting an answer enables Continue', async ({ page }) => {
+  await page.goto('/?path=/story/organisms-multiple-choice--default');
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
-  const storyContainer = canvas.locator('div').filter({ has: canvas.locator('text=Photosynthesis basics') }).first();
-  await expect(storyContainer).toBeVisible();
+  await canvas.locator('text=Mitochondria').click();           // interaction
+  await expect(canvas.locator('text=Continue')).toBeEnabled();  // resulting state change
 });
 ```
+
+Do **not** write a bare "renders / story loads / text is visible" e2e — that's static presence, already covered by the Jest `<name>.test.tsx`. Every e2e must click/type/drag/etc. and assert what changed.
 
 Rules that matter:
 
@@ -74,12 +85,11 @@ Rules that matter:
   `react-native-web`. A `Pressable` becomes a `div`, not a `<button>`; there's no native `role`
   to rely on. Use `canvas.locator('text=...')` against visible copy in the story, not
   `getByRole`.
-- **One test per meaningful assertion**, not one giant test per component. Match the existing
-  style — separate `test()` blocks for "story loads", "content renders", each story variant
-  (Primary/Secondary/etc).
-- Add a `test()` per additional story variant the component exports, plus content assertions for
-  the ones that matter. See `libs/lib-with-storybook/tests/e2e/stories/button/button.e2e.js` for
-  the pattern of one test per variant + one content test.
+- **One test per interaction flow**, not one giant test per component — each `test()` drives an
+  action (or short sequence) and asserts the outcome. Do **not** add "story loads" / "content
+  renders" / per-variant presence tests — those are unit-test territory (`.agents/rules/e2e.mdc`).
+- If a story variant only differs visually (no distinct interaction), it doesn't need its own e2e;
+  cover the variants that actually behave differently.
 
 ## Adding tests to an existing `.e2e.js`
 

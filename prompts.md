@@ -473,3 +473,17 @@ These prompts drove refinement, reconciliation and review across the documents r
 2. move the pre-slice checklist into a file in .agents/rules
 
 3. write these prompts into history.md
+
+---
+
+## Anexo — Prompts de la sesión: spec_partner en plan mode, 1 ronda de review, y regla e2e interaction-only
+
+> Prompts del usuario (verbatim, en orden) de la sesión que puso a `spec_partner` en **plan mode** (grilla read-only → presenta un plan → el gate humano aprueba el plan por adelantado → recién ahí escribe la bundle; `spec_reviewer` pasa a post-approval), redujo el spec_review y el slice_review a **1 sola ronda** (sin re-review; lo no resoluble escala), y añadió la regla `.agents/rules/e2e.mdc` (e2e solo con interacción real — nunca tests que solo renderizan una story y verifican presencia).
+
+1. I want the spec_partner to run in plan mode
+
+2. I want to change the flow so there is only 1 round of spec_review and only 1 round of slice_review
+
+3. I want to add a rule .agents/rules/e2e.mdc to specify that only e2e tests with real interaction are created, so never create e2e tests that only render a storybook story and asserts that the elements are there, unit tests are already covering that, so only e2e tests with interactions
+
+4. write the prompts into prompts.md

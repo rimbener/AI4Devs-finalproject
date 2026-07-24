@@ -114,3 +114,5 @@
 2026-07-23 | user-stories (ad hoc) | n/a | — | Retired locale-save-failure-notice; added multi-provider-ai-keys pending story (1915e1cdb).
 
 2026-07-23 | native-bottom-tabs | done | docs/features/native-bottom-tabs/ | Merged into feature-entrega3-HernanLaura; worktree removed.
+
+2026-07-24 | agents-rules (ad hoc, no story) | n/a | — | Plan-mode gate, 1-round reviews, e2e/state-sharing rules, DESIGN.md.

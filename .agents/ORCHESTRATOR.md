@@ -2,7 +2,7 @@
 
 > **Rule of precedence:** if this file conflicts with any agent/command/rule file, **this file wins** — except the canonical project rules in `.agents/rules/global.mdc`, `hooks-service-dao.mdc`, `state.mdc`, `atomic-design.mdc`, `component-split.mdc`, which always take precedence on _how code is written_. The step-by-step protocol lives in `.agents/agents/orchestrator_lead.md` and is **not** duplicated here.
 
-Takes one user story from `user-stories/` to a validated, PR-ready feature through four phases, driven by `orchestrator_lead` with **one human gate up front** — a single combined approval of the spec + Gherkin contract. Full rationale: `/ORCHESTRATOR_PLAN.md`.
+Takes one user story from `user-stories/` to a validated, PR-ready feature through four phases, driven by `orchestrator_lead` with **one human gate up front** — the human approves `spec_partner`'s **plan** (it runs in plan mode: grills read-only, presents the plan, writes nothing until approved). Full rationale: `/ORCHESTRATOR_PLAN.md`.
 
 ## Principles
 
@@ -19,13 +19,16 @@ Takes one user story from `user-stories/` to a validated, PR-ready feature throu
 
 ```
 pending
-  → spec_partner        → spec.md, tasks.md, task-N.md, gherkin-scenarios.md
+  → spec_partner (PLAN MODE)  → grills read-only → presents a PLAN (spec overview +
+        task/slice breakdown + @s scenario outline); writes NOTHING yet
+  → ⏸ HUMAN GATE: approve the plan (single approval, up front)                          [approved]
+  → spec_partner (author)     → spec.md, tasks.md, task-N.md, gherkin-scenarios.md
         (+ risks.md → gitignored tmp/<name>/, landed in docs/ at PR time)              [spec_drafted]
-  → spec_reviewer       → review-spec.md  (loop with spec_partner, ≤ 2 rounds)          [spec_ready]
-  → ⏸ HUMAN GATE: approve the spec + Gherkin contract (single approval)                 [approved]
+  → spec_reviewer             → review-spec.md; vets the WRITTEN bundle
+        (1 round: reviews once, spec_partner fixes every finding, no re-review)         [spec_ready]
   → implementer       → per vertical slice: build (TDD) → reviewer_slice (ONE agent,
-        checks all .agents/rules/ + design + accessibility) → fix → commit;
-        no slice N+1 until clean                                                        [in_progress]
+        checks all .agents/rules/ + design + accessibility; 1 round, no re-review)
+        → fix every finding → commit; no slice N+1 until findings fixed                 [in_progress]
   ── quality gate (after all slices) ──
   → reviews_lead (full)            → CI once + reviewer_engineering (code · architecture ·
         performance · security), the sole full reviewer → review.md; fix every finding
@@ -43,8 +46,8 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 | Agent | Phase | Writes | Edits code? |
 |---|---|---|---|
 | `orchestrator_lead` | orchestrates all | `progress/*`, phase in `tasks.md` | no |
-| `spec_partner` | 1 — spec + contract (grilling debate via `grill-me`) | spec bundle + `gherkin-scenarios.md` | no |
-| `spec_reviewer` | 1 — spec review (pre-gate) | `review-spec.md` | no |
+| `spec_partner` | 1 — plan mode: grill (`grill-me`) → plan → (after approval) author spec + `gherkin-scenarios.md` | spec bundle + `gherkin-scenarios.md` | no |
+| `spec_reviewer` | 1 — spec review (post-approval, on the written bundle) | `review-spec.md` | no |
 | `implementer` | 2 — build (TDD) | `src/`, `tests/`, `tdd.md`, task statuses | **yes** |
 | `reviewer_slice` | 2 — per slice (all `.agents/rules/` + design + accessibility, one agent) | `review-slice.md` | no |
 | `reviews_lead` | 3 — full review round (CI once, invokes the sole reviewer) | `review.md` | no |
@@ -62,9 +65,9 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 
 ## Gates (all must pass to advance — full detail in `orchestrator_lead.md` §Protocol)
 
-1. **spec_drafted → spec_ready** — `spec_reviewer` clean (≤ 2 rounds).
-2. **HUMAN GATE** — spec + contract approved together.
-3. **per-slice** — lint + check-types + tests (+ e2e where relevant) green; slice `@s` covered; `tdd.md` ≤ 8 000 bytes; `reviewer_slice` clean (≤ 2 rounds, no minors accepted).
+1. **HUMAN GATE (up front)** — the human approves `spec_partner`'s **plan** (spec overview + task/slice breakdown + `@s` scenario outline). `spec_partner` writes nothing until this passes → `approved`.
+2. **spec_drafted → spec_ready** — after authoring, `spec_reviewer` reviews the written bundle **once (1 round)**; `spec_partner` fixes every finding; no re-review; an unresolvable finding → escalate.
+3. **per-slice** — lint + check-types + tests (+ e2e where relevant) green; slice `@s` covered; `tdd.md` ≤ 8 000 bytes; `reviewer_slice` reviews **once (1 round)**, every finding fixed (no minors accepted), no re-review; unresolvable → escalate.
 4. **full review** — every finding fixed, any severity (≤ 2 rounds); after round 2: open blocker/major → escalate; only minors → ship as documented, human-accepted risks.
 5. **mutation** — once after the full review; 100% killed on the changed lines vs the delivery branch (≤ 2 rounds, else **escalate** — never a fabricated PASS).
 6. **pr_ready** — `dod_validator` all-pass; human opens/merges the PR → `done`.
@@ -107,7 +110,7 @@ See `/ORCHESTRATOR_PLAN.md` §7. Validated by `dod_validator`: Functionality · 
 
 ## Rules index (passive standards)
 
-- `.agents/rules/global.mdc` — monorepo spec · `hooks-service-dao.mdc` — layering · `state.mdc` — ≥3 related local states → `useReducer` · `atomic-design.mdc` — component structure (every component ships a `.stories.tsx`) · `component-split.mdc` — UI file split · `types.mdc` — `*.types.ts` placement · `i18n.mdc` — `t('ns.key')` inline, no `labels` object (key dictionaries excepted) · `tdd.mdc` — Three Laws, Red→Green→Refactor · `pre-slice-checklist.mdc` — recurring pre-slice self-check (barrels, helpers, a11y, atom ban, Modal, e2e, layout, i18n, test cmd)
+- `.agents/rules/global.mdc` — monorepo spec · `hooks-service-dao.mdc` — layering · `state.mdc` — ≥3 related local states → `useReducer` · `atomic-design.mdc` — component structure (every component ships a `.stories.tsx`) · `component-split.mdc` — UI file split · `types.mdc` — `*.types.ts` placement · `i18n.mdc` — `t('ns.key')` inline, no `labels` object (key dictionaries excepted) · `tdd.mdc` — Three Laws, Red→Green→Refactor · `pre-slice-checklist.mdc` — recurring pre-slice self-check (barrels, helpers, a11y, atom ban, Modal, e2e, layout, i18n, test cmd) · `e2e.mdc` — Playwright e2e are interaction-only (no render-only presence tests)
 - Reviewer rubrics: **in each `.agents/agents/reviewer_*.md` + `spec_reviewer.md`** (no separate rules file)
 
 ## Skills index (invocable procedures)
