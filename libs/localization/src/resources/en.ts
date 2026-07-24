@@ -27,10 +27,10 @@ export const en = {
       signUp: 'Sign up',
     },
     home: {
-      savedLessons: 'Saved lessons',
+      savedLessons: 'My lessons',
       openDemo: 'Open demo lesson',
-      loading: 'Loading saved lessons…',
-      empty: 'No saved lessons yet. Create one to get started.',
+      loading: 'Loading my lessons…',
+      empty: 'No lessons yet. Create one to get started.',
       error: "We couldn't load your lessons.",
       retry: 'Try again',
       openLesson: 'Open {{title}}',
