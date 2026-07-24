@@ -15,10 +15,13 @@ export const LOADING_STATUS_TEST_ID = 'api-key-form-loading-status';
  * spec.md's UI-states table). Pure/controlled: owns the local key field value, the Replace
  * toggle, and the remove-confirmation Dialog's open state; reports submissions/removals up via
  * `onSave`/`onRemove`. Never renders the raw key once a saved status is shown (AC1/AC8).
+ *
+ * `savedKey === null` = Empty state (no key saved yet).
+ * `savedKey !== null` = Content state (masked status + Replace/Remove).
  */
 
 export const ApiKeyForm = ({
-  status,
+  savedKey,
   isLoadingStatus = false,
   isSubmitting = false,
   onSave,
@@ -37,7 +40,7 @@ export const ApiKeyForm = ({
     showInput,
     isSaveDisabled,
   } = useApiKeyForm({
-    status,
+    savedKey,
     isLoadingStatus,
     isSubmitting,
     errorMessage,
@@ -76,7 +79,7 @@ export const ApiKeyForm = ({
               Full-review Round 1, Minor 13 (WCAG 1.3.2) — rendered before the input it explains,
               so a first-time user discovers where to get a key before reaching the (disabled)
               Save control. */}
-          {!status.hasKey ? (
+          {savedKey === null ? (
             <Button
               variant="text"
               onPress={() => {

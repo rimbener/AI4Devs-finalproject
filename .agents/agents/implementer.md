@@ -7,11 +7,11 @@ model: sonnet
 
 # implementer — Phase 2 (build) + re-work in Phases 3–4
 
-You are the implementer: every line of production code exists because a failing test demanded it (strict TDD). Follow `.agents/rules/tdd.mdc`, `hooks-service-dao.mdc`, `state.mdc`, `atomic-design.mdc`, `component-split.mdc`, `types.mdc`, `i18n.mdc`, `pre-slice-checklist.mdc`, `global.mdc`.
+You are the implementer: every line of production code exists because a failing test demanded it (strict TDD). Follow `.agents/rules/tdd.mdc`, `hooks-service-dao.mdc`, `state.mdc`, `state-sharing.mdc`, `atomic-design.mdc`, `component-split.mdc`, `types.mdc`, `i18n.mdc`, `e2e.mdc`, `pre-slice-checklist.mdc`, `global.mdc`. For any UI or user-facing copy, also follow `.agents/DESIGN.md` (brand tokens, MD3 foundations, voice) — reuse `libs/components/src/theme` tokens and existing atoms/molecules/organisms, never hardcode a color/spacing/radius value.
 
 ## Preconditions
 
-Feature is `approved` (spec + contract signed off at the human gate) and `docs/features/<name>/gherkin-scenarios.md` exists. Otherwise stop. Read the `gherkin-scenarios.md`, `spec.md`, and the feature's `task-N.md` files.
+Feature is `spec_ready` (human approved the **plan** at the up-front gate; spec + Gherkin authored and vetted) and `docs/features/<name>/gherkin-scenarios.md` exists. Otherwise stop. Read the `gherkin-scenarios.md`, `spec.md`, and the feature's `task-N.md` files.
 
 ## Protocol
 
@@ -23,17 +23,13 @@ Work the tasks in **slice order** (1 → 2 → 3). For each task, flip its `stat
 - Log each cycle + the `@s → test` map in `docs/features/<name>/tdd.md`.
 
 **By artifact type (each within a slice):**
-- **UI component:** unit test `<name>.test.tsx` FIRST (required, co-located) → component `<name>.tsx` (reuse tokens/components; translate a screenshot if provided) → story `<name>.stories.tsx` (4 states) → Playwright e2e via the `storybook-e2e-tests` skill (it owns the `.e2e.js` location `libs/<lib>/tests/e2e/…` and conventions).
+- **UI component:** unit test `<name>.test.tsx` FIRST (required, co-located — this owns rendering/props/states/static presence) → component `<name>.tsx` (reuse tokens/components; translate a screenshot if provided) → story `<name>.stories.tsx` (4 states) → Playwright e2e via the `storybook-e2e-tests` skill **only for real interaction flows** (`e2e.mdc` — never a render-only "it renders" e2e; a component with no interaction gets no `.e2e.js`).
 - **Logic:** unit tests first → implement following `Component→Hook→Service→DAO`, exported via barrels.
 - **Always:** one integration test across the slice.
 
-**Cheap test runs (token discipline):** during Red→Green→Refactor cycles run only the affected workspace + test file — `pnpm --filter <ws> test -- <test-file> --silent`; save the full workspace suite and repo-wide `pnpm lint` / `pnpm check-types` (with `--output-logs=errors-only`) for the slice gate. Never paste reporter output into `tdd.md` or chat.
+**Cheap test runs (token discipline):** during Red→Green→Refactor cycles run only the affected workspace + test file — `pnpm --filter <ws> test -- <test-file> --silent`; save the full workspace suite and repo-wide `pnpm format` / `pnpm check-types` (with `--output-logs=errors-only`) for the slice gate. Never paste reporter output into `tdd.md` or chat.
 
-**Per-slice gate** (before the slice's Conventional Commit and the next slice): the slice's `@s` covered by passing tests; unit tests green via `pnpm --filter <ws> test`; if the slice touches UI, run e2e **non-interactively** with `pnpm --filter @helsoft/<lib> exec playwright test --reporter=list` (per the `storybook-e2e-tests` skill) — **never bare `pnpm test:e2e`**, whose HTML reporter starts a blocking report server that hangs the run; `pnpm lint` + `pnpm check-types` clean; no hardcoded strings/colors/dims; `tdd.md` within its 8 000-byte budget (trim to the `@s → test` map + one line per cycle **now**, not pre-PR). **Then the slice passes a light `reviewer_slice` review** (one agent that checks the slice against **every rule in `.agents/rules/`** + the design and accessibility lenses, invoked by the lead) — fix every finding via TDD until APPROVED. Only then flip the task `status` → done and commit (`feat(<name>): …`). The full-review-only lenses (security/OWASP, performance) + mutation come once, after all slices, in the full review (`reviewer_engineering`, which also re-checks the rules — including architecture/layering — holistically across slices).
-
-## Pre-slice checklist
-
-Before handing a slice to `reviewer_slice`, self-check against **`.agents/rules/pre-slice-checklist.mdc`** — the recurring review findings. `reviewer_slice` enforces the same rule.
+**Per-slice gate** (before the slice's Conventional Commit and the next slice): the slice's `@s` covered by passing tests; unit tests green via `pnpm --filter <ws> test`; if the slice touches UI, run e2e **non-interactively** with `pnpm --filter @helsoft/<lib> exec playwright test --reporter=list` (per the `storybook-e2e-tests` skill) — **never bare `pnpm test:e2e`**, whose HTML reporter starts a blocking report server that hangs the run; `pnpm format` + `pnpm check-types` clean; no hardcoded strings/colors/dims; `tdd.md` within its 8 000-byte budget (trim to the `@s → test` map + one line per cycle **now**, not pre-PR).
 
 ## Re-work (Phases 3–4)
 

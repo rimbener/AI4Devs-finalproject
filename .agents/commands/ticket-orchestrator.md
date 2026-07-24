@@ -1,5 +1,5 @@
 ---
-description: Run the agentic orchestrator on a user story — spec → Gherkin → TDD → parallel review → mutation → DoD (PR-ready)
+description: Run the agentic orchestrator on a user story — plan gate → spec + Gherkin → TDD (per-slice review) → full review → mutation → DoD (PR-ready)
 argument-hint: "<story> — the name of a file in user-stories/pending/ (with or without .md), e.g. lesson-list"
 ---
 
@@ -15,8 +15,8 @@ Act as **`orchestrator_lead`** and drive the full pipeline for ONE feature. Stor
 
 ## Run the phases (guard every gate; state on disk)
 
-1. `spec_partner` → `spec.md` + `tasks.md` + `task-N.md` + `gherkin-scenarios.md` (contract via the `gherkin-authoring` skill; `risks.md` → gitignored `tmp/<name>/`, out of the bundle) → then `spec_reviewer` vets the whole bundle (`review-spec.md`); findings loop back to `spec_partner` (≤ 2 rounds) → **⏸ HUMAN GATE** (single, combined: approve spec **and** contract).
-2. `implementer` → strict TDD, one vertical slice at a time; **after each slice, invoke `reviewer_slice` directly (ONE agent: checks the slice against all `.agents/rules/` + design)** → fix findings → next slice.
+1. `spec_partner` runs in **plan mode**: grills the human **read-only** and returns a **plan** (spec overview + task/slice breakdown + `@s` scenario outline) — **no files yet** → **⏸ HUMAN GATE** (single, up front: approve the plan) → on approval, re-invoke `spec_partner` to **author** `spec.md` + `tasks.md` + `task-N.md` + `gherkin-scenarios.md` (`risks.md` → gitignored `tmp/<name>/`) → `spec_reviewer` vets the **written** bundle (`review-spec.md`) **once (1 round)**; `spec_partner` fixes every finding (no re-review; unresolvable → escalate) → `spec_ready`.
+2. `implementer` → strict TDD, one vertical slice at a time; **after each slice, invoke `reviewer_slice` directly (ONE agent: checks the slice against all `.agents/rules/` + design + accessibility)** — **1 round**: reviews once, `implementer` fixes every finding, no re-review (unresolvable → escalate) → next slice.
 3. After all slices — **quality gate: full review → mutation**:
    a. `reviews_lead` in **`full` mode** → runs CI **once**, then invokes the **sole full reviewer `reviewer_engineering`** (code · architecture · performance · security) → consolidated `review.md` → `implementer` fixes every finding (≤ 2 rounds; any severity incl. minor). Design & accessibility were already covered per slice by `reviewer_slice`.
    b. `mutation_tester` → StrykerJS **once** (via `run-mutation.sh`), on the feature's changed files vs the **delivery branch** (covers the review's fixes too) → `implementer` kills every survivor (≤ 2 rounds; unresolved → **ESCALATE**, never a fabricated PASS).

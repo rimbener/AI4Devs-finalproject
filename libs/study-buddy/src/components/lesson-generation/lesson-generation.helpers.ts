@@ -1,6 +1,42 @@
 import type { LessonGenerationPanelState } from '@helsoft/components';
 import type { LessonGenerationStage } from '@helsoft/hooks';
-import type { GenerationErrorCode, LessonComposition } from '@helsoft/types';
+import type { AiProvider, GenerationErrorCode, LessonComposition } from '@helsoft/types';
+import { AI_MODEL_REGISTRY, AI_PROVIDERS } from '@helsoft/types';
+
+/** Narrow runtime guard for provider RadioGroup values. */
+export const isAiProvider = (value: string): value is AiProvider =>
+  (AI_PROVIDERS as readonly string[]).includes(value);
+
+/** Whether `model` is still listed for `provider` in the curated registry. */
+export const isCuratedModel = (provider: AiProvider, model: string): boolean =>
+  AI_MODEL_REGISTRY[provider].models.some((entry) => entry.id === model);
+
+type GenerationSelection = {
+  provider: AiProvider;
+  model: string;
+};
+
+/**
+ * Resolve picker defaults from saved keys + optional stored preference (@s20/@s21).
+ * Valid stored preference wins; otherwise first saved provider (fixed order) + first curated model.
+ */
+export const resolveGenerationSelection = (
+  savedProviders: readonly AiProvider[],
+  stored: GenerationSelection | null,
+): GenerationSelection => {
+  const fallbackProvider = savedProviders[0];
+  const fallbackModel = AI_MODEL_REGISTRY[fallbackProvider].models[0]?.id ?? '';
+
+  if (
+    stored &&
+    savedProviders.includes(stored.provider) &&
+    isCuratedModel(stored.provider, stored.model)
+  ) {
+    return stored;
+  }
+
+  return { provider: fallbackProvider, model: fallbackModel };
+};
 
 /** Narrow runtime guard: `LessonGenerationPanel.onCompositionChange` hands back a plain string
  * (RadioGroup's own contract) — only forward it to `setComposition` when it is actually a member
@@ -22,12 +58,13 @@ export const toPanelState = (stage: LessonGenerationStage): LessonGenerationPane
 export const GENERATION_ERROR_KEYS: Record<GenerationErrorCode, string> = {
   missing_key: 'generation.error.missingKey',
   invalid_key: 'generation.error.invalidKey',
+  invalid_model: 'generation.error.invalidModel',
   platform_key_unavailable: 'generation.error.platformKeyUnavailable',
   rate_limited: 'generation.error.rateLimited',
   timeout: 'generation.error.timeout',
   generation_failed: 'generation.error.generationFailed',
   document_not_ready: 'generation.error.documentNotReady',
-  network_error: 'generation.error.network',
+  network_error: 'error.network',
   unauthenticated: 'generation.error.unauthenticated',
   persist_failed: 'generation.error.persistFailed',
 };
@@ -40,6 +77,7 @@ export type GenerationErrorRecovery = 'retry' | 'settings' | 'signIn' | 'none';
 export const GENERATION_ERROR_RECOVERY: Record<GenerationErrorCode, GenerationErrorRecovery> = {
   missing_key: 'settings',
   invalid_key: 'settings',
+  invalid_model: 'none',
   platform_key_unavailable: 'retry',
   rate_limited: 'retry',
   timeout: 'retry',

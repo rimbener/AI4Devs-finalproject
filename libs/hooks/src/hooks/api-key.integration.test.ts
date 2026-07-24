@@ -5,19 +5,9 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useApiKey } from './use-api-key';
 
 /**
- * Integration (ai-key-management, Slice 1 task-8 + Slice 2 task-10): useApiKey ->
- * ApiKeyService -> ApiKeyDao, exercised for real, against a mocked Supabase client boundary
- * (only `auth.getSession`, `from(...).select(...)`, and `functions.invoke` are stubbed —
- * nothing above the DAO is mocked). Mirrors the login-and-logout `auth.integration.test.ts`
- * pattern: one real `SupabaseClient` built once for the whole file (matching `initSupabase()`
- * being called once at app startup) so supabase-js never logs its "Multiple GoTrueClient
- * instances" warning.
- *
- * `functions` is a getter on `SupabaseClient` that constructs a fresh `FunctionsClient` on
- * every access (supabase-js source), so spying on one `client.functions` instance's own
- * `invoke` would not affect the DAO's own later `getSupabase().functions.invoke(...)` access.
- * Spying on the shared prototype (`Object.getPrototypeOf(client.functions)`) instead reaches
- * every instance, since `invoke` is a regular class method, not a per-instance field.
+ * Integration (ai-key-management): useApiKey -> ApiKeyService -> ApiKeyDao, exercised for
+ * real, against a mocked Supabase client boundary (only `auth.getSession`,
+ * `from(...).select(...)`, and `functions.invoke` are stubbed).
  */
 let client: SupabaseClient;
 
@@ -25,6 +15,9 @@ const authenticatedSession = { access_token: 'tok-1' } as Session;
 
 const mockInvoke = (impl: (...args: unknown[]) => unknown) =>
   jest.spyOn(Object.getPrototypeOf(client.functions), 'invoke').mockImplementation(impl as never);
+
+const groqRow = { provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' };
+const groqKeyStatus = { keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }] };
 
 describe('ai-key-management integration (hook -> service -> DAO)', () => {
   beforeAll(() => {
@@ -46,10 +39,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
   // @s3 — on mount, the status loads through the real hook -> service -> DAO chain and
   // reflects a previously-saved key from the mocked metadata select.
   it('loads the status on mount, reflecting a previously-saved key', async () => {
-    const select = jest.fn().mockResolvedValue({
-      data: [{ provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' }],
-      error: null,
-    });
+    const select = jest.fn().mockResolvedValue({ data: [groqRow], error: null });
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
     const { result } = renderHook(() => useApiKey());
@@ -57,123 +47,127 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(select).toHaveBeenCalledWith('provider, updated_at');
-    expect(result.current.status).toEqual({
-      hasKey: true,
-      provider: 'groq',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    });
+    expect(result.current.status).toEqual(groqKeyStatus);
+    expect(result.current.hasKey).toBe(true);
   });
 
-  // @s1 — saving a key end-to-end (hook -> service -> DAO -> mocked manage-api-key invoke)
-  // reflects the masked "key saved" status the Edge Function replies with.
+  // @s1 — saving a key end-to-end reflects the new multi-key status.
   it('saves a key end-to-end and reflects the masked status the Edge Function returns', async () => {
     jest.spyOn(client, 'from').mockReturnValue({
       select: jest.fn().mockResolvedValue({ data: [], error: null }),
     } as never);
-    const invoke = mockInvoke(() =>
-      Promise.resolve({
-        data: { hasKey: true, provider: 'groq', updatedAt: '2026-02-01T00:00:00.000Z' },
-        error: null,
-      }),
-    );
+    const invoke = mockInvoke(() => Promise.resolve({ data: groqKeyStatus, error: null }));
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status).toEqual({ hasKey: false });
+    expect(result.current.status).toEqual({ keys: [] });
 
     await act(async () => {
-      await result.current.saveApiKey('sk-test-key');
+      await result.current.saveApiKey('groq', 'sk-test-key');
     });
 
     expect(invoke).toHaveBeenCalledWith('manage-api-key', {
       body: { action: 'save', provider: 'groq', apiKey: 'sk-test-key' },
     });
-    expect(result.current.status).toEqual({
-      hasKey: true,
-      provider: 'groq',
-      updatedAt: '2026-02-01T00:00:00.000Z',
-    });
+    expect(result.current.status).toEqual(groqKeyStatus);
   });
 
-  // @s4 — replacing an already-saved key runs the exact same end-to-end path and reflects
-  // the new masked status.
-  it('replaces an already-saved key end-to-end and reflects the updated masked status', async () => {
+  // @s4 — replacing one provider leaves the other provider's key unchanged.
+  it('leaves the other provider key unchanged when replacing one provider', async () => {
+    const openaiRow = { provider: 'openai', updated_at: '2026-02-01T00:00:00.000Z' };
     jest.spyOn(client, 'from').mockReturnValue({
-      select: jest.fn().mockResolvedValue({
-        data: [{ provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' }],
-        error: null,
-      }),
+      select: jest.fn().mockResolvedValue({ data: [groqRow, openaiRow], error: null }),
     } as never);
-    const invoke = mockInvoke(() =>
+    mockInvoke(() =>
       Promise.resolve({
-        data: { hasKey: true, provider: 'groq', updatedAt: '2026-03-01T00:00:00.000Z' },
+        data: {
+          keys: [
+            { provider: 'groq', updatedAt: '2026-03-01T00:00:00.000Z' },
+            { provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
+          ],
+        },
         error: null,
       }),
     );
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status.updatedAt).toBe('2026-01-01T00:00:00.000Z');
+    expect(result.current.status.keys).toHaveLength(2);
 
     await act(async () => {
-      await result.current.saveApiKey('sk-replacement-key');
+      await result.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
-    expect(invoke).toHaveBeenCalledWith('manage-api-key', {
-      body: { action: 'save', provider: 'groq', apiKey: 'sk-replacement-key' },
+    expect(result.current.status.keys).toHaveLength(2);
+    expect(result.current.status.keys.find((k) => k.provider === 'openai')).toEqual({
+      provider: 'openai',
+      updatedAt: '2026-02-01T00:00:00.000Z',
     });
-    expect(result.current.status.updatedAt).toBe('2026-03-01T00:00:00.000Z');
+    expect(result.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
+      '2026-03-01T00:00:00.000Z',
+    );
   });
 
-  // @s8 (Slice 2, task-10) — removing a saved key end-to-end (hook -> service -> DAO ->
-  // mocked manage-api-key invoke) reflects the no-key status the Edge Function replies with.
-  it('removes a saved key end-to-end and reflects the no-key status', async () => {
+  // @s4 — replacing an already-saved key reflects the updated status.
+  it('replaces an already-saved key end-to-end and reflects the updated masked status', async () => {
     jest.spyOn(client, 'from').mockReturnValue({
-      select: jest.fn().mockResolvedValue({
-        data: [{ provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' }],
+      select: jest.fn().mockResolvedValue({ data: [groqRow], error: null }),
+    } as never);
+    mockInvoke(() =>
+      Promise.resolve({
+        data: { keys: [{ provider: 'groq', updatedAt: '2026-03-01T00:00:00.000Z' }] },
         error: null,
       }),
-    } as never);
-    const invoke = mockInvoke(() => Promise.resolve({ data: { hasKey: false }, error: null }));
+    );
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status.hasKey).toBe(true);
+    expect(result.current.status.keys[0]?.updatedAt).toBe('2026-01-01T00:00:00.000Z');
 
     await act(async () => {
-      await result.current.removeApiKey();
+      await result.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
-    expect(invoke).toHaveBeenCalledWith('manage-api-key', { body: { action: 'remove' } });
-    expect(result.current.status).toEqual({ hasKey: false });
+    expect(result.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z');
+  });
+
+  // @s8 — removing a saved key end-to-end reflects the no-key status.
+  it('removes a saved key end-to-end and reflects the no-key status', async () => {
+    jest.spyOn(client, 'from').mockReturnValue({
+      select: jest.fn().mockResolvedValue({ data: [groqRow], error: null }),
+    } as never);
+    const invoke = mockInvoke(() => Promise.resolve({ data: { keys: [] }, error: null }));
+
+    const { result } = renderHook(() => useApiKey());
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.hasKey).toBe(true);
+
+    await act(async () => {
+      await result.current.removeApiKey('groq');
+    });
+
+    expect(invoke).toHaveBeenCalledWith('manage-api-key', {
+      body: { action: 'remove', provider: 'groq' },
+    });
+    expect(result.current.status).toEqual({ keys: [] });
     expect(result.current.error).toBeNull();
   });
 
-  // @s9 (Slice 2, task-10) — a failed remove end-to-end normalizes to network_error and
-  // leaves the previously-saved status untouched.
+  // @s9 — a failed remove normalizes to network_error and preserves the saved status.
   it('normalizes a failed remove end-to-end and preserves the saved status', async () => {
     jest.spyOn(client, 'from').mockReturnValue({
-      select: jest.fn().mockResolvedValue({
-        data: [{ provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' }],
-        error: null,
-      }),
+      select: jest.fn().mockResolvedValue({ data: [groqRow], error: null }),
     } as never);
     mockInvoke(() => Promise.reject(new Error('edge unreachable')));
 
     const { result } = renderHook(() => useApiKey());
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // The service normalizes every save/remove failure (spec.md's error contract) — the raw
-    // cause's message never leaks upward, only the typed `code` does (asserted below).
     await act(async () => {
-      await expect(result.current.removeApiKey()).rejects.toBeInstanceOf(Error);
+      await expect(result.current.removeApiKey('groq')).rejects.toBeInstanceOf(Error);
     });
 
     expect(result.current.error).toBe('network_error');
-    expect(result.current.status).toEqual({
-      hasKey: true,
-      provider: 'groq',
-      updatedAt: '2026-01-01T00:00:00.000Z',
-    });
+    expect(result.current.status).toEqual(groqKeyStatus);
   });
 });

@@ -15,35 +15,40 @@ describe('ApiKeyDao', () => {
     mockGetSupabase.mockReturnValue({ functions: { invoke }, from });
   });
 
-  // @s1 (client half, task-4) — saveApiKey invokes the manage-api-key Edge Function with the
-  // save action + the given provider/key, and returns the masked status it replies with.
-  it('saveApiKey invokes manage-api-key with the save action and returns the masked status', async () => {
-    const status = { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' };
+  // @s2 (client half) — saveApiKey invokes manage-api-key and returns keys from the response body.
+  it('saveApiKey returns keys from invoke response without a client re-select', async () => {
+    const status = {
+      keys: [
+        { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
+      ],
+    };
     invoke.mockResolvedValue({ data: status, error: null });
 
-    const result = await ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test-key' });
+    const result = await ApiKeyDao.saveApiKey({ provider: 'openai', apiKey: 'sk-test' });
 
     expect(invoke).toHaveBeenCalledWith('manage-api-key', {
-      body: { action: 'save', provider: 'groq', apiKey: 'sk-test-key' },
+      body: { action: 'save', provider: 'openai', apiKey: 'sk-test' },
     });
-    expect(result).toBe(status);
+    expect(select).not.toHaveBeenCalled();
+    expect(result).toEqual(status);
   });
 
-  // @s1 (failure path) — a structured Edge Function error is thrown as-is; normalizing it to
-  // an ApiKeyErrorCode is the service's job (task-5/task-10), not the DAO's.
+  // @s2 (failure path) — a structured Edge Function error is thrown as-is
   it('saveApiKey throws the raw invoke error when the function call fails', async () => {
     const error = { message: 'edge function error' };
     invoke.mockResolvedValue({ data: null, error });
 
-    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test-key' })).rejects.toBe(
-      error,
-    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toBe(error);
   });
 
-  // @s3 — a saved row maps to a masked, present status.
-  it('getApiKeyStatus maps a present row to a masked hasKey: true status', async () => {
+  // @s1/@s7 — getApiKeyStatus returns all provider rows as a keys array
+  it('getApiKeyStatus maps all rows to a keys array', async () => {
     select.mockResolvedValue({
-      data: [{ provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' }],
+      data: [
+        { provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' },
+        { provider: 'openai', updated_at: '2026-02-01T00:00:00.000Z' },
+      ],
       error: null,
     });
 
@@ -52,21 +57,27 @@ describe('ApiKeyDao', () => {
     expect(from).toHaveBeenCalledWith('user_ai_keys');
     expect(select).toHaveBeenCalledWith('provider, updated_at');
     expect(result).toEqual({
-      hasKey: true,
-      provider: 'groq',
-      updatedAt: '2026-01-01T00:00:00.000Z',
+      keys: [
+        { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+        { provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' },
+      ],
     });
   });
 
-  // @s3 — no row (no key saved yet) maps to the no-key status.
-  it('getApiKeyStatus maps no row to a hasKey: false status', async () => {
+  // @s1 — no rows maps to empty keys array
+  it('getApiKeyStatus maps no rows to an empty keys array', async () => {
     select.mockResolvedValue({ data: [], error: null });
 
-    await expect(ApiKeyDao.getApiKeyStatus()).resolves.toEqual({ hasKey: false });
+    await expect(ApiKeyDao.getApiKeyStatus()).resolves.toEqual({ keys: [] });
   });
 
-  // @s3 (failure path) — a raw select error is thrown as-is; the service (task-5) is
-  // responsible for degrading this to a safe hasKey: false rather than throwing to the UI.
+  it('getApiKeyStatus maps null data to an empty keys array', async () => {
+    select.mockResolvedValue({ data: null, error: null });
+
+    await expect(ApiKeyDao.getApiKeyStatus()).resolves.toEqual({ keys: [] });
+  });
+
+  // @s1 (failure path) — raw select error is thrown; service degrades to { keys: [] }
   it('getApiKeyStatus throws the raw select error when the query fails', async () => {
     const error = { message: 'select failed' };
     select.mockResolvedValue({ data: null, error });
@@ -74,9 +85,8 @@ describe('ApiKeyDao', () => {
     await expect(ApiKeyDao.getApiKeyStatus()).rejects.toBe(error);
   });
 
-  // @s11 — the DAO exposes no raw-key read path: the status select lists only non-secret
-  // columns, and the masked result it returns carries no key-shaped field.
-  it('getApiKeyStatus selects only non-secret columns and returns no key field', async () => {
+  // @s9 — DAO selects only non-secret columns and returns no key material
+  it('getApiKeyStatus selects only non-secret columns and returns no key material', async () => {
     select.mockResolvedValue({
       data: [{ provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' }],
       error: null,
@@ -85,26 +95,79 @@ describe('ApiKeyDao', () => {
     const result = await ApiKeyDao.getApiKeyStatus();
 
     expect(select).toHaveBeenCalledWith(expect.not.stringMatching(/api_?key|secret/i));
-    expect(Object.keys(result).sort()).toEqual(['hasKey', 'provider', 'updatedAt'].sort());
+    // No key material on any item in the keys array
+    for (const key of result.keys) {
+      expect(Object.keys(key).sort()).toEqual(['provider', 'updatedAt'].sort());
+    }
   });
 
-  // @s8 (client half, task-10) — removeApiKey invokes the manage-api-key Edge Function with
-  // the remove action and returns the resulting (no-key) status.
-  it('removeApiKey invokes manage-api-key with the remove action and returns the resulting status', async () => {
-    invoke.mockResolvedValue({ data: { hasKey: false }, error: null });
+  // @s5 — removeApiKey invokes manage-api-key and returns keys from the response body.
+  it('removeApiKey returns keys from invoke response without a client re-select', async () => {
+    const status = { keys: [{ provider: 'openai', updatedAt: '2026-02-01T00:00:00.000Z' }] };
+    invoke.mockResolvedValue({ data: status, error: null });
 
-    const result = await ApiKeyDao.removeApiKey();
+    const result = await ApiKeyDao.removeApiKey('groq');
 
-    expect(invoke).toHaveBeenCalledWith('manage-api-key', { body: { action: 'remove' } });
-    expect(result).toEqual({ hasKey: false });
+    expect(invoke).toHaveBeenCalledWith('manage-api-key', {
+      body: { action: 'remove', provider: 'groq' },
+    });
+    expect(select).not.toHaveBeenCalled();
+    expect(result).toEqual(status);
   });
 
-  // @s9 (failure path) — a structured Edge Function error is thrown as-is; normalizing it to
-  // an ApiKeyErrorCode is the service's job, not the DAO's.
+  // @s5 (failure path)
   it('removeApiKey throws the raw invoke error when the function call fails', async () => {
     const error = { message: 'edge function error' };
     invoke.mockResolvedValue({ data: null, error });
 
-    await expect(ApiKeyDao.removeApiKey()).rejects.toBe(error);
+    await expect(ApiKeyDao.removeApiKey('groq')).rejects.toBe(error);
+  });
+
+  it('saveApiKey rejects invoke payloads that fail the ApiKeyStatus type guard', async () => {
+    invoke.mockResolvedValueOnce({ data: { keys: 'not-an-array' }, error: null });
+    invoke.mockResolvedValueOnce({ data: 'not-an-object', error: null });
+    invoke.mockResolvedValueOnce({
+      data: { keys: [{ provider: 123, updatedAt: '2026-01-01T00:00:00.000Z' }] },
+      error: null,
+    });
+    invoke.mockResolvedValueOnce({ data: { keys: [{ provider: 'groq' }] }, error: null });
+    invoke.mockResolvedValueOnce({
+      data: { keys: [{ provider: 'groq', updatedAt: 123 }] },
+      error: null,
+    });
+    invoke.mockResolvedValueOnce({
+      data: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+          { provider: 'openai', updatedAt: null },
+        ],
+      },
+      error: null,
+    });
+
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+    await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toThrow(
+      'invalid status payload',
+    );
+  });
+
+  it('removeApiKey rejects invoke payloads that fail the ApiKeyStatus type guard', async () => {
+    invoke.mockResolvedValue({ data: null, error: null });
+
+    await expect(ApiKeyDao.removeApiKey('groq')).rejects.toThrow('invalid status payload');
   });
 });

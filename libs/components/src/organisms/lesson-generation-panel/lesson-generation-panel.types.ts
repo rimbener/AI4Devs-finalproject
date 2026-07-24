@@ -1,9 +1,33 @@
-import type { GenerationProgressStep, LessonComposition } from '@helsoft/types';
+import type { AiProvider, GenerationProgressStep, LessonComposition } from '@helsoft/types';
 
-export type LessonGenerationPanelState = 'empty' | 'loading' | 'content' | 'error';
+export const COMPOSITION_LABEL_KEYS: Record<LessonComposition, string> = {
+  'instructional-only': 'generation.composition.instructionalOnly',
+  'activity-only': 'generation.composition.activityOnly',
+  both: 'generation.composition.both',
+};
 
-export type LessonGenerationPanelProps = {
+export type LessonGenerationPanelState = 'empty' | 'loading' | 'content' | 'error' | 'missing-key';
+
+export type LessonGenerationModelOption = {
+  id: string;
+  labelKey: string;
+};
+
+/** Context value for `LessonGenerationPanel` — provided above the panel by wiring / stories. */
+export type LessonGenerationPanelValue = {
   state: LessonGenerationPanelState;
+  /** When true, provider + model pickers render above composition (free-BYOK only, @s10/@s19). */
+  showPickers?: boolean;
+  /** Saved providers in fixed order — only these appear in the provider picker (@s10). */
+  savedProviders?: AiProvider[];
+  /** Curated models for the selected provider (@s10). */
+  modelOptions?: LessonGenerationModelOption[];
+  selectedProvider?: AiProvider;
+  selectedModel?: string;
+  onProviderChange?: (value: string) => void;
+  onModelChange?: (value: string) => void;
+  /** Handler for the missing-key notice action — wiring navigates to Settings. */
+  onMissingKeyAction?: () => void;
   /** The selected composition — 'both' is pre-selected by the wiring layer (@s1). */
   composition: LessonComposition;
   /** RadioGroup's own contract is a plain string; the wiring layer narrows it back to

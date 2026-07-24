@@ -64,4 +64,23 @@ describe('useSlideImage', () => {
 
     expect(result.current?.containedSize).toEqual({ width: 240, height: 120 });
   });
+
+  // Mutation — non-positive dims → aspectRatio fallback 1.
+  it('uses fallback aspect ratio 1 for non-positive dimensions in split layout', async () => {
+    const { result } = await renderHook(() =>
+      useSlideImage({
+        image: { imageId: '1', storagePath: 'p', width: 0, height: 800 },
+        layout: 'split',
+      }),
+    );
+
+    await act(async () => {
+      result.current?.onPaneLayout({
+        nativeEvent: { layout: { width: 240, height: 300, x: 0, y: 0 } },
+      } as Parameters<NonNullable<typeof result.current>['onPaneLayout']>[0]);
+    });
+
+    expect(result.current?.aspectRatio).toBe(1);
+    expect(result.current?.containedSize).toEqual({ width: 240, height: 240 });
+  });
 });

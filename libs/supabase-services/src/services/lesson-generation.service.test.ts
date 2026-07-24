@@ -43,6 +43,34 @@ describe('LessonGenerationService', () => {
     expect(result).toBe(lesson);
   });
 
+  // @s12 — optional provider/model are forwarded unchanged to the Edge invoke body.
+  it('forwards optional provider and model to the DAO unchanged', async () => {
+    const lesson: GeneratedLesson = {
+      lessonId: 'lesson-1',
+      title: 'Photosynthesis',
+      composition: 'both',
+      slides: [],
+    };
+    dao.generateLesson.mockResolvedValue(lesson);
+
+    await LessonGenerationService.generate(
+      {
+        documentId: 'doc-1',
+        composition: 'both',
+        provider: 'openai',
+        model: 'gpt-5.6-luna',
+      },
+      'user-1',
+    );
+
+    expect(dao.generateLesson).toHaveBeenCalledWith({
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'openai',
+      model: 'gpt-5.6-luna',
+    });
+  });
+
   // Guard rail — an empty/missing userId never reaches the DAO; rejects with the typed
   // unauthenticated code (mirrors PdfExtractionService's own guard).
   it('rejects with unauthenticated and never calls the DAO when userId is empty', async () => {
@@ -97,6 +125,7 @@ describe('LessonGenerationService', () => {
   describe('server error normalization (task-13)', () => {
     it.each([
       ['invalid_key'],
+      ['invalid_model'],
       ['rate_limited'],
       ['timeout'],
       ['generation_failed'],

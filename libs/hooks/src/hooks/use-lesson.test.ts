@@ -9,9 +9,9 @@ import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { useLesson } from './use-lesson';
 import type { UseLessonResult } from './use-lesson.types';
 
-const service = LessonsService as jest.Mocked<typeof LessonsService>;
-
 type LessonIdProps = { id: string };
+
+const service = LessonsService as jest.Mocked<typeof LessonsService>;
 
 const lesson: Lesson = {
   id: 'lesson-1',

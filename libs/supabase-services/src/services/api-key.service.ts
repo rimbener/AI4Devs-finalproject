@@ -1,22 +1,13 @@
-import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
+import type { AiProvider, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
 
 import { ApiKeyDao } from '../dao/api-key.dao';
 import { toTypedError } from '../utils/typed-error';
 
-const DEFAULT_PROVIDER: AiProvider = 'groq';
-
-const toApiKeyError = (code: ApiKeyErrorCode, message: string): Error & ApiKeyError =>
+const toApiKeyError = (code: ApiKeyErrorCode, message: string): Error & { code: ApiKeyErrorCode } =>
   toTypedError(code, message);
 
-/** A validation-layer failure — the defensive backstop (spec.md Open decision 3), mirroring
- * AuthService.signIn's empty-password rejection. */
-const validationError = (message: string): Error & ApiKeyError =>
-  toApiKeyError('validation_error', message);
-
-/** Every raw ApiKeyDao.saveApiKey/removeApiKey rejection (structured Edge Function body,
- * transport failure, thrown, unknown) collapses to the one typed failure code — the raw
- * error shape never leaks upward (task-10 Goal). */
-const networkError = (): Error & ApiKeyError => toApiKeyError('network_error', 'Network error');
+const validationError = (message: string) => toApiKeyError('validation_error', message);
+const networkError = () => toApiKeyError('network_error', 'Network error');
 
 /**
  * Business logic over ApiKeyDao: validates the key before ever calling the DAO, normalizes
@@ -24,10 +15,7 @@ const networkError = (): Error & ApiKeyError => toApiKeyError('network_error', '
  * read from crashing the UI on failure.
  */
 export abstract class ApiKeyService {
-  static async saveApiKey(
-    rawKey: string,
-    provider: AiProvider = DEFAULT_PROVIDER,
-  ): Promise<ApiKeyStatus> {
+  static async saveApiKey(provider: AiProvider, rawKey: string): Promise<ApiKeyStatus> {
     if (!rawKey.trim()) {
       throw validationError('API key is required');
     }
@@ -42,13 +30,13 @@ export abstract class ApiKeyService {
     try {
       return await ApiKeyDao.getApiKeyStatus();
     } catch {
-      return { hasKey: false };
+      return { keys: [] };
     }
   }
 
-  static async removeApiKey(): Promise<ApiKeyStatus> {
+  static async removeApiKey(provider: AiProvider): Promise<ApiKeyStatus> {
     try {
-      return await ApiKeyDao.removeApiKey();
+      return await ApiKeyDao.removeApiKey(provider);
     } catch {
       throw networkError();
     }

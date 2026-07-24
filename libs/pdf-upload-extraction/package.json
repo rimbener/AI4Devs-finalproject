@@ -7,6 +7,7 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "lint": "biome check .",
+    "format": "biome check --write .",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage=false --passWithNoTests --watchman=false",
     "test:watch": "jest --watch",
     "test:rls": "NODE_OPTIONS=--experimental-vm-modules jest --config jest.rls.config.js --coverage=false --watchman=false",

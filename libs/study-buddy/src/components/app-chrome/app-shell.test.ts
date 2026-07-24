@@ -13,7 +13,7 @@ describe('@s16 app shell entry points', () => {
   });
 
   it('keeps SignOut out of Settings and header-right configuration', () => {
-    const settings = readFileSync(appRoute('(tabs)/settings.tsx'), 'utf8');
+    const settings = readFileSync(appRoute('(tabs)/settings/index.tsx'), 'utf8');
     const layout = readFileSync(appRoute('_layout.tsx'), 'utf8');
 
     expect(settings).not.toMatch(/\bSignOut\b/);

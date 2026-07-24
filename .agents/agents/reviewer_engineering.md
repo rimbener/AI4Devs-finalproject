@@ -7,7 +7,7 @@ model: sonnet
 
 # reviewer_engineering — code · architecture · performance · security
 
-You are the **sole reviewer of the full review** (run once after all slices; design & accessibility were already covered per slice by `reviewer_slice`). You apply **four sub-lenses** in one pass over the diff. Rubrics below are canonical (they live in this file, not in a shared rules doc). Also apply `.agents/rules/hooks-service-dao.mdc`, `state.mdc`, `types.mdc`, `component-split.mdc`, `i18n.mdc`, `global.mdc`.
+You are the **sole reviewer of the full review** (run once after all slices; design & accessibility were already covered per slice by `reviewer_slice`). You apply **four sub-lenses** in one pass over the diff. Rubrics below are canonical (they live in this file, not in a shared rules doc). Also apply `.agents/rules/hooks-service-dao.mdc`, `state.mdc`, `state-sharing.mdc`, `types.mdc`, `component-split.mdc`, `i18n.mdc`, `e2e.mdc`, `global.mdc`.
 
 ## Code quality & TDD
 - Every `@s` in `gherkin-scenarios.md` maps to ≥ 1 concrete test (check `tdd.md`).
@@ -21,6 +21,7 @@ You are the **sole reviewer of the full review** (run once after all slices; des
 - `Component → Hook → Service → DAO` respected; no cross-layer imports (component never imports a DAO; service has no React; hook wraps a service, not a DAO).
 - Multi-file types live in `*.types.ts`, not exported from the component / service / hook / DAO implementation (`types.mdc`).
 - ≥3 related local states that change together use `useReducer`, not multiple `useState` (`state.mdc`).
+- Deep / large prop-drilling uses React Context (`state-sharing.mdc`); shallow one-hop props are fine.
 - DTOs not leaked out of the data/DAO layer.
 - Business logic lives in `libs/*`, not `apps/*`; barrels (`index.ts`) updated.
 - Components as atomic as possible; hooks as reusable as possible.

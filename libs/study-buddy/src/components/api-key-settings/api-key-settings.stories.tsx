@@ -1,3 +1,4 @@
+import type { ApiKeyStatus } from '@helsoft/types';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { configureApiKeyMock, configureProfileMock } from '../../../.storybook/mocks/hooks';
@@ -34,43 +35,28 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Empty — no key saved; Save disabled until a non-blank key is entered. */
-export const Empty: Story = {
+const emptyApiKeyStatus: ApiKeyStatus = { keys: [] };
+const groqApiKeyStatus: ApiKeyStatus = {
+  keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }],
+};
+
+/** Entry — Show API keys settings button (free plan). */
+export const Entry: Story = {
   decorators: [
     withProfileMock({ profile: FREE_PROFILE }),
-    withApiKeyMock({ status: { hasKey: false } }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };
 
-/** Content — masked saved status + Replace/Remove. */
-export const Saved: Story = {
-  decorators: [
-    withProfileMock({
-      profile: { ...FREE_PROFILE, canCreate: true },
-    }),
-    withApiKeyMock({
-      status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
-    }),
-  ],
-};
-
-/** Loading — initial status fetch in flight. */
+/** Loading — plan-sensitive entry hidden while entitlements load. */
 export const Loading: Story = {
   decorators: [
     withProfileMock({ profile: null, isLoading: true }),
-    withApiKeyMock({ status: { hasKey: false } }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };
 
-/** Error — network failure banner; form stays editable. */
-export const NetworkError: Story = {
-  decorators: [
-    withProfileMock({ profile: FREE_PROFILE }),
-    withApiKeyMock({ status: { hasKey: false }, error: 'network_error' }),
-  ],
-};
-
-/** Paid — BYOK settings stay hidden even if a key remains saved. */
+/** Paid — BYOK entry stays hidden even if a key remains saved. */
 export const Paid: Story = {
   decorators: [
     withProfileMock({
@@ -83,18 +69,18 @@ export const Paid: Story = {
       },
     }),
     withApiKeyMock({
-      status: { hasKey: true, provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
+      status: groqApiKeyStatus,
     }),
   ],
 };
 
-/** Profile error — key controls hidden with retry. */
+/** Profile error — entry hidden with retry. */
 export const ProfileError: Story = {
   decorators: [
     withProfileMock({
       profile: null,
       error: new globalThis.Error('read failed'),
     }),
-    withApiKeyMock({ status: { hasKey: false } }),
+    withApiKeyMock({ status: emptyApiKeyStatus }),
   ],
 };

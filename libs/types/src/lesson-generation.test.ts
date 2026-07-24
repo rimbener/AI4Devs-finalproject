@@ -17,6 +17,22 @@ describe('GenerateLessonRequest', () => {
     expect(request).toEqual({ documentId: 'doc-1', composition: 'both' });
   });
 
+  it('accepts optional provider and model for free-BYOK generation (@s12)', () => {
+    const request: GenerateLessonRequest = {
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    };
+
+    expect(request).toEqual({
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'groq',
+      model: 'openai/gpt-oss-20b',
+    });
+  });
+
   it('accepts every LessonComposition value', () => {
     const compositions: LessonComposition[] = ['instructional-only', 'activity-only', 'both'];
 
@@ -63,10 +79,11 @@ describe('GENERATION_PROGRESS_STEPS', () => {
 // spec.md's Error contract table — the closed set of codes LessonGenerationService normalizes
 // every failure to (mirrors PdfExtractionError).
 describe('GenerationError', () => {
-  it('carries one of the 10 closed GenerationErrorCode values', () => {
+  it('carries one of the 11 closed GenerationErrorCode values', () => {
     const codes: GenerationErrorCode[] = [
       'missing_key',
       'invalid_key',
+      'invalid_model',
       'platform_key_unavailable',
       'rate_limited',
       'timeout',
@@ -76,10 +93,10 @@ describe('GenerationError', () => {
       'unauthenticated',
       'persist_failed',
     ];
-    const error: GenerationError = { code: 'missing_key' };
+    const error: GenerationError = { code: 'invalid_model' };
 
-    expect(codes).toHaveLength(10);
-    expect(error).toEqual({ code: 'missing_key' });
+    expect(codes).toHaveLength(11);
+    expect(error).toEqual({ code: 'invalid_model' });
   });
 });
 

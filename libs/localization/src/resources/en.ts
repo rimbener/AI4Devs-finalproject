@@ -11,6 +11,9 @@ export const en = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Network error. Try again.',
+    },
     nav: {
       myLessons: 'My lessons',
       myPdfFiles: 'My PDF files',
@@ -116,7 +119,6 @@ export const en = {
         scannedNotSupported: "This looks like a scanned PDF; we can't read its text yet",
         corrupt: "This PDF couldn't be opened",
         extractionFailed: 'Something went wrong while reading your PDF',
-        network: 'Network error',
         unauthenticated: 'Please sign in to upload',
       },
     },
@@ -125,6 +127,12 @@ export const en = {
     // (`generation.error.*`) is Slice-2/task-13, added with the Error state itself.
     generation: {
       dialogHeadline: 'Generate lesson',
+      provider: {
+        heading: 'AI provider',
+      },
+      model: {
+        heading: 'Model',
+      },
       composition: {
         heading: 'Lesson content',
         instructionalOnly: 'Instructional only',
@@ -155,12 +163,13 @@ export const en = {
       error: {
         missingKey: 'An API key is required to generate lessons.',
         invalidKey: 'Your API key was rejected. Check it in Settings.',
+        invalidModel:
+          'That provider or model is no longer available. Choose another and try again.',
         platformKeyUnavailable: 'Lesson generation is temporarily unavailable. Try again.',
         rateLimited: "You've hit the provider's rate limit. Try again in a moment.",
         timeout: 'Generation took too long. Try again.',
         generationFailed: 'Something went wrong while generating your lesson. Try again.',
         documentNotReady: "This document isn't ready yet. Please re-upload your PDF.",
-        network: 'Network error. Try again.',
         unauthenticated: 'Please sign in to generate a lesson.',
         persistFailed: 'Your lesson could not be saved. Try again.',
         action: {
@@ -168,6 +177,33 @@ export const en = {
           settings: 'Go to Settings',
           signIn: 'Sign in',
         },
+      },
+    },
+    aiModel: {
+      groq: {
+        gptOss20b: 'GPT-OSS 20B',
+        gptOss120b: 'GPT-OSS 120B',
+        qwen36_27b: 'Qwen 3.6 27B',
+      },
+      openai: {
+        gpt56Luna: 'GPT-5.6 Luna',
+        gpt56Terra: 'GPT-5.6 Terra',
+      },
+      anthropic: {
+        claudeHaiku45: 'Claude Haiku 4.5',
+        claudeSonnet5: 'Claude Sonnet 5',
+      },
+      google: {
+        gemini36Flash: 'Gemini 3.6 Flash',
+        gemini25Flash: 'Gemini 2.5 Flash',
+      },
+      xai: {
+        grok43: 'Grok 4.3',
+        grok45: 'Grok 4.5',
+      },
+      deepseek: {
+        v4Flash: 'DeepSeek V4 Flash',
+        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -222,7 +258,6 @@ export const en = {
       error: {
         email: 'Enter a valid email address',
         invalidCredentials: 'Invalid email or password',
-        network: 'Network error',
       },
     },
     settings: {
@@ -244,12 +279,21 @@ export const en = {
         // Full-review Round 1, Major 4 — announced to assistive tech while the initial status
         // fetch is in flight (WCAG 4.1.3); not shown visually (mirrors auth.signingIn).
         loadingStatus: 'Checking your API key status…',
+        showSettings: 'Show API keys settings',
+        screenTitle: 'API keys settings',
         replace: 'Replace',
         remove: 'Remove',
         savedStatus: '{{provider}} key saved · Updated {{date}}',
         provider: {
           groq: 'Groq',
+          openai: 'OpenAI',
+          anthropic: 'Anthropic',
+          google: 'Google',
+          xai: 'xAI',
+          deepseek: 'DeepSeek',
         },
+        // multi-provider-ai-keys — guidance template used by ApiKeyManager (per-provider).
+        guidanceTemplate: "Don't have a key? Get one from {{provider}}",
         // ai-key-management task-11 (Slice 2) — added ahead of task-13 for the same
         // compiler-parity reason as task-8's original apiKey.* keys: es/pt/de are typed
         // against this exact shape, so ApiKeyForm's new Empty/Error/Remove-confirm labels
@@ -262,8 +306,13 @@ export const en = {
         // a duplicate-accessible-name collision between the two controls.
         removeConfirmAction: 'Confirm removal',
         removeConfirmCancelAction: 'Cancel',
+        manager: {
+          addHeading: 'Add provider',
+          addNew: 'Add new provider',
+          selectProvider: 'Select provider',
+          emptyMessage: 'No API keys saved',
+        },
         error: {
-          network: "Couldn't reach the server. Try again.",
           // ai-key-management task-13 (Slice 3) — spec.md Open decision 3: the defensive
           // service-layer backstop for a blank/whitespace-only key (validation_error). No
           // current caller reaches this through the UI (ApiKeyForm disables Save until a

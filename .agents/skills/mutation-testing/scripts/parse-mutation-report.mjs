@@ -16,7 +16,10 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { join } from 'node:path';
 
 const name = process.argv[2];
-if (!name) { console.error('usage: parse-mutation-report.mjs <feature-name>'); process.exit(1); }
+if (!name) {
+  console.error('usage: parse-mutation-report.mjs <feature-name>');
+  process.exit(1);
+}
 
 const root = execSync('git rev-parse --show-toplevel').toString().trim();
 const libsDir = join(root, 'libs');
@@ -33,26 +36,46 @@ for (const lib of readdirSync(libsDir, { withFileTypes: true }).filter((d) => d.
   const jsonPath = join(libsDir, lib.name, 'reports', 'mutation', 'mutation.json');
   if (!existsSync(jsonPath)) continue;
   let report;
-  try { report = JSON.parse(readFileSync(jsonPath, 'utf8')); } catch { continue; }
+  try {
+    report = JSON.parse(readFileSync(jsonPath, 'utf8'));
+  } catch {
+    continue;
+  }
   const files = report.files || {};
-  let detected = 0, undetected = 0, errors = 0, ignored = 0, total = 0;
+  let detected = 0,
+    undetected = 0,
+    errors = 0,
+    ignored = 0,
+    total = 0;
   for (const [file, entry] of Object.entries(files)) {
     for (const m of entry.mutants || []) {
       total++;
       if (DETECTED.has(m.status)) detected++;
-      else if (UNDETECTED.has(m.status)) { undetected++; survivors.push({ lib: lib.name, file, m }); }
-      else if (ERRORED.has(m.status)) errors++;
+      else if (UNDETECTED.has(m.status)) {
+        undetected++;
+        survivors.push({ lib: lib.name, file, m });
+      } else if (ERRORED.has(m.status)) errors++;
       else ignored++; // Ignored
     }
   }
   const valid = detected + undetected;
   const score = valid === 0 ? 'n/a' : ((detected / valid) * 100).toFixed(1);
   grandErrors += errors;
-  rows.push({ lib: `@helsoft/${lib.name}`, total, killed: detected, survived: undetected, errors, ignored, score });
+  rows.push({
+    lib: `@helsoft/${lib.name}`,
+    total,
+    killed: detected,
+    survived: undetected,
+    errors,
+    ignored,
+    score,
+  });
 }
 
 if (rows.length === 0) {
-  console.error('parse-mutation-report: no reports/mutation/mutation.json found under libs/* — run run-mutation.sh first.');
+  console.error(
+    'parse-mutation-report: no reports/mutation/mutation.json found under libs/* — run run-mutation.sh first.',
+  );
   process.exit(1);
 }
 
@@ -61,9 +84,10 @@ mkdirSync(featureDir, { recursive: true });
 const out = join(featureDir, 'mutation.md');
 
 const totalSurvived = rows.reduce((n, r) => n + r.survived, 0);
-const gateHint = totalSurvived === 0 && grandErrors === 0
-  ? 'threshold met on scope'
-  : `${totalSurvived} survivor(s)${grandErrors ? `, ${grandErrors} error mutant(s) ⚠` : ''} — kill or ESCALATE (never rewrite as PASS)`;
+const gateHint =
+  totalSurvived === 0 && grandErrors === 0
+    ? 'threshold met on scope'
+    : `${totalSurvived} survivor(s)${grandErrors ? `, ${grandErrors} error mutant(s) ⚠` : ''} — kill or ESCALATE (never rewrite as PASS)`;
 
 let md = `# Mutation — ${name}\n\n`;
 md += `_Auto-stubbed by \`parse-mutation-report.mjs\` from the per-lib Stryker JSON reports. ${gateHint}._\n\n`;

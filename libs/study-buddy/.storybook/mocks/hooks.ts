@@ -9,6 +9,7 @@
 export * from '../../../hooks/src/hooks/use-interaction-state';
 
 import type {
+  AiProvider,
   ApiKeyErrorCode,
   ApiKeyStatus,
   GeneratedLesson,
@@ -179,19 +180,22 @@ export const configureApiKeyMock = (config: ApiKeyMockConfig) => {
 
 const API_KEY_DELAY_MS = 400;
 
+const emptyApiKeyStatus = (): ApiKeyStatus => ({ keys: [] });
+
 export const useApiKey = () => {
   const [config] = useState(() => {
     const next = pendingApiKeyConfig;
     pendingApiKeyConfig = {};
     return next;
   });
-  const [status, setStatus] = useState<ApiKeyStatus>(config.status ?? { hasKey: false });
+  const [status, setStatus] = useState<ApiKeyStatus>(config.status ?? emptyApiKeyStatus());
   const [isLoading] = useState(config.isLoading ?? false);
   const [isSubmitting, setIsSubmitting] = useState(config.isSubmitting ?? false);
   const [error, setError] = useState<ApiKeyErrorCode | null>(config.error ?? null);
+  const hasKey = status.keys.length > 0;
 
   const saveApiKey = useCallback(
-    (_rawKey: string): Promise<void> =>
+    (_provider: AiProvider, _rawKey: string): Promise<void> =>
       new Promise((resolve, reject) => {
         setIsSubmitting(true);
         setError(null);
@@ -203,9 +207,7 @@ export const useApiKey = () => {
             return;
           }
           setStatus({
-            hasKey: true,
-            provider: 'groq',
-            updatedAt: new Date().toISOString(),
+            keys: [{ provider: 'groq', updatedAt: new Date().toISOString() }],
           });
           resolve();
         }, API_KEY_DELAY_MS);
@@ -214,7 +216,7 @@ export const useApiKey = () => {
   );
 
   const removeApiKey = useCallback(
-    (): Promise<void> =>
+    (_provider: AiProvider): Promise<void> =>
       new Promise((resolve, reject) => {
         setIsSubmitting(true);
         setError(null);
@@ -225,14 +227,14 @@ export const useApiKey = () => {
             reject(new Error('network_error'));
             return;
           }
-          setStatus({ hasKey: false });
+          setStatus(emptyApiKeyStatus());
           resolve();
         }, API_KEY_DELAY_MS);
       }),
     [config.scenario],
   );
 
-  return { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey };
+  return { status, isLoading, isSubmitting, error, hasKey, saveApiKey, removeApiKey };
 };
 
 // --- useProfile -----------------------------------------------------------

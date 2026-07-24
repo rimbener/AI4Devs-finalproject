@@ -1,0 +1,41 @@
+---
+description: when writing Playwright e2e (.e2e.js) for Storybook components — e2e are interaction-only
+alwaysApply: false
+---
+
+# E2E tests — interaction-only
+
+Playwright e2e (`.e2e.js`, via the `storybook-e2e-tests` skill) exist to exercise **real user interaction** against a rendered component and assert the resulting **behavior / state change**. They are not for proving elements exist.
+
+## The rule
+
+- **Only write an e2e that performs a real interaction** — press/click, type, drag, select, open/close, submit, navigate, multi-step flow — and asserts what the interaction **produces** (a state change, a new element appearing/disappearing, navigation, a callback effect visible in the UI).
+- **Never write an e2e that only renders a story and asserts elements are there** ("component renders", "story loads", "text X is visible", "N options shown"). That's static rendering — **Jest unit tests (`<name>.test.tsx`, RTL) already cover rendering, props, the 4 UI states, and static presence.** Duplicating it in Playwright adds slow, flaky coverage that proves nothing new.
+- **No meaningful interaction → no e2e.** A purely presentational component (an atom/label/icon with no behavior) gets unit tests only; it does not get an e2e file just to assert it renders.
+
+## Examples
+
+❌ **Don't** — render-only (delete these; unit tests own this):
+
+```js
+test('Card renders', async ({ page }) => {
+  await page.goto('/?path=/story/atoms-card--elevated');
+  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+  await expect(canvas.locator('text=Photosynthesis basics')).toBeVisible(); // ← just presence
+});
+```
+
+✅ **Do** — drive an interaction and assert the outcome:
+
+```js
+test('selecting an answer marks it and enables Continue', async ({ page }) => {
+  await page.goto('/?path=/story/organisms-multiple-choice--default');
+  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+  await canvas.locator('text=Mitochondria').click();          // interaction
+  await expect(canvas.locator('text=Continue')).toBeEnabled(); // resulting state change
+});
+```
+
+## Why
+
+Mutation testing bites on **Jest** (services/hooks/DAOs + component logic via `<name>.test.tsx`), not on Playwright `.e2e.js`. So render-only e2e neither kill mutants nor add real coverage — they only add runtime and flakiness. Playwright earns its keep on the interaction paths a unit test can't drive end-to-end. See `.agents/skills/storybook-e2e-tests/SKILL.md` for the mechanics (`.e2e.js` location, story URL, iframe locators).

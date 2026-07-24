@@ -37,6 +37,33 @@ describe('LessonGenerationDao', () => {
     expect(result).toBe(lesson);
   });
 
+  // @s12 — invokes generate-lesson with provider/model when present; platform path omits them.
+  it('invokes generate-lesson with provider and model when provided', async () => {
+    const lesson: GeneratedLesson = {
+      lessonId: 'lesson-1',
+      title: 'Photosynthesis',
+      composition: 'both',
+      slides: [],
+    };
+    invoke.mockResolvedValue({ data: lesson, error: null });
+
+    await LessonGenerationDao.generateLesson({
+      documentId: 'doc-1',
+      composition: 'both',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+    });
+
+    expect(invoke).toHaveBeenCalledWith('generate-lesson', {
+      body: {
+        documentId: 'doc-1',
+        composition: 'both',
+        provider: 'anthropic',
+        model: 'claude-haiku-4-5',
+      },
+    });
+  });
+
   // Failure path — a structured Edge Function error is thrown as-is; normalizing it to a
   // GenerationErrorCode is the service's job (task-6), not the DAO's.
   it('throws the raw invoke error when the function call fails', async () => {

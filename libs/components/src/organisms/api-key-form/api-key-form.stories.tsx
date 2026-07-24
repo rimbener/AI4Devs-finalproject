@@ -1,3 +1,4 @@
+import type { SavedProviderKey } from '@helsoft/types';
 import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { ApiKeyForm } from './api-key-form';
@@ -6,10 +7,8 @@ const labels = {
   keySavedStatus: 'Groq key saved · Updated Jan 1, 2026',
 };
 
-const noKeyStatus = { hasKey: false as const };
-const savedStatus = {
-  hasKey: true as const,
-  provider: 'groq' as const,
+const savedKey: SavedProviderKey = {
+  provider: 'groq',
   updatedAt: '2026-01-01T00:00:00.000Z',
 };
 
@@ -17,7 +16,7 @@ const meta = {
   title: 'Organisms/ApiKeyForm',
   component: ApiKeyForm,
   args: {
-    status: noKeyStatus,
+    savedKey: null,
     onSave: () => {},
     onRemove: () => {},
     guidanceUrl: 'https://console.groq.com/keys',
@@ -36,7 +35,7 @@ export const Empty: Story = {};
 // Content — masked "key saved" state (@s1/@s3), Replace/Remove, no raw key rendered.
 export const Content: Story = {
   args: {
-    status: savedStatus,
+    savedKey,
   },
 };
 

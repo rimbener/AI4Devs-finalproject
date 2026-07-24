@@ -1,0 +1,51 @@
+---
+description: use React Context to avoid deep or large prop-drilling
+alwaysApply: false
+---
+
+# Shared state → Context (not prop-drilling)
+
+Use **React Context** when data would otherwise be passed through many intermediate components that do not use it, or when a large props bag is threaded only to reach a deep child.
+
+Still functional React only — **no Redux** (see `global.mdc`). Local coordinated state (≥3 related fields) still uses `useReducer` per `state.mdc`; Context is for **sharing** that state (or values) across a subtree.
+
+```tsx
+// ❌ don't — drill through intermediates that ignore the value
+function App() {
+  const session = useSession();
+  return <Layout session={session} />;
+}
+function Layout({ session }: { session: Session }) {
+  return <Sidebar session={session} />;
+}
+function Sidebar({ session }: { session: Session }) {
+  return <UserMenu session={session} />;
+}
+
+// ✅ do — provide once; consumers read via hook
+const SessionContext = createContext<Session | null>(null);
+
+function useSessionContext() {
+  const value = useContext(SessionContext);
+  if (value == null) throw new Error('useSessionContext requires SessionProvider');
+  return value;
+}
+
+function SessionProvider({ children }: { children: React.ReactNode }) {
+  const session = useSession();
+  return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;
+}
+
+function UserMenu() {
+  const session = useSessionContext();
+  // ...
+}
+```
+
+## Rules of thumb
+
+- **When**: ≥2–3 levels of pass-through props, **or** a large/growing props object only needed deep in the tree.
+- **When not**: one parent → one child, or siblings that can stay prop-driven — prefer props.
+- **Prefer a typed context + `useX` hook** that throws if used outside the provider (fail loud).
+- **Keep providers close** to the subtree that needs the value; avoid a single god-context for unrelated concerns.
+- Context value identity: if the value is an object rebuilt every render and many consumers re-render, split contexts or memoize the value intentionally — do not add `useMemo` by default (see `global.mdc`).

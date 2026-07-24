@@ -5,9 +5,13 @@
 
 export type LessonComposition = 'instructional-only' | 'activity-only' | 'both';
 
+export type AiProvider = 'groq' | 'openai' | 'anthropic' | 'google' | 'xai' | 'deepseek';
+
 export type GenerateLessonRequest = {
   documentId: string;
   composition: LessonComposition;
+  provider?: AiProvider;
+  model?: string;
 };
 
 export type SlideImageRef = {
@@ -93,6 +97,7 @@ export type GenerationProgressStep = 'reading' | 'generating' | 'attaching';
 export type GenerationErrorCode =
   | 'missing_key'
   | 'invalid_key'
+  | 'invalid_model'
   | 'platform_key_unavailable'
   | 'rate_limited'
   | 'timeout'

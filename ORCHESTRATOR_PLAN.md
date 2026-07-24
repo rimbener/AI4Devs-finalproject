@@ -1,6 +1,6 @@
 # Agentic Orchestrator Workflow — Implementation Plan
 
-> **Superseded in part (2026-07-11, token-efficiency revision):** reviewer rubrics now live **in each reviewer's agent file** (`.agents/rules/review-standards.md` was removed); per-slice reviews run as a single combined `reviewer_slice` agent (rules + design + accessibility); **the full review has a single reviewer** — `reviewer_engineering` (code · architecture · performance · security) on Sonnet — with **design & accessibility handled per-slice by `reviewer_slice`** (not repeated in the full review); `reviews_lead` runs CI once per round and invokes that one reviewer; mutation runs **once, after the full review** (changed files vs the **delivery branch** `feature-entrega*`, never blind `main`) — the pre-review pass was removed, and the gate is **escalate-only** (never a fabricated PASS). Review artifacts are a **durable history** (kept, findings marked resolved — never emptied). Ops go through checked-in scripts (`bootstrap-worktree.sh`, `set-feature-phase.sh`, mutation helpers) — no hand-rolled `python3`/`sed`. Where this plan conflicts, `.agents/ORCHESTRATOR.md` wins.
+> **Superseded in part (2026-07-11, token-efficiency revision):** reviewer rubrics now live **in each reviewer's agent file** (`.agents/rules/review-standards.md` was removed); **`spec_partner` runs in plan mode** — it grills read-only and presents a plan; the single human gate approves the **plan** up front, and only then does it author the bundle (which `spec_reviewer` vets); per-slice reviews run as a single combined `reviewer_slice` agent (rules + design + accessibility); **the full review has a single reviewer** — `reviewer_engineering` (code · architecture · performance · security) on Sonnet — with **design & accessibility handled per-slice by `reviewer_slice`** (not repeated in the full review); `reviews_lead` runs CI once per round and invokes that one reviewer; mutation runs **once, after the full review** (changed files vs the **delivery branch** `feature-entrega*`, never blind `main`) — the pre-review pass was removed, and the gate is **escalate-only** (never a fabricated PASS). Review artifacts are a **durable history** (kept, findings marked resolved — never emptied). Ops go through checked-in scripts (`bootstrap-worktree.sh`, `set-feature-phase.sh`, mutation helpers) — no hand-rolled `python3`/`sed`. Where this plan conflicts, `.agents/ORCHESTRATOR.md` wins.
 
 > **Project:** AI Study Buddy (AI4Devs final project) — Turborepo + pnpm monorepo, Expo/React Native universal app, `@helsoft/*` libs, Supabase backend, Storybook + Playwright, Jest + RN Testing Library.
 > **Goal:** A repeatable, gate-driven agentic orchestrator that takes a user story/ticket from the command line all the way to a merge-ready PR, following strict TDD, layered reviews, mutation testing, and a full Definition of Done.
@@ -20,13 +20,13 @@ This orchestrator blends two references:
 | Aspect | harness-sdd | mobile-facephi | **This orchestrator** |
 |---|---|---|---|
 | Entry | "implement next pending feature" | `/spec FEAT-XXX` | User-story `.md` file in `user-stories/pending/`, named on the command line (moved pending → in-progress → done as it runs) |
-| Spec + Contract | `spec_partner` debates → `project-spec.md`; separate `gherkin_author` | `/spec` → spec + risks + tasks + qa | **`spec_partner` produces spec.md + risks.md + tasks.md + `gherkin-scenarios.md` in one step** (Gherkin via the `gherkin-authoring` skill), **`spec_reviewer` vets the bundle before the gate**, then approved at a **single human gate** |
+| Spec + Contract | `spec_partner` debates → `project-spec.md`; separate `gherkin_author` | `/spec` → spec + risks + tasks + qa | **`spec_partner` runs in plan mode**: grills read-only → presents a **plan** → **single human gate approves the plan up front** → then authors spec.md + risks.md + tasks.md + `gherkin-scenarios.md` (Gherkin via the `gherkin-authoring` skill), which **`spec_reviewer` vets** |
 | Build | `implementer` strict TDD | Code Agent by vertical slice | **`implementer`**, strict TDD **by vertical slice** (1→2→3), branching by artifact type (UI vs logic), always integration tests |
 | Review | single `judge` | `/arch` + `/security` separately | **Two cadences:** per-slice light review (`reviewer_slice`, checks the slice against **all `.agents/rules/` + design + accessibility**) during the build, then a **single-reviewer full round** after all slices — `reviewer_engineering` (code · architecture · performance · security) — driven by **`reviews_lead`**, which runs CI once and turns the findings into one change request to the implementer (design & accessibility stay at the slice level) |
 | Mutation | custom `mutate.py` | — | **StrykerJS** with per-feature score thresholds |
 | DoD / PR | — | `/pr` PR Guardian (validates DoD **and** opens PR) | **`dod_validator`** — validates the full DoD only; PR creation is a manual human step |
 
-The result is a 4-phase pipeline (below) driven by an orchestrator that guards the gates, keeps all state on disk, and stops for the human at **one point up front** — a single combined approval of the **spec + Gherkin contract** — after which it runs autonomously up to a validated, PR-ready state. Opening and merging the PR stays a manual human step.
+The result is a 4-phase pipeline (below) driven by an orchestrator that guards the gates, keeps all state on disk, and stops for the human at **one point up front** — approval of `spec_partner`'s **plan** (it runs in plan mode: grills read-only, presents the plan, writes nothing until approved) — after which it authors the spec + Gherkin contract and runs autonomously up to a validated, PR-ready state. Opening and merging the PR stays a manual human step.
 
 ---
 
@@ -35,13 +35,14 @@ The result is a 4-phase pipeline (below) driven by an orchestrator that guards t
 Everything the orchestrator generates must obey the project's existing rules (canonical rules live in `.agents/rules/` and take precedence):
 
 - **Monorepo layout** (`global.mdc`): code lives in `libs/*` as `@helsoft/*` packages; `apps/*` stay thin. A feature `app-x` pairs with a lib `libs/x`.
-- **Layering** (`hooks-service-dao.mdc`): `Component → Hook → Service → DAO → Supabase / external API`. DAOs = data access only (Supabase DAO via `getSupabase()` or external-API DAO via `fetch`); Services = validation + business logic, no React; Hooks = React integration (tanstack-query pattern), wrap services never DAOs. Every layer exports via `index.ts`. Related local state ≥3 fields → `useReducer` (`state.mdc`).
-- **Components** (`atomic-design.mdc`): atoms → molecules → organisms → templates → pages. Component files in `component-name/component-name.tsx`, and **every component in a Storybook-enabled lib always ships a co-located `component-name.stories.tsx`** (no exceptions — a component without its story is incomplete). Use existing tokens/components; new Storybook stories follow `libs/lib-with-storybook/src/stories` patterns. Always add e2e tests for components in Storybook.
+- **Layering** (`hooks-service-dao.mdc`): `Component → Hook → Service → DAO → Supabase / external API`. DAOs = data access only (Supabase DAO via `getSupabase()` or external-API DAO via `fetch`); Services = validation + business logic, no React; Hooks = React integration (tanstack-query pattern), wrap services never DAOs. Every layer exports via `index.ts`. Related local state ≥3 fields → `useReducer` (`state.mdc`). Deep / large prop-drilling → React Context (`state-sharing.mdc`).
+- **Components** (`atomic-design.mdc`): atoms → molecules → organisms → templates → pages. Component files in `component-name/component-name.tsx`, and **every component in a Storybook-enabled lib always ships a co-located `component-name.stories.tsx`** (no exceptions — a component without its story is incomplete). Use existing tokens/components; new Storybook stories follow `libs/lib-with-storybook/src/stories` patterns. Playwright e2e only for real interaction flows (`e2e.mdc`) — never render-only presence tests; unit tests own rendering/props/states.
 - **Component file split** (`component-split.mdc`): non-trivial UI (organisms / complex molecules) splits into `*.tsx` (JSX + handlers) / `*.types.ts` / `use-*.ts` (local state) / `*.helpers.ts` (pure); not the data-layer hook.
+- **Design / copy** (`.agents/DESIGN.md`): brand tokens, MD3 foundations, voice — reuse `libs/components/src/theme` and existing atoms/molecules; never hardcode color/spacing/radius.
 - **i18n / labels** (`i18n.mdc`): user-facing text always via `t('namespace.key')` **inline at the usage site** — never a `labels` variable/object of pre-resolved `t()` calls; the only allowed collection is a **key dictionary** mapping a domain value → translation key (e.g. `GENERATION_ERROR_KEYS`).
 - **Conventions**: functional React only, no Redux; always a `Props` type; kebab-case filenames; `.web.tsx` for platform-specific; Conventional Commits.
-- **Testing** (`global.mdc` + `E2E_TESTS.md`):
-  - Storybook components → **Jest + React Native Testing Library** unit tests (`<name>.test.tsx`, co-located — rendering/props/states/handlers/a11y) **plus** **Storybook + Playwright** e2e (`*.e2e.js` under `tests/e2e/`, mirroring the component's `src/` path; stories reached via `/?path=/story/...` inside `frameLocator('iframe[title="storybook-preview-iframe"]')`; components port 6007, lib-with-storybook 6006). The orchestrator **requires the Jest unit test on every component** so TDD and mutation testing apply to UI too — this deliberately extends the base convention, which used Storybook + Playwright alone.
+- **Testing** (`global.mdc` + `e2e.mdc`):
+  - Storybook components → **Jest + React Native Testing Library** unit tests (`<name>.test.tsx`, co-located — rendering/props/states/handlers/a11y) **plus** **Storybook + Playwright** e2e **only when there is a real interaction** (`e2e.mdc` — never a render-only "it renders" e2e; no interaction → no `.e2e.js`). E2e live under `tests/e2e/`, mirroring the component's `src/` path; stories reached via `/?path=/story/...` inside `frameLocator('iframe[title="storybook-preview-iframe"]')`; components port 6007, lib-with-storybook 6006. The orchestrator **requires the Jest unit test on every component** so TDD and mutation testing apply to UI too.
   - Hooks/services/DAOs/non-Storybook components → **Jest + React Native Testing Library** (`*.dao.test.ts`, `*.service.test.ts`, `*.test.ts`).
   - Supabase queries → **Supabase Test Helpers**.
 - **Backend**: Supabase; schema changes via migrations (`npx supabase migration new`, `npx supabase db push`).
@@ -64,10 +65,13 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 │   ├── component-split.mdc
 │   ├── types.mdc                 # existing — multi-file types live in *.types.ts
 │   ├── state.mdc                 # ≥3 related local states that change together → useReducer
+│   ├── state-sharing.mdc         # React Context to avoid deep / large prop-drilling
 │   ├── i18n.mdc                  # NEW — t('ns.key') inline, no labels object (key dictionaries excepted)
 │   ├── tdd.mdc                   # NEW — Three Laws of TDD, Red-Green-Refactor for TS
-│   └── pre-slice-checklist.mdc   # NEW — recurring pre-slice self-check (barrels, helpers, a11y, atom ban, Modal, e2e, layout, i18n)
+│   ├── pre-slice-checklist.mdc   # NEW — recurring pre-slice self-check (barrels, helpers, a11y, atom ban, Modal, e2e, layout, i18n)
+│   └── e2e.mdc                   # NEW — Playwright e2e are interaction-only (no render-only presence tests)
 │                                 #   (reviewer rubrics now live inline in each reviewer agent file — no shared review-standards doc)
+├── DESIGN.md                     # brand/design system (colors, type, voice, MD3; not a .mdc rule file)
 ├── skills/                       # invocable procedures (loaded on demand)
 │   ├── grill-me/                 # relentless one-question-at-a-time interview (runs /grilling) — used by spec_partner
 │   ├── gherkin-authoring/        # NEW — distill spec → tagged gherkin-scenarios.md contract
@@ -79,8 +83,8 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 │   └── commit.md
 ├── agents/                       # NEW — role definitions (subagents)
 │   ├── orchestrator_lead.md      # orchestrator: guards phases + the gate, invokes others
-│   ├── spec_partner.md           # Phase 1 — spec + Gherkin contract (one step)
-│   ├── spec_reviewer.md          # Phase 1 — pre-gate review of the spec bundle
+│   ├── spec_partner.md           # Phase 1 — PLAN MODE: grill → plan → (after approval) author spec + Gherkin contract
+│   ├── spec_reviewer.md          # Phase 1 — post-approval review of the written spec bundle
 │   ├── implementer.md          # Phase 2 (+ change re-work in Phase 3)
 │   ├── reviewer_slice.md         # Phase 2 — per-slice review vs. all .agents/rules/ + design + accessibility (one agent)
 │   ├── reviews_lead.md           # Phase 3 — CI once, invokes the sole full reviewer, consolidates, requests changes
@@ -109,7 +113,7 @@ docs/
         ├── task-2.md             #   each carries its own frontmatter status + slice + scenarios
         ├── …                     #   task-N.md
         ├── gherkin-scenarios.md        # spec_partner — the Gherkin contract (via gherkin-authoring skill)
-        ├── review-spec.md        # spec_reviewer — pre-gate spec-bundle review (durable findings trail; never empty)
+        ├── review-spec.md        # spec_reviewer — post-approval spec-bundle review (durable findings trail; never empty)
         ├── tdd.md                # implementer — TDD cycle log + @scenario → test map
         ├── review-engineering.md # reviewer_engineering — the sole full-review report
         ├── review.md             # reviews_lead — consolidated findings + change requests + round verdict
@@ -149,31 +153,34 @@ progress/                         # NEW — session-level state only (nothing fe
 **Feature pipeline phase** (frontmatter `status:` in `tasks.md`, guarded by `orchestrator_lead`):
 
 ```
-pending → spec_drafted → [spec_reviewer ↔ spec_partner, ≤ 2 rounds] → spec_ready
-        → [HUMAN GATE: approve spec + Gherkin contract] → approved
+pending → [spec_partner PLAN MODE: grill read-only → present plan]
+        → [HUMAN GATE: approve the plan] → approved
+        → [spec_partner authors bundle] → spec_drafted
+        → [spec_reviewer once on the written bundle → spec_partner fixes every finding, 1 round] → spec_ready
         → in_progress → in_review → mutation → pr_ready
         → [human opens & merges PR] → done
 ```
 
-Only `orchestrator_lead` (and `implementer` on final `done`) writes the feature phase; the implementer flips individual `task-N.md` statuses as it builds. **One human gate**, up front: a single combined approval of the spec **and** the Gherkin contract (`spec_ready → approved`), both produced by `spec_partner` in one step. Everything after the gate runs autonomously up to `pr_ready`; `dod_validator` only validates the DoD — opening and merging the PR is a manual human step that moves the feature to `done`.
+Only `orchestrator_lead` (and `implementer` on final `done`) writes the feature phase; the implementer flips individual `task-N.md` statuses as it builds. **One human gate**, up front: `spec_partner` runs in **plan mode** (grills read-only, presents a plan, writes nothing), the human approves the **plan** (`pending → approved`), and only then does `spec_partner` author the bundle (`spec_drafted`) which `spec_reviewer` vets (`spec_ready`). Everything after the gate runs autonomously up to `pr_ready`; `dod_validator` only validates the DoD — opening and merging the PR is a manual human step that moves the feature to `done`.
 
 ---
 
 ## 4. Pipeline overview
 
-One feature at a time. State on disk. One human approval up front — a single combined sign-off on spec + Gherkin contract. Edge labels show the feature status written after each step.
+One feature at a time. State on disk. One human approval up front — the human signs off `spec_partner`'s **plan** (plan mode) before any artifact is written. Edge labels show the feature status written after each step.
 
 ```mermaid
 flowchart TD
     CLI["/ticket-orchestrator &lt;story&gt;<br/>reads user-stories/pending/&lt;story&gt;.md"] --> LEAD{{"orchestrator_lead — orchestrator<br/>worktree feat/&lt;name&gt; · story pending→in-progress→done · guards the gate"}}
 
-    LEAD -->|pending| P1["① spec_partner<br/>grill-me debate → spec.md · risks.md · tasks.md · task-N.md · gherkin-scenarios.md"]
-    P1 -->|spec_drafted| SR["① spec_reviewer<br/>vet the bundle → review-spec.md"]
-    SR -->|"findings → fix (≤2 rounds)"| P1
-    SR -->|spec_ready| GATE{"⏸ HUMAN GATE<br/>approve spec + Gherkin contract"}
-    GATE -->|rejected| P1
+    LEAD -->|pending| P1["① spec_partner — PLAN MODE<br/>grill-me (read-only) → present PLAN (spec overview · slices · @s outline); writes nothing"]
+    P1 -->|plan_ready| GATE{"⏸ HUMAN GATE<br/>approve the plan (up front)"}
+    GATE -->|"rejected → re-grill"| P1
+    GATE -->|"approved"| AUTHOR["① spec_partner (author)<br/>write spec.md · risks.md · tasks.md · task-N.md · gherkin-scenarios.md"]
+    AUTHOR -->|spec_drafted| SR["① spec_reviewer<br/>vet the WRITTEN bundle → review-spec.md"]
+    SR -->|"findings → fix (1 round, no re-review)"| AUTHOR
 
-    GATE -->|"approved"| P3G
+    SR -->|"spec_ready"| P3G
     subgraph P3G["② implementer — strict TDD, one slice at a time (each slice: build → rules+design review → next) (in_progress)"]
         direction LR
         S1["Slice 1<br/>Happy path + Loading"] --> S2["Slice 2<br/>Empty + Error + Retry"] --> S3["Slice 3<br/>Analytics + Flag + a11y + i18n"] --> INT["Integration tests"]
@@ -189,7 +196,7 @@ flowchart TD
     RV --> RL
 
     RL -->|"any finding — even minor → fix (≤2 rounds)"| P3G
-    RL -->|"clean — OR after 2 rounds: minors-only (documented + accepted)"| MUT["③ mutation_tester<br/>StrykerJS on changed files vs main"]
+    RL -->|"clean — OR after 2 rounds: minors-only (documented + accepted)"| MUT["③ mutation_tester<br/>StrykerJS on changed files vs delivery branch"]
     RL -.->|"after 2 rounds: blocker/major → escalate & block"| ESC(["human"])
     MUT -->|"survivor → fix (≤2 rounds)"| P3G
     MUT -->|"0 survivors → pr_ready"| DV["④ dod_validator<br/>validate full DoD → dod.md"]
@@ -228,11 +235,11 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
   - `gherkin-scenarios.md` — the Gherkin contract, distilled from the spec **in the same step** via the `gherkin-authoring` skill: one `@s`-tagged `Scenario` per behavior (happy path + error/empty/edge), every AC mapped to ≥ 1 scenario, each `task-N.md`'s `scenarios` referencing the `@s` tags. Ambiguity is resolved here — the point of maximum leverage — not in code.
 - **Gate → `spec_drafted`:** every AC is testable (G/W/T); 4 UI states defined (if UI); risks have mitigations; every AC maps to an `@s` scenario in `gherkin-scenarios.md`; tasks map to `libs/*` paths that respect the layering rules.
 
-**Phase 1 (review) — `spec_reviewer` (automated, pre-gate)**
+**Phase 1 (review) — `spec_reviewer` (automated, post-approval — on the written bundle)**
 - **Tools:** `Read, Glob, Grep`. Reviews the **documents**, never writes them.
 - **Behavior:** independently vet the bundle (`spec.md`, `tasks.md`, `task-N.md`, `gherkin-scenarios.md` — **not `risks.md`, which lives in `tmp/<name>/` and is out of scope**) for correctness, completeness, testability, valid `libs/*` task paths, full story → AC → `@s` → task traceability, and that **`spec.md` is a terse overview that duplicates nothing** in the linked files (rubric inline in `spec_reviewer.md`). Write `review-spec.md`.
-- **Loop:** any finding → back to `spec_partner` to fix → re-review, **≤ 2 rounds**. On `APPROVED` → `spec_ready`. (Unresolved after 2 rounds → proceed to the gate with the open findings surfaced to the human.)
-- **⏸ HUMAN GATE (single, combined):** `orchestrator_lead` presents **`spec.md` and `gherkin-scenarios.md` together** (plus any open `review-spec.md` findings) and **waits for one explicit approval**. The human can send edits back to `spec_partner` (loop, re-running the spec review) or approve → `approved`. Building does not begin until both are signed off — the cheapest place to correct scope, intent, and contract.
+- **Single round:** `spec_reviewer` reviews the written bundle **once**; `spec_partner` fixes **every** finding; then → `spec_ready` (no re-review pass). A finding `spec_partner` can't resolve → the lead **escalates** to the human. (This runs after the plan gate, so scope is already approved; a fix that would materially change the approved plan is re-surfaced to the human.)
+- **⏸ HUMAN GATE (single, up front — on the PLAN):** before any file is written, `orchestrator_lead` presents `spec_partner`'s **plan** (spec overview + task/slice breakdown + `@s` scenario outline) and **waits for one explicit approval**. The human can send edits back to `spec_partner` (re-grill/re-plan) or approve → `approved`. Only then does `spec_partner` author the bundle, and `spec_reviewer` vets the written artifacts (a fix that would materially change the approved plan is re-surfaced to the human). Approving the plan is the cheapest place to correct scope, intent, and contract — before anything is authored.
 
 ### Phase 2 — `implementer` (Build, strict TDD)
 - **Tools:** `Read, Write, Edit, Glob, Grep, Bash`.
@@ -246,7 +253,7 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
   | **2 — Empty + Error + Retry** | Empty and Error UI states, retry action, error handling by failure type (e.g. Supabase/API error, 401→refresh, 429→backoff) | the error/empty `@s` scenarios | `feat(<name>): add error handling and empty state` |
   | **3 — Analytics + Flag + a11y + i18n** | Instrument analytics events, wrap in feature flag (if rollout), accessibility labels/roles, strings externalized | the observability/a11y `@s` scenarios | `feat(<name>): add analytics, a11y, and i18n` |
 
-  **Per-slice gate** (before the commit and before the next slice): the slice's `@s` scenarios are covered by passing tests; `pnpm --filter <ws> test` (+ relevant `test:e2e`) green; `pnpm lint` + `pnpm check-types` clean; no hardcoded strings/colors/dims; **and a light `reviewer_slice` review (checks the slice against all `.agents/rules/` + design + accessibility, invoked directly by `orchestrator_lead`) is clean** — findings fixed via TDD, ≤ 2 rounds. Then the Conventional Commit is made. Each slice is logged as its own block in `docs/features/<name>/tdd.md`. Non-UI/logic-only features still slice by risk (happy path → error/edge → observability) even without the 4 UI states.
+  **Per-slice gate** (before the commit and before the next slice): the slice's `@s` scenarios are covered by passing tests; `pnpm --filter <ws> test` (+ relevant `test:e2e`) green; `pnpm lint` + `pnpm check-types` clean; no hardcoded strings/colors/dims; **and a light `reviewer_slice` review (checks the slice against all `.agents/rules/` + design + accessibility, invoked directly by `orchestrator_lead`)** runs — **1 round**: reviews once, findings fixed via TDD, no re-review (unresolvable → escalate). Then the Conventional Commit is made. Each slice is logged as its own block in `docs/features/<name>/tdd.md`. Non-UI/logic-only features still slice by risk (happy path → error/edge → observability) even without the 4 UI states.
 - **What it generates within each slice, by artifact type:**
 
   **a. UI component** (Storybook-backed, atomic design) — TDD-driven exactly like logic:
@@ -320,7 +327,7 @@ export default {
 
 ## 6. Orchestrator — `orchestrator_lead`
 - **Tools:** `Read, Write, Glob, Grep, Bash, Task` (it invokes subagents; it does **not** implement or edit feature code).
-- **Responsibilities:** create the feature's **git worktree** on `feat/<name>` (`.worktrees/<name>`) and run everything inside it (never on the main checkout); own the feature folders under `docs/features/` (task statuses + feature phase in `tasks.md`) and `progress/current.md`; enforce one feature at a time; run phases in order; **stop at the single human gate** (combined spec + Gherkin contract approval) and loop edits back to `spec_partner` until approved; delegate the whole review phase to `reviews_lead` (which runs CI once, invokes the sole full reviewer `reviewer_engineering`, consolidates, and loops changes with the implementer); route surviving mutants back to `implementer`; append to `progress/history.md`. It never lets a phase advance until its gate passes.
+- **Responsibilities:** create the feature's **git worktree** on `feat/<name>` (`.worktrees/<name>`) and run everything inside it (never on the main checkout); own the feature folders under `docs/features/` (task statuses + feature phase in `tasks.md`) and `progress/current.md`; enforce one feature at a time; run phases in order; **stop at the single human gate** (approve `spec_partner`'s plan, up front — before any artifact is written) and loop edits back to `spec_partner` until the plan is approved; delegate the whole review phase to `reviews_lead` (which runs CI once, invokes the sole full reviewer `reviewer_engineering`, consolidates, and loops changes with the implementer); route surviving mutants back to `implementer`; append to `progress/history.md`. It never lets a phase advance until its gate passes.
 - **Entry:** the `/ticket-orchestrator <story>` command (`.agents/commands/ticket-orchestrator.md`) sets the role, resolves `$ARGUMENTS` to `user-stories/<story>.md`, and reads it as the ticket.
 
 **Anti-"telephone" rule:** subagents persist artifacts to disk and return a single reference line (e.g. `green -> docs/features/<name>/tdd.md`, `CHANGES_REQUESTED -> docs/features/<name>/review.md`). Content lives on disk, surviving restarts and blown context windows.

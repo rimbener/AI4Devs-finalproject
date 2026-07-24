@@ -34,7 +34,7 @@ describe('pdf-upload.helpers', () => {
       scanned_or_image_only: 'upload.error.scannedNotSupported',
       corrupt_or_unreadable: 'upload.error.corrupt',
       extraction_failed: 'upload.error.extractionFailed',
-      network_error: 'upload.error.network',
+      network_error: 'error.network',
       unauthenticated: 'upload.error.unauthenticated',
     };
 

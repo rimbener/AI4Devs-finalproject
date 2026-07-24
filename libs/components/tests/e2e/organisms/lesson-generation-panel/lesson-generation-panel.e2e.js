@@ -81,6 +81,36 @@ test('ErrorNoAction story renders the message with no recovery action button', a
   await expect(canvas.locator('button', { hasText: 'Try again' })).toHaveCount(0);
 });
 
+// @s10 — free-BYOK story renders provider and model pickers above composition.
+test('FreeByokWithPickers story renders provider and model pickers', async ({ page }) => {
+  await page.goto(story('free-byok-with-pickers'));
+  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+
+  await expect(canvas.locator('text=AI provider')).toBeVisible();
+  await expect(canvas.locator('text=Model')).toBeVisible();
+  await expect(canvas.locator('text=Groq').first()).toBeVisible();
+});
+
+// @s19 — platform story hides provider/model pickers.
+test('PlatformNoPickers story hides provider and model pickers', async ({ page }) => {
+  await page.goto(story('platform-no-pickers'));
+  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+
+  await expect(canvas.locator('text=AI provider')).toHaveCount(0);
+  await expect(canvas.locator('text=Model')).toHaveCount(0);
+  await expect(canvas.locator('text=Lesson content')).toBeVisible();
+});
+
+// @s16 — free-BYOK missing-key gate story shows notice and path to add a key.
+test('FreeByokMissingKey story renders the missing-key gate', async ({ page }) => {
+  await page.goto(story('free-byok-missing-key'));
+  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+
+  await expect(canvas.locator('text=An API key is required to generate lessons.')).toBeVisible();
+  await expect(canvas.locator('text=Add API key').first()).toBeVisible();
+  await expect(canvas.locator('text=AI provider')).toHaveCount(0);
+});
+
 // @s2 — the composition picker interaction itself: choosing a different option actually
 // changes the selected value (not just static markup).
 test('InteractivePicker story updates the selected composition when a different option is chosen', async ({

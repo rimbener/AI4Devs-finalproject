@@ -9,6 +9,7 @@
     "build": "storybook build",
     "check-types": "tsc --noEmit",
     "lint": "biome check .",
+    "format": "biome check --write .",
     "test": "jest --coverage=false --passWithNoTests --watchman=false",
     "test:watch": "jest --watch",
     "test:e2e": "npx playwright test",
@@ -24,6 +25,7 @@
     "@helsoft/localization": "workspace:*",
     "@helsoft/logging-in-out": "workspace:*",
     "@helsoft/pdf-upload-extraction": "workspace:*",
+    "@helsoft/services": "workspace:*",
     "@helsoft/supabase-services": "workspace:*",
     "@helsoft/types": "workspace:*"
   },

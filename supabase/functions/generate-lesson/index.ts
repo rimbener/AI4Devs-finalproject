@@ -16,7 +16,6 @@
 // OpenAI-compatible endpoint behind this same `runGeneration` seam. The vision fallback (task-12,
 // @s10) and the wall-clock timeout guard (@s15, risks.md R4) are new, equally unverified-live
 // additions behind the same seam discipline.
-import { createGroq } from 'npm:@ai-sdk/groq@4';
 import { generateObject } from 'npm:ai@7';
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@4';
@@ -27,17 +26,19 @@ import { GenerationTimeoutError, mapGenerationError } from './_shared/lesson-gen
 import {
   callProviderWithResolvedKey,
 } from './_shared/lesson-generation.key-source.ts';
+import { createProviderModel, createPlatformTextModel } from './_shared/lesson-generation.provider-factory.ts';
 import { handleLessonGenerationRoute } from './_shared/lesson-generation.route.ts';
 import { markDocumentGenerationFailure, persistLesson } from './_shared/lesson-generation.persist.ts';
 import { placeImagesByMetadata } from './_shared/lesson-generation.placement.ts';
 import { buildDeckPrompt } from './_shared/lesson-generation.prompt.ts';
 import { deckSchema } from './_shared/lesson-generation.schema.ts';
+import { resolveVisionModelForPlacement } from './_shared/lesson-generation.vision-model.ts';
 import type {
   PageAnchoredImage,
   PromptImageManifestEntry,
   VisionPlacementDecision,
 } from './_shared/lesson-generation.types.ts';
-import { TEXT_MODEL_ID, VISION_MODEL_ID } from './_shared/models.ts';
+import { PLATFORM_TEXT_MODEL_ID, type AiProvider } from './_shared/models.ts';
 import type {
   GeneratedLesson,
   GenerateLessonRequest,
@@ -81,13 +82,28 @@ const isLessonComposition = (value: unknown): value is LessonComposition =>
  * decoding (see https://console.groq.com/docs/structured-outputs). */
 const groqObjectOptions = { groq: { strictJsonSchema: false } };
 
-const runGeneration = async (apiKey: string, prompt: string): Promise<unknown> => {
-  const groq = createGroq({ apiKey });
+type GenerationContext = {
+  apiKey: string;
+  source: 'user' | 'platform';
+  provider: AiProvider;
+  model: string;
+};
+
+const runGeneration = async (
+  { apiKey, source, provider, model }: GenerationContext,
+  prompt: string,
+): Promise<unknown> => {
+  const modelFn =
+    source === 'platform'
+      ? () => createPlatformTextModel(apiKey)
+      : () => createProviderModel(provider, apiKey)(model);
   const { object } = await generateObject({
-    model: groq(TEXT_MODEL_ID),
+    model: modelFn() as Parameters<typeof generateObject>[0]['model'],
     schema: deckSchema,
     prompt,
-    providerOptions: groqObjectOptions,
+    ...(source === 'platform' || provider === 'groq'
+      ? { providerOptions: groqObjectOptions }
+      : {}),
   });
   return object;
 };
@@ -120,15 +136,18 @@ type SlideAnchorSummary = { index: number; title: string; content: string };
  * image in the deck rather than one call per image. A malformed/partial vision response yields no
  * decision for an image, which `applyVisionPlacements` already degrades to text-only (@s12). */
 const runVisionPlacement = async (
-  apiKey: string,
+  ctx: GenerationContext,
   images: { imageId: string; bytes: Uint8Array }[],
   slides: SlideAnchorSummary[],
 ): Promise<VisionPlacementDecision[]> => {
-  const groq = createGroq({ apiKey });
+  const visionModelId = resolveVisionModelForPlacement(ctx.provider, ctx.model);
+  if (!visionModelId) return [];
+
+  const visionModel = createProviderModel(ctx.provider, ctx.apiKey)(visionModelId);
   const { object } = await generateObject({
-    model: groq(VISION_MODEL_ID),
+    model: visionModel as Parameters<typeof generateObject>[0]['model'],
     schema: visionDecisionResponseSchema,
-    providerOptions: groqObjectOptions,
+    ...(ctx.provider === 'groq' ? { providerOptions: groqObjectOptions } : {}),
     messages: [
       {
         role: 'user',
@@ -219,8 +238,11 @@ Deno.serve(async (req) => {
         }
         return { usePlatformKey: planEmbed.use_platform_key };
       },
-      readUserApiKey: async () => {
-        const { data: keyRows } = await adminClient.rpc('get_api_key', { p_user_id: user.id });
+      readUserApiKey: async (provider) => {
+        const { data: keyRows } = await adminClient.rpc('get_api_key', {
+          p_user_id: user.id,
+          p_provider: provider,
+        });
         const keyRow = Array.isArray(keyRows) ? keyRows[0] : keyRows;
         return keyRow?.api_key ?? null;
       },
@@ -264,7 +286,9 @@ Deno.serve(async (req) => {
           ? 429
           : resolvedKey.errorCode === 'generation_failed'
             ? 500
-            : 422,
+            : resolvedKey.errorCode === 'invalid_model'
+              ? 422
+              : 422,
     );
   }
   const images = (resolvedKey.imageMetadata ?? []) as DocumentImageRow[];
@@ -285,9 +309,16 @@ Deno.serve(async (req) => {
     ...(image.description ? { alt: image.description } : {}),
   }));
 
+  const generationCtx: GenerationContext = {
+    apiKey: resolvedKey.apiKey,
+    source: resolvedKey.source,
+    provider: resolvedKey.provider,
+    model: resolvedKey.model ?? PLATFORM_TEXT_MODEL_ID,
+  };
+
   const generateLesson = async (): Promise<GeneratedLesson> => {
-    const rawDeck = await callProviderWithResolvedKey(resolvedKey, (apiKey) =>
-      runGeneration(apiKey, prompt),
+    const rawDeck = await callProviderWithResolvedKey(resolvedKey, () =>
+      runGeneration(generationCtx, prompt),
     );
 
     // Un-anchorable images (@s10) -- derived structurally from the model's own response, ahead
@@ -325,8 +356,8 @@ Deno.serve(async (req) => {
             title: slide.title ?? '',
             content: slide.content ?? '',
           }));
-          visionDecisions = await callProviderWithResolvedKey(resolvedKey, (apiKey) =>
-            runVisionPlacement(apiKey, downloaded, slideSummaries),
+          visionDecisions = await callProviderWithResolvedKey(resolvedKey, () =>
+            runVisionPlacement(generationCtx, downloaded, slideSummaries),
           );
         }
       } catch {

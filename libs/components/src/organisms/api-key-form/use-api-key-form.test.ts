@@ -3,6 +3,7 @@ jest.mock('@helsoft/localization', () => ({
 }));
 
 import { useLocalization } from '@helsoft/localization';
+import type { SavedProviderKey } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
 
@@ -19,11 +20,13 @@ const t = (key: string) => {
 };
 
 type HookProps = {
-  status: { hasKey: boolean };
+  savedKey: SavedProviderKey | null;
   isLoadingStatus?: boolean;
   isSubmitting?: boolean;
   errorMessage?: string;
 };
+
+const savedProviderKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:00:00Z' };
 
 const renderFormHook = (initialProps: HookProps) =>
   renderHook((props: HookProps) => useApiKeyForm(props), { initialProps });
@@ -34,7 +37,7 @@ describe('useApiKeyForm', () => {
   });
 
   it('starts with empty key, showInput true when no key, save disabled', async () => {
-    const { result } = await renderFormHook({ status: { hasKey: false } });
+    const { result } = await renderFormHook({ savedKey: null });
 
     expect(result.current?.apiKey).toBe('');
     expect(result.current?.showInput).toBe(true);
@@ -44,13 +47,13 @@ describe('useApiKeyForm', () => {
   });
 
   it('hides input when a key is saved and not replacing', async () => {
-    const { result } = await renderFormHook({ status: { hasKey: true } });
+    const { result } = await renderFormHook({ savedKey: savedProviderKey });
 
     expect(result.current?.showInput).toBe(false);
   });
 
   it('shows input once replacing is toggled on', async () => {
-    const { result } = await renderFormHook({ status: { hasKey: true } });
+    const { result } = await renderFormHook({ savedKey: savedProviderKey });
 
     await act(async () => {
       result.current?.setIsReplacing(true);
@@ -60,7 +63,7 @@ describe('useApiKeyForm', () => {
 
   // Mutation — `if (isReplacing)` → `if (true)`: false must not dispatch start-replace.
   it('does not start replace when setIsReplacing(false)', async () => {
-    const { result } = await renderFormHook({ status: { hasKey: true } });
+    const { result } = await renderFormHook({ savedKey: savedProviderKey });
 
     await act(async () => {
       result.current?.setIsReplacing(false);
@@ -72,7 +75,7 @@ describe('useApiKeyForm', () => {
 
   // Mutation-kill — `.trim()` on save-disabled; whitespace-only must stay disabled.
   it('keeps save disabled for whitespace-only keys', async () => {
-    const { result } = await renderFormHook({ status: { hasKey: false } });
+    const { result } = await renderFormHook({ savedKey: null });
 
     await act(async () => {
       result.current?.setApiKey('   ');
@@ -87,7 +90,7 @@ describe('useApiKeyForm', () => {
 
   it('disables save while submitting even with a non-blank key', async () => {
     const { result } = await renderFormHook({
-      status: { hasKey: false },
+      savedKey: null,
       isSubmitting: true,
     });
 
@@ -99,7 +102,7 @@ describe('useApiKeyForm', () => {
 
   it('clears replace mode + key after a successful replace-save', async () => {
     const { result, rerender } = await renderFormHook({
-      status: { hasKey: true },
+      savedKey: savedProviderKey,
       isSubmitting: true,
     });
 
@@ -110,7 +113,7 @@ describe('useApiKeyForm', () => {
     expect(result.current?.isReplacing).toBe(true);
 
     await act(async () => {
-      await rerender({ status: { hasKey: true }, isSubmitting: false });
+      await rerender({ savedKey: savedProviderKey, isSubmitting: false });
     });
 
     expect(result.current?.isReplacing).toBe(false);
@@ -124,13 +127,13 @@ describe('useApiKeyForm', () => {
     announceSpy.mockClear();
 
     const { rerender } = await renderFormHook({
-      status: { hasKey: false },
+      savedKey: null,
       errorMessage: undefined,
     });
     expect(announceSpy).not.toHaveBeenCalled();
 
     await act(async () => {
-      await rerender({ status: { hasKey: false }, errorMessage: 'network failed' });
+      await rerender({ savedKey: null, errorMessage: 'network failed' });
     });
 
     await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('network failed'));
@@ -144,14 +147,14 @@ describe('useApiKeyForm', () => {
     announceSpy.mockClear();
 
     const { rerender } = await renderFormHook({
-      status: { hasKey: false },
+      savedKey: null,
       isLoadingStatus: false,
     });
     expect(announceSpy).not.toHaveBeenCalled();
 
     await act(async () => {
       await rerender({
-        status: { hasKey: false },
+        savedKey: null,
         isLoadingStatus: true,
       });
     });
@@ -167,19 +170,30 @@ describe('useApiKeyForm', () => {
     announceSpy.mockClear();
 
     const { rerender } = await renderFormHook({
-      status: { hasKey: false },
+      savedKey: null,
       isSubmitting: false,
     });
     expect(announceSpy).not.toHaveBeenCalled();
 
     await act(async () => {
       await rerender({
-        status: { hasKey: false },
+        savedKey: null,
         isSubmitting: true,
       });
     });
 
     await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('saving key'));
     announceSpy.mockRestore();
+  });
+
+  it('does not enter replace mode when setIsReplacing(false) is called', async () => {
+    const { result } = await renderFormHook({ savedKey: savedProviderKey });
+
+    await act(async () => {
+      result.current?.setIsReplacing(false);
+    });
+
+    expect(result.current?.isReplacing).toBe(false);
+    expect(result.current?.showInput).toBe(false);
   });
 });
