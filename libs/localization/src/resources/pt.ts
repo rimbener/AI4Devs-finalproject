@@ -6,6 +6,9 @@ export const pt: TranslationResource = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Erro de rede. Tente novamente.',
+    },
     nav: {
       myLessons: 'Minhas lições',
       myPdfFiles: 'Meus arquivos PDF',
@@ -104,7 +107,6 @@ export const pt: TranslationResource = {
         scannedNotSupported: 'Este PDF parece digitalizado; ainda não conseguimos ler o texto',
         corrupt: 'Não foi possível abrir este PDF',
         extractionFailed: 'Algo deu errado ao ler seu PDF',
-        network: 'Erro de rede',
         unauthenticated: 'Faça login para enviar o arquivo',
       },
     },
@@ -150,7 +152,6 @@ export const pt: TranslationResource = {
         timeout: 'A geração demorou demais. Tente novamente.',
         generationFailed: 'Algo deu errado ao gerar sua lição. Tente novamente.',
         documentNotReady: 'Este documento ainda não está pronto. Reenvie seu PDF.',
-        network: 'Erro de rede. Tente novamente.',
         unauthenticated: 'Entre na sua conta para gerar uma lição.',
         persistFailed: 'Não foi possível salvar sua lição. Tente novamente.',
         action: {
@@ -239,7 +240,6 @@ export const pt: TranslationResource = {
       error: {
         email: 'Informe um e-mail válido',
         invalidCredentials: 'E-mail ou senha inválidos',
-        network: 'Erro de rede',
       },
     },
     settings: {
@@ -279,7 +279,6 @@ export const pt: TranslationResource = {
           emptyMessage: 'Nenhuma chave de API salva',
         },
         error: {
-          network: 'Não foi possível conectar ao servidor. Tente novamente.',
           empty: 'Informe sua chave de API.',
         },
       },

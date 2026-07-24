@@ -247,7 +247,7 @@ describe('PdfUpload', () => {
 
     await render(<PdfUpload />);
 
-    expect(screen.getByText('upload.error.network')).toBeTruthy();
+    expect(screen.getByText('error.network')).toBeTruthy();
 
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'upload.retryAction' }));
@@ -274,7 +274,7 @@ describe('PdfUpload', () => {
     scanned_or_image_only: 'upload.error.scannedNotSupported',
     corrupt_or_unreadable: 'upload.error.corrupt',
     extraction_failed: 'upload.error.extractionFailed',
-    network_error: 'upload.error.network',
+    network_error: 'error.network',
     unauthenticated: 'upload.error.unauthenticated',
   } as const;
 

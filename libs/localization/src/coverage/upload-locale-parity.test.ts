@@ -38,7 +38,7 @@ const STUBBED_UPLOAD_KEYS = [
   'upload.error.scannedNotSupported',
   'upload.error.corrupt',
   'upload.error.extractionFailed',
-  'upload.error.network',
+  'error.network',
   'upload.error.unauthenticated',
 ];
 

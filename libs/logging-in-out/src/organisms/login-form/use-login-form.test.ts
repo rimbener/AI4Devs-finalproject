@@ -115,10 +115,10 @@ describe('useLoginForm', () => {
     expect(announceSpy).not.toHaveBeenCalled();
 
     await act(async () => {
-      await rerender({ errorMessage: 'auth.error.network' });
+      await rerender({ errorMessage: 'error.network' });
     });
 
-    await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('auth.error.network'));
+    await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('error.network'));
     announceSpy.mockRestore();
   });
 

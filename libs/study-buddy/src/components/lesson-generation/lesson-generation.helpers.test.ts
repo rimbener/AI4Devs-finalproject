@@ -55,7 +55,7 @@ describe('GENERATION_ERROR_KEYS (task-13)', () => {
       timeout: 'generation.error.timeout',
       generation_failed: 'generation.error.generationFailed',
       document_not_ready: 'generation.error.documentNotReady',
-      network_error: 'generation.error.network',
+      network_error: 'error.network',
       unauthenticated: 'generation.error.unauthenticated',
       persist_failed: 'generation.error.persistFailed',
     });

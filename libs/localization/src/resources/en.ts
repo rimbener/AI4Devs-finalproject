@@ -11,6 +11,9 @@ export const en = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Network error. Try again.',
+    },
     nav: {
       myLessons: 'My lessons',
       myPdfFiles: 'My PDF files',
@@ -116,7 +119,6 @@ export const en = {
         scannedNotSupported: "This looks like a scanned PDF; we can't read its text yet",
         corrupt: "This PDF couldn't be opened",
         extractionFailed: 'Something went wrong while reading your PDF',
-        network: 'Network error',
         unauthenticated: 'Please sign in to upload',
       },
     },
@@ -168,7 +170,6 @@ export const en = {
         timeout: 'Generation took too long. Try again.',
         generationFailed: 'Something went wrong while generating your lesson. Try again.',
         documentNotReady: "This document isn't ready yet. Please re-upload your PDF.",
-        network: 'Network error. Try again.',
         unauthenticated: 'Please sign in to generate a lesson.',
         persistFailed: 'Your lesson could not be saved. Try again.',
         action: {
@@ -257,7 +258,6 @@ export const en = {
       error: {
         email: 'Enter a valid email address',
         invalidCredentials: 'Invalid email or password',
-        network: 'Network error',
       },
     },
     settings: {
@@ -313,7 +313,6 @@ export const en = {
           emptyMessage: 'No API keys saved',
         },
         error: {
-          network: "Couldn't reach the server. Try again.",
           // ai-key-management task-13 (Slice 3) — spec.md Open decision 3: the defensive
           // service-layer backstop for a blank/whitespace-only key (validation_error). No
           // current caller reaches this through the UI (ApiKeyForm disables Save until a

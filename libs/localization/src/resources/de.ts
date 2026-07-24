@@ -6,6 +6,9 @@ export const de: TranslationResource = {
     brand: {
       name: 'AI Study Buddy',
     },
+    error: {
+      network: 'Netzwerkfehler. Versuche es erneut.',
+    },
     nav: {
       myLessons: 'Meine Lektionen',
       myPdfFiles: 'Meine PDF-Dateien',
@@ -105,7 +108,6 @@ export const de: TranslationResource = {
           'Dieses PDF scheint gescannt zu sein; wir können den Text noch nicht lesen',
         corrupt: 'Dieses PDF konnte nicht geöffnet werden',
         extractionFailed: 'Beim Lesen deines PDFs ist etwas schiefgelaufen',
-        network: 'Netzwerkfehler',
         unauthenticated: 'Bitte melde dich an, um hochzuladen',
       },
     },
@@ -153,7 +155,6 @@ export const de: TranslationResource = {
         generationFailed:
           'Beim Generieren deiner Lektion ist etwas schiefgelaufen. Versuche es erneut.',
         documentNotReady: 'Dieses Dokument ist noch nicht bereit. Lade dein PDF erneut hoch.',
-        network: 'Netzwerkfehler. Versuche es erneut.',
         unauthenticated: 'Bitte melde dich an, um eine Lektion zu generieren.',
         persistFailed: 'Deine Lektion konnte nicht gespeichert werden. Versuche es erneut.',
         action: {
@@ -242,7 +243,6 @@ export const de: TranslationResource = {
       error: {
         email: 'Bitte gib eine gültige E-Mail-Adresse ein',
         invalidCredentials: 'E-Mail oder Passwort ungültig',
-        network: 'Netzwerkfehler',
       },
     },
     settings: {
@@ -283,7 +283,6 @@ export const de: TranslationResource = {
           emptyMessage: 'Keine API-Schlüssel gespeichert',
         },
         error: {
-          network: 'Server nicht erreichbar. Bitte erneut versuchen.',
           empty: 'Gib deinen API-Schlüssel ein.',
         },
       },
