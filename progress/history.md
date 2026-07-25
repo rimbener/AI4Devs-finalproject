@@ -142,3 +142,5 @@
 2026-07-24 | tabs-header (ad hoc, no story) | n/a | — | Added @helsoft/components TabsHeader molecule (title + trailing action); wired into SavedLessons and PdfDocuments, replacing per-screen inline heading rows; en/es/pt/de "saved lessons" copy renamed to "my lessons". Built on feat/lesson-route-header (worktree).
 
 2026-07-24 | lesson-route-header | done | docs/features/lesson-route-header/ | Merged into feature-entrega3-HernanLaura (incl. ad hoc safe-area-insets + tabs-header work); worktree removed.
+
+2026-07-24 | comment-cleanup (ad hoc, no story) | n/a | — | Repo-wide why-not-what comment audit (830 files); trimmed 15 files' restating/obvious comments (cc1ba8747).
