@@ -1,8 +1,17 @@
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
 import { useApiKey } from './use-api-key';
+
+const createWrapper = () => {
+  const queryClient = new QueryClient();
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 /**
  * Integration (ai-key-management): useApiKey -> ApiKeyService -> ApiKeyDao, exercised for
@@ -42,7 +51,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     const select = jest.fn().mockResolvedValue({ data: [groqRow], error: null });
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => useApiKey());
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -58,7 +67,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     } as never);
     const invoke = mockInvoke(() => Promise.resolve({ data: groqKeyStatus, error: null }));
 
-    const { result } = renderHook(() => useApiKey());
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status).toEqual({ keys: [] });
 
@@ -90,7 +99,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       }),
     );
 
-    const { result } = renderHook(() => useApiKey());
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status.keys).toHaveLength(2);
 
@@ -120,7 +129,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       }),
     );
 
-    const { result } = renderHook(() => useApiKey());
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status.keys[0]?.updatedAt).toBe('2026-01-01T00:00:00.000Z');
 
@@ -138,7 +147,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     } as never);
     const invoke = mockInvoke(() => Promise.resolve({ data: { keys: [] }, error: null }));
 
-    const { result } = renderHook(() => useApiKey());
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.hasKey).toBe(true);
 
@@ -160,7 +169,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     } as never);
     mockInvoke(() => Promise.reject(new Error('edge unreachable')));
 
-    const { result } = renderHook(() => useApiKey());
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     await act(async () => {

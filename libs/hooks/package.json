@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@helsoft/supabase-services": "workspace:*",
-    "@helsoft/types": "workspace:*"
+    "@helsoft/types": "workspace:*",
+    "@tanstack/react-query": "^5.90.3"
   },
   "peerDependencies": {
     "react": "*",

@@ -1,12 +1,22 @@
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
 import { buildAuthApiErrorFixture } from '../test-utils/auth-error-fixtures';
 import { useAuth } from './use-auth';
 import { useSession } from './use-session';
+import { useSignOut } from './use-sign-out';
 
 type EmitAuthStateChange = Parameters<SupabaseClient['auth']['onAuthStateChange']>[0];
+
+const createWrapper = () => {
+  const queryClient = new QueryClient();
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 /**
  * Integration (login-and-logout, Slice 1 + Slice 2 error normalization): useAuth ->
@@ -55,7 +65,7 @@ describe('login-and-logout slice-1 integration', () => {
       .spyOn(client.auth, 'getSession')
       .mockResolvedValue({ data: { session: null }, error: null } as never);
 
-    const { result } = renderHook(() => useSession());
+    const { result } = renderHook(() => useSession(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.session).toBeNull();
@@ -74,15 +84,17 @@ describe('login-and-logout slice-1 integration', () => {
       return { data: { session, user: { id: 'u1' } }, error: null } as never;
     });
 
-    const { result } = renderHook(() => ({ session: useSession(), auth: useAuth() }));
+    const { result } = renderHook(() => ({ session: useSession(), auth: useAuth() }), {
+      wrapper: createWrapper(),
+    });
     await waitFor(() => expect(result.current.session.isLoading).toBe(false));
     expect(result.current.session.session).toBeNull();
 
-    await act(async () => {
-      await result.current.auth.signIn('user@example.com', 'secret1');
+    act(() => {
+      result.current.auth.signIn({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(result.current.session.session).toBe(session);
+    await waitFor(() => expect(result.current.session.session).toBe(session));
   });
 
   // @s5 — a real Supabase invalid-login error surfaces as useAuth().error === 'invalid_credentials'
@@ -106,27 +118,27 @@ describe('login-and-logout slice-1 integration', () => {
         return { data: { session, user: { id: 'u1' } }, error: null } as never;
       });
 
-    const { result } = renderHook(() => ({ session: useSession(), auth: useAuth() }));
+    const { result } = renderHook(() => ({ session: useSession(), auth: useAuth() }), {
+      wrapper: createWrapper(),
+    });
     await waitFor(() => expect(result.current.session.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(
-        result.current.auth.signIn('user@example.com', 'wrongpass'),
-      ).rejects.toBeTruthy();
+    act(() => {
+      result.current.auth.signIn({ email: 'user@example.com', password: 'wrongpass' });
     });
 
-    expect(result.current.auth.error).toBe('invalid_credentials');
+    await waitFor(() => expect(result.current.auth.error).toBe('invalid_credentials'));
     expect(result.current.session.session).toBeNull();
 
-    await act(async () => {
-      await result.current.auth.signIn('user@example.com', 'secret1');
+    act(() => {
+      result.current.auth.signIn({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(result.current.auth.error).toBeNull();
-    expect(result.current.session.session).toBe(session);
+    await waitFor(() => expect(result.current.auth.error).toBeNull());
+    await waitFor(() => expect(result.current.session.session).toBe(session));
   });
 
-  // @s4 — signing out through useAuth clears the session useSession observes.
+  // @s4 — signing out through useSignOut clears the session useSession observes.
   it('signing out clears the session that useSession observes', async () => {
     const { client, emit } = buildMockedClient();
     const session = { access_token: 'tok-2' } as Session;
@@ -138,15 +150,17 @@ describe('login-and-logout slice-1 integration', () => {
       return { error: null } as never;
     });
 
-    const { result } = renderHook(() => ({ session: useSession(), auth: useAuth() }));
+    const { result } = renderHook(() => ({ session: useSession(), signOut: useSignOut() }), {
+      wrapper: createWrapper(),
+    });
     await waitFor(() => expect(result.current.session.isLoading).toBe(false));
     expect(result.current.session.session).toBe(session);
 
-    await act(async () => {
-      await result.current.auth.signOut();
+    act(() => {
+      result.current.signOut.signOut();
     });
 
-    expect(result.current.session.session).toBeNull();
+    await waitFor(() => expect(result.current.session.session).toBeNull());
   });
 
   // @s7 — a previously-persisted session is restored on a fresh mount (no manual credentials).
@@ -157,7 +171,7 @@ describe('login-and-logout slice-1 integration', () => {
       .spyOn(client.auth, 'getSession')
       .mockResolvedValue({ data: { session: persisted }, error: null } as never);
 
-    const { result } = renderHook(() => useSession());
+    const { result } = renderHook(() => useSession(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.session).toBe(persisted);

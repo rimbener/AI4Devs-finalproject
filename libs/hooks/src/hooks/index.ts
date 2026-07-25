@@ -19,5 +19,7 @@ export * from './use-profile';
 export type * from './use-profile.types';
 export * from './use-session';
 export type * from './use-session.types';
+export * from './use-sign-out';
+export type * from './use-sign-out.types';
 export * from './use-slide-image-url';
 export type * from './use-slide-image-url.types';

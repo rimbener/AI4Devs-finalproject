@@ -1,10 +1,7 @@
-import type { AuthErrorCode } from '@helsoft/types';
+import type { AuthErrorCode, SignInParams } from '@helsoft/types';
 
 export type UseAuthResult = {
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  /** True while a signIn/signOut call is in flight (drives the LoginForm Loading state). */
-  isSubmitting: boolean;
-  /** The normalized code from the most recent failed signIn — null once it succeeds. */
+  isSigningIn: boolean;
   error: AuthErrorCode | null;
+  signIn: (params: SignInParams) => void;
 };

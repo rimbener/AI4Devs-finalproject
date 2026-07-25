@@ -1,16 +1,24 @@
 jest.mock('@helsoft/supabase-services', () => ({
   AuthService: {
     signIn: jest.fn(),
-    signOut: jest.fn(),
   },
 }));
 
 import { AuthService } from '@helsoft/supabase-services';
-import { act, renderHook } from '@testing-library/react-native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
 import { useAuth } from './use-auth';
 
 const service = AuthService as jest.Mocked<typeof AuthService>;
+
+const createWrapper = () => {
+  const queryClient = new QueryClient();
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 describe('useAuth', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -18,63 +26,73 @@ describe('useAuth', () => {
   // @s2 — signIn delegates to AuthService with the given credentials.
   it('signIn calls AuthService.signIn with the given email and password', async () => {
     service.signIn.mockResolvedValue({ session: null, user: null } as never);
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    await act(async () => {
-      await result.current.signIn('user@example.com', 'secret1');
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(service.signIn).toHaveBeenCalledWith('user@example.com', 'secret1');
+    await waitFor(() => {
+      expect(service.signIn).toHaveBeenCalledWith('user@example.com', 'secret1');
+    });
   });
 
-  // @s3 — isSubmitting is true while the sign-in call is in flight, false once it resolves.
-  it('sets isSubmitting true during sign-in and false after it resolves', async () => {
+  // @s3 — isSigningIn is true while the sign-in call is in flight, false once it resolves.
+  it('sets isSigningIn true during sign-in and false after it resolves', async () => {
     let resolveSignIn: (value: unknown) => void = () => {};
     service.signIn.mockReturnValue(
       new Promise((resolve) => {
         resolveSignIn = resolve;
       }) as never,
     );
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    expect(result.current.isSubmitting).toBe(false);
+    expect(result.current.isSigningIn).toBe(false);
 
-    let signInPromise!: Promise<void>;
     act(() => {
-      signInPromise = result.current.signIn('user@example.com', 'secret1');
+      result.current.signIn({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(result.current.isSubmitting).toBe(true);
+    // TanStack Query batches the resulting mutation-state notification onto a macrotask, so
+    // the re-render lands one tick after the synchronous `act` above.
+    await waitFor(() => {
+      expect(result.current.isSigningIn).toBe(true);
+    });
 
     await act(async () => {
       resolveSignIn({ session: null, user: null });
-      await signInPromise;
     });
 
-    expect(result.current.isSubmitting).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSigningIn).toBe(false);
+    });
   });
 
   // @s5/@s6 — a failed signIn exposes the normalized AuthErrorCode via `error`, so the UI can
   // render the right banner without ever seeing the raw service/DAO error.
   it('sets error to the failed signIn code, and null on a subsequent successful signIn', async () => {
     service.signIn.mockRejectedValueOnce({ code: 'invalid_credentials' });
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
     expect(result.current.error).toBeNull();
 
-    await act(async () => {
-      await expect(result.current.signIn('user@example.com', 'wrong')).rejects.toBeTruthy();
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'wrong' });
     });
 
-    expect(result.current.error).toBe('invalid_credentials');
+    await waitFor(() => {
+      expect(result.current.error).toBe('invalid_credentials');
+    });
 
     service.signIn.mockResolvedValueOnce({ session: null, user: null } as never);
 
-    await act(async () => {
-      await result.current.signIn('user@example.com', 'secret1');
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(result.current.error).toBeNull();
+    await waitFor(() => {
+      expect(result.current.error).toBeNull();
+    });
   });
 
   // @s3/@s6 — the Loading state shows "no error yet" (spec.md UI-states table): a stale error
@@ -82,12 +100,14 @@ describe('useAuth', () => {
   // once it resolves.
   it('clears a previous error immediately when a new signIn attempt starts, before it resolves', async () => {
     service.signIn.mockRejectedValueOnce({ code: 'network_error' });
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    await act(async () => {
-      await expect(result.current.signIn('user@example.com', 'secret1')).rejects.toBeTruthy();
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'secret1' });
     });
-    expect(result.current.error).toBe('network_error');
+    await waitFor(() => {
+      expect(result.current.error).toBe('network_error');
+    });
 
     let resolveSignIn: (value: unknown) => void = () => {};
     service.signIn.mockReturnValue(
@@ -96,67 +116,33 @@ describe('useAuth', () => {
       }) as never,
     );
 
-    let signInPromise!: Promise<void>;
     act(() => {
-      signInPromise = result.current.signIn('user@example.com', 'secret1');
+      result.current.signIn({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(result.current.isSubmitting).toBe(true);
-    expect(result.current.error).toBeNull();
+    // The new attempt's pending state clears the stale error before it resolves.
+    await waitFor(() => {
+      expect(result.current.isSigningIn).toBe(true);
+      expect(result.current.error).toBeNull();
+    });
 
     await act(async () => {
       resolveSignIn({ session: null, user: null });
-      await signInPromise;
     });
   });
 
-  // @s4 — signOut delegates to AuthService.
-  it('signOut calls AuthService.signOut', async () => {
-    service.signOut.mockResolvedValue(undefined);
-    const { result } = renderHook(() => useAuth());
-
-    await act(async () => {
-      await result.current.signOut();
-    });
-
-    expect(service.signOut).toHaveBeenCalledWith();
-  });
-
-  // @s4 — isSubmitting mirrors the same in-flight/resolved lifecycle for signOut.
-  it('sets isSubmitting true during sign-out and false after it resolves', async () => {
-    let resolveSignOut: (value: unknown) => void = () => {};
-    service.signOut.mockReturnValue(
-      new Promise((resolve) => {
-        resolveSignOut = resolve;
-      }) as never,
-    );
-    const { result } = renderHook(() => useAuth());
-
-    let signOutPromise!: Promise<void>;
-    act(() => {
-      signOutPromise = result.current.signOut();
-    });
-
-    expect(result.current.isSubmitting).toBe(true);
-
-    await act(async () => {
-      resolveSignOut(undefined);
-      await signOutPromise;
-    });
-
-    expect(result.current.isSubmitting).toBe(false);
-  });
-
-  // @s3 — isSubmitting also returns to false when the sign-in call rejects (not just resolves).
-  it('sets isSubmitting back to false after a failed sign-in', async () => {
+  // @s3 — isSigningIn also returns to false when the sign-in call rejects (not just resolves).
+  it('sets isSigningIn back to false after a failed sign-in', async () => {
     service.signIn.mockRejectedValue(new Error('invalid_credentials'));
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    await act(async () => {
-      await expect(result.current.signIn('user@example.com', 'wrong')).rejects.toThrow();
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'wrong' });
     });
 
-    expect(result.current.isSubmitting).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSigningIn).toBe(false);
+    });
   });
 
   // Guard against a hypothetical AuthService contract violation (Round-1 slice-2 review,
@@ -165,13 +151,15 @@ describe('useAuth', () => {
   // back to the safe network_error default instead.
   it('falls back to network_error when the rejected cause has no valid string code', async () => {
     service.signIn.mockRejectedValueOnce({ message: 'boom' });
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    await act(async () => {
-      await expect(result.current.signIn('user@example.com', 'wrong')).rejects.toBeTruthy();
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'wrong' });
     });
 
-    expect(result.current.error).toBe('network_error');
+    await waitFor(() => {
+      expect(result.current.error).toBe('network_error');
+    });
   });
 
   // Full-review Round 1, Minor 7 — isAuthErrorShape only checked `typeof code === 'string'`, not
@@ -179,56 +167,58 @@ describe('useAuth', () => {
   // have silently passed through instead of falling back to the safe network_error default.
   it('falls back to network_error when the rejected cause has a string code outside the AuthErrorCode union', async () => {
     service.signIn.mockRejectedValueOnce({ code: 'something_else' });
-    const { result } = renderHook(() => useAuth());
+    const { result } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
-    await act(async () => {
-      await expect(result.current.signIn('user@example.com', 'wrong')).rejects.toBeTruthy();
+    act(() => {
+      result.current.signIn({ email: 'user@example.com', password: 'wrong' });
     });
 
-    expect(result.current.error).toBe('network_error');
+    await waitFor(() => {
+      expect(result.current.error).toBe('network_error');
+    });
   });
 
-  // Memoization — signIn/signOut must stay referentially stable across re-renders that
-  // don't change any dependency, so a memoized consumer (e.g. React.memo'd button) never
-  // re-renders needlessly.
-  it('keeps signIn and signOut referentially stable across re-renders', () => {
-    const { result, rerender } = renderHook(() => useAuth());
+  // Memoization — signIn must stay referentially stable across re-renders that don't change
+  // any dependency, so a memoized consumer (e.g. React.memo'd button) never re-renders
+  // needlessly. `mutate` is one of TanStack Query's stable primitives, so this holds for free.
+  it('keeps signIn referentially stable across re-renders', () => {
+    const { result, rerender } = renderHook(() => useAuth(), { wrapper: createWrapper() });
 
     const firstSignIn = result.current.signIn;
-    const firstSignOut = result.current.signOut;
 
     rerender(undefined);
 
     expect(result.current.signIn).toBe(firstSignIn);
-    expect(result.current.signOut).toBe(firstSignOut);
   });
 
   // Stale-closure guard — a signIn reference captured on an early render must still drive
-  // the *current* isSubmitting state correctly on a later render, not a stale snapshot.
-  it('a signIn reference captured on an earlier render still drives the current isSubmitting state', async () => {
+  // the *current* isSigningIn state correctly on a later render, not a stale snapshot.
+  it('a signIn reference captured on an earlier render still drives the current isSigningIn state', async () => {
     let resolveSignIn: (value: unknown) => void = () => {};
     service.signIn.mockReturnValue(
       new Promise((resolve) => {
         resolveSignIn = resolve;
       }) as never,
     );
-    const { result, rerender } = renderHook(() => useAuth());
+    const { result, rerender } = renderHook(() => useAuth(), { wrapper: createWrapper() });
     const signInFromFirstRender = result.current.signIn;
 
     rerender(undefined);
 
-    let signInPromise!: Promise<void>;
     act(() => {
-      signInPromise = signInFromFirstRender('user@example.com', 'secret1');
+      signInFromFirstRender({ email: 'user@example.com', password: 'secret1' });
     });
 
-    expect(result.current.isSubmitting).toBe(true);
+    await waitFor(() => {
+      expect(result.current.isSigningIn).toBe(true);
+    });
 
     await act(async () => {
       resolveSignIn({ session: null, user: null });
-      await signInPromise;
     });
 
-    expect(result.current.isSubmitting).toBe(false);
+    await waitFor(() => {
+      expect(result.current.isSigningIn).toBe(false);
+    });
   });
 });
