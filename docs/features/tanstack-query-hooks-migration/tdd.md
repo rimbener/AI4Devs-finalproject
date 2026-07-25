@@ -21,3 +21,28 @@
 - All 4 pre-existing `use-session.test.ts` tests pass unchanged.
 - Full `@helsoft/hooks` suite: 20 suites / 162 tests green (a `console.warn`-after-teardown / worker-exit warning is pre-existing Jest/Expo test-runner noise, unrelated to this change — reproduced identically on a clean re-run).
 - `pnpm --filter @helsoft/hooks lint` and `check-types` clean.
+
+## Slice 1 — use-lesson (task-2)
+
+### @s → test map
+| @s | Test | File |
+|---|---|---|
+| s5 | `initializes isLoading to true on the first render before effects flush`, `starts loading and resolves with the lesson from LessonsService.getLesson` | `libs/hooks/src/hooks/use-lesson.test.ts` |
+| s6 | `resolves with a lesson that has zero slides` | `libs/hooks/src/hooks/use-lesson.test.ts` |
+| s7 | `sets error and clears loading when the service rejects` | `libs/hooks/src/hooks/use-lesson.test.ts` |
+| s8 | `refetch after a failed read clears the error and exposes the lesson` | `libs/hooks/src/hooks/use-lesson.test.ts` |
+| s9 | `reloads when the lesson id changes`, `never lets a stale response for a previous lesson id replace the newly requested one` | `libs/hooks/src/hooks/use-lesson.test.ts` |
+
+### Cycles
+1. **RED** — added `caches the loaded lesson under lessonQueryKey(id)` (migration anchor: renders `useLesson` under a real `QueryClient`, asserts `queryClient.getQueryData(lessonQueryKey(id))` equals the lesson). Failed: `lessonQueryKey` doesn't exist yet. **GREEN** — rewrote `use-lesson.ts` on `useQuery({ queryKey: lessonQueryKey(id), queryFn: () => LessonsService.getLesson(id) })`; `refetch` wraps `queryRefetch` to stay `() => void`; deleted `use-lesson.reducer.ts`. **REFACTOR** — none needed, already minimal.
+2. **Adapt s5/s6/s7** — wrapped the three pre-existing loading/content/error tests in a `createWrapper()` (`QueryClient({ retry: false })` + `QueryClientProvider`); no assertion changes. Passed unchanged (characterizes the new implementation against the same contract).
+3. **Adapt s8** — rewrote `refetch reloads the lesson from the service` into `refetch after a failed read clears the error and exposes the lesson`: first call rejects, `refetch()` then resolves; asserts the error clears and the lesson appears. Passed on the `useQuery` implementation (TanStack clears `error` on a successful refetch) with no extra code.
+4. **Adapt s9** — kept `reloads when the lesson id changes` (wrapper added only). Added a new race test, `never lets a stale response for a previous lesson id replace the newly requested one`: id switches while the first id's fetch is still pending, then the stale promise resolves after the second id's lesson is already exposed; asserts the stale value never overwrites. Passed with no manual guard — the per-id query key already isolates the two fetches' cache entries.
+5. **Dropped** `ignores a stale successful load that resolves after a newer refetch` and `ignores a stale rejection that settles after a newer refetch` — these characterized the deleted `requestId` ref guard on same-id `refetch()` races, an implementation detail with no `@s` mapping; TanStack owns same-key in-flight dedup now (per task-2 notes, no manual guard is written).
+6. **Refactor** — none beyond the initial write; `use-lesson.ts` is a single `useQuery` call plus a `useCallback`-wrapped `refetch`.
+
+### Notes
+- `lesson-player.integration.test.ts` adapted with the same `createWrapper()` (the only change — `useQuery` now requires a `QueryClientProvider` ancestor).
+- `use-lesson.reducer.ts` deleted; no importers remained (`next-request-id.ts` keeps its one importer, `use-slide-image-url`, per task-2 notes — untouched here).
+- No `instanceof Error` normalizer re-added — `LessonsService.getLesson` already rejects with a real `Error`.
+- Full `@helsoft/hooks` suite: 20 suites / 161 tests green. `pnpm --filter @helsoft/hooks lint` + `check-types` clean; repo-wide `pnpm format` + `pnpm turbo run check-types --output-logs=errors-only` clean (14/14 packages).
