@@ -15,3 +15,4 @@ export * from './pdf-document-summary';
 export * from './profile';
 export * from './scorable-slide';
 export * from './score-summary';
+export * from './sign-in-params';
