@@ -3,7 +3,7 @@ id: task-12
 title: "AGENTS.md: tanstack-query is installed and required"
 slice: 8
 scenarios: []
-status: todo
+status: done
 paths: [AGENTS.md]
 ---
 
@@ -11,12 +11,12 @@ paths: [AGENTS.md]
 The Architecture → Hooks bullet in `AGENTS.md` still says tanstack-query "is the intended pattern for data-fetching hooks but is not installed yet — add it to `@helsoft/hooks` when first needed". Replace that with the truth: it is installed, it is the required pattern for hooks that read or write through a service, and there are four documented exemptions.
 
 ## Done criteria
-- [ ] The "not installed yet" sentence is gone
-- [ ] The bullet states tanstack-query is installed and is the **required** pattern for service-backed hooks in `@helsoft/hooks`
-- [ ] It cross-references `.agents/rules/tanstack-query.mdc` for the pattern **and** its Exemptions section
-- [ ] The surrounding guidance (`state.mdc` for ≥3 related local fields, `state-sharing.mdc` for prop-drilling) is preserved — those rules still apply to non-server state
-- [ ] No other section of `AGENTS.md` is edited
-- [ ] `pnpm lint` green
+- [x] The "not installed yet" sentence is gone
+- [x] The bullet states tanstack-query is installed and is the **required** pattern for service-backed hooks in `@helsoft/hooks`
+- [x] It cross-references `.agents/rules/tanstack-query.mdc` for the pattern **and** its Exemptions section
+- [x] The surrounding guidance (`state.mdc` for ≥3 related local fields, `state-sharing.mdc` for prop-drilling) is preserved — those rules still apply to non-server state
+- [x] No other section of `AGENTS.md` is edited
+- [x] `pnpm lint` green
 
 ## Notes
 Documentation only — no `@s` scenarios.

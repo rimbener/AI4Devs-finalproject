@@ -73,7 +73,7 @@ Two service libs — pick by data source:
 - **`@helsoft/supabase-services`** — Supabase DAOs/services + `initSupabase`/`getSupabase`. Paths: `libs/supabase-services/src/dao|services/{feature}.{dao|service}.ts`.
 - **DAOs** (`{Feature}Dao` abstract class, static methods): raw data access only. One DAO class per data source.
 - **Services** (`{Feature}Service` abstract class): validation + business logic; call DAOs, never fetch directly; no React.
-- **Hooks** (`libs/hooks/src/hooks/use-{feature}.ts`): React integration wrapping services (never DAOs directly). tanstack-query is the intended pattern for data-fetching hooks but is not installed yet — add it to `@helsoft/hooks` when first needed. Related local state ≥3 fields → `useReducer` (`state.mdc`). Deep / large prop-drilling → React Context (`state-sharing.mdc`).
+- **Hooks** (`libs/hooks/src/hooks/use-{feature}.ts`): React integration wrapping services (never DAOs directly). `@tanstack/react-query` is installed and is the **required** pattern for service-backed hooks — see `.agents/rules/tanstack-query.mdc` for the `useQuery`/`useMutation` pattern and its Exemptions section (a small, named set of hooks where a query/mutation model doesn't fit). Related local state ≥3 fields → `useReducer` (`state.mdc`); deep / large prop-drilling → React Context (`state-sharing.mdc`) — both still apply to genuine local/shared client state, which this pattern does not replace.
 - Each layer exports through its `index.ts` barrel files.
 
 ### Supabase client wiring
