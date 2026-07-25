@@ -10,8 +10,8 @@ jest.mock('@helsoft/localization', () => ({
 import { useApiKey, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { ApiKeyStatus } from '@helsoft/types';
-import { fireEvent, render, screen } from '@testing-library/react-native';
-import { AccessibilityInfo, Text } from 'react-native';
+import { render, screen } from '@testing-library/react-native';
+import { Text } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { ApiKeyGate } from './api-key-gate';
@@ -63,42 +63,6 @@ describe('ApiKeyGate', () => {
     mockUseProfile.mockReturnValue(profileValue());
   });
 
-  it('does not announce entitlement loading after entitlements resolve', async () => {
-    const announce = jest
-      .spyOn(AccessibilityInfo, 'announceForAccessibility')
-      .mockImplementation(jest.fn());
-
-    await render(
-      <ApiKeyGate>
-        <Text>generation content</Text>
-      </ApiKeyGate>,
-    );
-
-    expect(announce).not.toHaveBeenCalled();
-    announce.mockRestore();
-  });
-
-  it('announces when entitlement loading starts after mount', async () => {
-    const announce = jest
-      .spyOn(AccessibilityInfo, 'announceForAccessibility')
-      .mockImplementation(jest.fn());
-    const view = await render(
-      <ApiKeyGate>
-        <Text>generation content</Text>
-      </ApiKeyGate>,
-    );
-
-    mockUseProfile.mockReturnValue(profileValue({ profile: null, isLoading: true }));
-    await view.rerender(
-      <ApiKeyGate>
-        <Text>generation content</Text>
-      </ApiKeyGate>,
-    );
-
-    expect(announce).toHaveBeenCalledWith('entitlements.loading');
-    announce.mockRestore();
-  });
-
   it('handles unresolved non-loading entitlements as unavailable', async () => {
     mockUseProfile.mockReturnValue(profileValue({ profile: null }));
 
@@ -135,28 +99,6 @@ describe('ApiKeyGate', () => {
 
     expect(screen.getByText('creation enabled')).toBeTruthy();
     expect(screen.queryByText('creation disabled')).toBeNull();
-  });
-
-  // @s10 (loading facet) — while loading, no notice; children stay mounted with canCreate=false.
-  it('announces entitlement loading without the cannot-create message', async () => {
-    const announce = jest
-      .spyOn(AccessibilityInfo, 'announceForAccessibility')
-      .mockImplementation(jest.fn());
-    mockUseProfile.mockReturnValue(profileValue({ profile: null, isLoading: true }));
-
-    await render(
-      <ApiKeyGate>
-        <CanCreateProbe />
-        <Text>open existing lesson</Text>
-      </ApiKeyGate>,
-    );
-
-    expect(screen.getByText('creation disabled')).toBeTruthy();
-    expect(screen.getByText('open existing lesson')).toBeTruthy();
-    expect(screen.queryByText('upload.cannotCreate')).toBeNull();
-    expect(screen.getByText('entitlements.loading').props.accessibilityLiveRegion).toBe('polite');
-    expect(announce).toHaveBeenCalledWith('entitlements.loading');
-    announce.mockRestore();
   });
 
   // @s10 (guard facet) — notice when gated; children remain for open/play (@s13).
@@ -244,14 +186,14 @@ describe('ApiKeyGate', () => {
     expect(screen.getByText('upload.cannotCreate')).toBeTruthy();
   });
 
-  // @s5/@s6 — entitlement failures expose retry while children stay mounted (@s13).
-  it('renders an entitlement error and retries while keeping children mounted', async () => {
-    const retry = jest.fn();
+  // @s5/@s6 — an entitlement fetch failure (root `_layout.tsx` already gates the fatal case
+  // full-screen) just leaves `canCreate` falsy here, so children stay mounted behind the
+  // same cannot-create messaging as any other unavailable-creation state (@s13).
+  it('falls back to the cannot-create message when entitlements fail, keeping children mounted', async () => {
     mockUseProfile.mockReturnValue(
       profileValue({
         profile: null,
         error: new Error('profile missing'),
-        retry,
       }),
     );
 
@@ -261,10 +203,8 @@ describe('ApiKeyGate', () => {
       </ApiKeyGate>,
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('entitlements.error.message');
+    expect(screen.getByText('upload.cannotCreate')).toBeTruthy();
     expect(screen.getByText('open existing lesson')).toBeTruthy();
-    fireEvent.press(screen.getByRole('button', { name: 'entitlements.error.retry' }));
-    expect(retry).toHaveBeenCalledTimes(1);
   });
 
   // @s13 — context consumers preserve lesson access while creation stays gated.

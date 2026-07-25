@@ -23,11 +23,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** Loading — status still in flight; gate renders nothing (no premature notice flash). */
-export const Loading: Story = {
-  decorators: [withProfileMock({ profile: null, isLoading: true })],
-};
-
 /** Cannot create — contact-support message above children. */
 export const CannotCreate: Story = {
   decorators: [
@@ -73,7 +68,7 @@ export const Paid: Story = {
   ],
 };
 
-/** Error — plan read failed and can be retried. */
+/** Error — plan read failed; falls back to the same cannot-create messaging. */
 export const Error: Story = {
   decorators: [withProfileMock({ profile: null, error: new globalThis.Error('read failed') })],
 };
