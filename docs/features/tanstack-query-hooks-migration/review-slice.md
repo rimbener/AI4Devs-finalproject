@@ -96,3 +96,33 @@ Everything else — error contract preserved (`Error | null`), no `console.log`/
 **N/A** — logic-only hook, no UI added or touched by this slice.
 
 **Status: the one `open` finding (`[tdd]`, test-duplication regression) is now `resolved`** — see Resolution note above. No production-code rule violation; test-file hygiene only.
+
+## Slice 3 — task-4 (migrate `usePdfDocuments` to `useQuery` + delete mutation, delete its reducer)
+
+**Commit reviewed:** `05a76d747` (diff vs `05a76d747~1`)
+**Scope:** `libs/hooks/src/hooks/use-pdf-documents.ts`, `libs/hooks/src/hooks/use-pdf-documents.reducer.ts` (deleted), `libs/hooks/src/hooks/use-pdf-documents.test.ts`, `libs/hooks/src/hooks/pdf-documents.integration.test.ts`, plus `task-4.md`/`tdd.md` status updates — matches task-4.md's declared `paths:`. No scope creep.
+
+**Verdict: APPROVED**
+
+### Rule-by-rule check (`.agents/rules/*.mdc`)
+
+- `global.mdc` — functional hook, no Redux; `UsePdfDocumentsResult` (in `use-pdf-documents.types.ts`) unchanged; kebab-case filenames; `use-pdf-documents.ts` is 58 lines; one hook exported per file (`pdfDocumentsQueryKey` is a co-located const, same shape as `tanstack-query.mdc`'s own `SESSION_QUERY_KEY` example); the hook's doc comment explains *why* (`setQueryData`, never `invalidateQueries` — no flicker), the D4 inline comment explains *why* mutation-first. Pass.
+- `hooks-service-dao.mdc` — hook calls `PdfDocumentsService.getDocuments`/`deleteDocument` only, never a DAO directly; no business logic added to the hook. Pass.
+- `tanstack-query.mdc` — `useQuery({ queryKey: pdfDocumentsQueryKey, queryFn })` for the read; delete `useMutation` bridges its success into the cache via `queryClient.setQueryData` (never `invalidateQueries` — grep confirms zero calls, only the doc-comment mention), matching "bridge external effects via setQueryData"; query key exported as a `const` tuple; `refetch` stays `() => void` and calls `resetDelete()` before `void queryRefetch()` per D4 (`use-pdf-documents.ts:43-46`); no second `QueryClient`/`QueryProvider` created. `deleteDocument` returns `mutateAsync` rather than the rule's preferred bare `mutate` — this is the same deviation already reviewed and explicitly accepted as a documented spec decision in Slice 2 (task-3, `use-lessons`) to preserve the `Promise`-rejecting contract consumers depend on; task-4.md's own Done criteria mandate mirroring that exact shape, so this is not a new violation. Test wrapping: both `use-pdf-documents.test.ts` and `pdf-documents.integration.test.ts` wrap in `QueryClient({ retry: false })` + `QueryClientProvider`; query/mutation-derived assertions go through `await waitFor(...)` throughout. **Verified point (a) — the specific regression flagged and fixed twice in Slices 1 and 2 — was NOT reintroduced a third time:** `createWrapper` in `use-pdf-documents.test.ts` (lines 15-20) takes the optional `queryClient` param from the start, and the migration-anchor test (`caches the loaded documents under pdfDocumentsQueryKey`, lines 46-56) correctly calls `createWrapper(queryClient)` and reads cache state off that same instance — no hand-rolled second `QueryClientProvider` wrapper anywhere in the file (confirmed by reading the full file, not just the diff). Pass, no findings.
+- `state.mdc` / `state-sharing.mdc` — the 3-field reducer (`documents`/`isLoading`/`error`) is correctly removed, not reintroduced elsewhere; `useQuery`+`useMutation` own that coordinated state now. No prop-drilling introduced. Pass / N/A.
+- `atomic-design.mdc` / `component-split.mdc` — N/A, logic-only hook, no component/JSX touched.
+- `types.mdc` — `UsePdfDocumentsResult` unchanged, stays in `use-pdf-documents.types.ts`, only exported types there, no runtime logic added; `pdfDocumentsQueryKey` is a runtime const, correctly kept in the implementation file (matches the `tanstack-query.mdc` reference pattern and the Slice 1/2 precedent). Pass.
+- `i18n.mdc` — N/A, no user-facing strings touched.
+- `tdd.mdc` — `tdd.md`'s new "Slice 3 — use-pdf-documents (task-4)" section has a complete `@s → test` map for s17-s23, each mapped by name to a test in `use-pdf-documents.test.ts` (cross-checked against `gherkin-scenarios.md` lines 143-191 — all seven scenario texts match the test behavior exactly); a terse Red→Green→Refactor cycle log (3 lines, prose only, no pasted diffs/output); explicitly logs the 8 dropped `isMounted`/`requestId`/unmount/stale-race/identity characterization tests as no-`@s`-mapping implementation detail of the deleted reducer (confirmed against the diff — these tests characterized only removed guard logic, not surviving production code, same call as Slice 2). Whole `tdd.md` is 7 553 bytes, under the 8 000-byte budget. No hardcoded strings/colors/dimensions (logic-only). Pass.
+- `pre-slice-checklist.mdc` — `pdfDocumentsQueryKey` is barrel-exported (`export * from './use-pdf-documents'` in `libs/hooks/src/hooks/index.ts:16`); no new pure helpers requiring extraction; no loading-UI/a11y/atom/Modal/e2e surface in this slice; no `React.useRef`/regex-as-integration shortcuts; `use-pdf-documents.reducer.ts` fully deleted with zero remaining importers (repo-wide grep for `usePdfDocumentsReducer`/`usePdfDocumentsInitialState`/`use-pdf-documents.reducer` returns nothing). Pass.
+- `e2e.mdc` — no `.e2e.js` added or needed; non-interactive data hook. Pass.
+
+### Code quality
+
+No findings. `createWrapper` duplication (the recurring finding in Slices 1 and 2) is absent here — confirmed by reading the full test file, not just the diff. Error contract preserved (`Error | null`); no `console.log`/TODOs; no magic numbers; single-purpose 58-line hook; short/revealing names (`pdfDocumentsQueryKey`, `queryRefetch`, `resetDelete`). D4 error-merge and reset-before-refetch ordering verified directly against the code (`error: deleteError ?? queryError`; `refetch` calls `resetDelete()` then `void queryRefetch()`) and against every ordering the old reducer produced (s20 clears a read error, s22 leaves the list on a delete failure, s23 clears a stuck delete error and exposes a later read failure). `deleteDocument` uses `mutateAsync` and still rejects to the caller (s22's `rejects.toBe(failure)`); a failed delete leaves the cached list byte-for-byte unchanged (s22); delete success filters the row via `setQueryData` with zero extra `getDocuments` calls (s21, asserted `toHaveBeenCalledTimes(1)`), never `invalidateQueries`.
+
+### Design / Accessibility
+
+**N/A** — logic-only hook, no UI added or touched by this slice.
+
+**Status: no open findings — APPROVED, no fixes required before this slice closes.**
