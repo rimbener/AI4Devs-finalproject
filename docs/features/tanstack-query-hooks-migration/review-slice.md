@@ -265,3 +265,71 @@ One blocking finding: `[tanstack-query]` `libs/hooks/src/hooks/use-profile.ts:23
 ### Resolution (fixup commit)
 
 **`[tanstack-query]` finding — resolved.** `use-profile.ts` now destructures the raw `useQuery` result as `error: queryError` and derives `const error = queryError ? (queryError instanceof Error ? queryError : new Error(String(queryError))) : null`, restoring exactly the deleted reducer's `cause instanceof Error ? cause : new Error(String(cause))` guard (no typed-error-code union added — the `Error | null` contract doesn't need one, unlike `use-api-key.ts`'s discriminated-union case). New RED→GREEN test `use-profile.test.ts` — "normalizes a non-Error rejection into a real Error" — rejects `ProfileService.getProfile()` with a plain Postgrest-shaped object (`{ message, code, details }`, not `new Error(...)`) and asserts `result.current.error` is `instanceof Error` with `.message === String(postgrestError)`; confirmed RED (`toBeInstanceOf(Error)` failed, `Received constructor: Object`) before the fix, GREEN after. Full re-runs: `pnpm --filter @helsoft/hooks test` (18 suites / 137 tests, all green), `pnpm --filter @helsoft/hooks lint` and `check-types` clean, repo-wide `pnpm turbo run test` (12/12 tasks) and `pnpm turbo run check-types` (14/14 tasks) both green — no regressions.
+
+## Slice 8 — task-10 + task-11 + task-12 (docs: Exemptions/D2/D3/D5/D6, stale-comment sweep, AGENTS.md correction)
+
+**Commits reviewed:**
+- `a9ef91e53` — task-10, `.agents/rules/tanstack-query.mdc` (diff vs `a9ef91e53~1`)
+- `7350032a5` — task-11, the 4 exempt hook files (diff vs `7350032a5~1`)
+- `29a577fd6` — task-12, `AGENTS.md` (diff vs `29a577fd6~1`)
+
+**Scope:** `.agents/rules/tanstack-query.mdc`, `libs/hooks/src/hooks/use-lesson-generation.ts`, `libs/pdf-upload-extraction/src/hooks/use-pdf-extraction.ts`, `libs/localization/src/hooks/use-locale-preference.ts`, `libs/study-buddy/src/components/lesson-generation/use-lesson-generation.ts`, `AGENTS.md`, plus each task's own bookkeeping file. Docs-only slice, no `@s` scenarios — matches task-10/11/12.md's declared `paths:` exactly. No scope creep.
+
+**Verdict: APPROVED**
+
+### Rule-by-rule check (`.agents/rules/*.mdc`)
+
+- `global.mdc` — no code/component/naming changes; the added rule prose and comments explain rationale (*why* each hook is exempt, *why* D2/D3/D5/D6 exist), not restating the obvious. N/A/pass.
+- `hooks-service-dao.mdc` — no layering changed; the exemption comments correctly describe hooks that still wrap services (never DAOs) and stay in `useReducer`/plain-state form. Pass.
+- `tanstack-query.mdc` — this *is* the file under review. Verified the new content describes real code, not an idealized version:
+  - **Exemptions** section names all 4 hooks with the specific, non-generic reason from task-10.md, and each matches the corresponding hook's own updated comment (`use-lesson-generation.ts:34-38`, `use-pdf-extraction.ts:32-36`, `use-locale-preference.ts:6-10`, `study-buddy/.../use-lesson-generation.ts:19-22` — cross-checked verbatim against `a9ef91e53`'s Exemptions text). Pass.
+  - **D2** (auth-change cache reset) — the mdc's code snippet and prose (`'auth'` key-prefix reservation, evict-on-user-id-change-only, eviction *before* the cache write) match `use-session.ts:38-49` line for line, including the "not on same-user token refresh" nuance (`previousUserIdRef` comparison) and eviction ordering (`removeQueries` at `:43` runs before `setQueryData` at `:46`). Pass.
+  - **D3** (tagged-union mutation) — matches `use-api-key.ts:22-25,46-59` exactly (one `useMutation` over `{ kind: 'save' | 'remove' }`, single `error`/`isSubmitting` slot). The "keep genuinely independent actions separate" carve-out in the mdc is consistent with the file's own doc comment. Pass.
+  - **D5** (`isPending` not a synchronous guard) — matches `use-lesson-attempt.ts:19-53` exactly: ref set before `mutate`, cleared in `onSettled` (not `onSuccess`), rationale (double-tap/no dedupe/duplicate insert) matches the hook's own comment almost verbatim. Pass.
+  - **D6** (`staleTime` + `gcTime` from TTL) — matches `use-slide-image-url.ts:10-12,25-26` exactly (`CACHE_WINDOW_MS = (SIGNED_URL_TTL_SECONDS - 60) * 1000` applied to both fields). Pass.
+  - **Opening-paragraph correction** — verified `ApiKeyProvider`/`ProfileProvider` no longer exist anywhere as components (repo-wide grep for the identifiers returns only two historical code comments — `use-api-key.test.ts:312`, `use-profile.test.ts:210` — noting their removal, not stray references), and `apps/app-study-buddy/src/app/_layout.tsx` confirms `QueryProvider` is the sole `@helsoft/hooks` provider in the tree. The rule's claim is accurate, not aspirational. Pass.
+  - Code snippets use single quotes consistently, matching Biome's repo-wide convention. Pass.
+- `state.mdc` / `state-sharing.mdc` — N/A for the mdc/AGENTS.md changes (prose only); the 4 exempt hooks correctly remain on `useReducer`/plain-state/refs (unchanged, comments-only diff) — no rule violation introduced. AGENTS.md's Hooks bullet (`29a577fd6`) explicitly preserves both rules' applicability to genuine local/shared client state, per task-12's Done criteria. Pass.
+- `atomic-design.mdc` / `component-split.mdc` — N/A, no component/JSX touched.
+- `types.mdc` — N/A, no type files touched.
+- `i18n.mdc` — N/A, no user-facing strings; these are internal rule/doc-comment prose, not `t()`-eligible copy.
+- `tdd.mdc` — task-10/11/12.md each explicitly declare `scenarios: []` and "Documentation only — no `@s` scenarios," consistent with `tdd.md` having no slice-8 entry to cross-check. No production code changed (task-11's 4 files are comments-only, verified below), so "no production code without a test" doesn't apply — there is no new behavior to test. Pass.
+- `pre-slice-checklist.mdc` — no new public symbols, no new pure helpers, no loading-UI/a11y/atom/Modal/e2e surface touched. N/A/pass.
+- `e2e.mdc` — no `.e2e.js` added or needed for a docs-only slice. Pass.
+
+### Task-11 critical check: zero logic changes in the 4 exempt hook files
+
+Diffed each hunk of `7350032a5` individually against its parent:
+- `use-lesson-generation.ts` (libs/hooks) — diff is confined to the JSDoc block above `export const useLessonGeneration`; the function body, imports, and `isGenerationErrorShape` helper are untouched.
+- `use-pdf-extraction.ts` — diff confined to the JSDoc block above `export const usePdfExtraction`; `LastAttempt` type and hook body untouched.
+- `use-locale-preference.ts` — diff confined to the JSDoc block above `export const useLocalePreference`; the `getStoredLocale`/etc. callbacks untouched.
+- `use-lesson-generation.ts` (study-buddy) — diff confined to the JSDoc block above `export const useLessonGenerationForm`; the function signature and body untouched.
+
+Grepped all 4 files post-change for `useQuery`/`useMutation` — the only matches are the new comment prose (e.g. "Exempt from `useMutation`"), never an actual import or call site — confirming none of the 4 was silently migrated. **Comments-only, confirmed.**
+
+### Repo-wide "not installed" grep
+
+`grep -rln "tanstack-query not installed\|not installed yet"` (excluding `.git`/`node_modules`) returns exactly 7 hits, all outside task-11's `paths:` and all pre-existing/quoting-as-subject:
+`docs/features/tanstack-query-hooks-migration/{task-11,task-12,gherkin-scenarios,tasks}.md`, `user-stories/in-progress/tanstack-query-hooks-migration.md` (this feature's own planning docs, quoting the phrase as the subject of the task — expected per task-11.md's own Done criteria), and two unrelated already-shipped features' historical docs (`docs/features/signup-and-lesson-persistence/risks.md`, `docs/features/score-results-summary/task-5.md`). Zero hits in any source file (`.ts`/`.tsx`) or `.mdc` rule file. Matches task-11's Done criteria exactly.
+
+### 7 migrated hooks — comment currency check
+
+Grepped `libs/hooks/src/hooks/{use-session,use-profile,use-auth,use-sign-out,use-api-key,use-lessons,use-lesson,use-slide-image-url,use-lesson-attempt,use-pdf-documents}.ts` for stale-history phrasing ("not installed", "previously", "used to", "before the migration") — zero hits. Every migrated hook's doc comment describes current behavior only. Pass.
+
+### `AGENTS.md` check
+
+Diff (`29a577fd6`) touches exactly 2 lines in the Hooks bullet — confirmed via `git show --stat`, no other section of `AGENTS.md` modified. The corrected bullet states tanstack-query is installed and required for service-backed hooks, cross-references `tanstack-query.mdc`'s pattern and Exemptions section, and explicitly preserves `state.mdc`/`state-sharing.mdc` for genuine local/shared client state. Matches task-12's Done criteria exactly.
+
+### Code quality
+
+N/A beyond the above — no functions/logic added; prose is concise, each new comment states a reason (why exempt / why this pattern), not a restatement of what the code does.
+
+### Design / Accessibility
+
+**N/A** — pure documentation/comment slice, no UI added, removed, or touched.
+
+### Summary
+
+No findings. All three tasks' Done criteria verified directly against the diffs and the current state of the referenced hook files: the Exemptions section and D2/D3/D5/D6 patterns in `tanstack-query.mdc` describe real, current code (not idealized); the opening-paragraph provider correction is accurate (`ApiKeyProvider`/`ProfileProvider` confirmed gone); the 4 exempt hooks' comments are genuinely comments-only with the correct, specific exemption reasons; the repo-wide "not installed" sweep is clean outside expected historical/self-referential docs; `AGENTS.md`'s Hooks bullet is corrected without collateral edits.
+
+**Status: no open findings — APPROVED, no fixes required before this slice closes.**
