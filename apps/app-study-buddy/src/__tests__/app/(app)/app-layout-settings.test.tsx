@@ -1,7 +1,3 @@
-jest.mock('@helsoft/hooks', () => ({
-  ProfileProvider: ({ children }: { children: unknown }) => children,
-}));
-
 jest.mock('@helsoft/localization', () => ({
   useLocalization: () => ({ t: (k: string) => k }),
 }));

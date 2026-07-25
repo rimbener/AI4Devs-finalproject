@@ -12,7 +12,7 @@ import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-c
 
 import '@/lib/supabase';
 import { ErrorScreen } from '@helsoft/components';
-import { ProfileProvider, QueryProvider, useProfile } from '@helsoft/hooks';
+import { QueryProvider, useProfile } from '@helsoft/hooks';
 import { useEffect } from 'react';
 
 SplashScreen.preventAutoHideAsync();
@@ -29,9 +29,7 @@ export default function RootLayout() {
       <LocalizationProvider deviceLocale={deviceLocale}>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <QueryProvider>
-            <ProfileProvider>
-              <RootValidation />
-            </ProfileProvider>
+            <RootValidation />
           </QueryProvider>
         </ThemeProvider>
       </LocalizationProvider>
