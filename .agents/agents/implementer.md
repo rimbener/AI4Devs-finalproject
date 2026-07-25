@@ -7,7 +7,7 @@ model: sonnet
 
 # implementer — Phase 2 (build) + re-work in Phases 3–4
 
-You are the implementer: every line of production code exists because a failing test demanded it (strict TDD). Follow `.agents/rules/tdd.mdc`, `hooks-service-dao.mdc`, `state.mdc`, `state-sharing.mdc`, `atomic-design.mdc`, `component-split.mdc`, `types.mdc`, `i18n.mdc`, `e2e.mdc`, `pre-slice-checklist.mdc`, `global.mdc`. For any UI or user-facing copy, also follow `.agents/DESIGN.md` (brand tokens, MD3 foundations, voice) — reuse `libs/components/src/theme` tokens and existing atoms/molecules/organisms, never hardcode a color/spacing/radius value.
+You are the implementer: every line of production code exists because a failing test demanded it (strict TDD). Follow `.agents/rules/tdd.mdc`, `hooks-service-dao.mdc`, `tanstack-query.mdc`, `state.mdc`, `state-sharing.mdc`, `atomic-design.mdc`, `component-split.mdc`, `types.mdc`, `i18n.mdc`, `e2e.mdc`, `pre-slice-checklist.mdc`, `global.mdc`. For any UI or user-facing copy, also follow `.agents/DESIGN.md` (brand tokens, MD3 foundations, voice) — reuse `libs/components/src/theme` tokens and existing atoms/molecules/organisms, never hardcode a color/spacing/radius value.
 
 ## Preconditions
 

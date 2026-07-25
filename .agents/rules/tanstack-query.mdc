@@ -1,0 +1,82 @@
+---
+description: when using tanstack-query (useQuery/useMutation) in @helsoft/hooks
+alwaysApply: false
+---
+
+# TanStack Query
+
+`@tanstack/react-query` is the data-fetching/mutation pattern for hooks in `@helsoft/hooks` that read or write through `@helsoft/supabase-services` / `@helsoft/services`. Every consumer needs a `QueryClientProvider` ancestor — use `QueryProvider` from `@helsoft/hooks` (`libs/hooks/src/provider/query-provider.tsx`), wired once at the app root in `apps/app-study-buddy/src/app/_layout.tsx` above `ApiKeyProvider`/`ProfileProvider`. Never create a second `QueryClient` elsewhere.
+
+## Reads — `useQuery`
+
+Fetch-once / observe-forever data uses `useQuery` for the initial read and pushes any external change straight into the cache instead of refetching.
+
+```typescript
+// use-session.ts
+export const SESSION_QUERY_KEY = ['auth', 'session'] as const;
+
+export const useSession = (): UseSessionResult => {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: SESSION_QUERY_KEY,
+    queryFn: () => AuthService.getSession(),
+    staleTime: Infinity, // only ever changes via setQueryData below, never a poll
+  });
+
+  useEffect(() => {
+    const unsubscribe = AuthService.onAuthStateChange((next) => {
+      queryClient.setQueryData(SESSION_QUERY_KEY, next);
+    });
+    return () => unsubscribe?.();
+  }, [queryClient]);
+
+  return { session: data ?? null, isLoading };
+};
+```
+
+- Export the query key as a `const` tuple so other hooks can target the same cache entry.
+- Bridge external event sources (Supabase auth/realtime callbacks) with `queryClient.setQueryData(key, value)` — never a parallel `useState`.
+
+## Writes — `useMutation`
+
+ Expose its own primitives (`mutate`, `isPending`, `error`, `reset`) directly rather than re-deriving them with `useState`/`useCallback` — they're already stable across renders. Prefer to return `mutate`, not `mutateAsync`: callers read `isPending`/`error` reactively instead of awaiting the call. Rename the generic primitives to the action (`isSigningOut`, not `isPending`).
+
+```typescript
+// use-sign-out.ts
+export const useSignOut = (): UseSignOutResult => {
+  const {
+    mutate: signOut,
+    isPending: isSigningOut,
+    error,
+    reset,
+  } = useMutation({ mutationFn: () => AuthService.signOut() });
+
+  return {
+    signOut,
+    isSigningOut,
+    error: error ? toErrorCode(error) : null,
+    reset,
+  };
+};
+```
+
+- Prefer one hook per independent action (`useSignOut` alongside `useAuth`'s `signIn`) over one hook owning every mutation for a domain. unless there are multiple actions used from the same file, or there are shared code between the actions in the hook.
+- Only expose `reset` when a consumer needs to clear a stale error manually (e.g. dismissing a banner) — a fresh `mutate` call already clears it on its own.
+- Normalize the mutation's raw `error` through a typed guard (`isXErrorShape` / `toErrorCode`) so the UI only ever sees a closed error-code union, never an unchecked cast. Extract that guard into a shared `use-{domain}.helpers.ts` (e.g. `use-auth.helpers.ts`) once more than one hook in the domain needs it.
+
+## Testing
+
+Wrap `renderHook` with a `QueryClientProvider` backed by a fresh `QueryClient` per test:
+
+```typescript
+const createWrapper = () => {
+  const queryClient = new QueryClient();
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
+
+renderHook(() => useSignOut(), { wrapper: createWrapper() });
+```
+
+TanStack Query batches cache notifications onto a macrotask (`setTimeout(cb, 0)`), landing outside the `act()` that triggered them. `libs/hooks/jest-setup-after.ts` calls `notifyManager.setNotifyFunction(act)` so those updates are wrapped, but assertions on query/mutation-derived state (`isLoading`, `isPending`, `error`) still need `await waitFor(...)` rather than a synchronous read immediately after the triggering `act`.

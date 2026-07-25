@@ -35,7 +35,7 @@ The result is a 4-phase pipeline (below) driven by an orchestrator that guards t
 Everything the orchestrator generates must obey the project's existing rules (canonical rules live in `.agents/rules/` and take precedence):
 
 - **Monorepo layout** (`global.mdc`): code lives in `libs/*` as `@helsoft/*` packages; `apps/*` stay thin. A feature `app-x` pairs with a lib `libs/x`.
-- **Layering** (`hooks-service-dao.mdc`): `Component → Hook → Service → DAO → Supabase / external API`. DAOs = data access only (Supabase DAO via `getSupabase()` or external-API DAO via `fetch`); Services = validation + business logic, no React; Hooks = React integration (tanstack-query pattern), wrap services never DAOs. Every layer exports via `index.ts`. Related local state ≥3 fields → `useReducer` (`state.mdc`). Deep / large prop-drilling → React Context (`state-sharing.mdc`).
+- **Layering** (`hooks-service-dao.mdc`): `Component → Hook → Service → DAO → Supabase / external API`. DAOs = data access only (Supabase DAO via `getSupabase()` or external-API DAO via `fetch`); Services = validation + business logic, no React; Hooks = React integration wrapping services never DAOs; data-fetching/mutation hooks use **tanstack-query** (`useQuery`/`useMutation`, one `QueryClient` via `QueryProvider`, mutation primitives exposed directly, errors normalized — `tanstack-query.mdc`). Every layer exports via `index.ts`. Related local state ≥3 fields → `useReducer` (`state.mdc`). Deep / large prop-drilling → React Context (`state-sharing.mdc`).
 - **Components** (`atomic-design.mdc`): atoms → molecules → organisms → templates → pages. Component files in `component-name/component-name.tsx`, and **every component in a Storybook-enabled lib always ships a co-located `component-name.stories.tsx`** (no exceptions — a component without its story is incomplete). Use existing tokens/components; new Storybook stories follow `libs/lib-with-storybook/src/stories` patterns. Playwright e2e only for real interaction flows (`e2e.mdc`) — never render-only presence tests; unit tests own rendering/props/states.
 - **Component file split** (`component-split.mdc`): non-trivial UI (organisms / complex molecules) splits into `*.tsx` (JSX + handlers) / `*.types.ts` / `use-*.ts` (local state) / `*.helpers.ts` (pure); not the data-layer hook.
 - **Design / copy** (`.agents/DESIGN.md`): brand tokens, MD3 foundations, voice — reuse `libs/components/src/theme` and existing atoms/molecules; never hardcode color/spacing/radius.
@@ -61,6 +61,7 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 ├── rules/                        # passive standards (always-on reference)
 │   ├── global.mdc
 │   ├── hooks-service-dao.mdc
+│   ├── tanstack-query.mdc        # useQuery/useMutation in @helsoft/hooks (one QueryClient, mutation primitives, error guard, waitFor tests)
 │   ├── atomic-design.mdc
 │   ├── component-split.mdc
 │   ├── types.mdc                 # existing — multi-file types live in *.types.ts

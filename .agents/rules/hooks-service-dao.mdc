@@ -71,7 +71,7 @@ export abstract class ProfileService {
 
 ## Hook — `libs/hooks/src/hooks/use-{feature}.ts`
 
-React integration wrapping a **service** (never a DAO) from either `@helsoft/services` or `@helsoft/supabase-services`. `use{FeatureName}`, `export function`, exported through `src/hooks/index.ts`. React state/effects/lifecycle live here; business logic does not (delegate to services). Data-fetching hooks use tanstack-query (`useQuery`) — add `@tanstack/react-query` to `@helsoft/hooks` when first needed (not installed yet).
+React integration wrapping a **service** (never a DAO) from either `@helsoft/services` or `@helsoft/supabase-services`. `use{FeatureName}`, `export function`, exported through `src/hooks/index.ts`. React state/effects/lifecycle live here; business logic does not (delegate to services). Data-fetching/mutating hooks use tanstack-query (`useQuery`/`useMutation`, already installed in `@helsoft/hooks`) — see `.agents/rules/tanstack-query.mdc`.
 
 ```typescript
 export const useGetProfile = () => {
