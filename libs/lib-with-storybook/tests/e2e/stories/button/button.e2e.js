@@ -3,7 +3,6 @@ const { test, expect } = require('@playwright/test');
 test('Primary button story loads', async ({ page }) => {
   await page.goto('/?path=/story/example-button--primary');
 
-  // Verify the story page loaded
   const iframe = page.locator('iframe[title="storybook-preview-iframe"]');
   await expect(iframe).toBeVisible();
 
@@ -13,7 +12,6 @@ test('Primary button story loads', async ({ page }) => {
 test('Secondary button story loads', async ({ page }) => {
   await page.goto('/?path=/story/example-button--secondary');
 
-  // Verify the story page loaded
   const iframe = page.locator('iframe[title="storybook-preview-iframe"]');
   await expect(iframe).toBeVisible();
 

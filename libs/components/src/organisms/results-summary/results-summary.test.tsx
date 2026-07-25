@@ -50,7 +50,6 @@ describe('ResultsSummary', () => {
     expect(screen.getByText('100%')).toBeTruthy();
   });
 
-  // Content state — the retake action renders and calls the given handler when pressed.
   it('calls onRetake when the retake action is pressed', async () => {
     const onRetake = jest.fn();
     await render(
@@ -68,7 +67,6 @@ describe('ResultsSummary', () => {
     expect(onRetake).toHaveBeenCalledTimes(1);
   });
 
-  // Content state — the back-to-lessons action renders and calls the given handler when pressed.
   it('calls onBackToLessons when the back-to-lessons action is pressed', async () => {
     const onBackToLessons = jest.fn();
     await render(
@@ -105,8 +103,6 @@ describe('ResultsSummary', () => {
     expect(screen.getByRole('button', { name: 'Back to my lessons', disabled: true })).toBeTruthy();
   });
 
-  // Content state — the loading affordance is absent and actions stay enabled outside of
-  // `loading` (the score content state).
   it('does not show the loading indicator and keeps actions enabled outside of loading', async () => {
     await render(
       <ResultsSummary
@@ -184,7 +180,6 @@ describe('ResultsSummary', () => {
     expect(onRetrySave).toHaveBeenCalledTimes(1);
   });
 
-  // Content state — outside of saveFailed, no notice or retry action renders.
   it('does not show the save-failure notice when saveFailed is false', async () => {
     await render(
       <ResultsSummary
@@ -501,7 +496,6 @@ describe('ResultsSummary', () => {
     expect(actionsRow).toHaveStyle({ flexDirection: 'row', alignItems: 'center', gap: spacing.s3 });
   });
 
-  // Layout — the card content stacks headline/body/notice/actions with the standard vertical gap.
   it('stacks the content with the standard vertical gap', async () => {
     await render(
       <ResultsSummary

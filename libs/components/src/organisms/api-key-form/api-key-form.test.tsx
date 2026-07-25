@@ -201,7 +201,6 @@ describe('ApiKeyForm', () => {
     openURL.mockRestore();
   });
 
-  // Guidance link rejection must not become an unhandled promise rejection.
   it('does not leave a rejected Linking.openURL promise unhandled when the guidance link is pressed', async () => {
     const unhandledRejectionSpy = jest.fn();
     process.on('unhandledRejection', unhandledRejectionSpy);
@@ -646,7 +645,6 @@ describe('ApiKeyForm', () => {
     expect(screen.getByText('Saving…')).toBeTruthy();
   });
 
-  // Error banner in Empty state keeps input editable.
   it('renders an errorMessage banner in the Empty state and keeps the input editable', async () => {
     await render(
       <ApiKeyForm
@@ -663,7 +661,6 @@ describe('ApiKeyForm', () => {
     expect(screen.queryByText('Groq key saved · Updated Jan 1, 2026')).toBeNull();
   });
 
-  // No errorMessage means no banner.
   it('renders no error banner when errorMessage is absent', async () => {
     await render(
       <ApiKeyForm
@@ -792,7 +789,6 @@ describe('ApiKeyForm', () => {
     expect(screen.queryByText(labels.removeConfirmHeadline)).toBeNull();
   });
 
-  // Remove opens confirmation dialog without calling onRemove.
   it('opens a confirmation dialog when Remove is pressed, without calling onRemove yet', async () => {
     const onRemove = jest.fn();
     await render(

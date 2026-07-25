@@ -51,8 +51,8 @@ export type MatchingItem = {
 
 /** One correct correspondence: a left item id ↔ a right item id. Left↔right only (cross-column). */
 export type MatchingPair = {
-  leftId: string; // references one leftItems[].id
-  rightId: string; // references one rightItems[].id
+  leftId: string;
+  rightId: string;
 };
 
 export type MatchingSlide = SlideBase & {

@@ -40,7 +40,6 @@ describe('LessonAttemptDao', () => {
     expect(insert).toHaveBeenCalledWith({ lesson_id: 'lesson-1', score: 3, total: 3 });
   });
 
-  // Row → LessonAttempt mapping (snake_case DB → camelCase type).
   it('maps the inserted row to a camelCase LessonAttempt', async () => {
     single.mockResolvedValue({
       data: {

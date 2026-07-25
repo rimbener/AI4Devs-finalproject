@@ -20,7 +20,6 @@ describe('LessonsDao', () => {
     single.mockReset();
     from.mockReset();
 
-    // getLessons chain: from().select().order()
     order.mockResolvedValue({ data: [], error: null });
     select.mockReturnValue({ order, eq });
     eq.mockReturnValue({ single });

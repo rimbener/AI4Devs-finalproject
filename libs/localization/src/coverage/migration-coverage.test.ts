@@ -238,7 +238,6 @@ const flattenKeys = (node: unknown, prefix = ''): Set<string> => {
   return keys;
 };
 
-/** Collect dotted string literals from source (candidates for `t()` keys). */
 const extractDottedKeyLiterals = (source: string): string[] => {
   const withoutSfGlyphs = source.replace(SF_SYMBOL_PROP, 'sf: ""');
   return [...withoutSfGlyphs.matchAll(DOTTED_KEY_LITERAL)].map((match) => match[1]);

@@ -2,7 +2,7 @@ import type { Locale } from '@helsoft/types';
 import type { ReactNode } from 'react';
 
 export type LocalizationContextValue = {
-  /** Change the active language immediately and persist the choice. */
+  /** Immediate; persists the choice. */
   setLocale: (locale: Locale) => void;
 };
 

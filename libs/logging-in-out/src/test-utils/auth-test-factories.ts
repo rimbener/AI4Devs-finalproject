@@ -1,9 +1,6 @@
 import type { useLocalization } from '@helsoft/localization';
 import type { AuthErrorCode } from '@helsoft/types';
 
-/**
- * Shared mock-return factories for sign-in-form / sign-out unit tests.
- */
 export const localizationValue = (overrides: Partial<ReturnType<typeof useLocalization>> = {}) => ({
   t: (key: string) => key,
   locale: 'en' as const,

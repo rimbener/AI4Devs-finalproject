@@ -125,7 +125,6 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByDisplayValue('sk-secret')).toBeNull();
   });
 
-  // loading state.
   it('renders a loading indicator when isLoading is true', async () => {
     await render(<ApiKeyManager {...defaultProps} isLoading />);
 
@@ -157,14 +156,12 @@ describe('ApiKeyManager', () => {
     expect(screen.getByRole('button', { name: 'Replace Groq' })).toBeTruthy();
   });
 
-  // No error → no banner.
   it('renders no error banner when errorMessage is absent', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
     expect(screen.queryByText("Couldn't reach the server.")).toBeNull();
   });
 
-  // Add flow: Add button opens modal; selecting a provider shows the key input.
   it('shows the key input after opening Add and selecting a provider', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
@@ -269,7 +266,6 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByText('Remove API key?')).toBeNull();
   });
 
-  // Replace: pressing Replace on a row opens the modal with key input.
   it('shows the key input when Replace is pressed on a saved row', async () => {
     await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} />);
 
@@ -282,7 +278,6 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 
-  // Replace save: calls onSave with the provider.
   it('calls onSave with the correct provider when replacing a key', async () => {
     const onSave = jest.fn();
     await render(<ApiKeyManager {...defaultProps} savedKeys={[groqKey]} onSave={onSave} />);
@@ -298,7 +293,6 @@ describe('ApiKeyManager', () => {
     expect(onSave).toHaveBeenCalledWith('groq', 'sk-new-key');
   });
 
-  // Add button hidden when all 6 providers are saved.
   it('hides the Add button when all six providers have saved keys', async () => {
     const allKeys: SavedProviderKey[] = [
       { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' },
@@ -327,7 +321,6 @@ describe('ApiKeyManager', () => {
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
   });
 
-  // Guidance link shown when a provider is selected in the add modal.
   it('shows the guidance link after selecting a provider with a configured guidanceUrl', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
