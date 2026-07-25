@@ -1,5 +1,6 @@
 export * from './api-key.dao';
 export * from './auth.dao';
+export type * from './auth.types';
 export * from './lesson-attempt.dao';
 export * from './lesson-generation.dao';
 export * from './lesson-image.dao';
