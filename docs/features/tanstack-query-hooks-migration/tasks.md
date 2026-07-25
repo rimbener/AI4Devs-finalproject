@@ -1,6 +1,6 @@
 ---
 feature: tanstack-query-hooks-migration
-phase: approved # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
+phase: spec_ready # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
 review_round: 0     # incremented by reviews_lead; cap 2
 ---
 
@@ -32,7 +32,7 @@ Nine slices, each independently shippable. Every task leaves the repo green on i
 ## Slice 4 — use-slide-image-url
 | Task | Title | Scenarios |
 |---|---|---|
-| task-5 | Export SIGNED_URL_TTL_SECONDS from @helsoft/supabase-services | s24 |
+| task-5 | Export SIGNED_URL_TTL_SECONDS from @helsoft/supabase-services | — |
 | task-6 | Migrate useSlideImageUrl to useQuery with a derived cache window; delete next-request-id | s24, s25, s26, s27, s28, s29 |
 
 ## Slice 5 — use-lesson-attempt
@@ -56,3 +56,5 @@ Nine slices, each independently shippable. Every task leaves the repo green on i
 | task-10 | tanstack-query.mdc: Exemptions section + D2/D3/D5/D6 patterns | — |
 | task-11 | Sweep stale "tanstack-query not installed" comments (11 files) | — |
 | task-12 | AGENTS.md: tanstack-query is installed and required | — |
+
+Scenario-free tasks (task-5, task-10, task-11, task-12) are deliberate, not oversights: task-5 is a pure prerequisite for task-6, and slice 8 is documentation. All 58 `@s` scenarios are owned by exactly one task.
