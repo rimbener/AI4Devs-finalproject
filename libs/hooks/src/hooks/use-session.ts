@@ -12,6 +12,11 @@ export const SESSION_QUERY_KEY = ['auth', 'session'] as const;
 export const useSession = (): UseSessionResult => {
   const queryClient = useQueryClient();
   const receivedAuthEventRef = useRef(false);
+  // Seeded from whatever session is already cached at mount (if any), then kept in sync by the
+  // bridge below — read in a ref (not state) so the comparison itself never triggers a render.
+  const previousUserIdRef = useRef<string | undefined>(
+    queryClient.getQueryData<Session | null>(SESSION_QUERY_KEY)?.user?.id,
+  );
 
   const { data, isLoading } = useQuery({
     queryKey: SESSION_QUERY_KEY,
@@ -33,6 +38,11 @@ export const useSession = (): UseSessionResult => {
   useEffect(() => {
     const unsubscribe = AuthService.onAuthStateChange((next) => {
       receivedAuthEventRef.current = true;
+      const nextUserId = next?.user?.id;
+      if (nextUserId !== previousUserIdRef.current) {
+        queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+      }
+      previousUserIdRef.current = nextUserId;
       queryClient.setQueryData(SESSION_QUERY_KEY, next);
     });
     return () => unsubscribe?.();
