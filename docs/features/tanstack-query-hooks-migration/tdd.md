@@ -68,3 +68,22 @@ Notes:
 - `retry: false` not set — service never rejects (catches internally), so the stock 3× retry never engages; not needed for correctness (per task-6 note).
 - Repo-wide grep before delete: only `use-slide-image-url.ts` and `next-request-id.test.ts` imported `nextRequestId`.
 - Full `@helsoft/hooks` suite: 19 suites / 152 tests green; `@helsoft/hooks` lint + check-types clean; `@helsoft/supabase-services` check-types clean; repo-wide `pnpm format` + `pnpm check-types` 14/14 clean.
+
+## Slice 5 — use-lesson-attempt (task-7)
+| @s | Test |
+|---|---|
+| s30 | saving→saved transitions; returned attempt exposed |
+| s31 | rejected save → error, attempt null |
+| s32 | separate save after settle is a fresh insert (2nd call, 2nd attempt) |
+| s33 (NEW) | two saveAttempt calls in one `act()` (same tick) → exactly 1 service call |
+| s34 | saveAttempt refused while in flight; still 1 call once it settles |
+| s35 | retry replays `mutation.variables`, becomes saved |
+| s36 | retry no-op: no prior call (ex.1) / already in flight (ex.2) |
+
+Cycles:
+1. RED: migration-anchor test — save must register in `queryClient.getMutationCache()` — fails against the old `useState`+`.then/.catch` hook (cache empty).
+2. GREEN: rewrote on `useMutation({mutationFn: saveAttempt, onSettled})`; status mapped `pending→saving`/`success→saved` else passthrough; `attempt = data ?? null`. Kept the **one** `isSaving` ref (D5) as a pure entry gate for `saveAttempt`+`retry`, cleared in `onSettled`, commented with the TanStack-doesn't-dedupe rationale. Deleted `isMounted`+`lastInput`; `retry` replays `mutation.variables`, no-op when `undefined`.
+3. Mutation dispatch (both `mutationFn` call and status update) is deferred a tick behind TanStack's scheduling — sync post-`act()` reads under-report; adapted tests to `waitFor` per `tanstack-query.mdc`. Refusal-path asserts stay sync — ref aborts before any scheduling.
+4. s33 new: two `saveAttempt` calls inside one `act(() => {...})`, no re-render between — the gap the two-separate-`act()` overlap tests don't cover.
+5. Adapted `lesson-results.integration.test.tsx` (study-buddy) to `{ wrapper: QueryProvider }` — real hook now needs a `QueryClientProvider` ancestor.
+Full `@helsoft/hooks`: 19 suites/154 tests green; lint+check-types clean. `@helsoft/study-buddy` otherwise green (1 pre-existing unrelated `use-lessons`/`QueryProvider` failure predates this slice, confirmed via `git stash`). Repo-wide format+check-types clean.
