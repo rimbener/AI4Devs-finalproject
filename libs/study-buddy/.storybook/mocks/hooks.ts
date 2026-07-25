@@ -72,7 +72,7 @@ export const useSession = () => {
 };
 
 export type AuthMockConfig = {
-  isSubmitting?: boolean;
+  isSigningIn?: boolean;
   error?: AuthErrorCode | null;
   scenario?: 'success' | 'invalidCredentials' | 'networkError';
 };
@@ -94,45 +94,69 @@ export const useAuth = () => {
     pendingConfig = {};
     return next;
   });
-  const [isSubmitting, setIsSubmitting] = useState(config.isSubmitting ?? false);
+  const [isSigningIn, setIsSigningIn] = useState(config.isSigningIn ?? false);
   const [error, setError] = useState<AuthErrorCode | null>(config.error ?? null);
 
   const signIn = useCallback(
-    (_email: string, _password: string): Promise<void> =>
-      new Promise((resolve, reject) => {
-        setIsSubmitting(true);
-        setError(null);
-        setTimeout(() => {
-          setIsSubmitting(false);
-          if (config.scenario === 'invalidCredentials') {
-            setError('invalid_credentials');
-            reject(new Error('invalid_credentials'));
-            return;
-          }
-          if (config.scenario === 'networkError') {
-            setError('network_error');
-            reject(new Error('network_error'));
-            return;
-          }
-          resolve();
-        }, SIGN_IN_DELAY_MS);
-      }),
+    (_params: { email: string; password: string }): void => {
+      setIsSigningIn(true);
+      setError(null);
+      setTimeout(() => {
+        setIsSigningIn(false);
+        if (config.scenario === 'invalidCredentials') {
+          setError('invalid_credentials');
+          return;
+        }
+        if (config.scenario === 'networkError') {
+          setError('network_error');
+        }
+      }, SIGN_IN_DELAY_MS);
+    },
     [config.scenario],
   );
 
-  const signOut = useCallback(
-    (): Promise<void> =>
-      new Promise((resolve) => {
-        setIsSubmitting(true);
-        setTimeout(() => {
-          setIsSubmitting(false);
-          resolve();
-        }, SIGN_OUT_DELAY_MS);
-      }),
-    [],
-  );
+  return { signIn, isSigningIn, error };
+};
 
-  return { signIn, signOut, isSubmitting, error };
+export type SignOutMockConfig = {
+  isSigningOut?: boolean;
+  error?: AuthErrorCode | null;
+  scenario?: 'success' | 'networkError';
+};
+
+let pendingSignOutConfig: SignOutMockConfig = {};
+
+/** Call from a story's decorator just before it renders, so useSignOut's lazy initializer
+ * below picks it up on that story's first (and only) mount. */
+export const configureSignOutMock = (config: SignOutMockConfig) => {
+  pendingSignOutConfig = config;
+};
+
+export const useSignOut = () => {
+  const [config] = useState(() => {
+    const next = pendingSignOutConfig;
+    pendingSignOutConfig = {};
+    return next;
+  });
+  const [isSigningOut, setIsSigningOut] = useState(config.isSigningOut ?? false);
+  const [error, setError] = useState<AuthErrorCode | null>(config.error ?? null);
+
+  const reset = useCallback(() => {
+    setError(null);
+  }, []);
+
+  const signOut = useCallback((): void => {
+    setIsSigningOut(true);
+    setError(null);
+    setTimeout(() => {
+      setIsSigningOut(false);
+      if (config.scenario === 'networkError') {
+        setError('network_error');
+      }
+    }, SIGN_OUT_DELAY_MS);
+  }, [config.scenario]);
+
+  return { signOut, isSigningOut, error, reset };
 };
 
 export type LessonAttemptStatus = 'idle' | 'saving' | 'saved' | 'error';

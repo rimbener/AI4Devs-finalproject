@@ -31,6 +31,7 @@ jest.mock('@helsoft/hooks', () => ({
   })),
 }));
 
+import { QueryProvider } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
@@ -40,6 +41,9 @@ import { useRouter } from 'expo-router';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { LessonGeneration } from './lesson-generation';
+
+const renderLessonGeneration = (documentId: string) =>
+  render(<LessonGeneration documentId={documentId} />, { wrapper: QueryProvider });
 
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
@@ -98,7 +102,7 @@ describe('ai-lesson-generation integration (component -> hook -> service -> DAO)
     const t = jest.fn((key: string) => key);
     mockUseLocalization.mockReturnValue(localizationValue({ t }));
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await renderLessonGeneration('doc-1');
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'generation.generate', disabled: false }),
@@ -140,7 +144,7 @@ describe('ai-lesson-generation integration (component -> hook -> service -> DAO)
     const t = jest.fn((key: string) => key);
     mockUseLocalization.mockReturnValue(localizationValue({ t }));
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await renderLessonGeneration('doc-1');
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'generation.generate', disabled: false }),

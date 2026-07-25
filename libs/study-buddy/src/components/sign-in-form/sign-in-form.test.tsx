@@ -29,7 +29,7 @@ describe('SignInForm (study-buddy wiring)', () => {
   });
 
   it('wires useAuth().signIn into the prop-driven form', async () => {
-    const signIn = jest.fn().mockResolvedValue(undefined);
+    const signIn = jest.fn();
     mockUseAuth.mockReturnValue(authValue({ signIn }));
 
     await render(<SignInForm />);
@@ -44,7 +44,7 @@ describe('SignInForm (study-buddy wiring)', () => {
       fireEvent.press(screen.getByRole('button', { name: 'auth.submit' }));
     });
 
-    expect(signIn).toHaveBeenCalledWith('user@example.com', 'secret1');
+    expect(signIn).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret1' });
   });
 
   it('wires router.push(/sign-up) into onNavigateToSignUp', async () => {
@@ -58,9 +58,9 @@ describe('SignInForm (study-buddy wiring)', () => {
     expect(push).toHaveBeenCalledWith('/sign-up');
   });
 
-  // useAuth().isSubmitting reaches the rendered form: submit is disabled while in flight.
-  it('wires useAuth().isSubmitting into the disabled submit control', async () => {
-    mockUseAuth.mockReturnValue(authValue({ isSubmitting: true }));
+  // useAuth().isSigningIn reaches the rendered form: submit is disabled while in flight.
+  it('wires useAuth().isSigningIn into the disabled submit control', async () => {
+    mockUseAuth.mockReturnValue(authValue({ isSigningIn: true }));
 
     await render(<SignInForm />);
 
@@ -80,7 +80,7 @@ describe('SignInForm (study-buddy wiring)', () => {
   // that exercises the production email regex through the form, so an EMAIL_PATTERN change
   // that diverges from the test-utils mirror fails here instead of drifting silently.
   it('blocks a malformed email via the real AuthService.isValidEmail before calling signIn', async () => {
-    const signIn = jest.fn().mockResolvedValue(undefined);
+    const signIn = jest.fn();
     mockUseAuth.mockReturnValue(authValue({ signIn }));
 
     await render(<SignInForm />);

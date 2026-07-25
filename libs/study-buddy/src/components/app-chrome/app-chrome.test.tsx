@@ -1,6 +1,6 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
-  useAuth: jest.fn(),
+  useSignOut: jest.fn(),
   useSession: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({
@@ -11,15 +11,15 @@ jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
 
-import { useAuth, useSession } from '@helsoft/hooks';
+import { useSession, useSignOut } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { usePathname, useRouter } from 'expo-router';
 
-import { authValue, localizationValue } from '../../test-utils/auth-test-factories';
+import { localizationValue, signOutValue } from '../../test-utils/auth-test-factories';
 import { AppChrome } from './app-chrome';
 
-const mockUseAuth = useAuth as jest.Mock;
+const mockUseSignOut = useSignOut as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUsePathname = usePathname as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
@@ -40,7 +40,7 @@ const sessionValue = {
 describe('AppChrome', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue(authValue());
+    mockUseSignOut.mockReturnValue(signOutValue());
     mockUseLocalization.mockReturnValue(localizationValue());
     mockUsePathname.mockReturnValue('/');
     mockUseRouter.mockReturnValue({ navigate });
@@ -98,8 +98,8 @@ describe('AppChrome', () => {
 
   // @s12 — Sign out stays on desktop AccountMenu confirm flow.
   it('uses session identity for account actions and the controlled sign-out dialog', async () => {
-    const signOut = jest.fn().mockResolvedValue(undefined);
-    mockUseAuth.mockReturnValue(authValue({ signOut }));
+    const signOut = jest.fn();
+    mockUseSignOut.mockReturnValue(signOutValue({ signOut }));
     await render(<AppChrome />);
 
     await act(async () => {

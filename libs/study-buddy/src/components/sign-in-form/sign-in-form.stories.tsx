@@ -28,9 +28,9 @@ export const Default: Story = {
   decorators: [withAuthMock({ scenario: 'success' })],
 };
 
-// Loading — useAuth().isSubmitting drives LoginForm's Loading affordance.
+// Loading — useAuth().isSigningIn drives LoginForm's Loading affordance.
 export const Loading: Story = {
-  decorators: [withAuthMock({ isSubmitting: true })],
+  decorators: [withAuthMock({ isSigningIn: true })],
 };
 
 // Error (auth failure, @s5) — invalid_credentials renders as the invalidCredentials banner.

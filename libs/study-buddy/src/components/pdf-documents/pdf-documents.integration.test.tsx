@@ -6,7 +6,7 @@ jest.mock('@helsoft/hooks', () => ({
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
-import { useLessonGeneration, useProfile } from '@helsoft/hooks';
+import { QueryProvider, useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
@@ -14,6 +14,8 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 
 import { PdfDocuments } from './pdf-documents';
+
+const renderPdfDocuments = () => render(<PdfDocuments />, { wrapper: QueryProvider });
 
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -113,7 +115,7 @@ describe('PdfDocuments integration (wiring → hook → service → DAO)', () =>
     // biome-ignore lint/suspicious/noExplicitAny: test double
     jest.spyOn(client, 'from' as any).mockReturnValue({ select } as any);
 
-    await render(<PdfDocuments />);
+    await renderPdfDocuments();
 
     await waitFor(() => {
       expect(screen.getByText('notes.pdf')).toBeTruthy();

@@ -8,13 +8,13 @@ import { useRouter } from 'expo-router';
  * No navigation on success — root Stack.Protected reacts to the session change.
  */
 export const SignInForm = () => {
-  const { signIn, isSubmitting, error } = useAuth();
+  const { signIn, isSigningIn, error } = useAuth();
   const router = useRouter();
 
   return (
     <SignInFormView
       onSignIn={signIn}
-      isSubmitting={isSubmitting}
+      isSigningIn={isSigningIn}
       error={error}
       onNavigateToSignUp={() => router.push('/sign-up')}
       isValidEmail={AuthService.isValidEmail}

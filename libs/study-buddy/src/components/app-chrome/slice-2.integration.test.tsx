@@ -3,7 +3,7 @@
  */
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
-  useAuth: jest.fn(),
+  useSignOut: jest.fn(),
   useBreakpoint: jest.fn(),
   useLessons: jest.fn(),
   useSession: jest.fn(),
@@ -16,18 +16,18 @@ jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
 
-import { useAuth, useBreakpoint, useLessons, useSession } from '@helsoft/hooks';
+import { useBreakpoint, useLessons, useSession, useSignOut } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
-import { authValue, localizationValue } from '../../test-utils/auth-test-factories';
+import { localizationValue, signOutValue } from '../../test-utils/auth-test-factories';
 import { SavedLessons } from '../saved-lessons/saved-lessons';
 import { SettingsSignOut } from '../settings-sign-out/settings-sign-out';
 import { AppChrome } from './app-chrome';
 
-const mockUseAuth = useAuth as jest.Mock;
+const mockUseSignOut = useSignOut as jest.Mock;
 const mockUseBreakpoint = useBreakpoint as jest.Mock;
 const mockUseLessons = useLessons as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -50,7 +50,7 @@ describe('native-bottom-tabs slice 2 integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue(authValue());
+    mockUseSignOut.mockReturnValue(signOutValue());
     mockUseLocalization.mockReturnValue(localizationValue({ t }));
     mockUsePathname.mockReturnValue('/');
     mockUseRouter.mockReturnValue({ push, navigate });

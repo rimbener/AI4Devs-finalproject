@@ -1,14 +1,22 @@
-import type { useAuth } from '@helsoft/hooks';
+import type { useAuth, useSignOut } from '@helsoft/hooks';
 import type { useLocalization } from '@helsoft/localization';
 
 /**
- * Shared `useAuth()`/`useLocalization()` mock-return factories for study-buddy unit tests.
+ * Shared `useAuth()`/`useSignOut()`/`useLocalization()` mock-return factories for study-buddy
+ * unit tests.
  */
 export const authValue = (overrides: Partial<ReturnType<typeof useAuth>> = {}) => ({
   signIn: jest.fn(),
-  signOut: jest.fn(),
-  isSubmitting: false,
+  isSigningIn: false,
   error: null,
+  ...overrides,
+});
+
+export const signOutValue = (overrides: Partial<ReturnType<typeof useSignOut>> = {}) => ({
+  signOut: jest.fn(),
+  isSigningOut: false,
+  error: null,
+  reset: jest.fn(),
   ...overrides,
 });
 
