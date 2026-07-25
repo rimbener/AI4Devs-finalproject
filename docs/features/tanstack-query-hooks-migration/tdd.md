@@ -1,99 +1,70 @@
 # TDD log — tanstack-query-hooks-migration
 
 ## Slice 0 — auth-change cache reset (task-1, `use-session.ts`)
+| @s | Test |
+|---|---|
+| s1 | evicts other cached entries and re-reads them when a different user signs in |
+| s2 | preserves the cache and does not re-read on a same-user token refresh |
+| s3 | evicts other cached entries on sign-out, never the session entry itself |
+| s4 | evicts the cache before writing the new session (call order) |
 
-### @s → test map
-| @s | Test | File |
-|---|---|---|
-| s1 | `@s1 evicts other cached entries and re-reads them when a different user signs in` | `libs/hooks/src/hooks/use-session.test.ts` |
-| s2 | `@s2 preserves the cache and does not re-read on a same-user token refresh` | `libs/hooks/src/hooks/use-session.test.ts` |
-| s3 | `@s3 evicts other cached entries when the session becomes unauthenticated, but never the session entry itself` | `libs/hooks/src/hooks/use-session.test.ts` |
-| s4 | `@s4 evicts the cache before writing the new session, so the write is never clobbered` | `libs/hooks/src/hooks/use-session.test.ts` |
-
-### Cycles
-1. s1: unconditional `removeQueries({ predicate: q.queryKey[0] !== 'auth' })` before `setQueryData` in the auth bridge.
-2. s2: added `previousUserIdRef` (seeded from cached session at mount) to guard eviction to real user-id changes only.
-3. s3: characterization — sign-out eviction + predicate excludes `SESSION_QUERY_KEY`; passed on cycle-2 impl.
-4. s4: characterization — asserts evict-before-write call order; passed on cycle-1 impl, verified teeth by reverting order manually.
-
-### Notes
-- Scope: `onAuthStateChange` bridge only; `queryFn`/`receivedAuthEventRef` untouched.
-- Full `@helsoft/hooks` suite: 20 suites / 162 tests green. lint + check-types clean.
+Cycles: unconditional `removeQueries({predicate: key[0] !== 'auth'})` before `setQueryData` in the auth bridge (s1) → `previousUserIdRef` guard so only real user-id changes evict (s2) → s3/s4 characterized against that impl, passed unchanged.
+Full `@helsoft/hooks` suite: 162 tests green; lint + check-types clean.
 
 ## Slice 1 — use-lesson (task-2)
+| @s | Test |
+|---|---|
+| s5 | first render loading=true; resolves lesson, no error |
+| s6 | resolves a lesson with zero slides |
+| s7 | sets error, clears loading, on service rejection |
+| s8 | refetch after failure clears error, exposes lesson |
+| s9 | id-change reload + stale-response-for-previous-id never wins |
 
-### @s → test map
-| @s | Test | File |
-|---|---|---|
-| s5 | `initializes isLoading to true on the first render before effects flush`, `starts loading and resolves with the lesson from LessonsService.getLesson` | `libs/hooks/src/hooks/use-lesson.test.ts` |
-| s6 | `resolves with a lesson that has zero slides` | `libs/hooks/src/hooks/use-lesson.test.ts` |
-| s7 | `sets error and clears loading when the service rejects` | `libs/hooks/src/hooks/use-lesson.test.ts` |
-| s8 | `refetch after a failed read clears the error and exposes the lesson` | `libs/hooks/src/hooks/use-lesson.test.ts` |
-| s9 | `reloads when the lesson id changes`, `never lets a stale response for a previous lesson id replace the newly requested one` | `libs/hooks/src/hooks/use-lesson.test.ts` |
-
-### Cycles
-1. Migration anchor: `caches the loaded lesson under lessonQueryKey(id)`; rewrote hook on `useQuery({ queryKey: lessonQueryKey(id) })`; deleted `use-lesson.reducer.ts`.
-2. s5-s7: wrapped pre-existing tests in `createWrapper()` (`QueryClient({retry:false})`); passed unchanged.
-3. s8: renamed refetch test to fail-then-succeed shape; passed, TanStack clears `error` on successful refetch.
-4. s9: kept id-change test + added stale-response race test; both pass — per-id key isolates caches, no manual guard needed.
-5. Dropped 2 stale-`refetch()`-race tests (characterized deleted `requestId` ref, no `@s` mapping; TanStack owns same-key dedup).
-6. Refactor: none beyond initial write.
-
-### Notes
-- `lesson-player.integration.test.ts` adapted with same `createWrapper()`.
-- `use-lesson.reducer.ts` deleted, no other importers.
-- No `instanceof Error` normalizer re-added.
-- Full `@helsoft/hooks` suite: 20 suites / 161 tests green; lint + check-types clean; repo-wide format + check-types clean (14/14).
+Cycles: rewrote on `useQuery({queryKey: lessonQueryKey(id)})`, deleted `use-lesson.reducer.ts`; wrapped tests in `createWrapper()`; s8 refetch relies on TanStack clearing error on success; s9 per-id key isolates caches, no manual guard. Dropped 2 stale-`refetch()`-race characterization tests (deleted-reducer internals, no `@s`).
+`lesson-player.integration.test.ts` adapted with same `createWrapper()`. No `instanceof Error` normalizer re-added.
+Full suite: 161 tests green; lint + check-types clean; repo-wide 14/14 clean.
 
 ## Slice 2 — use-lessons (task-3)
+| @s | Test |
+|---|---|
+| s10-s13 | load / empty / error / refetch-clears-error (mirrors use-lesson shape) |
+| s14 | delete removes from cached list, no re-read (`setQueryData`, no invalidate) |
+| s15 | failed delete rejects to caller, list unchanged |
+| s16 | D4: delete error cleared before refetch; later read failure wins |
 
-### @s → test map
-| @s | Test | File |
-|---|---|---|
-| s10 | `initializes isLoading to true on the first render before effects flush`, `starts loading and resolves with lessons from LessonsService.getLessons` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-| s11 | `resolves with an empty lessons array when the service returns none` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-| s12 | `sets error and clears loading when the service rejects` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-| s13 | `refetch clears a prior error on success` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-| s14 | `deleteLesson removes the lesson from the list after a successful service delete, without re-reading` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-| s15 | `deleteLesson leaves the list unchanged and sets error when the service rejects` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-| s16 | `refetch clears a delete error and exposes a later read failure instead` | `libs/hooks/src/hooks/use-lessons.test.ts` |
-
-### Cycles
-1. Migration anchor: rewrote hook on `useQuery(['lessons'])` + `useMutation` delete, `setQueryData` filter on success (no invalidate); deleted `use-lessons.reducer.ts`.
-2. s10-s13: wrapped pre-existing tests in `createWrapper()`; passed unchanged (kept the non-error reload test too, no dedicated `@s`).
-3. s14: added a `getLessons` call-count assertion (still 1) after delete success, proving no re-read; passed — `setQueryData` never triggers a refetch.
-4. s15: wrapped pre-existing failed-delete test; passed — `mutateAsync` still rejects, cache untouched.
-5. s16 (D4): new test — delete fails (error exposed), `refetch()` then a failing re-read; asserts the exposed error is the read failure, not the stale delete failure. Passed on `deleteMutation.error ?? query.error` + `reset()`-before-`refetch()` ordering.
-6. Dropped 6 isMounted/requestId/unmount characterization tests — implementation details of the deleted reducer, no `@s` mapping; TanStack owns unmount safety.
-
-### Notes
-- `lessons.integration.test.ts` adapted with same `createWrapper()`, otherwise unedited.
-- `use-lessons.reducer.ts` deleted, no other importers.
-- No `instanceof Error` normalizer re-added.
-- Fixed a flaky sync read after `act()` (notifyManager batches via `setTimeout`) — wrapped in `waitFor`.
-- Full `@helsoft/hooks` suite: 20 suites / 156 tests green; lint + check-types clean; repo-wide format + check-types clean (14/14).
+Cycles: `useQuery(['lessons'])` + delete `useMutation`; deleted `use-lessons.reducer.ts`. D4: `error = deleteMutation.error ?? query.error`; `refetch` wrapper calls `deleteMutation.reset()` before `query.refetch()`. Dropped 6 isMounted/requestId/unmount characterization tests — no `@s` mapping.
+`lessons.integration.test.ts` adapted, otherwise unedited. Fixed one flaky sync-read-after-`act()` with `waitFor` (notifyManager batches via setTimeout).
+Full suite: 156 tests green; lint + check-types clean; repo-wide 14/14 clean.
 
 ## Slice 3 — use-pdf-documents (task-4)
+| @s | Test |
+|---|---|
+| s17-s23 | mirrors task-3 1:1 (`pdfDocumentsQueryKey`, `PdfDocumentsService`, D4 mutation-first error + reset-before-refetch) |
 
-### @s → test map
-| @s | Test | File |
-|---|---|---|
-| s17 | `initializes isLoading to true...`, `starts loading and resolves with documents from PdfDocumentsService.getDocuments` | `use-pdf-documents.test.ts` |
-| s18 | `resolves with an empty documents array when the service returns none` | `use-pdf-documents.test.ts` |
-| s19 | `sets error and clears loading when the service rejects` | `use-pdf-documents.test.ts` |
-| s20 | `refetch clears a prior error on success` | `use-pdf-documents.test.ts` |
-| s21 | `deleteDocument removes the document from the list after a successful service delete, without re-reading` | `use-pdf-documents.test.ts` |
-| s22 | `deleteDocument leaves the list unchanged and sets error when the service rejects` | `use-pdf-documents.test.ts` |
-| s23 | `refetch clears a delete error and exposes a later read failure instead` | `use-pdf-documents.test.ts` |
+Cycles: mirrored shape, GREEN on first pass; deleted `use-pdf-documents.reducer.ts`; dropped 8 deleted-reducer-internals characterization tests (no `@s`).
+`pdf-documents.integration.test.ts` given local `createWrapper()`, otherwise unedited.
+Full suite: 150 tests green; lint + check-types clean; repo-wide 14/14 clean.
 
-### Cycles
-1. Mirrored task-3's shape 1:1: RED with adapted test file (`pdfDocumentsQueryKey`, `PdfDocumentsService`); rewrote hook on `useQuery(['pdf-documents'])` + delete `useMutation` with `setQueryData` filter (D4 mutation-first `error`, `reset()`-before-`refetch()`); deleted `use-pdf-documents.reducer.ts`. GREEN on first pass.
-2. Dropped 8 isMounted/requestId/unmount/stale-race/identity characterization tests — deleted-reducer internals, no `@s` mapping (same call as slice 2).
-3. Refactor: none beyond the mirrored shape.
+## Slice 4 — use-slide-image-url (task-5 + task-6)
+| @s | Test |
+|---|---|
+| — | task-5: no `@s` (pure prerequisite export, per review-spec finding 1) |
+| s24 | derives `staleTime` and `gcTime` from `SIGNED_URL_TTL_SECONDS`, both under the TTL |
+| s25 | absent ref → url null, not loading, service never called |
+| s26 | ref present → loading true then resolves the signed url |
+| s27 | service resolves null → url null, loading finished, no throw |
+| s28 | stale response for a previous storagePath never replaces the newer one |
+| s29 | re-view within the cache window serves cached url, no second signing call |
 
-### Notes
-- `pdf-documents.integration.test.ts` given the same local `createWrapper()`, otherwise unedited.
-- `use-pdf-documents.reducer.ts` deleted, no other importers.
-- No `instanceof Error` normalizer re-added.
-- Full `@helsoft/hooks` suite: 20 suites / 150 tests green; lint + check-types clean; repo-wide format + check-types clean (14/14).
-</content>
+Cycles:
+1. task-5: exported `SIGNED_URL_TTL_SECONDS` from `lesson-image.service.ts` (was module-private `const`); flows through the existing `services/index.ts` → lib `index.ts` barrels untouched (already `export *`). No behavior change; existing `lesson-image.service.test.ts` (4 tests) unaffected.
+2. task-6 RED: new `use-slide-image-url.test.ts` — migration-anchor cache-key test + s24 (introspects `queryClient.getQueryCache().find(key)?.options.staleTime` / `.gcTime`) + s25-s29 (s25-s28 adapted from the pre-migration file; s29 new) — all failing against the old `useState`/`requestId` hook.
+3. GREEN: rewrote hook on `useQuery({queryKey: slideImageQueryKey(storagePath), enabled: Boolean(storagePath), staleTime: CACHE_WINDOW_MS, gcTime: CACHE_WINDOW_MS})` where `CACHE_WINDOW_MS = (SIGNED_URL_TTL_SECONDS - 60) * 1000`; `url = data ?? null`. v5's `isLoading = isPending && isFetching` gives `false` for the disabled-query case with no manual derivation (s25). s28's stale-response guard is now free from the per-`storagePath` key. All 7 tests green.
+4. Deleted `next-request-id.ts` + its test (repo-wide grep confirmed zero remaining importers after the rewrite).
+5. `lesson-player.integration.test.ts` already carries the `QueryClientProvider` wrapper from slice 1 and doesn't reference this hook — left unedited, still green.
+6. Refactor: none beyond initial write (biome flattened the query-key one-liner).
+
+Notes:
+- `retry: false` not set — service never rejects (catches internally), so the stock 3× retry never engages; not needed for correctness (per task-6 note).
+- Repo-wide grep before delete: only `use-slide-image-url.ts` and `next-request-id.test.ts` imported `nextRequestId`.
+- Full `@helsoft/hooks` suite: 19 suites / 152 tests green; `@helsoft/hooks` lint + check-types clean; `@helsoft/supabase-services` check-types clean; repo-wide `pnpm format` + `pnpm check-types` 14/14 clean.

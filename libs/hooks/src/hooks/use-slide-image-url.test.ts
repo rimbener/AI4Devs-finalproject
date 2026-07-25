@@ -1,14 +1,25 @@
 jest.mock('@helsoft/supabase-services', () => ({
   LessonImageService: { getSignedImageUrl: jest.fn() },
+  SIGNED_URL_TTL_SECONDS: 300,
 }));
 
-import { LessonImageService } from '@helsoft/supabase-services';
+import { LessonImageService, SIGNED_URL_TTL_SECONDS } from '@helsoft/supabase-services';
 import type { SlideImageRef } from '@helsoft/types';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
-import { useSlideImageUrl } from './use-slide-image-url';
+import { slideImageQueryKey, useSlideImageUrl } from './use-slide-image-url';
 
 const service = LessonImageService as jest.Mocked<typeof LessonImageService>;
+
+const createWrapper = (
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) => {
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 const imageRef: SlideImageRef = {
   imageId: 'img-1',
@@ -21,19 +32,65 @@ const imageRef: SlideImageRef = {
 describe('useSlideImageUrl', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  // @s8 — absent image ref → url null, not loading.
+  // Migration anchor — the hook must read/write through the shared TanStack cache under the
+  // exported key, not a private useState/requestId slice.
+  it('caches the signed url under slideImageQueryKey(storagePath)', async () => {
+    service.getSignedImageUrl.mockResolvedValue('https://example.com/signed.png');
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    const { result } = renderHook(() => useSlideImageUrl(imageRef), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(queryClient.getQueryData(slideImageQueryKey(imageRef.storagePath))).toBe(
+      'https://example.com/signed.png',
+    );
+  });
+
+  // @s24 — both cache windows are derived from the published TTL and strictly under it.
+  it('derives staleTime and gcTime from SIGNED_URL_TTL_SECONDS, both under the TTL', async () => {
+    service.getSignedImageUrl.mockResolvedValue('https://example.com/signed.png');
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    const { result } = renderHook(() => useSlideImageUrl(imageRef), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const query = queryClient
+      .getQueryCache()
+      .find({ queryKey: slideImageQueryKey(imageRef.storagePath) });
+    expect(query).toBeDefined();
+    const options = query?.options as { staleTime?: number };
+    const ttlMs = SIGNED_URL_TTL_SECONDS * 1000;
+
+    expect(options.staleTime).toEqual(expect.any(Number));
+    expect(options.staleTime as number).toBeGreaterThan(0);
+    expect(options.staleTime as number).toBeLessThan(ttlMs);
+    expect(query?.gcTime).toBeGreaterThan(0);
+    expect(query?.gcTime).toBeLessThan(ttlMs);
+  });
+
+  // @s25 — a slide with no image reference never calls the signing service.
   it('returns url null and isLoading false when imageRef is absent', () => {
-    const { result } = renderHook(() => useSlideImageUrl(undefined));
+    const { result } = renderHook(() => useSlideImageUrl(undefined), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.url).toBeNull();
     expect(result.current.isLoading).toBe(false);
     expect(service.getSignedImageUrl).not.toHaveBeenCalled();
   });
 
-  // @s7 — resolves a usable URL.
+  // @s26 — a slide with an image reports loading then exposes the signed url.
   it('resolves the signed URL from LessonImageService', async () => {
     service.getSignedImageUrl.mockResolvedValue('https://example.com/signed.png');
-    const { result } = renderHook(() => useSlideImageUrl(imageRef));
+    const { result } = renderHook(() => useSlideImageUrl(imageRef), {
+      wrapper: createWrapper(),
+    });
 
     expect(result.current.isLoading).toBe(true);
 
@@ -43,17 +100,19 @@ describe('useSlideImageUrl', () => {
     expect(result.current.url).toBe('https://example.com/signed.png');
   });
 
-  // @s9 feed — failure degrades to null.
+  // @s27 — a signing failure degrades to no url without throwing.
   it('returns url null when the service resolves null', async () => {
     service.getSignedImageUrl.mockResolvedValue(null);
-    const { result } = renderHook(() => useSlideImageUrl(imageRef));
+    const { result } = renderHook(() => useSlideImageUrl(imageRef), {
+      wrapper: createWrapper(),
+    });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.url).toBeNull();
   });
 
-  // Mutation — effect depends on storagePath; stale requestId / isMounted guards.
+  // @s28 — a late response for a previous slide image never replaces the newly requested one.
   it('ignores a stale signed URL that resolves after a newer storagePath', async () => {
     let resolveFirst: (value: unknown) => void = () => {};
     let resolveSecond: (value: unknown) => void = () => {};
@@ -63,7 +122,7 @@ describe('useSlideImageUrl', () => {
 
     const { result, rerender } = renderHook(
       ({ ref }: { ref: SlideImageRef }) => useSlideImageUrl(ref),
-      { initialProps: { ref: imageRef } },
+      { initialProps: { ref: imageRef }, wrapper: createWrapper() },
     );
 
     rerender({
@@ -80,5 +139,25 @@ describe('useSlideImageUrl', () => {
     });
 
     expect(result.current.url).toBe('https://example.com/other.png');
+  });
+
+  // @s29 — re-viewing the same slide inside the cache window skips a second signing call.
+  it('serves the cached url without a second signing call within the cache window', async () => {
+    service.getSignedImageUrl.mockResolvedValue('https://example.com/signed.png');
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    const first = renderHook(() => useSlideImageUrl(imageRef), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(first.result.current.isLoading).toBe(false));
+    first.unmount();
+
+    const second = renderHook(() => useSlideImageUrl(imageRef), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    expect(second.result.current.isLoading).toBe(false);
+    expect(second.result.current.url).toBe('https://example.com/signed.png');
+    expect(service.getSignedImageUrl).toHaveBeenCalledTimes(1);
   });
 });
