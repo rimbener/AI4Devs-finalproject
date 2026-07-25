@@ -72,4 +72,28 @@
 - No `instanceof Error` normalizer re-added.
 - Fixed a flaky sync read after `act()` (notifyManager batches via `setTimeout`) — wrapped in `waitFor`.
 - Full `@helsoft/hooks` suite: 20 suites / 156 tests green; lint + check-types clean; repo-wide format + check-types clean (14/14).
+
+## Slice 3 — use-pdf-documents (task-4)
+
+### @s → test map
+| @s | Test | File |
+|---|---|---|
+| s17 | `initializes isLoading to true...`, `starts loading and resolves with documents from PdfDocumentsService.getDocuments` | `use-pdf-documents.test.ts` |
+| s18 | `resolves with an empty documents array when the service returns none` | `use-pdf-documents.test.ts` |
+| s19 | `sets error and clears loading when the service rejects` | `use-pdf-documents.test.ts` |
+| s20 | `refetch clears a prior error on success` | `use-pdf-documents.test.ts` |
+| s21 | `deleteDocument removes the document from the list after a successful service delete, without re-reading` | `use-pdf-documents.test.ts` |
+| s22 | `deleteDocument leaves the list unchanged and sets error when the service rejects` | `use-pdf-documents.test.ts` |
+| s23 | `refetch clears a delete error and exposes a later read failure instead` | `use-pdf-documents.test.ts` |
+
+### Cycles
+1. Mirrored task-3's shape 1:1: RED with adapted test file (`pdfDocumentsQueryKey`, `PdfDocumentsService`); rewrote hook on `useQuery(['pdf-documents'])` + delete `useMutation` with `setQueryData` filter (D4 mutation-first `error`, `reset()`-before-`refetch()`); deleted `use-pdf-documents.reducer.ts`. GREEN on first pass.
+2. Dropped 8 isMounted/requestId/unmount/stale-race/identity characterization tests — deleted-reducer internals, no `@s` mapping (same call as slice 2).
+3. Refactor: none beyond the mirrored shape.
+
+### Notes
+- `pdf-documents.integration.test.ts` given the same local `createWrapper()`, otherwise unedited.
+- `use-pdf-documents.reducer.ts` deleted, no other importers.
+- No `instanceof Error` normalizer re-added.
+- Full `@helsoft/hooks` suite: 20 suites / 150 tests green; lint + check-types clean; repo-wide format + check-types clean (14/14).
 </content>

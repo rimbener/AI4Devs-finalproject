@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
 import { usePdfDocuments } from './use-pdf-documents';
 
@@ -9,6 +12,12 @@ import { usePdfDocuments } from './use-pdf-documents';
  * PdfDocumentsDao against a mocked Supabase `from` boundary. Nothing above the DAO is mocked.
  */
 let client: SupabaseClient;
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 describe('pending-pdfs-generate slice-1 integration (hook -> service -> DAO)', () => {
   beforeAll(() => {
@@ -43,7 +52,7 @@ describe('pending-pdfs-generate slice-1 integration (hook -> service -> DAO)', (
     const select = jest.fn(() => ({ order }));
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => usePdfDocuments());
+    const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -94,7 +103,7 @@ describe('pending-pdfs-generate slice-1 integration (hook -> service -> DAO)', (
     const select = jest.fn(() => ({ order }));
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => usePdfDocuments());
+    const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.error).not.toBeNull());
 
