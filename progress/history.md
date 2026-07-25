@@ -144,3 +144,5 @@
 2026-07-24 | lesson-route-header | done | docs/features/lesson-route-header/ | Merged into feature-entrega3-HernanLaura (incl. ad hoc safe-area-insets + tabs-header work); worktree removed.
 
 2026-07-24 | comment-cleanup (ad hoc, no story) | n/a | — | Repo-wide why-not-what comment audit (830 files); trimmed 15 files' restating/obvious comments (cc1ba8747).
+
+2026-07-25 | unistyles-configure-order (ad hoc, no story) | n/a | — | metro.config.js prepends @helsoft/components/theme via getModulesRunBeforeMainModule; fixes dev-server 500 from configure-before-create race (347160f65).
