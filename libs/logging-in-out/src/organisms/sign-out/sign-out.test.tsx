@@ -7,11 +7,18 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { SignOut } from './sign-out';
+import type { SignOutProps } from './sign-out.types';
 
 const mockUseLocalization = useLocalization as jest.Mock;
 
-const renderSignOut = (onSignOut = jest.fn().mockResolvedValue(undefined)) =>
-  render(<SignOut onSignOut={onSignOut} />);
+const defaultProps = (): SignOutProps => ({
+  onSignOut: jest.fn().mockResolvedValue(undefined),
+  isSigningOut: false,
+  error: null,
+});
+
+const renderSignOut = (overrides: Partial<SignOutProps> = {}) =>
+  render(<SignOut {...defaultProps()} {...overrides} />);
 
 describe('SignOut', () => {
   beforeEach(() => {
@@ -35,7 +42,7 @@ describe('SignOut', () => {
 
   it('renders only the controlled confirmation dialog and reports close changes', async () => {
     const onOpenChange = jest.fn();
-    await render(<SignOut onSignOut={jest.fn()} open onOpenChange={onOpenChange} />);
+    await renderSignOut({ open: true, onOpenChange });
 
     expect(screen.queryByRole('button', { name: 'auth.logOut' })).toBeNull();
     expect(screen.getByText('auth.logOutConfirmBody')).toBeTruthy();
@@ -61,7 +68,7 @@ describe('SignOut', () => {
   // @s4/@s11 — confirming in the dialog signs the user out.
   it('calls onSignOut when the confirmation is accepted', async () => {
     const onSignOut = jest.fn().mockResolvedValue(undefined);
-    await renderSignOut(onSignOut);
+    await renderSignOut({ onSignOut });
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'auth.logOut' }));
     });
@@ -75,7 +82,7 @@ describe('SignOut', () => {
   // @s4/@s11 — confirming closes the dialog.
   it('closes the confirmation dialog after confirming', async () => {
     const onSignOut = jest.fn().mockResolvedValue(undefined);
-    await renderSignOut(onSignOut);
+    await renderSignOut({ onSignOut });
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'auth.logOut' }));
     });
@@ -86,49 +93,10 @@ describe('SignOut', () => {
     expect(screen.queryByText('auth.logOutConfirmBody')).toBeNull();
   });
 
-  // The dialog closes optimistically, so a failed sign-out must reach the parent through
-  // onSignOutError — the component's only error surface.
-  it('reports a rejected onSignOut to onSignOutError', async () => {
-    const cause = new Error('network down');
-    const onSignOut = jest.fn().mockRejectedValue(cause);
-    const onSignOutError = jest.fn();
-    await render(<SignOut onSignOut={onSignOut} onSignOutError={onSignOutError} />);
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'auth.logOut' }));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'auth.logOutConfirmAction' }));
-    });
-
-    expect(onSignOutError).toHaveBeenCalledWith(cause);
-  });
-
-  // A failed onSignOut must not become a silent unhandled promise rejection.
-  it('does not leave a rejected onSignOut promise unhandled', async () => {
-    const unhandledRejectionSpy = jest.fn();
-    process.on('unhandledRejection', unhandledRejectionSpy);
-
-    const onSignOut = jest.fn().mockRejectedValue(new Error('network down'));
-    await renderSignOut(onSignOut);
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'auth.logOut' }));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'auth.logOutConfirmAction' }));
-    });
-    await act(async () => {
-      await new Promise<void>((resolve) => setImmediate(() => resolve()));
-    });
-
-    process.off('unhandledRejection', unhandledRejectionSpy);
-    expect(onSignOut).toHaveBeenCalledTimes(1);
-    expect(unhandledRejectionSpy).not.toHaveBeenCalled();
-  });
-
   // @s10 — dismissing the dialog keeps the session active: onSignOut is never called.
   it('does not call onSignOut when the confirmation is dismissed', async () => {
     const onSignOut = jest.fn();
-    await renderSignOut(onSignOut);
+    await renderSignOut({ onSignOut });
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'auth.logOut' }));
     });
@@ -138,5 +106,52 @@ describe('SignOut', () => {
 
     expect(onSignOut).not.toHaveBeenCalled();
     expect(screen.queryByText('auth.logOutConfirmBody')).toBeNull();
+  });
+
+  it('shows an error dialog when error is set', async () => {
+    await renderSignOut({ error: 'network_error' });
+
+    expect(screen.getByText('auth.logOutError')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'auth.logOutRetry' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'auth.logOutCancelAction' })).toBeTruthy();
+  });
+
+  it('hides the confirm dialog while the error dialog is open', async () => {
+    await renderSignOut({ open: true, error: 'network_error' });
+
+    expect(screen.queryByText('auth.logOutConfirmBody')).toBeNull();
+    expect(screen.getByText('auth.logOutError')).toBeTruthy();
+  });
+
+  it('resets and signs out again when retry is pressed', async () => {
+    const onSignOut = jest.fn().mockResolvedValue(undefined);
+    const onSignOutError = jest.fn();
+    await renderSignOut({ error: 'network_error', onSignOut, onSignOutError });
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'auth.logOutRetry' }));
+    });
+
+    expect(onSignOutError).toHaveBeenCalledTimes(1);
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('only resets when error-dialog cancel is pressed', async () => {
+    const onSignOut = jest.fn();
+    const onSignOutError = jest.fn();
+    await renderSignOut({ error: 'network_error', onSignOut, onSignOutError });
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'auth.logOutCancelAction' }));
+    });
+
+    expect(onSignOutError).toHaveBeenCalledTimes(1);
+    expect(onSignOut).not.toHaveBeenCalled();
+  });
+
+  it('disables the trigger while signing out', async () => {
+    await renderSignOut({ isSigningOut: true });
+
+    expect(screen.getByRole('button', { name: 'auth.logOut' })).toBeDisabled();
   });
 });

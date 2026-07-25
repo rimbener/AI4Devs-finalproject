@@ -15,15 +15,15 @@ import { SignInForm } from './sign-in-form';
 const mockUseLocalization = useLocalization as jest.Mock;
 
 const renderSignInForm = ({
-  onSignIn = jest.fn().mockResolvedValue(undefined),
-  isSubmitting = false,
+  onSignIn = jest.fn(),
+  isSigningIn = false,
   error = null,
   onNavigateToSignUp = jest.fn(),
 }: SignInFormTestProps = {}) =>
   render(
     <SignInForm
       onSignIn={onSignIn}
-      isSubmitting={isSubmitting}
+      isSigningIn={isSigningIn}
       error={error}
       onNavigateToSignUp={onNavigateToSignUp}
       isValidEmail={isValidEmail}
@@ -38,7 +38,7 @@ describe('SignInForm', () => {
 
   // @s2 — submitting the form calls onSignIn with the entered credentials.
   it('calls onSignIn with the entered email and password on submit', async () => {
-    const onSignIn = jest.fn().mockResolvedValue(undefined);
+    const onSignIn = jest.fn();
     await renderSignInForm({ onSignIn });
 
     await act(async () => {
@@ -49,7 +49,7 @@ describe('SignInForm', () => {
     });
     fireEvent.press(screen.getByRole('button', { name: 'auth.submit' }));
 
-    expect(onSignIn).toHaveBeenCalledWith('user@example.com', 'secret1');
+    expect(onSignIn).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret1' });
   });
 
   // Content state — the sign-up link calls onNavigateToSignUp.
@@ -61,16 +61,16 @@ describe('SignInForm', () => {
     expect(onNavigateToSignUp).toHaveBeenCalledTimes(1);
   });
 
-  // @s3 — isSubmitting drives the LoginForm Loading state.
-  it('disables the submit control while isSubmitting is true', async () => {
-    await renderSignInForm({ isSubmitting: true });
+  // @s3 — isSigningIn drives the LoginForm Loading state.
+  it('disables the submit control while isSigningIn is true', async () => {
+    await renderSignInForm({ isSigningIn: true });
 
     expect(screen.getByRole('button', { name: 'auth.submit', disabled: true })).toBeTruthy();
   });
 
   // @s3 — the exact `auth.signingIn` i18n key is wired into LoginForm's Loading affordance.
   it('passes the auth.signingIn i18n key into the Loading affordance', async () => {
-    await renderSignInForm({ isSubmitting: true });
+    await renderSignInForm({ isSigningIn: true });
 
     expect(screen.getByText('auth.signingIn')).toBeTruthy();
   });
@@ -96,7 +96,7 @@ describe('SignInForm', () => {
 
   // @s9 fix — correcting the email re-enables submit and allows a real resubmit.
   it('re-enables submit and calls onSignIn after correcting a malformed email post-error', async () => {
-    const onSignIn = jest.fn().mockResolvedValue(undefined);
+    const onSignIn = jest.fn();
     await renderSignInForm({ onSignIn });
 
     await act(async () => {
@@ -121,7 +121,7 @@ describe('SignInForm', () => {
 
     fireEvent.press(screen.getByRole('button', { name: 'auth.submit' }));
 
-    expect(onSignIn).toHaveBeenCalledWith('user@example.com', 'secret1');
+    expect(onSignIn).toHaveBeenCalledWith({ email: 'user@example.com', password: 'secret1' });
   });
 
   // @s9 (empty-password half) — LoginForm Empty-state gating keeps submit disabled.
@@ -165,31 +165,6 @@ describe('SignInForm', () => {
     });
 
     expect(screen.getByRole('button', { name: 'auth.submit', disabled: false })).toBeTruthy();
-  });
-
-  // Rejecting onSignIn must not become an unhandled promise rejection.
-  it('does not leave a rejected onSignIn promise unhandled', async () => {
-    const unhandledRejectionSpy = jest.fn();
-    process.on('unhandledRejection', unhandledRejectionSpy);
-
-    const onSignIn = jest.fn().mockRejectedValue({ code: 'network_error' });
-    await renderSignInForm({ onSignIn });
-
-    await act(async () => {
-      fireEvent.changeText(screen.getByLabelText('auth.email'), 'user@example.com');
-    });
-    await act(async () => {
-      fireEvent.changeText(screen.getByLabelText('auth.password'), 'secret1');
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'auth.submit' }));
-    });
-    await act(async () => {
-      await new Promise<void>((resolve) => setImmediate(() => resolve()));
-    });
-
-    process.off('unhandledRejection', unhandledRejectionSpy);
-    expect(unhandledRejectionSpy).not.toHaveBeenCalled();
   });
 
   // No error at all — no banner renders.

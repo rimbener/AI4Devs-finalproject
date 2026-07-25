@@ -9,10 +9,10 @@ const meta = {
   title: 'Organisms/SignInForm',
   component: SignInForm,
   args: {
-    onSignIn: () => new Promise<void>((resolve) => setTimeout(resolve, SIGN_IN_DELAY_MS)),
+    onSignIn: () => setTimeout(() => {}, SIGN_IN_DELAY_MS),
     onNavigateToSignUp: () => {},
     isValidEmail,
-    isSubmitting: false,
+    isSigningIn: false,
     error: null,
   },
 } satisfies Meta<typeof SignInForm>;
@@ -24,10 +24,10 @@ type Story = StoryObj<typeof meta>;
 // Content (Empty/Content) — pristine form; typing + submit exercises isValidEmail inline validation.
 export const Default: Story = {};
 
-// Loading — isSubmitting drives LoginForm's Loading affordance.
+// Loading — isSigningIn drives LoginForm's Loading affordance.
 export const Loading: Story = {
   args: {
-    isSubmitting: true,
+    isSigningIn: true,
   },
 };
 

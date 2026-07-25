@@ -14,7 +14,7 @@ export const isValidEmail = (email: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@
 
 export type SignInFormTestProps = {
   onSignIn?: jest.Mock;
-  isSubmitting?: boolean;
+  isSigningIn?: boolean;
   error?: AuthErrorCode | null;
   onNavigateToSignUp?: jest.Mock;
 };

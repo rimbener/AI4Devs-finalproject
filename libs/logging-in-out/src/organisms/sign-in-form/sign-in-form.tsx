@@ -13,7 +13,7 @@ import { useSignInForm } from './use-sign-in-form';
  */
 export const SignInForm = ({
   onSignIn,
-  isSubmitting = false,
+  isSigningIn = false,
   error,
   onNavigateToSignUp,
   isValidEmail,
@@ -24,9 +24,7 @@ export const SignInForm = ({
     const nextEmailError = isValidEmail(email) ? undefined : t('auth.error.email');
     setEmailError(nextEmailError);
     if (nextEmailError) return;
-    // Contract (SignInFormProps.onSignIn): the parent surfaces failures via `error` — observed
-    // here only so the rethrow never becomes an unhandled promise rejection.
-    void onSignIn(email, password).catch(() => {});
+    onSignIn({ email, password });
   };
 
   // Re-validates once an emailError is already showing, so correcting the email re-enables the
@@ -39,7 +37,7 @@ export const SignInForm = ({
   return (
     <LoginForm
       onSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
+      isSubmitting={isSigningIn}
       onNavigateToSignUp={onNavigateToSignUp}
       errorMessage={resolveAuthErrorMessage(error, t)}
       emailError={emailError}
