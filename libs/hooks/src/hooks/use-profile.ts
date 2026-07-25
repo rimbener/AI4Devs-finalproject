@@ -23,13 +23,21 @@ export const useProfile = (): UseProfileResult => {
   const {
     data,
     isPending,
-    error,
+    error: queryError,
     refetch: queryRefetch,
   } = useQuery({
     queryKey: profileQueryKey(sessionUserId ?? ''),
     queryFn: () => ProfileService.getProfile(),
     enabled: Boolean(sessionUserId) && !isSessionLoading,
   });
+
+  // ProfileDao rethrows the raw Supabase/Postgrest error object, not an Error instance — normalize
+  // it the same way the deleted reducer did, so the Error | null contract always holds.
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError
+      : new Error(String(queryError))
+    : null;
 
   const retry = useCallback(() => {
     void queryRefetch();

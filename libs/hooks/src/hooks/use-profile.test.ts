@@ -130,6 +130,19 @@ describe('useProfile', () => {
     expect(result.current.error).toBe(error);
   });
 
+  // @s54 (non-Error rejection) — a raw Postgrest-shaped rejection (not an Error instance) still
+  // surfaces through the contract as a real Error, matching the deleted reducer's guard.
+  it('normalizes a non-Error rejection into a real Error', async () => {
+    const postgrestError = { message: 'Profile not found', code: 'PGRST116', details: null };
+    service.getProfile.mockRejectedValue(postgrestError);
+
+    const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe(String(postgrestError));
+  });
+
   // @s55 (example: the plan uses the platform key) — creation is allowed.
   it('allows creation when the plan uses the platform key, even without a saved key', async () => {
     mockUseApiKey.mockReturnValue({ ...loadedApiKey, status: { keys: [] }, hasKey: false });
