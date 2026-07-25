@@ -62,7 +62,7 @@ This is a monorepo for react-native/node/next applications.
 - If a file has more than 150-200 lines, it's a code smell and maybe should be split into smaller files. This is a subjective judgment, so you should use your best judgment.
 - Always use functional React. Don't use Redux. Related local state (≥3 fields that change together) → `useReducer` per `.agents/rules/state.mdc`. Deep / large prop-drilling → React Context per `.agents/rules/state-sharing.mdc`.
 - Always create a type for React components Props. Types rules: `.agents/rules/types.mdc` (multi-file → `*.types.ts`; only exported types there; no runtime logic).
-- **Comment the *why*, not the *what**.** Be brief and to the point. Never comment the obvious.
+- **Comment the *why*, not the *what**.** Be brief and concise. Never comment the obvious.
 
 ### Components & Storybook
 - **Every component authored in a Storybook-enabled library always ships a co-located `component-name.stories.tsx`** (`@helsoft/components`, `@helsoft/activities`, `@helsoft/logging-in-out`, and any lib scaffolded from `@helsoft/lib-with-storybook`). No component is "done" without its story; the story covers the component's states. See `.agents/rules/atomic-design.mdc`.

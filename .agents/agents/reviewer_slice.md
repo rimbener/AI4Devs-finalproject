@@ -13,7 +13,7 @@ A fast quality gate before a vertical slice closes. One agent, scoped strictly t
 
 **Glob `.agents/rules/*.mdc` and enforce every rule** on the slice's diff. The directory is authoritative — if a rule file is added or changed, apply it; do not rely on this list being complete. Today the set is:
 
-- **`global.mdc`** — monorepo layout (`libs/*` as `@helsoft/*`, thin `apps/*`); functional React, no Redux; always a `Props` type; kebab-case filenames; a Storybook story for every component in a Storybook-enabled lib; comment the *why*.
+- **`global.mdc`** — monorepo layout (`libs/*` as `@helsoft/*`, thin `apps/*`); functional React, no Redux; always a `Props` type; kebab-case filenames; a Storybook story for every component in a Storybook-enabled lib; **Comment the *why*, not the *what**.** Be brief and concise. Never comment the obvious.
 - **`hooks-service-dao.mdc`** — layering `Component → Hook → Service → DAO`; DAOs = data access only; services = validation/business logic, no React; hooks wrap services, not DAOs; each layer exports via `index.ts`.
 - **`atomic-design.mdc`** — correct atom/molecule/organism placement; reuse existing tokens/components (no ad-hoc colors/spacing/typography); every component ships a co-located `<name>.stories.tsx` covering its states.
 - **`component-split.mdc`** — non-trivial UI split into `*.tsx` (JSX + handlers) / `*.types.ts` / `use-*.ts` (local state) / `*.helpers.ts` (pure); handlers stay in the component, helpers stay pure.
