@@ -5,7 +5,7 @@ jest.mock('react-native', () => ({
   useWindowDimensions: jest.fn(),
 }));
 
-import { useSession } from '@helsoft/hooks';
+import { QueryProvider, useSession } from '@helsoft/hooks';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -78,7 +78,9 @@ describe('pdf-upload-extraction slice-1 integration', () => {
       invoke: jest.fn().mockResolvedValue({ data: extractionResult, error: null }),
     } as never);
 
-    const { result } = renderHook(() => ({ session: useSession(), pdf: usePdfExtraction() }));
+    const { result } = renderHook(() => ({ session: useSession(), pdf: usePdfExtraction() }), {
+      wrapper: QueryProvider,
+    });
     await waitFor(() => expect(result.current.session.isLoading).toBe(false));
 
     expect(result.current.pdf.stage).toBe('idle');

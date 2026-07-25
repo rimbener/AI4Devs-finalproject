@@ -5,7 +5,7 @@ jest.mock('react-native', () => ({
   useWindowDimensions: jest.fn(),
 }));
 
-import { useSession } from '@helsoft/hooks';
+import { QueryProvider, useSession } from '@helsoft/hooks';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { FunctionsFetchError, initSupabase } from '@helsoft/supabase-services';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -72,7 +72,9 @@ describe('pdf-upload-extraction slice-2 error/retry integration', () => {
       .mockResolvedValueOnce({ data: extractionResult, error: null });
     jest.spyOn(sharedClient, 'functions', 'get').mockReturnValue({ invoke } as never);
 
-    const { result } = renderHook(() => ({ session: useSession(), pdf: usePdfExtraction() }));
+    const { result } = renderHook(() => ({ session: useSession(), pdf: usePdfExtraction() }), {
+      wrapper: QueryProvider,
+    });
     await waitFor(() => expect(result.current.session.isLoading).toBe(false));
 
     await act(async () => {
