@@ -1,5 +1,4 @@
 jest.mock('@helsoft/hooks', () => ({
-  ApiKeyProvider: ({ children }: { children: unknown }) => children,
   ProfileProvider: ({ children }: { children: unknown }) => children,
 }));
 

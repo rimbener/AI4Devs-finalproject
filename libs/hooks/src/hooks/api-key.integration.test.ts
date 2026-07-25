@@ -7,8 +7,7 @@ import { createElement } from 'react';
 
 import { useApiKey } from './use-api-key';
 
-const createWrapper = () => {
-  const queryClient = new QueryClient();
+const createWrapper = (queryClient = new QueryClient()) => {
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children);
 };
@@ -78,7 +77,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     expect(invoke).toHaveBeenCalledWith('manage-api-key', {
       body: { action: 'save', provider: 'groq', apiKey: 'sk-test-key' },
     });
-    expect(result.current.status).toEqual(groqKeyStatus);
+    await waitFor(() => expect(result.current.status).toEqual(groqKeyStatus));
   });
 
   // @s4 — replacing one provider leaves the other provider's key unchanged.
@@ -107,14 +106,16 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       await result.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
+    await waitFor(() =>
+      expect(result.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
+        '2026-03-01T00:00:00.000Z',
+      ),
+    );
     expect(result.current.status.keys).toHaveLength(2);
     expect(result.current.status.keys.find((k) => k.provider === 'openai')).toEqual({
       provider: 'openai',
       updatedAt: '2026-02-01T00:00:00.000Z',
     });
-    expect(result.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
-      '2026-03-01T00:00:00.000Z',
-    );
   });
 
   // @s4 — replacing an already-saved key reflects the updated status.
@@ -137,7 +138,9 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       await result.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
-    expect(result.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z');
+    await waitFor(() =>
+      expect(result.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z'),
+    );
   });
 
   // @s8 — removing a saved key end-to-end reflects the no-key status.
@@ -158,7 +161,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     expect(invoke).toHaveBeenCalledWith('manage-api-key', {
       body: { action: 'remove', provider: 'groq' },
     });
-    expect(result.current.status).toEqual({ keys: [] });
+    await waitFor(() => expect(result.current.status).toEqual({ keys: [] }));
     expect(result.current.error).toBeNull();
   });
 
@@ -176,7 +179,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       await expect(result.current.removeApiKey('groq')).rejects.toBeInstanceOf(Error);
     });
 
-    expect(result.current.error).toBe('network_error');
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
     expect(result.current.status).toEqual(groqKeyStatus);
   });
 });

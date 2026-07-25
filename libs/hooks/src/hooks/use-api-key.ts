@@ -1,17 +1,12 @@
 import { ApiKeyService } from '@helsoft/supabase-services';
 import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
-import {
-  createContext,
-  createElement,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useReducer,
-} from 'react';
-import { useApiKeyInitialState, useApiKeyReducer } from './use-api-key.reducer';
-import type { ApiKeyProviderProps, UseApiKeyResult } from './use-api-key.types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useMemo } from 'react';
+
+import type { UseApiKeyResult } from './use-api-key.types';
 import { useSession } from './use-session';
+
+const EMPTY_STATUS: ApiKeyStatus = { keys: [] };
 
 const API_KEY_ERROR_CODES: ReadonlySet<ApiKeyErrorCode> = new Set([
   'network_error',
@@ -21,110 +16,72 @@ const API_KEY_ERROR_CODES: ReadonlySet<ApiKeyErrorCode> = new Set([
 const isApiKeyErrorShape = (cause: unknown): cause is ApiKeyError =>
   API_KEY_ERROR_CODES.has((cause as { code?: unknown } | null)?.code as ApiKeyErrorCode);
 
-/**
- * The full stateful implementation, shared by both the standalone `useApiKey()` path and
- * `ApiKeyProvider`. `skip` short-circuits the status-fetch effect (rules-of-hooks: hooks
- * are always called in the same order every render).
- */
-const useApiKeyState = (skip: boolean): UseApiKeyResult => {
-  const { session, isLoading: isSessionLoading } = useSession();
-  const sessionUserId = session?.user?.id;
-  const [state, dispatch] = useReducer(useApiKeyReducer, useApiKeyInitialState);
+/** Query key for a learner's key status, scoped by user id (D1) — never leaks across users. */
+export const apiKeyStatusQueryKey = (userId: string) => ['api-key', 'status', userId] as const;
 
-  useEffect(() => {
-    if (skip) return;
-
-    let cancelled = false;
-
-    if (isSessionLoading) return;
-
-    if (!sessionUserId) {
-      dispatch({ type: 'status/unauthenticated' });
-      return;
-    }
-
-    dispatch({ type: 'status/load/start' });
-    ApiKeyService.getApiKeyStatus().then((nextStatus) => {
-      if (cancelled) return;
-      dispatch({ type: 'status/load/success', status: nextStatus });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [skip, sessionUserId, isSessionLoading]);
-
-  const runMutation = useCallback(async (mutate: () => Promise<ApiKeyStatus>) => {
-    dispatch({ type: 'mutation/start' });
-    try {
-      const nextStatus = await mutate();
-      dispatch({ type: 'mutation/success', status: nextStatus });
-    } catch (cause) {
-      dispatch({
-        type: 'mutation/failure',
-        error: isApiKeyErrorShape(cause) ? cause.code : 'network_error',
-      });
-      throw cause;
-    }
-  }, []);
-
-  const saveApiKey = useCallback(
-    (provider: AiProvider, rawKey: string) =>
-      runMutation(() => ApiKeyService.saveApiKey(provider, rawKey)),
-    [runMutation],
-  );
-  const removeApiKey = useCallback(
-    (provider: AiProvider) => runMutation(() => ApiKeyService.removeApiKey(provider)),
-    [runMutation],
-  );
-
-  const hasKey = useMemo(() => state.status.keys.length > 0, [state.status.keys]);
-
-  return useMemo(
-    () => ({
-      status: state.status,
-      isLoading: state.isLoading,
-      isSubmitting: state.isSubmitting,
-      error: state.error,
-      hasKey,
-      saveApiKey,
-      removeApiKey,
-    }),
-    [
-      state.status,
-      state.isLoading,
-      state.isSubmitting,
-      state.error,
-      hasKey,
-      saveApiKey,
-      removeApiKey,
-    ],
-  );
-};
-
-const ApiKeyContext = createContext<UseApiKeyResult | undefined>(undefined);
+/** Tagged union so save/remove share one mutation slot (D3) — see use-api-key's module doc. */
+type ApiKeyMutationVariables =
+  | { kind: 'save'; provider: AiProvider; rawKey: string }
+  | { kind: 'remove'; provider: AiProvider };
 
 /**
  * React integration over ApiKeyService: loads the current multi-key status for an
- * authenticated user and exposes per-provider save/remove mutations. Exposes a derived
- * `hasKey` boolean so `useProfile().canCreate` + `ApiKeyGate` continue working unchanged.
- *
- * When called underneath an `ApiKeyProvider`, returns that provider's single shared instance
- * instead of computing its own (avoids redundant `getApiKeyStatus()` reads when e.g. both
- * the Settings and Upload screens are mounted in the same expo-router session).
+ * authenticated user under a per-user cache key, and exposes save/remove behind **one**
+ * tagged-union mutation (D3) so a single error/isSubmitting slot mirrors the old reducer's
+ * cross-clearing semantics — a successful remove clears an error left by a failed save.
+ * Exposes a derived `hasKey` so `useProfile().canCreate` + `ApiKeyGate` keep working unchanged.
+ * Two consumers under the same QueryClient share one read — no provider needed (s49).
  */
 export const useApiKey = (): UseApiKeyResult => {
-  const shared = useContext(ApiKeyContext);
-  const own = useApiKeyState(shared !== undefined);
-  return shared ?? own;
-};
+  const { session, isLoading: isSessionLoading } = useSession();
+  const sessionUserId = session?.user?.id;
+  const queryClient = useQueryClient();
 
-/**
- * Computes `useApiKey()`'s state once and shares it via context with every `useApiKey()` call
- * nested underneath it. Wire this once around the app screens that read key status so visiting
- * both Settings and Upload in one session shares a single status read.
- */
-export const ApiKeyProvider = ({ children }: ApiKeyProviderProps) => {
-  const value = useApiKeyState(false);
-  return createElement(ApiKeyContext.Provider, { value }, children);
+  const { data, isPending } = useQuery({
+    queryKey: apiKeyStatusQueryKey(sessionUserId ?? ''),
+    queryFn: () => ApiKeyService.getApiKeyStatus(),
+    enabled: Boolean(sessionUserId) && !isSessionLoading,
+  });
+
+  const {
+    mutateAsync,
+    isPending: isSubmitting,
+    error: mutationError,
+  } = useMutation({
+    mutationFn: (variables: ApiKeyMutationVariables) =>
+      variables.kind === 'save'
+        ? ApiKeyService.saveApiKey(variables.provider, variables.rawKey)
+        : ApiKeyService.removeApiKey(variables.provider),
+    onSuccess: (nextStatus) => {
+      if (!sessionUserId) return;
+      queryClient.setQueryData(apiKeyStatusQueryKey(sessionUserId), nextStatus);
+    },
+  });
+
+  const saveApiKey = useCallback(
+    async (provider: AiProvider, rawKey: string) => {
+      await mutateAsync({ kind: 'save', provider, rawKey });
+    },
+    [mutateAsync],
+  );
+
+  const removeApiKey = useCallback(
+    async (provider: AiProvider) => {
+      await mutateAsync({ kind: 'remove', provider });
+    },
+    [mutateAsync],
+  );
+
+  // A disabled query reports isPending: true — only treat that as loading while authenticated,
+  // so the unauthenticated case reads { isLoading: false, status: { keys: [] } } (s38).
+  const isLoading = isSessionLoading || (Boolean(sessionUserId) && isPending);
+  const status = data ?? EMPTY_STATUS;
+  const hasKey = useMemo(() => status.keys.length > 0, [status]);
+  const error = mutationError
+    ? isApiKeyErrorShape(mutationError)
+      ? mutationError.code
+      : ('network_error' satisfies ApiKeyErrorCode)
+    : null;
+
+  return { status, isLoading, isSubmitting, error, hasKey, saveApiKey, removeApiKey };
 };

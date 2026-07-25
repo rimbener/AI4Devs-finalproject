@@ -81,7 +81,7 @@ export const useProfile = (): UseProfileResult => {
   return shared ?? own;
 };
 
-/** Owns the single profile+flags fetch for the authenticated app shell. Nest under `ApiKeyProvider`. */
+/** Owns the single profile+flags fetch for the authenticated app shell. */
 export const ProfileProvider = ({ children }: ProfileProviderProps) => {
   const value = useProfileState(false);
   return createElement(ProfileContext.Provider, { value }, children);
