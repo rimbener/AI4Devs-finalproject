@@ -38,4 +38,4 @@ rm -f "$TMP"
 
 echo "Wrote $ENV_FILE → $API_URL"
 cd "$APP_DIR"
-exec npx expo start "$@"
+exec npx expo start --port 8091 "$@"
