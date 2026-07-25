@@ -11,7 +11,7 @@ module.exports = defineConfig({
   // (its default on-failure open starts a blocking report server that hangs non-interactive runs).
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:6008',
+    baseURL: 'http://localhost:6013',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -23,7 +23,7 @@ module.exports = defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    url: 'http://localhost:6008',
+    url: 'http://localhost:6013',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

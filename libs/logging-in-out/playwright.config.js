@@ -9,7 +9,7 @@ module.exports = defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:6010',
+    baseURL: 'http://localhost:6012',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
@@ -21,7 +21,7 @@ module.exports = defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    url: 'http://localhost:6010',
+    url: 'http://localhost:6012',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
