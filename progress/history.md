@@ -148,3 +148,5 @@
 2026-07-25 | unistyles-configure-order (ad hoc, no story) | n/a | — | metro.config.js prepends @helsoft/components/theme via getModulesRunBeforeMainModule; fixes dev-server 500 from configure-before-create race (347160f65).
 
 2026-07-25 | root-gating (ad hoc, no story) | n/a | — | ErrorMessageWithRetry+ErrorScreen (components); root _layout gates on font/profile load with full-screen error, guard now profile-based not session-based; ApiKeyGate loses its own loading/error UI; entitlements copy→profile+fonts keys; playwright baseURLs synced to reassigned ports (9c771cf70..de4d79ad6).
+
+2026-07-25 | tanstack-query-auth (ad hoc, no story) | n/a | — | useAuth/useSession moved to tanstack-query (useMutation/useQuery); new useSignOut hook + QueryProvider; SignOut gains loading/error/retry UI (19812439d..8c89fa11b).
