@@ -83,7 +83,8 @@ export const de: TranslationResource = {
     fonts: {
       loading: 'Schriften werden geladen…',
       error: {
-        message: 'Es ist ein Fehler aufgetreten, während die Schriften geladen werden. Bitte versuche es erneut.',
+        message:
+          'Es ist ein Fehler aufgetreten, während die Schriften geladen werden. Bitte versuche es erneut.',
       },
     },
     upload: {

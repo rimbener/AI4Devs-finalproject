@@ -83,7 +83,8 @@ export const es: TranslationResource = {
     fonts: {
       loading: 'Cargando fuentes…',
       error: {
-        message: 'Se produjo un error al cargar las fuentes. Por favor, intenta reiniciar la aplicación.',
+        message:
+          'Se produjo un error al cargar las fuentes. Por favor, intenta reiniciar la aplicación.',
       },
     },
     upload: {

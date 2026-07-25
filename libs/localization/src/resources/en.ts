@@ -89,7 +89,8 @@ export const en = {
     fonts: {
       loading: 'Loading fonts…',
       error: {
-        message: 'An error occurred while loading the fonts. Please try restarting the application.',
+        message:
+          'An error occurred while loading the fonts. Please try restarting the application.',
       },
     },
     upload: {
