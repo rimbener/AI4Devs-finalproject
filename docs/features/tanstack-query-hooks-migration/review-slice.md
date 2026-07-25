@@ -97,6 +97,8 @@ Everything else — error contract preserved (`Error | null`), no `console.log`/
 
 **Status: the one `open` finding (`[tdd]`, test-duplication regression) is now `resolved`** — see Resolution note above. No production-code rule violation; test-file hygiene only.
 
+**Scope-gap fix (post-review, found by a later repo-wide `pnpm turbo run test` run):** task-3's declared `paths:` covered only `libs/hooks`, but `useLessons`'s consumer in `@helsoft/study-buddy` — `libs/study-buddy/src/components/saved-lessons/saved-lessons.integration.test.tsx` — was not exercised by that slice's own test run and broke ("No QueryClient set, use QueryClientProvider to set one") once `useLessons` moved onto `useQuery`/`useQueryClient`. Fixed by wrapping the component render in a local `QueryClientProvider` + fresh `QueryClient({ defaultOptions: { queries: { retry: false } } })`, matching the pattern already used in `libs/hooks`'s adapted integration tests (`use-lessons.test.ts`'s `createWrapper`); no assertion changes. Added `@tanstack/react-query` (`^5.90.3`, matching `libs/hooks`) as a `devDependency` in `libs/study-buddy/package.json` so `tsc --noEmit` resolves the import (`pnpm-lock.yaml` updated via `pnpm install`). Verified: `pnpm --filter @helsoft/study-buddy test` (38/38 suites, 296/296 tests), `pnpm turbo run test --output-logs=errors-only` (12/12), `pnpm turbo run check-types --output-logs=errors-only` (14/14), `pnpm format` (no fixes needed) — all green. Not logged in `tdd.md` (not a TDD cycle, a scope-gap fix to an existing test).
+
 ## Slice 3 — task-4 (migrate `usePdfDocuments` to `useQuery` + delete mutation, delete its reducer)
 
 **Commit reviewed:** `05a76d747` (diff vs `05a76d747~1`)
