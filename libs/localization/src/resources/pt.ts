@@ -74,10 +74,16 @@ export const pt: TranslationResource = {
       count_other: '{{count}} lições',
     },
     entitlements: {
-      loading: 'Carregando seu plano…',
+      loading: 'Carregando seu perfil…',
       error: {
-        message: 'Não foi possível carregar seu plano.',
+        message: 'Não foi possível carregar seu perfil.',
         retry: 'Tentar novamente',
+      },
+    },
+    fonts: {
+      loading: 'Carregando fontes…',
+      error: {
+        message: 'Ocorreu um erro ao carregar as fontes. Por favor, tente reiniciar a aplicação.',
       },
     },
     upload: {

@@ -80,10 +80,16 @@ export const en = {
       count_other: '{{count}} lessons',
     },
     entitlements: {
-      loading: 'Loading your plan…',
+      loading: 'Loading your profile…',
       error: {
-        message: "We couldn't load your plan.",
+        message: "We couldn't load your profile.",
         retry: 'Try again',
+      },
+    },
+    fonts: {
+      loading: 'Loading fonts…',
+      error: {
+        message: 'An error occurred while loading the fonts. Please try restarting the application.',
       },
     },
     upload: {

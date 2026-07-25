@@ -74,10 +74,16 @@ export const de: TranslationResource = {
       count_other: '{{count}} Lektionen',
     },
     entitlements: {
-      loading: 'Dein Tarif wird geladen…',
+      loading: 'Dein Profil wird geladen…',
       error: {
-        message: 'Dein Tarif konnte nicht geladen werden.',
+        message: 'Dein Profil konnte nicht geladen werden.',
         retry: 'Erneut versuchen',
+      },
+    },
+    fonts: {
+      loading: 'Schriften werden geladen…',
+      error: {
+        message: 'Es ist ein Fehler aufgetreten, während die Schriften geladen werden. Bitte versuche es erneut.',
       },
     },
     upload: {
