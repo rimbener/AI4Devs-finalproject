@@ -13,8 +13,9 @@ import { useLessonAttempt } from './use-lesson-attempt';
 const service = LessonAttemptService as jest.Mocked<typeof LessonAttemptService>;
 const input = { lessonId: 'lesson-1', score: 3, total: 3 };
 
-const createWrapper = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const createWrapper = (
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) => {
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children);
 };
@@ -28,9 +29,9 @@ describe('useLessonAttempt', () => {
     const savedAttempt = { id: 'attempt-1', ...input, createdAt: '2026-07-11T00:00:00.000Z' };
     service.saveAttempt.mockResolvedValue(savedAttempt);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children);
-    const { result } = renderHook(() => useLessonAttempt(), { wrapper });
+    const { result } = renderHook(() => useLessonAttempt(), {
+      wrapper: createWrapper(queryClient),
+    });
 
     await act(async () => {
       result.current.saveAttempt(input);
