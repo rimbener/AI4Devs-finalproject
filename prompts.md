@@ -488,6 +488,16 @@ These prompts drove refinement, reconciliation and review across the documents r
 
 4. write the prompts into prompts.md
 
+---
+
+## Anexo — Prompts de la sesión: conectar las reglas hooks-service-dao y tanstack-query al orquestador
+
+> Prompts del usuario (verbatim, en orden) de la sesión que conectó la regla nueva `.agents/rules/tanstack-query.mdc` (y el `hooks-service-dao.mdc` actualizado, que ahora apunta a ella) en los índices del orquestador: `rules.md`, `ORCHESTRATOR.md`, la lista enumerada de `reviewer_slice`, las listas de reglas de `reviewer_engineering` e `implementer`, el árbol de reglas y el bullet de layering del plan, y el puntero de `@helsoft/hooks` en `global.mdc` (también se completó `state-sharing.mdc` para mantener la lista de `reviewer_slice` == el directorio de reglas).
+
+1. add the new rules of hooks-service-dao.mdc and tanstack-query.mdc into the orchestrator
+
+2. add the prompt into prompts.md
+
 5. I want to add a .agents/rules/state-sharing.mdc file where it says that Context should be used to avoid large prop-drilling or many levels of prop-drilling
 
 6. /commit
