@@ -1,73 +1,57 @@
 import { LessonsService } from '@helsoft/supabase-services';
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import type { LessonSummary } from '@helsoft/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
-import { useLessonsInitialState, useLessonsReducer } from './use-lessons.reducer';
 import type { UseLessonsResult } from './use-lessons.types';
 
+/** Query key for the learner's lesson list. */
+export const lessonsQueryKey = ['lessons'] as const;
+
 /**
- * React integration over LessonsService (tanstack-query not installed → local state,
- * per spec.md Open decisions). Drives Home Loading/Content/Empty/Error via
- * `{ lessons, isLoading, error, refetch, deleteLesson }`.
+ * React integration over LessonsService. Drives Home Loading/Content/Empty/Error via
+ * `{ lessons, isLoading, error, refetch, deleteLesson }`. A successful delete filters the
+ * cache directly with `setQueryData` — never `invalidateQueries` — so there is no
+ * post-mutation refetch or loading flicker.
  */
 export const useLessons = (): UseLessonsResult => {
-  const [state, dispatch] = useReducer(useLessonsReducer, useLessonsInitialState);
-  const isMounted = useRef(true);
-  // Incremented to cancel an in-flight load when a newer one starts (mount or refetch).
-  const requestId = useRef(0);
+  const queryClient = useQueryClient();
 
-  useEffect(
-    () => () => {
-      isMounted.current = false;
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch: queryRefetch,
+  } = useQuery({
+    queryKey: lessonsQueryKey,
+    queryFn: () => LessonsService.getLessons(),
+  });
+
+  const {
+    mutateAsync,
+    error: deleteError,
+    reset: resetDelete,
+  } = useMutation({
+    mutationFn: (id: string) => LessonsService.deleteLesson(id),
+    onSuccess: (_result, id) => {
+      queryClient.setQueryData<LessonSummary[]>(lessonsQueryKey, (current) =>
+        (current ?? []).filter((lesson) => lesson.id !== id),
+      );
     },
-    [],
-  );
-
-  const load = useCallback(() => {
-    const id = ++requestId.current;
-    dispatch({ type: 'load/start' });
-
-    void LessonsService.getLessons()
-      .then((next) => {
-        if (id !== requestId.current || !isMounted.current) return;
-        dispatch({ type: 'load/success', lessons: next });
-      })
-      .catch((cause: unknown) => {
-        if (id !== requestId.current || !isMounted.current) return;
-        dispatch({
-          type: 'load/failure',
-          error: cause instanceof Error ? cause : new Error(String(cause)),
-        });
-      });
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  });
 
   const refetch = useCallback(() => {
-    load();
-  }, [load]);
+    resetDelete();
+    void queryRefetch();
+  }, [resetDelete, queryRefetch]);
 
-  const deleteLesson = useCallback(async (id: string) => {
-    try {
-      await LessonsService.deleteLesson(id);
-      if (!isMounted.current) return;
-      dispatch({ type: 'delete/success', id });
-    } catch (cause) {
-      if (isMounted.current) {
-        dispatch({
-          type: 'delete/failure',
-          error: cause instanceof Error ? cause : new Error(String(cause)),
-        });
-      }
-      throw cause;
-    }
-  }, []);
+  const deleteLesson = useCallback((id: string) => mutateAsync(id), [mutateAsync]);
 
   return {
-    lessons: state.lessons,
-    isLoading: state.isLoading,
-    error: state.error,
+    lessons: data ?? [],
+    isLoading,
+    // D4: mutation-first merge reproduces the old reducer's last-writer-wins slot.
+    error: deleteError ?? queryError,
     refetch,
     deleteLesson,
   };
