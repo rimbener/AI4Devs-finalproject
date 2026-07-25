@@ -16,8 +16,9 @@ type LessonIdProps = { id: string };
 
 const service = LessonsService as jest.Mocked<typeof LessonsService>;
 
-const createWrapper = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const createWrapper = (
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) => {
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children);
 };
@@ -47,8 +48,7 @@ describe('useLesson', () => {
   it('caches the loaded lesson under lessonQueryKey(id)', async () => {
     service.getLesson.mockResolvedValue(lesson);
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = ({ children }: { children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: queryClient }, children);
+    const wrapper = createWrapper(queryClient);
 
     const { result } = renderHook(() => useLesson('lesson-1'), { wrapper });
 
