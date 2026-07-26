@@ -25,14 +25,11 @@ to any hardcoded list.
 - [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
-- **Unknown stays `invalid_model` on purpose** (decision D12): only the genuinely *disabled* case gets
-  the new `provider_disabled` code, so that code carries exactly one meaning and the frontend can
-  write precise copy. Unknown-provider behaviour is a strict no-op — nothing regresses.
+- Decisions: **D12** (unknown stays `invalid_model`; only disabled gets the new code), **D6** (fail
+  closed, never assume enabled). Rationale lives in `spec.md`.
 - Fail-closed needs **no new code path**: `index.ts` already wraps `handleLessonGenerationRoute` in
   `try { … } catch { return errorResponse(req, 'generation_failed', 500) }`. Letting the loader's
   rejection propagate into that catch is the whole implementation. Assert it rather than adding a
   branch.
 - Distinguish carefully: `null` from the loader (row absent → `invalid_model` 422) is **not** the same
   as the loader throwing (read failure → `generation_failed` 500). Both are pinned; keep them apart.
-- Do not soften the failure into a default-enabled assumption — a DB hiccup must never re-enable a
-  retired provider (decision D6).

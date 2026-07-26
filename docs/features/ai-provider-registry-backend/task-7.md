@@ -26,20 +26,17 @@ new `provider_disabled` code at 422, while the platform route reuses the existin
       `platform_key_unavailable`, **503**, no SDK call (s20)
 - [ ] The `enabled` check runs **before** any key resolution or SDK factory call on both routes
 - [ ] Platform route still acquires/releases its generation slot correctly when it rejects early
+- [ ] `libs/types/` is **not** touched by this task
 - [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
-- **Scope boundary (decision D11/D13):** this task widens **only** the Edge-side mirror
-  `supabase/functions/generate-lesson/_shared/types.ts`. The `libs/types/src/lesson-generation.ts`
-  union, its `lesson-generation.test.ts` guard, the four locale bundles and the client-side error
-  mapping are **owned by the paired frontend story** (`user-stories/pending/ai-provider-registry-frontend.md`,
-  amended for exactly this). Do not touch `libs/types` here.
-- 422 matches `invalid_model`'s existing status — it is a request-validation refusal.
-- **The platform route deliberately reuses `platform_key_unavailable` 503** (decision D14) rather
-  than `provider_disabled`: the learner's request is not invalid and they cannot fix it, and 503 +
-  the existing copy ("Lesson generation is temporarily unavailable. Try again.") is already correct,
-  so this branch needs **no new vocabulary and no new copy**.
-- `provider_disabled` therefore means exactly "the provider *you chose* is retired" — BYOK only.
-- **Blast radius, documented in risks.md R3:** `update ai_providers set enabled = false where id = 'groq'`
-  disables platform generation for every paid learner, because `route.ts` hardcodes `provider: 'groq'`
-  for that route. Mitigation is the migration-header warning from task-1, not code.
+- Decisions: **D13** (new `provider_disabled` `GenerationErrorCode` at 422, Edge-side mirror only),
+  **D14** (platform route reuses `platform_key_unavailable` 503). Rationale lives in `spec.md`.
+- **Scope boundary:** widen only `supabase/functions/generate-lesson/_shared/types.ts`. The
+  `libs/types/src/lesson-generation.ts` union, its `lesson-generation.test.ts` guard, the four locale
+  bundles and the client-side error mapping are owned by the paired frontend story
+  (`user-stories/pending/ai-provider-registry-frontend.md`, amended to cite D13 and D14 explicitly).
+- `provider_disabled` means exactly "the provider *you chose* is retired" — BYOK only. Do not route
+  the platform path through it.
+- Blast radius is recorded in risks.md R3; the operator-facing warning is authored by task-1's
+  migration header, not here.

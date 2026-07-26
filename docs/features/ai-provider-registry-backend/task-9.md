@@ -27,23 +27,19 @@ allowed so a learner can revoke a credential they gave us.
       - remove + unknown → **400** `{ code: 'network_error' }`, unchanged from today (s25)
 - [ ] The disabled check happens **before** any `save_api_key` RPC / Vault call
 - [ ] `remove` never consults `enabled` at all — only provider existence
+- [ ] `libs/` is **not** touched by this task
 - [ ] `pnpm lint` + `pnpm check-types` green; Deno tests pass
 
 ## Notes
-- **Why remove is allowed** (decision D10): the frontend keeps a disabled provider visible in the
-  saved-keys list *with a Remove button*. Rejecting remove would trap the learner's API credential in
-  our Vault permanently with no way to revoke it. Saving is a new choice (excluded); removing is
-  cleanup. `remove_api_key` is a plain delete on `(user_id, provider)` and does not care about `enabled`.
-- **This contradicts the paired frontend story's original AC wording** ("save/remove … is rejected").
-  That story has been amended by the lead to match this split; see `spec.md`'s cross-story note. Do
-  not edit the frontend story from this task.
-- **`provider_disabled` fires only for genuinely disabled** (decision D12). Unknown keeps
-  `network_error` for *both* actions so unknown-provider behaviour is byte-identical to today. The
-  scoped loader distinguishes the two for free: `null` = unknown, row with `enabled === false` = disabled.
-- The `ApiKeyErrorCode` union in `libs/types/src/api-key-error.ts` is currently
-  `'network_error' | 'validation_error'`. Widening it with `provider_disabled`, plus locale copy and
-  the `api-key.service.ts` mapping, is **frontend-story scope** (decision D11). Emit the code here;
-  do not touch `libs/`.
+- Decisions: **D10** (save rejected / remove always allowed), **D12** (`provider_disabled` only for
+  genuinely disabled; unknown keeps `network_error`), **D11** (the `ApiKeyErrorCode` widening, copy
+  and `api-key.service.ts` mapping are frontend-story scope). Rationale lives in `spec.md`.
+- The frontend story has been amended to cite D10/D11/D12 and no longer contradicts this matrix. Do
+  not edit that story from this task.
+- Implementation detail: `remove_api_key` is a plain delete on `(user_id, provider)` and does not care
+  about `enabled`, so allowing remove costs nothing.
+- The scoped loader distinguishes the two rejection causes for free: `null` = unknown, row with
+  `enabled === false` = disabled.
 - Today's unknown-provider path is `dispatch` returning `null` → `400 { code: 'network_error' }`.
   Preserve that path for unknown; add a distinct branch for disabled.
 - `provider.test.ts` currently asserts a synchronous six-provider allow-list. Rewrite it against

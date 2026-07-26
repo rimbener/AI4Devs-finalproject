@@ -23,6 +23,7 @@ drives image placement, replacing the deleted `AI_MODEL_REGISTRY`'s `visionDefau
 - [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
+- Decision: **D6** (the global registry this closed over is deleted). Rationale lives in `spec.md`.
 - **Strict TDD**, non-UI `.ts`.
 - This file is already the right shape — `resolveVisionModelFromRegistry(registry, provider, model)`
   takes its data as a **parameter**, which is exactly the injected-catalog pattern. The change is

@@ -30,20 +30,17 @@ story was written to remove.
 - [ ] `validateByokGenerationRequest` / `resolveByokGenerationKey` updated to thread the entry
 - [ ] Existing `lesson-generation.validation.test.ts` cases still pass, rewritten against fixtures
       instead of the deleted global registry
+- [ ] No fallback to any hardcoded provider or model list remains
 - [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
-- **Fail closed, no fallback** (decision D6): the hardcoded data is deleted outright, not kept as a
-  degraded path. A stale fallback could silently resurrect a provider an operator deliberately
-  disabled — worse than an error.
-- `PLATFORM_TEXT_MODEL_ID` stays hardcoded on purpose: it is paired with the `PLATFORM_GROQ_API_KEY`
-  env var and the hardcoded `provider: 'groq'` in `route.ts`. The platform path is deliberately not
-  learner-configurable and making it DB-driven is out of scope.
-- **Accepted risk, do not "fix" it** (decision D7, risks.md R4): after widening, `provider-factory.ts`'s
-  `providerCreators[provider]` can be `undefined` for a catalog row with no wired `@ai-sdk` factory,
-  producing an opaque `generation_failed` 502. The human explicitly chose this over a capability
-  guard. Verified it compiles: `tsconfig.base.json` sets `strict: true` but **not**
-  `noUncheckedIndexedAccess`, so the index access type-checks.
+- Decisions: **D6** (fail closed, registries deleted, `AiProvider` → `string`, `PLATFORM_TEXT_MODEL_ID`
+  stays hardcoded), **D7** (no SDK-capability guard). Rationale lives in `spec.md`.
+- **D7 is an accepted risk — do not "fix" it** (risks.md R4): after widening,
+  `provider-factory.ts`'s `providerCreators[provider]` can be `undefined` for a catalog row with no
+  wired `@ai-sdk` factory, producing an opaque `generation_failed` 502. Verified it compiles:
+  `tsconfig.base.json` sets `strict: true` but **not** `noUncheckedIndexedAccess`, so the index
+  access type-checks.
 - Unknown provider and uncurated model both keep yielding `invalid_model` 422 — byte-identical to
   today. Only the *disabled* case gets a new code, in task-7.
 - Keep `models.ts`'s header comment honest: it is no longer a hand-mirrored registry.

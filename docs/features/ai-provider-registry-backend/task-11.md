@@ -24,8 +24,9 @@ model — and that flipping `enabled` changes the decision on the very next requ
 - [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
+- Decision: **D9** (no caching). Rationale lives in `spec.md`.
 - Satisfies `tdd.mdc`'s "one integration test across the vertical slice".
-- s28 is the **regression guard for decision D9.** If anyone later adds a module-level TTL cache to
+- **s28 is the regression guard for D9.** If anyone later adds a module-level TTL cache to
   `loadProviderCatalog`, this test must fail — that is its entire purpose. Write it so it would.
 - Mock at the client boundary (the `from(...).select(...)` chain), not at `loadProviderCatalog`, or the
   test proves nothing about the query wiring.

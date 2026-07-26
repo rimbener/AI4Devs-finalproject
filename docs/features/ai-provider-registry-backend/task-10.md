@@ -23,12 +23,13 @@ to a hardcoded allow-list — so a DB hiccup can never let a key be stored for a
 - [ ] `pnpm lint` + `pnpm check-types` green; Deno tests pass
 
 ## Notes
+- Decision: **D6** (fail closed, never treat an unreadable catalog as "assume enabled"). Rationale
+  lives in `spec.md`.
 - Like task-8, this needs **no new branch**: `index.ts` already wraps the whole handler in
   `try { … } catch { logEvent({ action, outcome: 'network_error', userId: 'unknown' }); return jsonResponse(request, 502, { code: 'network_error' }) }`.
   Letting the loader's rejection reach that catch *is* the implementation — assert it, don't add code.
-- 502 `network_error` is deliberately the fail-closed shape here: it is already in the
-  `ApiKeyErrorCode` union, already mapped by `api-key.service.ts`, and already has copy — so this
-  path needs nothing from the frontend story.
+- 502 `network_error` is the fail-closed shape because it is already in the `ApiKeyErrorCode` union,
+  already mapped by `api-key.service.ts`, and already has copy — so this path needs nothing from the
+  frontend story.
 - Keep the existing redaction discipline (`@s12` of the original ai-key-management feature): the
   catch-all must not log the body or the key.
-- Fail **closed**, never open (decision D6): do not treat an unreadable catalog as "assume enabled".
