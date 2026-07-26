@@ -22,9 +22,16 @@ export const useLesson = (id: string): UseLessonResult => {
     queryFn: () => LessonsService.getLesson(id),
   });
 
-  const refetch = useCallback(() => {
-    void queryRefetch();
-  }, [queryRefetch]);
+  const refetch = useCallback(
+    () => {
+      void queryRefetch();
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent mutant — TanStack's QueryObserver
+    // binds `refetch` once in its constructor (`this.refetch = this.refetch.bind(this)` in
+    // `@tanstack/query-core`), so it's referentially stable for the life of this hook instance
+    // regardless of what's in this array.
+    [queryRefetch],
+  );
 
   return {
     lesson: data ?? null,

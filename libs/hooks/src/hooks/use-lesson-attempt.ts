@@ -42,6 +42,10 @@ export const useLessonAttempt = (): UseLessonAttemptResult => {
       isSaving.current = true;
       mutate(input);
     },
+    // Stryker disable next-line ArrayDeclaration: equivalent mutant — TanStack's MutationObserver
+    // binds `mutate` once in its constructor (`this.mutate = this.mutate.bind(this)` in
+    // `@tanstack/query-core`), so it's referentially stable for the life of this hook instance
+    // regardless of what's in this array.
     [mutate],
   );
 

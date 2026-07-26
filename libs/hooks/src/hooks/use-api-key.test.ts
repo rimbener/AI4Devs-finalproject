@@ -70,6 +70,17 @@ describe('useApiKey', () => {
     expect(result.current.hasKey).toBe(true);
   });
 
+  // Mutation-kill — hasKey is strictly `keys.length > 0`, false at the empty boundary.
+  it('reports hasKey false when the loaded status has no keys', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    service.getApiKeyStatus.mockResolvedValue(emptyStatus);
+
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.hasKey).toBe(false);
+  });
+
   // @s38 — an unauthenticated visitor gets an empty status, is not loading, and the status
   // service is never called.
   it('does not load the status when there is no session', async () => {
@@ -80,6 +91,17 @@ describe('useApiKey', () => {
     expect(result.current.isLoading).toBe(false);
     expect(service.getApiKeyStatus).not.toHaveBeenCalled();
     expect(result.current.status).toEqual(emptyStatus);
+  });
+
+  // Mutation-kill — the disabled query for an unauthenticated visitor registers under the exact
+  // empty-string-scoped key, not some other placeholder.
+  it("registers the disabled query under apiKeyStatusQueryKey('') when there is no session", () => {
+    mockUseSession.mockReturnValue(noSession);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    renderHook(() => useApiKey(), { wrapper: createWrapper(queryClient) });
+
+    expect(queryClient.getQueryCache().find({ queryKey: apiKeyStatusQueryKey('') })).toBeDefined();
   });
 
   // @s39 — a still-resolving session keeps the status loading and the service is not called yet.

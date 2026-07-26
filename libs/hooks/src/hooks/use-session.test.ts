@@ -8,9 +8,9 @@ jest.mock('@helsoft/supabase-services', () => ({
 import type { Session } from '@helsoft/supabase-services';
 import { AuthService } from '@helsoft/supabase-services';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { act, render, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
-import { createElement } from 'react';
+import { createElement, useState } from 'react';
 
 import { SESSION_QUERY_KEY, useSession } from './use-session';
 
@@ -109,11 +109,17 @@ describe('useSession', () => {
       resolveGetSession(null);
     });
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
+    // `isLoading` is already false at this point (setQueryData above already resolved the
+    // query), so waiting on it alone would pass before the stale fetch's own queryFn
+    // continuation — batched onto a macrotask by notifyManager — has actually run. A real
+    // timer tick must elapse first, or a regression here (e.g. the guard's `?? null` returning
+    // the stale `null` outright) would go undetected.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
     });
 
     expect(result.current.session).toBe(next);
+    expect(result.current.isLoading).toBe(false);
   });
 
   it('unsubscribes on unmount', async () => {
@@ -276,5 +282,40 @@ describe('useSession', () => {
       (_, index) => setQueryDataSpy.mock.calls[index]?.[0] === SESSION_QUERY_KEY,
     );
     expect(removeCallOrder).toBeLessThan(setCallOrder as number);
+  });
+
+  // Mutation-kill — the auth-state-change subscription effect is keyed on `[queryClient]`: if a
+  // consumer's ambient QueryClient is ever swapped (e.g. a provider re-init), the effect must
+  // tear down the old subscription and re-subscribe against the new client, never keep writing
+  // auth events into a QueryClient nobody reads from anymore.
+  it('unsubscribes from the old client and re-subscribes against a new one when the QueryClient changes', async () => {
+    const unsubscribeA = jest.fn();
+    const unsubscribeB = jest.fn();
+    service.onAuthStateChange.mockReturnValueOnce(unsubscribeA).mockReturnValueOnce(unsubscribeB);
+
+    const clientA = new QueryClient();
+    let setClient: (client: QueryClient) => void = () => {};
+    const Consumer = () => {
+      useSession();
+      return null;
+    };
+    const Wrapper = () => {
+      const [client, updateClient] = useState(clientA);
+      setClient = updateClient;
+      return createElement(QueryClientProvider, { client }, createElement(Consumer));
+    };
+
+    render(createElement(Wrapper));
+
+    await waitFor(() => expect(service.onAuthStateChange).toHaveBeenCalledTimes(1));
+    expect(unsubscribeA).not.toHaveBeenCalled();
+
+    const clientB = new QueryClient();
+    act(() => {
+      setClient(clientB);
+    });
+
+    await waitFor(() => expect(service.onAuthStateChange).toHaveBeenCalledTimes(2));
+    expect(unsubscribeA).toHaveBeenCalledTimes(1);
   });
 });

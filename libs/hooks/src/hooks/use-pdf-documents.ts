@@ -40,12 +40,25 @@ export const usePdfDocuments = (): UsePdfDocumentsResult => {
     },
   });
 
-  const refetch = useCallback(() => {
-    resetDelete();
-    void queryRefetch();
-  }, [resetDelete, queryRefetch]);
+  const refetch = useCallback(
+    () => {
+      resetDelete();
+      void queryRefetch();
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent mutant — TanStack binds both
+    // `mutation.reset` and `query.refetch` once in their observers' constructors (see
+    // `@tanstack/query-core`'s MutationObserver/QueryObserver), so both are referentially stable
+    // for the life of this hook instance regardless of what's in this array.
+    [resetDelete, queryRefetch],
+  );
 
-  const deleteDocument = useCallback((id: string) => mutateAsync(id), [mutateAsync]);
+  const deleteDocument = useCallback(
+    (id: string) => mutateAsync(id),
+    // Stryker disable next-line ArrayDeclaration: equivalent mutant — `mutateAsync` is bound
+    // once by TanStack's MutationObserver constructor, so it's referentially stable for the
+    // life of this hook instance regardless of what's in this array.
+    [mutateAsync],
+  );
 
   return {
     documents: data ?? [],

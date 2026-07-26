@@ -101,3 +101,54 @@ these 9 files (excluding both `use-lesson-generation.ts` files and their Compile
 
 > ⚠ 129 error mutant(s) (CompileError) — investigated above, confirmed legitimate TypeScript-checker
 > rejections, not a sandbox defect. Not escalated.
+
+## Round 1 kill (implementer, mutation phase)
+
+All 24 in-scope survivors resolved — killed with a behavioral test, or excluded as a proven
+equivalent mutant via a `// Stryker disable next-line <Mutator>: <reason>` comment (never a bare
+suppression — each carries the justification inline, and the exclusion itself was re-verified with
+Stryker, confirming the mutation score is 100 either way). Full per-file Stryker re-run (all 9
+files together): **208 mutants, 77 killed, 11 ignored, 0 survived — 100.00 score.**
+
+### Killed (14)
+
+| File:line | Mutator | Test added / changed |
+|---|---|---|
+| `use-api-key.ts:51` | StringLiteral | new — disabled query registers under `apiKeyStatusQueryKey('')` exactly (`queryCache.find()`) |
+| `use-api-key.ts:93` (×2, ConditionalExpression + EqualityOperator) | — | new — `hasKey` is `false` at the 0-keys boundary |
+| `use-lesson-attempt.ts:49` | ConditionalExpression | modified — "retry does nothing" now flushes 2 microtasks (`await act(async…)`) before asserting; a bare sync `act()` let the guard-removal mutant hide behind `mutate()`'s one-tick dispatch lag |
+| `use-lesson-attempt.ts:51` | BooleanLiteral | modified — "retry refused while in flight" 2nd-retry check now flushed the same way |
+| `use-slide-image-url.ts:22` | StringLiteral | new — disabled query registers under `slideImageQueryKey('')` exactly |
+| `use-profile.ts:28` | StringLiteral | new — disabled query registers under `profileQueryKey('')` exactly |
+| `use-session-gate.ts:14` | OptionalChaining | new — a session object with no `user` field never throws |
+| `use-session.ts:28` (×2: BlockStatement + ConditionalExpression) | — | modified — the existing stale-`getSession()` test now awaits a real macrotask tick (`setTimeout`) before its final assertion, since `notifyManager` batches the query's own success notification onto `setTimeout(0)`; `isLoading` was already `false` from the earlier `setQueryData`, so the old assertion raced ahead of the guard's own resolution and never observed a regression |
+| `use-session.ts:29` | LogicalOperator | same fix as above (`?? null` vs `&& null` only differs once the guarded branch is actually observed post-tick) |
+| `use-session.ts:40` | BooleanLiteral | same fix as above (`receivedAuthEventRef.current = true` feeds the same guard) |
+| `use-session.ts:49` | ArrayDeclaration | new — swapping the ambient `QueryClient` (via a stateful wrapper) must unsubscribe the old `onAuthStateChange` listener and re-subscribe against the new client |
+
+### Excluded as equivalent (11) — Stryker `disable next-line` + inline justification
+
+TanStack's `MutationObserver`/`QueryObserver` bind `mutate`/`mutateAsync`/`refetch`/`reset` **once**
+in their constructors (`@tanstack/query-core`: `this.mutate = this.mutate.bind(this)`,
+`this.refetch = this.refetch.bind(this)`) — confirmed by reading the installed package source.
+Those references never change for the life of a hook instance, so a `useCallback([...])` wrapping
+one of them behaves identically regardless of the array's contents; Stryker's own `NoCoverage`
+tag on `use-api-key.ts:63` independently corroborates this for that specific case.
+
+- `use-api-key.ts:63` (StringLiteral, NoCoverage) — `pendingRawKeyRef.current ?? ''`: the ref is
+  always non-null when read (set synchronously by `saveApiKey` immediately before every 'save'
+  mutation); the fallback exists only so `useRef<string | null>` type-checks.
+- `use-api-key.ts:69` (BlockStatement) — the `onSettled` ref reset is memory hygiene only; the ref
+  is never read except by the 'save' branch, which always overwrites it fresh first.
+- `use-api-key.ts:79`, `:86` (ArrayDeclaration, `[mutateAsync]`)
+- `use-lesson-attempt.ts:45` (ArrayDeclaration, `[mutate]`)
+- `use-lesson.ts:27` (ArrayDeclaration, `[queryRefetch]`)
+- `use-lessons.ts:46` (`[resetDelete, queryRefetch]`), `:48` (`[mutateAsync]`)
+- `use-pdf-documents.ts:46` (`[resetDelete, queryRefetch]`), `:48` (`[mutateAsync]`)
+- `use-profile.ts:43` (ArrayDeclaration, `[queryRefetch]`)
+
+### Gates
+
+`@helsoft/hooks` full suite: 148/148 green. Repo-wide `pnpm turbo run test --force`: 12/12 clean.
+Repo-wide `pnpm turbo run check-types --force`: 14/14 clean. `pnpm format` / `pnpm --filter
+@helsoft/hooks lint`: clean, no hardcoded strings/colors introduced (pure hook/test changes).

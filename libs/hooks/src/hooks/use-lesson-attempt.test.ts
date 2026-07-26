@@ -174,12 +174,17 @@ describe('useLessonAttempt', () => {
     expect(result.current.attempt).toEqual(savedAttempt);
   });
 
-  // @s36 (example 1) — retry is a no-op when there is nothing to replay.
-  it('retry does nothing when there is no prior saveAttempt call', () => {
+  // @s36 (example 1) — retry is a no-op when there is nothing to replay. The extra microtask
+  // flushes below are load-bearing: `mutate()`'s actual invocation of the mutationFn lands a
+  // tick after the synchronous call, so a bare `act(() => {...})` here would pass even if the
+  // `variables === undefined` guard were removed entirely.
+  it('retry does nothing when there is no prior saveAttempt call', async () => {
     const { result } = renderHook(() => useLessonAttempt(), { wrapper: createWrapper() });
 
-    act(() => {
+    await act(async () => {
       result.current.retry();
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(service.saveAttempt).not.toHaveBeenCalled();
@@ -206,10 +211,15 @@ describe('useLessonAttempt', () => {
     });
     await waitFor(() => expect(service.saveAttempt).toHaveBeenCalledTimes(2));
 
-    act(() => {
+    // The refusal itself is synchronous, but confirming the service was NOT called a third
+    // time needs a flush too: without it, a broken guard (e.g. the in-flight ref never actually
+    // flipping true) would still read as "only 2 calls" here purely because `mutate()`'s
+    // mutationFn invocation hasn't landed yet, not because it was refused.
+    await act(async () => {
       result.current.retry();
+      await Promise.resolve();
+      await Promise.resolve();
     });
-    // Refused synchronously — no scheduling happens, so no wait is needed here.
     expect(service.saveAttempt).toHaveBeenCalledTimes(2);
 
     await act(async () => {

@@ -38,9 +38,16 @@ export const useProfile = (): UseProfileResult => {
       : new Error(String(queryError))
     : null;
 
-  const retry = useCallback(() => {
-    void queryRefetch();
-  }, [queryRefetch]);
+  const retry = useCallback(
+    () => {
+      void queryRefetch();
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent mutant — TanStack's QueryObserver
+    // binds `refetch` once in its constructor (`this.refetch = this.refetch.bind(this)` in
+    // `@tanstack/query-core`), so it's referentially stable for the life of this hook instance
+    // regardless of what's in this array.
+    [queryRefetch],
+  );
 
   // A disabled query reports isPending: true — only treat that as loading while authenticated,
   // so the unauthenticated case reads { isLoading: false, profile: null } (s52).

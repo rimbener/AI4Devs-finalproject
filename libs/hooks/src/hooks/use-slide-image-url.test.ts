@@ -85,6 +85,16 @@ describe('useSlideImageUrl', () => {
     expect(service.getSignedImageUrl).not.toHaveBeenCalled();
   });
 
+  // Mutation-kill — the disabled query for an absent storagePath registers under the exact
+  // empty-string-scoped key, not some other placeholder.
+  it("registers the disabled query under slideImageQueryKey('') when imageRef is absent", () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    renderHook(() => useSlideImageUrl(undefined), { wrapper: createWrapper(queryClient) });
+
+    expect(queryClient.getQueryCache().find({ queryKey: slideImageQueryKey('') })).toBeDefined();
+  });
+
   // @s26 — a slide with an image reports loading then exposes the signed url.
   it('resolves the signed URL from LessonImageService', async () => {
     service.getSignedImageUrl.mockResolvedValue('https://example.com/signed.png');

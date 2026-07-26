@@ -60,12 +60,21 @@ export const useApiKey = (): UseApiKeyResult => {
   } = useMutation({
     mutationFn: (variables: ApiKeyMutationVariables) =>
       variables.kind === 'save'
-        ? ApiKeyService.saveApiKey(variables.provider, pendingRawKeyRef.current ?? '')
+        ? // Stryker disable next-line StringLiteral: equivalent mutant — `pendingRawKeyRef.current`
+          // is always set (non-null) synchronously by `saveApiKey` immediately before this mutation
+          // fires, so the `?? ''` right-hand side never evaluates under the public hook contract
+          // (confirmed NoCoverage by Stryker itself, not just a hard-to-reach branch). It exists
+          // only so `useRef<string | null>` type-checks; see the doc comment above this type.
+          ApiKeyService.saveApiKey(variables.provider, pendingRawKeyRef.current ?? '')
         : ApiKeyService.removeApiKey(variables.provider),
     onSuccess: (nextStatus) => {
       if (!sessionUserId) return;
       queryClient.setQueryData(apiKeyStatusQueryKey(sessionUserId), nextStatus);
     },
+    // Stryker disable next-line BlockStatement: equivalent mutant — resetting the ref here is
+    // pure memory hygiene (shrinking the window the raw key sits in the ref). It's never
+    // re-read except by the 'save' branch above, which always overwrites it fresh right before
+    // use, so no sequence of calls through the public API can observe whether this ran.
     onSettled: () => {
       pendingRawKeyRef.current = null;
     },
@@ -76,6 +85,10 @@ export const useApiKey = (): UseApiKeyResult => {
       pendingRawKeyRef.current = rawKey;
       await mutateAsync({ kind: 'save', provider });
     },
+    // Stryker disable next-line ArrayDeclaration: equivalent mutant — TanStack's MutationObserver
+    // binds `mutate`/`mutateAsync` once in its constructor (`this.mutate = this.mutate.bind(this)`
+    // in `@tanstack/query-core`'s MutationObserver), so `mutateAsync` is referentially stable for
+    // the life of this hook instance regardless of what's in this array.
     [mutateAsync],
   );
 
@@ -83,6 +96,7 @@ export const useApiKey = (): UseApiKeyResult => {
     async (provider: AiProvider) => {
       await mutateAsync({ kind: 'remove', provider });
     },
+    // Stryker disable next-line ArrayDeclaration: same equivalence as saveApiKey's deps above.
     [mutateAsync],
   );
 

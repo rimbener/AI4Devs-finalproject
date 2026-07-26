@@ -45,6 +45,18 @@ describe('useSessionGate', () => {
     expect(result.current.deriveIsLoading(false)).toBe(true);
   });
 
+  // Mutation-kill — a session object with no `user` field (e.g. a partially-hydrated session)
+  // must never throw; both `?.` links guard independently.
+  it('never throws and reports no sessionUserId when the session has no user field', () => {
+    mockUseSession.mockReturnValue({ session: {}, isLoading: false });
+
+    expect(() => renderHook(() => useSessionGate())).not.toThrow();
+    const { result } = renderHook(() => useSessionGate());
+
+    expect(result.current.sessionUserId).toBeUndefined();
+    expect(result.current.enabled).toBe(false);
+  });
+
   it('derives loading from the query-pending flag once authenticated and settled', () => {
     mockUseSession.mockReturnValue({
       session: { user: { id: 'user-1' } },

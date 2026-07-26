@@ -86,6 +86,17 @@ describe('useProfile', () => {
     expect(service.getProfile).not.toHaveBeenCalled();
   });
 
+  // Mutation-kill — the disabled query for an unauthenticated visitor registers under the exact
+  // empty-string-scoped key, not some other placeholder.
+  it("registers the disabled query under profileQueryKey('') when there is no session", () => {
+    mockUseSession.mockReturnValue(noSession);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    renderHook(() => useProfile(), { wrapper: createWrapper(queryClient) });
+
+    expect(queryClient.getQueryCache().find({ queryKey: profileQueryKey('') })).toBeDefined();
+  });
+
   // @s53 (example: the session) — loading is true while the session is still resolving.
   it('reports loading while the session is still resolving', () => {
     mockUseSession.mockReturnValue({ session: null, isLoading: true });
