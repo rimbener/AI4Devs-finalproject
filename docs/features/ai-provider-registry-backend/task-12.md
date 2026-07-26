@@ -4,7 +4,7 @@ title: Author the SQL/RLS manual-verification checklist and verify the migration
 slice: 3
 scenarios: []
 verifies: [s1, s2, s3, s4, s5, s6, s7, s8, s9]
-status: todo
+status: done
 paths:
   - tmp/ai-provider-registry-backend/verify-provider-registry.sql
 ---

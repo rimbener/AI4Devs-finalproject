@@ -3,7 +3,7 @@ id: task-11
 title: Integration test — catalog rows drive validation, vision resolution and the enabled gate
 slice: 3
 scenarios: [s27, s28]
-status: todo
+status: done
 paths: [libs/supabase-services/src/services/provider-catalog.integration.test.ts]
 ---
 
