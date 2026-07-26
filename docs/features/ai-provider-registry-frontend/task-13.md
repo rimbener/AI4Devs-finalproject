@@ -24,12 +24,14 @@ visibility, with no re-implementation in the test itself.
       without JSX) that:
       1. mocks the Supabase client boundary (not `AiProvidersDao` itself) with a renamed,
          reordered, one-disabled fixture
-      2. renders/exercises the real `useAiProviders()` and asserts the resulting array's order and
-         names
-      3. feeds that same array into the real `useApiKeyManager`'s `unsavedProviders` derivation and
-         asserts the disabled provider is excluded (task-7)
-      4. feeds it into the real `useLessonGenerationForm`'s `savedProviders` derivation and asserts
-         the same exclusion there
+      2. renders/exercises the real `useAiProviders()` and asserts the resulting `providers` array's
+         order and names, and asserts `enabledProviders` is exactly the `enabled === true` subset of
+         `providers`, same order
+      3. feeds that same `enabledProviders` field into the real `useApiKeyManager`'s
+         `unsavedProviders` derivation and asserts the disabled provider is excluded (task-7) — not
+         the raw `providers` array, since `unsavedProviders` no longer re-checks `enabled` itself
+      4. feeds `enabledProviders` into the real `useLessonGenerationForm`'s `savedProviders`
+         derivation and asserts the same exclusion there, for the same reason
 - [ ] No mock of `useAiProviders` itself, `useApiKeyManager`, or `useLessonGenerationForm` inside
       this test — only the Supabase client boundary is mocked, so the wiring between them is what's
       actually exercised

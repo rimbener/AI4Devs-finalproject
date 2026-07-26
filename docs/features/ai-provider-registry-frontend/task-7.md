@@ -21,12 +21,17 @@ for that same learner's disabled-but-keyed row (backend D10's asymmetry, reflect
 ## Done criteria
 - [ ] Scenario s7 covered: `ApiKeyManagerRemove`'s confirm action is exercised for a disabled,
       keyed provider and completes normally (no client-side gate blocks it)
-- [ ] Scenario s8 covered: `useApiKeyManager`'s `unsavedProviders` (the add-picker's options) filters
-      to `enabled && !savedProviders.has(id)` — a disabled, unkeyed provider is excluded even though
-      it's technically "unsaved"
+- [ ] Scenario s8 covered: `useApiKeyManager`'s `unsavedProviders` (the add-picker's options) is
+      derived from `useAiProviders().enabledProviders` (threaded in as a prop, per Decision 12/task-3 —
+      `useApiKeyManager` doesn't call the hook itself), applying only the "not already saved" condition
+      on top — `enabledProviders.filter((p) => !savedProviders.has(p.id))` — never a `p.enabled` check
+      re-derived inline; a disabled, unkeyed provider is excluded because it's already absent from
+      `enabledProviders`, not because this task re-checks `enabled`
 - [ ] Scenario s9 covered: `useLessonGenerationForm`'s `savedProviders` (the generate-flow picker's
-      options) filters to `enabled && hasKey` — a disabled provider is excluded even when the
-      learner holds a key for it, unlike the settings list (task-6), which keeps it visible
+      options) is derived from `useAiProviders().enabledProviders`, applying only the "has a saved key"
+      condition on top — `enabledProviders.filter((p) => hasKey(p.id))` — never a `p.enabled` check
+      re-derived inline; a disabled provider is excluded even when the learner holds a key for it,
+      unlike the settings list (task-6), which keeps it visible
 - [ ] Neither filter removes a disabled provider's row from `ApiKeySavedList` (task-6's list stays
       unfiltered by `enabled`) — only the two *picker* derivations gain the filter
 - [ ] `pnpm lint` + `pnpm check-types` + `pnpm test` green for `@helsoft/components` and
@@ -40,6 +45,9 @@ for that same learner's disabled-but-keyed row (backend D10's asymmetry, reflect
   derivations, not one toggled by a flag, so a future change to one can't silently leak into the
   other.
 - `useApiKeyManager` currently has no notion of `enabled` at all (`unsavedProviders =
-  AI_PROVIDERS.filter(...)`) — this task is the first to thread the catalog's `enabled` flag into it
-  (via a new prop, since the hook itself takes `savedKeys`/`isSubmitting`/`hasError` only today, not
-  a hook call — Decision 12).
+  AI_PROVIDERS.filter(...)`) — this task is the first to thread the catalog's enabled subset into it,
+  via a new prop built by `ApiKeySettingsScreen` from `useAiProviders().enabledProviders` (the hook
+  itself takes `savedKeys`/`isSubmitting`/`hasError` only today, and doesn't call `useAiProviders()`
+  directly — Decision 12). The prop carries the hook's already-filtered `enabledProviders`, not the
+  raw `enabled` flag, so `useApiKeyManager` never re-derives the "is this provider choosable" check
+  itself — it only intersects the given `enabledProviders` with its own "not saved" condition.

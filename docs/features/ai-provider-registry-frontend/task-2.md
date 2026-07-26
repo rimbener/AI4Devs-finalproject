@@ -21,9 +21,14 @@ live catalog through the required tanstack-query pattern, gated on an authentica
       asserts `isLoading` is true before the query resolves and correctly resolves to `false` for a
       signed-out session — this is the foundation scenarios s1/s2/s3/s4 (owned by task-3/task-4) and
       s11 (owned by task-3) build on
-- [ ] `useAiProviders(): UseAiProvidersResult` — `{ providers: AiProviderCatalogEntry[]; isLoading:
-      boolean }`, `useQuery({ queryKey: AI_PROVIDERS_QUERY_KEY, queryFn:
-      AiProvidersService.getCatalog, staleTime: Infinity, enabled })`
+- [ ] `useAiProviders(): UseAiProvidersResult` — `{ providers: AiProviderCatalogEntry[];
+      enabledProviders: AiProviderCatalogEntry[]; isLoading: boolean }`, `useQuery({ queryKey:
+      AI_PROVIDERS_QUERY_KEY, queryFn: AiProvidersService.getCatalog, staleTime: Infinity, enabled })`
+- [ ] `enabledProviders` is computed once, inside the hook, from the same `providers` array — e.g.
+      `useMemo(() => providers.filter((p) => p.enabled), [providers])` — so every consumer that needs
+      "only choosable providers" reads this one field instead of re-deriving its own `enabled` filter;
+      a hook test asserts `enabledProviders` is exactly the `enabled === true` subset of `providers`,
+      in the same order, against a mixed enabled/disabled fixture
 - [ ] Exported `AI_PROVIDERS_QUERY_KEY = ['ai-providers', 'catalog'] as const` (mirrors
       `SESSION_QUERY_KEY`/`apiKeyStatusQueryKey`'s exported-key convention)
 - [ ] `enabled` derived from `useSessionGate()` (catalog RLS is `to authenticated`) — no per-user

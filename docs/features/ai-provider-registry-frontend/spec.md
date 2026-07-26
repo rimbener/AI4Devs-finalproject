@@ -68,7 +68,15 @@ and must not restate the reasoning.
 2. **DAO reads the whole catalog in one query**, `ai_providers` with a nested `ai_provider_models`
    select, ordered by `sort_order` at both levels. *Why:* unlike the Edge Functions' scoped
    single-provider `loadProviderCatalog` (backend D8), every client consumer here (settings list,
-   add-picker, generate provider/model pickers) needs the full ordered list at once.
+   add-picker, generate provider/model pickers) needs the full ordered list at once. `AiProvidersService`
+   exposes both `getCatalog()` (full, ordered) and `getEnabledCatalog()` (filters `enabled === true`,
+   built on one `getCatalog()` call). *Why the second method exists but is unused here:* `useAiProviders`
+   only ever calls `getCatalog()` (task-2) and derives `enabledProviders` itself, once, from that same
+   fetch (`providers.filter((p) => p.enabled)`) — no second Service call needed. `enabledProviders` is
+   a hook-level field: every consumer that needs "only choosable providers" (task-7) reads it straight
+   off `useAiProviders()` rather than each independently re-filtering `providers` by `enabled`.
+   `getEnabledCatalog()` is kept solely for any future non-hook caller that doesn't want to build its
+   own hook.
 3. **`AiProvider` stays the existing closed 6-literal union in `libs/types/src/ai-provider.ts`,
    unchanged.** *Why:* mirrors the backend story's own D15 (it left `ai-provider.ts`/
    `api-key-settings.ts` untouched) — only the four hardcoded constants (`AI_PROVIDERS`,
