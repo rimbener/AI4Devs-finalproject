@@ -1,4 +1,4 @@
-import type { ProviderEntry } from '../../../../supabase/functions/_shared/provider-catalog';
+import type { ProviderEntry } from '../../../../supabase/functions/_shared/provider-catalog.types';
 import {
   resolveByokGenerationKey,
   validateByokGenerationRequest,

@@ -1,4 +1,4 @@
-import type { ProviderEntry } from '../../../../supabase/functions/_shared/provider-catalog';
+import type { ProviderEntry } from '../../../../supabase/functions/_shared/provider-catalog.types';
 import { resolveVisionModelForPlacement } from '../../../../supabase/functions/generate-lesson/_shared/lesson-generation.vision-model';
 
 const withVisionDefault: ProviderEntry = {

@@ -21,8 +21,9 @@ story was written to remove.
 ## Done criteria
 - [ ] Scenarios s12, s19 covered by TDD'd Jest tests
 - [ ] `AI_PROVIDERS` and `AI_MODEL_REGISTRY` **deleted** from `models.ts`
-- [ ] `models.ts` still exports the `AiModelEntry` / `AiProviderModels` types and
-      `PLATFORM_TEXT_MODEL_ID` (unchanged value `'openai/gpt-oss-20b'`)
+- [ ] `models.ts` still exports `PLATFORM_TEXT_MODEL_ID` (unchanged value `'openai/gpt-oss-20b'`);
+      `AiModelEntry`/`AiProviderModels` are deleted too (review-slice.md round-1 finding #2 —
+      dead after `AI_MODEL_REGISTRY`'s removal, no remaining task-7..12 consumer)
 - [ ] `AiProvider` widened from the six-member union to `string` in `models.ts` **and** in
       `_shared/types.ts`, with the widening propagated through `route.ts` and `provider-factory.ts`
 - [ ] `isValidModelForProvider` takes the **provider entry** (not a global registry) and decides from

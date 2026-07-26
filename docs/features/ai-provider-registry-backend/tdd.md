@@ -77,6 +77,16 @@ this pipeline).
   and had no `loadProviderEntry` mock — added `groqEntry`/`openaiEntry`/`anthropicEntry`
   fixtures and wired the mock into each so they keep passing under the new entry-required gate.
 
+## Slice 1 review-round-1 fix-up (commit after `28258cfe9`)
+`reviewer_slice` CHANGES_REQUESTED, 3 findings (see `review-slice.md`), all RESOLVED:
+1. Extracted `ProviderEntry`/`ProviderModel` into `provider-catalog.types.ts` (types.mdc); the 6
+   consumers + `provider-catalog.ts` itself re-pointed; `CatalogQueryClient` un-exported (private).
+2. Deleted dead `AiModelEntry`/`AiProviderModels` from `models.ts` (no reachable consumer);
+   corrected task-4.md's Done criteria to match.
+3. Added explicit `on delete restrict` to the FK migration + fixed the header's `NO ACTION` vs
+   `RESTRICT` default claim; corrected task-2.md accordingly.
+Re-ran the full gate below after each fix — all green, no test behaviour changed.
+
 ## Slice gate
 - `pnpm --filter @helsoft/supabase-services test` — 34 suites / 281 tests green.
 - `pnpm --filter @helsoft/supabase-services check-types` — clean.

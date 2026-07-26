@@ -21,7 +21,8 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@4';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
-import { loadProviderCatalog, type ProviderEntry } from '../_shared/provider-catalog.ts';
+import { loadProviderCatalog } from '../_shared/provider-catalog.ts';
+import type { ProviderEntry } from '../_shared/provider-catalog.types.ts';
 import { assembleGeneratedLesson } from './_shared/lesson-generation.assembly.ts';
 import { GenerationTimeoutError, mapGenerationError } from './_shared/lesson-generation.errors.ts';
 import {

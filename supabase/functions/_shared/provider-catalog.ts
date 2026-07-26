@@ -1,27 +1,13 @@
 // Shared AI-provider/model catalog module (ai-provider-registry-backend, task-3), imported by
 // both generate-lesson and manage-api-key so every enabled/model-validity decision lives in one
 // place instead of a per-function mirror (D5). Split in two:
-//   - the pure half (types below) takes no import at all, so libs/supabase-services' Jest suite
-//     can import this file by relative path with zero Deno-only baggage;
+//   - the pure half (the public `ProviderEntry`/`ProviderModel` contract, split into the
+//     co-located provider-catalog.types.ts per types.mdc) takes no import at all, so
+//     libs/supabase-services' Jest suite can import this file by relative path with zero
+//     Deno-only baggage;
 //   - the impure half (`loadProviderCatalog`) is the single scoped query (D8) — no caching of any
 //     kind (D9): callers must load fresh, once per request.
-
-export type ProviderModel = {
-  modelId: string;
-  label: string;
-  vision: boolean;
-  isVisionDefault: boolean;
-  sortOrder: number;
-};
-
-export type ProviderEntry = {
-  id: string;
-  name: string;
-  guidanceUrl: string | null;
-  enabled: boolean;
-  sortOrder: number;
-  models: ProviderModel[];
-};
+import type { ProviderEntry } from './provider-catalog.types.ts';
 
 type RawProviderModelRow = {
   model_id: string;
@@ -42,8 +28,9 @@ type RawProviderRow = {
 
 // Minimal structural type for the one query chain this loader needs — avoids importing
 // npm:@supabase/supabase-js just for a type, so this file stays resolvable by Jest with no
-// Deno-only import (matching the ../_shared/cors.ts precedent).
-export type CatalogQueryClient = {
+// Deno-only import (matching the ../_shared/cors.ts precedent). Private: used only by
+// `loadProviderCatalog` below, not part of this module's public contract (types.mdc).
+type CatalogQueryClient = {
   from: (table: string) => {
     select: (columns: string) => {
       eq: (

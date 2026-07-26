@@ -18,8 +18,10 @@ rather than a hardcoded list baked into a past migration.
 - [ ] Scenarios s8, s9 implemented here (SQL verification via task-12)
 - [ ] `alter table public.user_ai_keys drop constraint user_ai_keys_provider_check;`
 - [ ] `alter table public.user_ai_keys add constraint user_ai_keys_provider_fkey
-      foreign key (provider) references public.ai_providers (id);` — RESTRICT is the default and is
-      what blocks deleting a referenced provider (s9)
+      foreign key (provider) references public.ai_providers (id) on delete restrict;` — explicit
+      RESTRICT (review-slice.md round-1 finding #3: the unstated default is `NO ACTION`, not
+      `RESTRICT` — behaviourally identical here since this constraint isn't deferrable, but spelled
+      out so the DDL says exactly what it means) blocks deleting a referenced provider (s9)
 - [ ] Migration timestamp sorts **after** task-1's
 - [ ] **Authors** this migration's header comment: reversibility note showing how to restore the
       CHECK. task-12 verifies it exists; it does not write it.

@@ -1,7 +1,7 @@
 // Pure BYOK provider/model validation — Jest-tested via import from this path (task-9). Model
 // validity is decided from the caller-supplied catalog `ProviderEntry` (task-3/task-4) rather
 // than any hardcoded registry — a `null` entry means the provider is unknown to the catalog.
-import type { ProviderEntry } from '../../_shared/provider-catalog.ts';
+import type { ProviderEntry } from '../../_shared/provider-catalog.types.ts';
 
 /** Decides model validity from the entry's own catalog models (@s12/@s19) — no global registry. */
 export const isValidModelForProvider = (entry: ProviderEntry, model: string): boolean =>

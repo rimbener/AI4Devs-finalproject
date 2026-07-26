@@ -3,10 +3,12 @@
 -- Replaces the closed six-value CHECK on user_ai_keys.provider (added in
 -- 20260722000000_multi_provider_ai_keys.sql) with a real foreign key to the new
 -- public.ai_providers catalog (task-1), so integrity is enforced against live catalog rows
--- rather than a hardcoded allow-list baked into a past migration (@s8). ON DELETE RESTRICT
--- (the default) blocks deleting a provider that still has saved keys (@s9) — disabling a
+-- rather than a hardcoded allow-list baked into a past migration (@s8). An explicit
+-- ON DELETE RESTRICT blocks deleting a provider that still has saved keys (@s9) — disabling a
 -- provider (ai_providers.enabled = false) remains the only supported way to retire it while
--- learner keys exist for it.
+-- learner keys exist for it. (Omitting the clause would default to NO ACTION, not RESTRICT --
+-- behaviourally identical here since this constraint isn't deferrable, but RESTRICT is spelled
+-- out explicitly so the DDL says exactly what it means.)
 --
 -- Ordering is load-bearing: this migration's timestamp must sort after task-1's, since the FK
 -- validation needs the seeded ai_providers rows to already exist. Verified safe: the CHECK being
@@ -23,4 +25,5 @@ alter table public.user_ai_keys drop constraint user_ai_keys_provider_check;
 
 alter table public.user_ai_keys
   add constraint user_ai_keys_provider_fkey
-  foreign key (provider) references public.ai_providers (id);
+  foreign key (provider) references public.ai_providers (id)
+  on delete restrict;

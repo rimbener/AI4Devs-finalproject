@@ -1,4 +1,4 @@
-import type { ProviderEntry } from '../../_shared/provider-catalog.ts';
+import type { ProviderEntry } from '../../_shared/provider-catalog.types.ts';
 import { resolveLessonGenerationKeyForPlan } from './lesson-generation.key-source.ts';
 import { resolveByokGenerationKey } from './lesson-generation.validation.ts';
 import type { AiProvider } from './models.ts';
