@@ -2,7 +2,8 @@ import {
   AI_MODEL_REGISTRY,
   AI_PROVIDERS,
   type AiProvider,
-  type AiProviderModels,
+  type AiProviderCatalogEntry,
+  type AiProviderCatalogModel,
   API_KEY_SETTINGS_GUIDANCE_URLS,
   type ApiKeyStatus,
   PROVIDER_NAME_KEYS,
@@ -32,7 +33,7 @@ describe('ai-provider types and registry', () => {
   // spec.md — visionDefault is either null or a model id that exists in that provider's list
   it('visionDefault is null or points to a model in the same provider list', () => {
     for (const provider of AI_PROVIDERS) {
-      const entry: AiProviderModels = AI_MODEL_REGISTRY[provider];
+      const entry = AI_MODEL_REGISTRY[provider];
       if (entry.visionDefault !== null) {
         const ids = entry.models.map((m) => m.id);
         expect(ids).toContain(entry.visionDefault);
@@ -107,5 +108,31 @@ describe('ai-provider types and registry', () => {
       xai: 'https://console.x.ai',
       deepseek: 'https://platform.deepseek.com/api_keys',
     });
+  });
+
+  // task-1 (ai-provider-registry-frontend) — shape lock for the Service's catalog output types.
+  it('AiProviderCatalogModel/AiProviderCatalogEntry carry exactly their documented fields', () => {
+    const model: AiProviderCatalogModel = {
+      modelId: 'gpt-5.6-luna',
+      label: 'GPT-5.6 Luna',
+      vision: true,
+      isVisionDefault: true,
+      sortOrder: 1,
+    };
+    const entry: AiProviderCatalogEntry = {
+      id: 'openai',
+      name: 'OpenAI',
+      guidanceUrl: 'https://platform.openai.com/api-keys',
+      enabled: true,
+      sortOrder: 2,
+      models: [model],
+    };
+
+    expect(Object.keys(model).sort()).toEqual(
+      ['modelId', 'label', 'vision', 'isVisionDefault', 'sortOrder'].sort(),
+    );
+    expect(Object.keys(entry).sort()).toEqual(
+      ['id', 'name', 'guidanceUrl', 'enabled', 'sortOrder', 'models'].sort(),
+    );
   });
 });

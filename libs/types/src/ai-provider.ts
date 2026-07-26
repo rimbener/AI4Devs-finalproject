@@ -14,25 +14,20 @@ export const AI_PROVIDERS: readonly AiProvider[] = [
   'deepseek',
 ];
 
-/** One curated model entry. `labelKey` is an i18n key; `vision` flags image-placement support. */
-export type AiModelEntry = {
-  id: string;
-  labelKey: string;
-  vision: boolean;
-};
-
-/** One provider's curated model list + nullable vision-default (null = degrade to text-only). */
-export type AiProviderModels = {
-  models: AiModelEntry[];
-  visionDefault: string | null;
-};
-
 /**
  * Curated model registry (spec.md Open decisions, Jul 2026 docs).
  * `*` = vision-capable; `→` = visionDefault.
  * Consumed by settings add-picker, generate pickers, and hand-mirrored into Deno (task-9).
+ * (ai-provider-registry-frontend task-1: the old named `AiModelEntry`/`AiProviderModels` types
+ * are gone — this constant keeps an equivalent inline shape until task-11 deletes it outright.)
  */
-export const AI_MODEL_REGISTRY: Record<AiProvider, AiProviderModels> = {
+export const AI_MODEL_REGISTRY: Record<
+  AiProvider,
+  {
+    models: { id: string; labelKey: string; vision: boolean }[];
+    visionDefault: string | null;
+  }
+> = {
   groq: {
     models: [
       { id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b', vision: false },
@@ -76,4 +71,31 @@ export const AI_MODEL_REGISTRY: Record<AiProvider, AiProviderModels> = {
     ],
     visionDefault: 'deepseek-v4-flash',
   },
+};
+
+/**
+ * One catalog model row, camelCase-mapped by `AiProvidersService.getCatalog()`
+ * (ai-provider-registry-frontend task-1, Decision 2) — the client-side read shape for a row of
+ * `ai_provider_models`. This is the Service's output type, never the DAO's.
+ */
+export type AiProviderCatalogModel = {
+  modelId: string;
+  label: string;
+  vision: boolean;
+  isVisionDefault: boolean;
+  sortOrder: number;
+};
+
+/**
+ * One catalog provider row + its `sort_order`-ordered models, camelCase-mapped by
+ * `AiProvidersService.getCatalog()` (ai-provider-registry-frontend task-1, Decisions 1–2) — the
+ * Service's output type, never the DAO's.
+ */
+export type AiProviderCatalogEntry = {
+  id: AiProvider;
+  name: string;
+  guidanceUrl: string | null;
+  enabled: boolean;
+  sortOrder: number;
+  models: AiProviderCatalogModel[];
 };
