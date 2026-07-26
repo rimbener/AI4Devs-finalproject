@@ -156,3 +156,4 @@
 2026-07-25 | agents-rules (ad hoc, no story) | n/a | — | New .agents/rules/tanstack-query.mdc (one QueryClient/QueryProvider, expose mutation primitives, setQueryData bridge, typed error guard, waitFor tests); wired into rules.md, ORCHESTRATOR.md, reviewer_slice (+ missing state-sharing entry), reviewer_engineering, implementer, global.mdc, hooks-service-dao.mdc, ORCHESTRATOR_PLAN.md; prompts.md annex (8894e54a1, 150b0090b).
 
 2026-07-26 | tanstack-query-hooks-migration | pr_ready | docs/features/tanstack-query-hooks-migration/ | Post-migration: split api-key mutations + sticky submit UX (4412da382, bae079f74).
+2026-07-26 | tanstack-query-hooks-migration | pr_ready | docs/features/tanstack-query-hooks-migration/ | Code review fixes: symmetric api-key error clearing, delete-error-before-refetch for lessons/pdf-documents, general.save/saving locale reuse, dropped unreachable logged-out isLoading AC (3382ec692, 767619672, f0491a704, 38600fc51).
