@@ -8,6 +8,10 @@
  */
 export const en = {
   translation: {
+    general: {
+      save: 'Save',
+      saving: 'Saving…',
+    },
     brand: {
       name: 'AI Study Buddy',
     },
@@ -284,8 +288,6 @@ export const en = {
       // api-key-form/api-key-settings).
       apiKey: {
         inputLabel: 'API key',
-        save: 'Save',
-        saving: 'Saving…',
         // Full-review Round 1, Major 4 — announced to assistive tech while the initial status
         // fetch is in flight (WCAG 4.1.3); not shown visually (mirrors auth.signingIn).
         loadingStatus: 'Checking your API key status…',

@@ -15,7 +15,7 @@ const mockUseLocalization = useLocalization as jest.Mock;
 const tMap: Record<string, string> = {
   'settings.apiKey.inputLabel': 'API key',
   'settings.apiKey.save': 'Save',
-  'settings.apiKey.saving': 'Saving…',
+  'general.saving': 'Saving…',
   'settings.apiKey.replace': 'Replace',
   'settings.apiKey.removeConfirmCancelAction': 'Cancel',
   'settings.apiKey.manager.addNew': 'Add new provider',
@@ -154,7 +154,7 @@ describe('ApiKeyFormDialog', () => {
     expect(screen.getByLabelText('API key')).toBeTruthy();
   });
 
-  it('shows saving label and disables the field while submitting', async () => {
+  it('shows saving label and hides the form while submitting', async () => {
     await render(
       <ApiKeyFormDialog
         {...defaultProps}
@@ -167,8 +167,8 @@ describe('ApiKeyFormDialog', () => {
     );
 
     expect(screen.getByText('Saving…')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Save', disabled: true })).toBeTruthy();
-    expect(screen.getByLabelText('API key').props.accessibilityState?.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+    expect(screen.queryByLabelText('API key')).toBeNull();
   });
 
   it('shows guidance link and opens the URL for the selected provider', async () => {

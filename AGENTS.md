@@ -86,6 +86,7 @@ Two service libs — pick by data source:
 - Kebab-case filenames: `component-name/component-name.tsx` (+ `component-name.stories.tsx` for every shared component), `{feature}.dao.ts`, `{feature}.service.ts`, `use-{feature}.ts`.
 - Platform-specific files use the `.web.tsx` suffix convention (see `apps/app-study-buddy/src/components/`).
 - New apps `app-{feature}` should pair with a feature lib `libs/{feature}`.
+- Ask before modyfing code if the user request to fix unit tests. This is MANDATORY.
 
 ## Agentic orchestrator
 

@@ -1,14 +1,14 @@
 import { useLocalization } from '@helsoft/localization';
-import { useEffect, useRef } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-
 import { Button } from '../../atoms/button/button';
-import { ProgressIndicator } from '../../atoms/progress-indicator/progress-indicator';
 import { ApiKeySavedList } from '../../molecules/api-key-saved-list/api-key-saved-list';
 import { ApiKeyFormDialog } from '../api-key-form-dialog/api-key-form-dialog';
-import { Dialog } from '../dialog/dialog';
 import type { ApiKeyManagerProps } from './api-key-manager.types';
+import { ApiKeyManagerEmpty } from './api-key-manager-empty';
+import { ApiKeyManagerError } from './api-key-manager-error';
+import { ApiKeyManagerLoading } from './api-key-manager-loading';
+import { ApiKeyManagerRemove } from './api-key-manager-remove';
 import { useApiKeyManager } from './use-api-key-manager';
 
 /**
@@ -35,6 +35,7 @@ export const ApiKeyManager = ({
     selectProvider,
     apiKey,
     setApiKey,
+    dialogIsSubmitting,
     confirmingRemove,
     setConfirmingRemove,
     savedProviders,
@@ -45,15 +46,7 @@ export const ApiKeyManager = ({
     openAddModal,
     openReplaceModal,
     closeModal,
-  } = useApiKeyManager({ savedKeys, isSubmitting });
-
-  const wasSubmitting = useRef(false);
-  useEffect(() => {
-    if (wasSubmitting.current && !isSubmitting && !errorMessage && modalOpen) {
-      closeModal();
-    }
-    wasSubmitting.current = isSubmitting;
-  }, [isSubmitting, errorMessage, modalOpen, closeModal]);
+  } = useApiKeyManager({ savedKeys, isSubmitting, hasError: Boolean(errorMessage) });
 
   const handleSave = () => {
     if (formProvider) {
@@ -62,14 +55,7 @@ export const ApiKeyManager = ({
   };
 
   if (isLoading) {
-    return (
-      <View>
-        <ProgressIndicator variant="circular" />
-        <Text accessibilityLiveRegion="polite" style={styles.visuallyHidden}>
-          {t('settings.apiKey.loadingStatus')} he
-        </Text>
-      </View>
-    );
+    return <ApiKeyManagerLoading />;
   }
 
   const addButton = !allSaved ? (
@@ -78,32 +64,22 @@ export const ApiKeyManager = ({
 
   return (
     <View style={styles.container}>
-      {errorMessage ? (
-        <View style={styles.errorBanner} accessibilityRole="alert">
-          <Text style={styles.errorBannerText} accessibilityLiveRegion="assertive">
-            {errorMessage}
-          </Text>
-        </View>
-      ) : null}
+      {errorMessage ? <ApiKeyManagerError errorMessage={errorMessage} /> : null}
 
       {isEmpty ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyMessage}>{t('settings.apiKey.manager.emptyMessage')}</Text>
-          {addButton}
-        </View>
+        <ApiKeyManagerEmpty>{addButton}</ApiKeyManagerEmpty>
       ) : (
-        <>
-          <ApiKeySavedList
-            savedKeys={savedKeys}
-            savedProviders={savedProviders}
-            getSavedStatusLabel={getSavedStatusLabel}
-            providerNameKeys={providerNameKeys}
-            isSubmitting={isSubmitting}
-            onReplace={openReplaceModal}
-            onRemove={setConfirmingRemove}
-          />
+        <ApiKeySavedList
+          savedKeys={savedKeys}
+          savedProviders={savedProviders}
+          getSavedStatusLabel={getSavedStatusLabel}
+          providerNameKeys={providerNameKeys}
+          isSubmitting={isSubmitting}
+          onReplace={openReplaceModal}
+          onRemove={setConfirmingRemove}
+        >
           {addButton}
-        </>
+        </ApiKeySavedList>
       )}
 
       <ApiKeyFormDialog
@@ -115,27 +91,19 @@ export const ApiKeyManager = ({
         apiKey={apiKey}
         onApiKeyChange={setApiKey}
         onSelectProvider={selectProvider}
-        isSubmitting={isSubmitting}
+        isSubmitting={dialogIsSubmitting}
         isSaveDisabled={isSaveDisabled}
         onSave={handleSave}
         guidanceUrls={guidanceUrls}
         providerNameKeys={providerNameKeys}
       />
 
-      <Dialog
-        open={confirmingRemove !== null}
-        onClose={() => setConfirmingRemove(null)}
-        headline={t('settings.apiKey.removeConfirmHeadline')}
-        confirmLabel={t('settings.apiKey.removeConfirmAction')}
-        cancelLabel={t('settings.apiKey.removeConfirmCancelAction')}
-        onConfirm={() => {
-          const p = confirmingRemove;
-          setConfirmingRemove(null);
-          if (p) onRemove(p);
-        }}
-      >
-        {t('settings.apiKey.removeConfirmBody')}
-      </Dialog>
+      <ApiKeyManagerRemove
+        confirmingRemove={confirmingRemove}
+        isSubmitting={dialogIsSubmitting}
+        setConfirmingRemove={setConfirmingRemove}
+        onRemove={onRemove}
+      />
     </View>
   );
 };
@@ -143,27 +111,5 @@ export const ApiKeyManager = ({
 const styles = StyleSheet.create((theme) => ({
   container: {
     gap: theme.spacing.s4,
-  },
-  empty: {
-    gap: theme.spacing.s4,
-  },
-  emptyMessage: {
-    ...theme.typography.bodyMedium,
-    color: theme.colors.onSurfaceVariant,
-  },
-  errorBanner: {
-    backgroundColor: theme.colors.errorContainer,
-    borderRadius: theme.shape.card,
-    padding: theme.spacing.s3,
-  },
-  errorBannerText: {
-    ...theme.typography.bodyMedium,
-    color: theme.colors.onErrorContainer,
-  },
-  visuallyHidden: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    overflow: 'hidden',
   },
 }));

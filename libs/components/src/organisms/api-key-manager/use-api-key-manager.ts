@@ -1,5 +1,5 @@
 import { AI_PROVIDERS, type AiProvider, type SavedProviderKey } from '@helsoft/types';
-import { useMemo, useReducer } from 'react';
+import { useMemo, useReducer, useRef } from 'react';
 
 import {
   type ApiKeyFormMode,
@@ -12,14 +12,38 @@ export type { ApiKeyFormMode };
 type UseApiKeyManagerArgs = {
   savedKeys: SavedProviderKey[];
   isSubmitting?: boolean;
+  hasError?: boolean;
 };
 
 /**
  * Local add/replace/remove form state + derived provider lists for ApiKeyManager.
  * Add/Replace open a modal; empty screen shows only message + Add button.
  */
-export const useApiKeyManager = ({ savedKeys, isSubmitting = false }: UseApiKeyManagerArgs) => {
-  const [state, dispatch] = useReducer(apiKeyManagerReducer, initialApiKeyManagerState);
+export const useApiKeyManager = ({
+  savedKeys,
+  isSubmitting = false,
+  hasError = false,
+}: UseApiKeyManagerArgs) => {
+  // Lazy init: seed dialogIsSubmitting from the current prop, not the reducer's hardcoded
+  // `false` — otherwise mounting with isSubmitting already true (e.g. a submit already in
+  // flight on first render) would never get flagged, since submit/sync only reacts to changes.
+  const [state, dispatch] = useReducer(apiKeyManagerReducer, initialApiKeyManagerState, (init) => ({
+    ...init,
+    dialogIsSubmitting: isSubmitting,
+  }));
+
+  // Render-phase sync, not a useEffect: a ref (not state) guards the dispatch itself, so this
+  // never fires unless `isSubmitting` actually changed (an unconditional dispatch every render
+  // trips React's nested-update limit). The transition *handling* still lives entirely in the
+  // reducer (`submit/sync`) — this only decides *whether* to notify it, which is exactly the
+  // "adjusting state during rendering" pattern React recommends in place of an effect: it lets
+  // React redo the render before committing, so the dialog can never paint a frame where the
+  // submit has settled but the sticky "still submitting" flag hasn't caught up yet.
+  const lastIsSubmittingRef = useRef(isSubmitting);
+  if (lastIsSubmittingRef.current !== isSubmitting) {
+    lastIsSubmittingRef.current = isSubmitting;
+    dispatch({ type: 'submit/sync', isSubmitting, hasError });
+  }
 
   const savedProviders = useMemo(() => new Set(savedKeys.map((k) => k.provider)), [savedKeys]);
   const unsavedProviders = useMemo(
@@ -28,7 +52,7 @@ export const useApiKeyManager = ({ savedKeys, isSubmitting = false }: UseApiKeyM
   );
   const allSaved = unsavedProviders.length === 0;
   const isEmpty = savedKeys.length === 0;
-  const isSaveDisabled = isSubmitting || !state.formProvider || !state.apiKey.trim();
+  const isSaveDisabled = state.dialogIsSubmitting || !state.formProvider || !state.apiKey.trim();
 
   const openAddModal = () => {
     dispatch({ type: 'modal/open-add' });
@@ -70,6 +94,7 @@ export const useApiKeyManager = ({ savedKeys, isSubmitting = false }: UseApiKeyM
     selectProvider,
     apiKey: state.apiKey,
     setApiKey,
+    dialogIsSubmitting: state.dialogIsSubmitting,
     confirmingRemove: state.confirmingRemove,
     setConfirmingRemove,
     savedProviders,

@@ -9,4 +9,5 @@ export type ApiKeySavedListProps = {
   isSubmitting?: boolean;
   onReplace: (provider: AiProvider) => void;
   onRemove: (provider: AiProvider) => void;
+  children?: React.ReactNode;
 };

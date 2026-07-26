@@ -181,4 +181,42 @@ describe('useApiKeyManager', () => {
     expect(result.current?.formProvider).toBe('google');
     expect(result.current?.apiKey).toBe('');
   });
+
+  it('keeps dialogIsSubmitting true and closes the modal when a submit succeeds', async () => {
+    const { result, rerender } = await renderHook(
+      ({ savedKeys, isSubmitting }: { savedKeys: SavedProviderKey[]; isSubmitting: boolean }) =>
+        useApiKeyManager({ savedKeys, isSubmitting }),
+      { initialProps: { savedKeys: [], isSubmitting: false } },
+    );
+
+    await act(async () => {
+      result.current?.openAddModal();
+    });
+
+    await rerender({ savedKeys: [], isSubmitting: true });
+    expect(result.current?.dialogIsSubmitting).toBe(true);
+
+    await rerender({ savedKeys: [groqKey], isSubmitting: false });
+
+    expect(result.current?.modalOpen).toBe(false);
+    expect(result.current?.dialogIsSubmitting).toBe(true);
+  });
+
+  it('drops dialogIsSubmitting and keeps the modal open when a submit fails', async () => {
+    const { result, rerender } = await renderHook(
+      ({ isSubmitting, hasError }: { isSubmitting: boolean; hasError: boolean }) =>
+        useApiKeyManager({ savedKeys: [], isSubmitting, hasError }),
+      { initialProps: { isSubmitting: false, hasError: false } },
+    );
+
+    await act(async () => {
+      result.current?.openAddModal();
+    });
+
+    await rerender({ isSubmitting: true, hasError: false });
+    await rerender({ isSubmitting: false, hasError: true });
+
+    expect(result.current?.modalOpen).toBe(true);
+    expect(result.current?.dialogIsSubmitting).toBe(false);
+  });
 });
