@@ -17,7 +17,7 @@ export const ModelSelector = ({ disabled }: ModelSelectorProps) => {
       title={t('generation.model.heading')}
       options={modelOptions.map((model) => ({
         value: model.id,
-        label: t(model.labelKey),
+        label: model.label,
       }))}
       value={selectedModel ?? modelOptions[0]?.id ?? ''}
       onChange={onModelChange ?? (() => {})}

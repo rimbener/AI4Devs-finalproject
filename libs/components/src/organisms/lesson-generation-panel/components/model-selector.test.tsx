@@ -10,8 +10,8 @@ import { ModelSelector } from './model-selector';
 const mockUseLocalization = useLocalization as jest.Mock;
 
 const modelOptions = [
-  { id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' },
-  { id: 'openai/gpt-oss-120b', labelKey: 'aiModel.groq.gptOss120b' },
+  { id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' },
+  { id: 'openai/gpt-oss-120b', label: 'GPT OSS 120B' },
 ];
 
 const baseValue = (
@@ -56,24 +56,20 @@ describe('ModelSelector', () => {
     await renderSelector(baseValue());
 
     expect(screen.getByText('generation.model.heading')).toBeTruthy();
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
   });
 
   it('defaults to the first model when selectedModel is unset', async () => {
     await renderSelector(baseValue({ selectedModel: undefined }));
 
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
   });
 
   it('calls onModelChange when another model is chosen', async () => {
     const onModelChange = jest.fn();
     await renderSelector(baseValue({ onModelChange }));
 
-    fireEvent.press(screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b' }));
+    fireEvent.press(screen.getByRole('radio', { name: 'GPT OSS 120B' }));
 
     expect(onModelChange).toHaveBeenCalledWith('openai/gpt-oss-120b');
   });

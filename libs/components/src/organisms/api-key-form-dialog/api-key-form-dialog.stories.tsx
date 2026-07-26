@@ -5,13 +5,13 @@ import { useState } from 'react';
 import { ApiKeyFormDialog } from './api-key-form-dialog';
 import type { ApiKeyFormDialogProps } from './api-key-form-dialog.types';
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
+const providerNames: Record<AiProvider, string> = {
+  groq: 'Groq',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  xai: 'xAI',
+  deepseek: 'DeepSeek',
 };
 
 const guidanceUrls: Partial<Record<AiProvider, string>> = {
@@ -58,7 +58,7 @@ const meta = {
     isSaveDisabled: true,
     onSave: () => {},
     guidanceUrls,
-    providerNameKeys,
+    providerNames,
   },
   render: (args) => <InteractiveAdd {...args} />,
 } satisfies Meta<typeof ApiKeyFormDialog>;

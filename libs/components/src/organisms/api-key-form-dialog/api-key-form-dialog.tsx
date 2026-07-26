@@ -26,10 +26,10 @@ export const ApiKeyFormDialog = ({
   isSaveDisabled,
   onSave,
   guidanceUrls,
-  providerNameKeys,
+  providerNames,
 }: ApiKeyFormDialogProps) => {
   const { t } = useLocalization();
-  const providerLabel = (p: AiProvider) => t(providerNameKeys[p]);
+  const providerLabel = (p: AiProvider) => providerNames[p];
   const textFieldRef = useRef<TextInput>(null);
 
   React.useEffect(() => {

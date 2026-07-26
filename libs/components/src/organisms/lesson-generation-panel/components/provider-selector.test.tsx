@@ -1,7 +1,6 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
 import { useLocalization } from '@helsoft/localization';
-import type { AiProvider } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { LessonGenerationPanelProvider } from '../lesson-generation-panel.context';
@@ -18,7 +17,10 @@ const baseValue = (
   onCompositionChange: jest.fn(),
   canGenerate: true,
   onGenerate: jest.fn(),
-  savedProviders: ['groq', 'openai'] as AiProvider[],
+  savedProviders: [
+    { id: 'groq', name: 'Groq' },
+    { id: 'openai', name: 'OpenAI' },
+  ],
   selectedProvider: 'groq',
   onProviderChange: jest.fn(),
   ...overrides,
@@ -45,25 +47,21 @@ describe('ProviderSelector', () => {
   it('renders saved providers and marks the selected one', async () => {
     await renderSelector(baseValue());
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-    ).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
   });
 
   it('defaults selection to the first saved provider when selectedProvider is unset', async () => {
     await renderSelector(baseValue({ selectedProvider: undefined }));
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
   });
 
   it('calls onProviderChange when another provider is chosen', async () => {
     const onProviderChange = jest.fn();
     await renderSelector(baseValue({ onProviderChange }));
 
-    fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
+    fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
 
     expect(onProviderChange).toHaveBeenCalledWith('openai');
   });

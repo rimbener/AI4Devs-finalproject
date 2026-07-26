@@ -18,6 +18,7 @@ import { useApiKeyManager } from './use-api-key-manager';
  */
 export const ApiKeyManager = ({
   savedKeys,
+  providers,
   isLoading = false,
   isSubmitting = false,
   errorMessage,
@@ -25,7 +26,7 @@ export const ApiKeyManager = ({
   onRemove,
   guidanceUrls,
   getSavedStatusLabel,
-  providerNameKeys,
+  providerNames,
 }: ApiKeyManagerProps) => {
   const { t } = useLocalization();
   const {
@@ -46,7 +47,7 @@ export const ApiKeyManager = ({
     openAddModal,
     openReplaceModal,
     closeModal,
-  } = useApiKeyManager({ savedKeys, isSubmitting, hasError: Boolean(errorMessage) });
+  } = useApiKeyManager({ savedKeys, providers, isSubmitting, hasError: Boolean(errorMessage) });
 
   const handleSave = () => {
     if (formProvider) {
@@ -71,9 +72,10 @@ export const ApiKeyManager = ({
       ) : (
         <ApiKeySavedList
           savedKeys={savedKeys}
+          providers={providers}
           savedProviders={savedProviders}
           getSavedStatusLabel={getSavedStatusLabel}
-          providerNameKeys={providerNameKeys}
+          providerNames={providerNames}
           isSubmitting={isSubmitting}
           onReplace={openReplaceModal}
           onRemove={setConfirmingRemove}
@@ -95,7 +97,7 @@ export const ApiKeyManager = ({
         isSaveDisabled={isSaveDisabled}
         onSave={handleSave}
         guidanceUrls={guidanceUrls}
-        providerNameKeys={providerNameKeys}
+        providerNames={providerNames}
       />
 
       <ApiKeyManagerRemove

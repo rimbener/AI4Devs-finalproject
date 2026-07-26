@@ -1,4 +1,4 @@
-import { AI_PROVIDERS, type AiProvider, type SavedProviderKey } from '@helsoft/types';
+import type { AiProvider, SavedProviderKey } from '@helsoft/types';
 import { useMemo, useReducer, useRef } from 'react';
 
 import {
@@ -11,6 +11,9 @@ export type { ApiKeyFormMode };
 
 type UseApiKeyManagerArgs = {
   savedKeys: SavedProviderKey[];
+  /** Ordered provider ids driving unsavedProviders' order (Decision 4 — no client re-sort;
+   * the wiring layer passes the catalog's already-sorted order through unchanged). */
+  providers: readonly AiProvider[];
   isSubmitting?: boolean;
   hasError?: boolean;
 };
@@ -21,6 +24,7 @@ type UseApiKeyManagerArgs = {
  */
 export const useApiKeyManager = ({
   savedKeys,
+  providers,
   isSubmitting = false,
   hasError = false,
 }: UseApiKeyManagerArgs) => {
@@ -47,8 +51,8 @@ export const useApiKeyManager = ({
 
   const savedProviders = useMemo(() => new Set(savedKeys.map((k) => k.provider)), [savedKeys]);
   const unsavedProviders = useMemo(
-    () => AI_PROVIDERS.filter((p) => !savedProviders.has(p)),
-    [savedProviders],
+    () => providers.filter((p) => !savedProviders.has(p)),
+    [providers, savedProviders],
   );
   const allSaved = unsavedProviders.length === 0;
   const isEmpty = savedKeys.length === 0;

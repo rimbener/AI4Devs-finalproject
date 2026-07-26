@@ -43,14 +43,14 @@ const t = (key: string, opts?: TOptions) => {
   return tMap[key] ?? key;
 };
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
+const providers: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
 
 const providerNames: Record<AiProvider, string> = {
   groq: 'Groq',
@@ -73,11 +73,12 @@ const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:
 
 const defaultProps: ApiKeyManagerProps = {
   savedKeys: [],
+  providers,
   onSave: jest.fn(),
   onRemove: jest.fn(),
   guidanceUrls,
   getSavedStatusLabel,
-  providerNameKeys,
+  providerNames,
 };
 
 describe('ApiKeyManager', () => {
@@ -352,7 +353,8 @@ describe('ApiKeyManager', () => {
     expect(t).toHaveBeenCalledWith('settings.apiKey.manager.addNew');
     expect(t).toHaveBeenCalledWith('settings.apiKey.replace');
     expect(t).toHaveBeenCalledWith('settings.apiKey.remove');
-    expect(t).toHaveBeenCalledWith('settings.apiKey.provider.groq');
+    // Provider display names are plain catalog strings now (Decision 3) — no i18n key lookup.
+    expect(t).not.toHaveBeenCalledWith('settings.apiKey.provider.groq');
   });
 
   it('clears the key field when selecting a provider in the add modal', async () => {

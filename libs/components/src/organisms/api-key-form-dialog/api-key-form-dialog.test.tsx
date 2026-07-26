@@ -36,13 +36,13 @@ const t = (key: string, opts?: TOptions) => {
   return tMap[key] ?? key;
 };
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
+const providerNames: Record<AiProvider, string> = {
+  groq: 'Groq',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  xai: 'xAI',
+  deepseek: 'DeepSeek',
 };
 
 const guidanceUrls: Partial<Record<AiProvider, string>> = {
@@ -61,7 +61,7 @@ const defaultProps: ApiKeyFormDialogProps = {
   isSaveDisabled: true,
   onSave: jest.fn(),
   guidanceUrls,
-  providerNameKeys,
+  providerNames,
 };
 
 describe('ApiKeyFormDialog', () => {

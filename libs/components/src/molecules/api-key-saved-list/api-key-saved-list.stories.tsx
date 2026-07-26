@@ -3,14 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { ApiKeySavedList } from './api-key-saved-list';
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
+const providers: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
 
 const providerNames: Record<AiProvider, string> = {
   groq: 'Groq',
@@ -32,9 +32,10 @@ const meta = {
   component: ApiKeySavedList,
   args: {
     savedKeys: [groqKey],
+    providers,
     savedProviders: new Set<AiProvider>(['groq']),
     getSavedStatusLabel,
-    providerNameKeys,
+    providerNames,
     isSubmitting: false,
     onReplace: () => {},
     onRemove: () => {},

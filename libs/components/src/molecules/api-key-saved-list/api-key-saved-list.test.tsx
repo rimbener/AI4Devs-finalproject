@@ -22,13 +22,22 @@ const tMap: Record<string, string> = {
   'settings.apiKey.provider.deepseek': 'DeepSeek',
 };
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
+const providers: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
+
+const providerNames: Record<AiProvider, string> = {
+  groq: 'Groq',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  xai: 'xAI',
+  deepseek: 'DeepSeek',
 };
 
 const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' };
@@ -39,9 +48,10 @@ const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
 
 const defaultProps: ApiKeySavedListProps = {
   savedKeys: [groqKey],
+  providers,
   savedProviders: new Set<AiProvider>(['groq']),
   getSavedStatusLabel,
-  providerNameKeys,
+  providerNames,
   onReplace: jest.fn(),
   onRemove: jest.fn(),
   children: <></>,
@@ -67,6 +77,25 @@ describe('ApiKeySavedList', () => {
     expect(screen.getByText(`openai · ${openaiKey.updatedAt}`)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Replace Groq' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Replace OpenAI' })).toBeTruthy();
+  });
+
+  // @s3/@s20 (task-3) — row order follows the passed-in providers prop (catalog order), not a
+  // hardcoded constant; a reordered catalog reorders rows with no other code change.
+  it('renders rows in the order of the passed-in providers prop, not alphabetically', async () => {
+    await render(
+      <ApiKeySavedList
+        {...defaultProps}
+        providers={['xai', 'groq', 'anthropic', 'google', 'deepseek', 'openai']}
+        savedKeys={[groqKey, openaiKey]}
+        savedProviders={new Set<AiProvider>(['groq', 'openai'])}
+      />,
+    );
+
+    const replaceButtons = screen.getAllByRole('button', { name: /^Replace /i });
+    expect(replaceButtons.map((button) => button.props.accessibilityLabel)).toEqual([
+      'Replace Groq',
+      'Replace OpenAI',
+    ]);
   });
 
   it('skips providers not present in savedProviders', async () => {
