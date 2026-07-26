@@ -1,3 +1,5 @@
+export * from './use-ai-providers';
+export type * from './use-ai-providers.types';
 export * from './use-api-key';
 export type * from './use-api-key.types';
 export * from './use-auth';
