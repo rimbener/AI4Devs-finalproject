@@ -82,7 +82,6 @@ describe('useApiKey', () => {
   });
 
   // @s38 — an unauthenticated visitor gets an empty status and the status service is never called.
-  // Hook exposes TQ `isPending` as `isLoading`; a disabled query with no data stays pending.
   it('does not load the status when there is no session', async () => {
     mockUseSession.mockReturnValue(noSession);
 
@@ -252,7 +251,6 @@ describe('useApiKey', () => {
   });
 
   // @s47 — remove success resets the save mutation so a prior save error is cleared (D3).
-  // Current hook only resets remove←save, not save←remove; assert status write + remove call.
   it('clears an error left by a failed saveApiKey once removeApiKey succeeds', async () => {
     mockUseSession.mockReturnValue(authenticatedSession);
     service.saveApiKey.mockRejectedValue(
@@ -273,6 +271,7 @@ describe('useApiKey', () => {
 
     await waitFor(() => expect(service.removeApiKey).toHaveBeenCalledWith('groq'));
     await waitFor(() => expect(result.current.status).toEqual(emptyStatus));
+    expect(result.current.error).toBeNull();
   });
 
   // @s48 (example: saves a key) — isSubmitting is true while saveApiKey is in flight, false

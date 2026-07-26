@@ -60,6 +60,7 @@ export const useApiKey = (): UseApiKeyResult => {
     onSuccess: (nextStatus) => {
       if (!sessionUserId) return;
       queryClient.setQueryData(apiKeyStatusQueryKey(sessionUserId), nextStatus);
+      saveMutation.reset();
     },
     gcTime: 0,
   });
