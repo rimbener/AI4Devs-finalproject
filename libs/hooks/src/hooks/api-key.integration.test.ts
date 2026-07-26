@@ -7,8 +7,7 @@ import { createElement } from 'react';
 
 import { useApiKey } from './use-api-key';
 
-const createWrapper = () => {
-  const queryClient = new QueryClient();
+const createWrapper = (queryClient = new QueryClient()) => {
   return ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client: queryClient }, children);
 };
@@ -71,14 +70,16 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status).toEqual({ keys: [] });
 
-    await act(async () => {
-      await result.current.saveApiKey('groq', 'sk-test-key');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test-key');
     });
 
-    expect(invoke).toHaveBeenCalledWith('manage-api-key', {
-      body: { action: 'save', provider: 'groq', apiKey: 'sk-test-key' },
-    });
-    expect(result.current.status).toEqual(groqKeyStatus);
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('manage-api-key', {
+        body: { action: 'save', provider: 'groq', apiKey: 'sk-test-key' },
+      }),
+    );
+    await waitFor(() => expect(result.current.status).toEqual(groqKeyStatus));
   });
 
   // @s4 — replacing one provider leaves the other provider's key unchanged.
@@ -103,18 +104,20 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status.keys).toHaveLength(2);
 
-    await act(async () => {
-      await result.current.saveApiKey('groq', 'sk-replacement-key');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
+    await waitFor(() =>
+      expect(result.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
+        '2026-03-01T00:00:00.000Z',
+      ),
+    );
     expect(result.current.status.keys).toHaveLength(2);
     expect(result.current.status.keys.find((k) => k.provider === 'openai')).toEqual({
       provider: 'openai',
       updatedAt: '2026-02-01T00:00:00.000Z',
     });
-    expect(result.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
-      '2026-03-01T00:00:00.000Z',
-    );
   });
 
   // @s4 — replacing an already-saved key reflects the updated status.
@@ -133,11 +136,13 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.status.keys[0]?.updatedAt).toBe('2026-01-01T00:00:00.000Z');
 
-    await act(async () => {
-      await result.current.saveApiKey('groq', 'sk-replacement-key');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
-    expect(result.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z');
+    await waitFor(() =>
+      expect(result.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z'),
+    );
   });
 
   // @s8 — removing a saved key end-to-end reflects the no-key status.
@@ -151,14 +156,16 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.hasKey).toBe(true);
 
-    await act(async () => {
-      await result.current.removeApiKey('groq');
+    act(() => {
+      result.current.removeApiKey('groq');
     });
 
-    expect(invoke).toHaveBeenCalledWith('manage-api-key', {
-      body: { action: 'remove', provider: 'groq' },
-    });
-    expect(result.current.status).toEqual({ keys: [] });
+    await waitFor(() =>
+      expect(invoke).toHaveBeenCalledWith('manage-api-key', {
+        body: { action: 'remove', provider: 'groq' },
+      }),
+    );
+    await waitFor(() => expect(result.current.status).toEqual({ keys: [] }));
     expect(result.current.error).toBeNull();
   });
 
@@ -172,11 +179,13 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.removeApiKey('groq')).rejects.toBeInstanceOf(Error);
+    act(() => {
+      // removeApiKey (react-query's `mutate`) is fire-and-forget — it doesn't return a
+      // rejectable promise. The failure surfaces through the hook's `error` state instead.
+      result.current.removeApiKey('groq');
     });
 
-    expect(result.current.error).toBe('network_error');
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
     expect(result.current.status).toEqual(groqKeyStatus);
   });
 });

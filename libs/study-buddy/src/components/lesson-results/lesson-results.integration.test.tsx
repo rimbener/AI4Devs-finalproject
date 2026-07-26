@@ -1,5 +1,6 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
+import { QueryProvider } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
@@ -80,6 +81,7 @@ describe('LessonResults integration (study-buddy -> hook -> service -> DAO)', ()
         onRetake={jest.fn()}
         onBackToLessons={jest.fn()}
       />,
+      { wrapper: QueryProvider },
     );
 
     expect(screen.getByText('1 / 1')).toBeTruthy();

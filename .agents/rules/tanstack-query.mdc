@@ -5,7 +5,7 @@ alwaysApply: false
 
 # TanStack Query
 
-`@tanstack/react-query` is the data-fetching/mutation pattern for hooks in `@helsoft/hooks` that read or write through `@helsoft/supabase-services` / `@helsoft/services`. Every consumer needs a `QueryClientProvider` ancestor — use `QueryProvider` from `@helsoft/hooks` (`libs/hooks/src/provider/query-provider.tsx`), wired once at the app root in `apps/app-study-buddy/src/app/_layout.tsx` above `ApiKeyProvider`/`ProfileProvider`. Never create a second `QueryClient` elsewhere.
+`@tanstack/react-query` is the data-fetching/mutation pattern for hooks in `@helsoft/hooks` that read or write through `@helsoft/supabase-services` / `@helsoft/services`. Every consumer needs a `QueryClientProvider` ancestor — use `QueryProvider` from `@helsoft/hooks` (`libs/hooks/src/provider/query-provider.tsx`), wired once at the app root in `apps/app-study-buddy/src/app/_layout.tsx`. It is the sole provider from `@helsoft/hooks` in that tree — `ApiKeyProvider`/`ProfileProvider` were reducer+Context stand-ins for a server cache and no longer exist; the shared `QueryClient` cache is what dedupes reads across sibling consumers now. Never create a second `QueryClient` elsewhere.
 
 ## Reads — `useQuery`
 
@@ -38,6 +38,48 @@ export const useSession = (): UseSessionResult => {
 - Export the query key as a `const` tuple so other hooks can target the same cache entry.
 - Bridge external event sources (Supabase auth/realtime callbacks) with `queryClient.setQueryData(key, value)` — never a parallel `useState`.
 
+### Time-limited resources: `staleTime` *and* `gcTime` (D6)
+
+When the fetched value has a published TTL (a signed URL, a short-lived token), derive **both**
+`staleTime` and `gcTime` from that TTL — `gcTime` alone only controls how long an unobserved entry
+survives in the cache, it does not stop a mounted observer from refetching once the data is
+considered stale. Without a matching `staleTime`, a component that unmounts and remounts inside the
+TTL window still triggers a needless re-fetch (or re-sign) of a URL that was still valid.
+
+```typescript
+// use-slide-image-url.ts
+const CACHE_WINDOW_MS = (SIGNED_URL_TTL_SECONDS - 60) * 1000; // safety margin under the real TTL
+
+useQuery({
+  queryKey: slideImageQueryKey(storagePath),
+  queryFn: () => LessonImageService.getSignedImageUrl(storagePath),
+  staleTime: CACHE_WINDOW_MS,
+  gcTime: CACHE_WINDOW_MS,
+});
+```
+
+### Auth-change cache reset (D2)
+
+`QueryProvider` sits above `Stack.Protected` and never unmounts, so one `QueryClient` survives a
+user switch — every unscoped or user-scoped cache entry from the previous user would otherwise
+leak into the next session. `useSession` is the one choke point that guards against this: reserve
+the `'auth'` key prefix for session-owned entries, and on every `onAuthStateChange` callback evict
+every **non**-`auth` entry — but only when the user id actually changes, never on a same-user token
+refresh, which would otherwise thrash every screen's cache on every hourly refresh. The eviction
+must run **before** the new session is written to the cache, so no reader can observe stale
+other-user data next to a fresh session.
+
+```typescript
+const unsubscribe = AuthService.onAuthStateChange((next) => {
+  const nextUserId = next?.user?.id;
+  if (nextUserId !== previousUserIdRef.current) {
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+  }
+  previousUserIdRef.current = nextUserId;
+  queryClient.setQueryData(SESSION_QUERY_KEY, next);
+});
+```
+
 ## Writes — `useMutation`
 
  Expose its own primitives (`mutate`, `isPending`, `error`, `reset`) directly rather than re-deriving them with `useState`/`useCallback` — they're already stable across renders. Prefer to return `mutate`, not `mutateAsync`: callers read `isPending`/`error` reactively instead of awaiting the call. Rename the generic primitives to the action (`isSigningOut`, not `isPending`).
@@ -60,12 +102,6 @@ export const useSignOut = (): UseSignOutResult => {
   };
 };
 ```
-
-- Prefer one hook per independent action (`useSignOut` alongside `useAuth`'s `signIn`) over one hook owning every mutation for a domain. unless there are multiple actions used from the same file, or there are shared code between the actions in the hook.
-- Only expose `reset` when a consumer needs to clear a stale error manually (e.g. dismissing a banner) — a fresh `mutate` call already clears it on its own.
-- Normalize the mutation's raw `error` through a typed guard (`isXErrorShape` / `toErrorCode`) so the UI only ever sees a closed error-code union, never an unchecked cast. Extract that guard into a shared `use-{domain}.helpers.ts` (e.g. `use-auth.helpers.ts`) once more than one hook in the domain needs it.
-- Don't add unnecessary `useCallback`s to the hook body — `useMutation` already returns stable functions.
-
 ```tsx
 // ❌ don't — add unnecessary useCallback for the refetch function
 export const useLesson = (id: string): UseLessonResult => {
@@ -113,6 +149,109 @@ export const useLesson = (id: string): UseLessonResult => {
 };
 
 ```
+
+- Prefer one hook per independent action (`useSignOut` alongside `useAuth`'s `signIn`) over one hook owning every mutation for a domain — unless there are multiple actions used from the same file, or there is shared code between the actions in the hook.
+- Only expose `reset` when a consumer needs to clear a stale error manually (e.g. dismissing a banner) — a fresh `mutate` call already clears it on its own.
+- Normalize the mutation's raw `error` through a typed guard (`isXErrorShape` / `toErrorCode`) so the UI only ever sees a closed error-code union, never an unchecked cast. Extract that guard into a shared `use-{domain}.helpers.ts` (e.g. `use-auth.helpers.ts`) once more than one hook in the domain needs it.
+- Don't add unnecessary `useCallback`s to the hook body — `useMutation` already returns stable functions.
+- Prefer to create the query key it inline, don't add a function to create it, unless there is some complexity to it or the key is shared.
+
+### Two mutations sharing one error/pending slot, cross-reset (D3)
+
+The "same file / shared code" carve-out above has a concrete trigger: when the hook's **public
+contract** exposes a single `error`/`isPending`-shaped slot for what the service layer sees as
+several distinct actions (e.g. save vs. remove). Keep the actions as **separate `useMutation`s**
+(so each mutation's `mutationFn` stays a plain single-purpose call and no tagged-union variable
+type is needed), and derive the shared slot: `isPending: a.isPending || b.isPending`,
+`error: a.error ?? b.error`. The one thing this needs that a single mutation gets for free: each
+action's `onSuccess` must call the **other** mutation's `reset()`, so a success on either side
+clears a stale error left by the other (the contract promises this cross-clearing — a successful
+remove clears an error left by a failed save). Declaring both with `const` in the same hook body
+is safe even though each references the other before its own declaration line: neither `onSuccess`
+callback runs synchronously during the initial call, only later when a mutation actually settles,
+by which point both bindings exist.
+
+```typescript
+// use-api-key.ts
+const saveMutation = useMutation({
+  mutationFn: (provider: AiProvider) => ApiKeyService.saveApiKey(provider, pendingRawKeyRef.current ?? ''),
+  onSuccess: (nextStatus) => {
+    queryClient.setQueryData(apiKeyStatusQueryKey(userId), nextStatus);
+    removeMutation.reset();
+  },
+});
+
+const removeMutation = useMutation({
+  mutationFn: (provider: AiProvider) => ApiKeyService.removeApiKey(provider),
+  onSuccess: (nextStatus) => {
+    queryClient.setQueryData(apiKeyStatusQueryKey(userId), nextStatus);
+    saveMutation.reset();
+  },
+});
+
+const isSubmitting = saveMutation.isPending || removeMutation.isPending;
+const error = saveMutation.error ?? removeMutation.error;
+```
+
+Keep genuinely independent actions (different files, no shared `error`/`isPending` contract) as
+separate hooks/mutations — this carve-out is for a single hook whose *return type* already
+committed to one slot, not a default for every multi-action domain.
+
+### `isPending` is not a synchronous guard (D5)
+
+`isPending` is React state: it only flips to `true` after a render commits. TanStack Query does
+not dedupe `mutate()` calls, so a second `mutate()` issued in the same tick as the first (a
+double-tap, or a handler firing alongside an effect) still reads `isPending === false` and starts a
+second write — e.g. a duplicate insert. An action that must never fire twice concurrently needs a
+plain ref as a synchronous entry gate, set **before** calling `mutate` and cleared in `onSettled`
+(not `onSuccess` — a failed call must also reopen the gate):
+
+```typescript
+// use-lesson-attempt.ts
+const isSaving = useRef(false);
+
+const mutation = useMutation({
+  mutationFn: (input: NewLessonAttempt) => LessonAttemptService.saveAttempt(input),
+  onSettled: () => {
+    isSaving.current = false;
+  },
+});
+
+const saveAttempt = useCallback(
+  (input: NewLessonAttempt) => {
+    if (isSaving.current) return;
+    isSaving.current = true;
+    mutate(input);
+  },
+  [mutate],
+);
+```
+
+Do not remove the ref as "redundant" with `isPending` — they answer different questions (`isPending`
+is a render-visible status, the ref is a same-tick lock) and only the ref actually closes the
+double-fire window.
+
+## Exemptions
+
+Not every hook that reads or writes through a service belongs on `useQuery`/`useMutation`. These
+four are deliberately **not** migrated — do not convert them without first invalidating the reason
+below, and do not use them as precedent for a new hook without checking that the same reason
+actually applies:
+
+- **`libs/hooks/src/hooks/use-lesson-generation.ts`** (`useLessonGeneration`) — drives a
+  multi-stage `stage` machine with a `setInterval` progress stepper over a single long-running LLM
+  call, plus a `retry` that must replay the exact prior request. The stepper and the stage
+  transitions are orthogonal to query/mutation lifecycle state and would need to be bolted on
+  beside `useMutation` either way.
+- **`libs/pdf-upload-extraction/src/hooks/use-pdf-extraction.ts`** (`usePdfExtraction`) — same
+  reasoning as above; its `retry` must reuse the exact same `documentId` from the original attempt
+  so a retry never mints a second document row.
+- **`libs/localization/src/hooks/use-locale-preference.ts`** (`useLocalePreference`) — thin
+  imperative AsyncStorage getters/setters called from effects; there is no observable
+  loading/error state for `useQuery`/`useMutation` to model.
+- **`libs/study-buddy/src/components/lesson-generation/use-lesson-generation.ts`**
+  (`useLessonGenerationForm`) — reads a stored generation preference once, to seed local picker
+  state; it is a one-shot initializer, not an ongoing server-state read.
 
 ## Testing
 

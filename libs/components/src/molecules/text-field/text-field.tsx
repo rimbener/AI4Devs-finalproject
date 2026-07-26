@@ -14,6 +14,7 @@ import { Icon } from '../../atoms/icon/icon';
 export type TextFieldVariant = 'filled' | 'outlined';
 
 export type TextFieldProps = Omit<TextInputProps, 'style'> & {
+  ref?: React.RefObject<TextInput | null>;
   label?: string;
   variant?: TextFieldVariant;
   supportingText?: string;
@@ -43,6 +44,7 @@ export type TextFieldProps = Omit<TextInputProps, 'style'> & {
  * Supports label, supporting text, leading/trailing icons, error state, multiline.
  */
 export const TextField = ({
+  ref,
   label,
   variant = 'filled',
   supportingText,
@@ -90,6 +92,7 @@ export const TextField = ({
           />
         ) : null}
         <TextInput
+          ref={ref}
           editable={!disabled}
           multiline={multiline}
           numberOfLines={multiline ? rows : 1}

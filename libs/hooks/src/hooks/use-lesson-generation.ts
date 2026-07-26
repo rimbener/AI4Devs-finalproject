@@ -31,9 +31,11 @@ const isGenerationErrorShape = (cause: unknown): cause is GenerationError => {
 
 /**
  * React integration over `LessonGenerationService` (never the DAO): a plain-state, one-shot
- * mutation hook (mirrors `useApiKey`/`usePdfExtraction` — tanstack-query not installed) that
- * also drives the multi-step progress stepper (@s14) while the single `generate` call is in
- * flight, settling to `content`/`error` on resolve.
+ * mutation hook (mirrors `usePdfExtraction`) that also drives the multi-step progress stepper
+ * (@s14) while the single `generate` call is in flight, settling to `content`/`error` on resolve.
+ * Exempt from `useMutation` — see `.agents/rules/tanstack-query.mdc`'s Exemptions section: the
+ * `stage`/stepper machine and the "retry replays the exact prior request" contract sit orthogonal
+ * to query/mutation lifecycle state.
  */
 export const useLessonGeneration = (): UseLessonGenerationResult => {
   const { session } = useSession();

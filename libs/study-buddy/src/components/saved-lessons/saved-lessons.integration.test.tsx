@@ -4,10 +4,20 @@ jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 import { useLocalization } from '@helsoft/localization';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 
 import { SavedLessons } from './saved-lessons';
+
+const renderWithQueryClient = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <SavedLessons />
+    </QueryClientProvider>,
+  );
+};
 
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
@@ -72,7 +82,7 @@ describe('SavedLessons integration (wiring → hook → service → DAO)', () =>
     const select = jest.fn(() => ({ order }));
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    await render(<SavedLessons />);
+    await renderWithQueryClient();
 
     await waitFor(() => expect(screen.getByText('Newer')).toBeTruthy());
     expect(screen.getByText('Older')).toBeTruthy();
@@ -101,7 +111,7 @@ describe('SavedLessons integration (wiring → hook → service → DAO)', () =>
     const del = jest.fn().mockReturnValue({ eq: delEq });
     jest.spyOn(client, 'from').mockReturnValue({ select, delete: del } as never);
 
-    await render(<SavedLessons />);
+    await renderWithQueryClient();
     await waitFor(() => expect(screen.getByText('Newer')).toBeTruthy());
 
     await act(async () => {

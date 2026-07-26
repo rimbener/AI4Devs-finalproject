@@ -1,74 +1,48 @@
 import { PdfDocumentsService } from '@helsoft/supabase-services';
-import { useCallback, useEffect, useReducer, useRef } from 'react';
-
-import { usePdfDocumentsInitialState, usePdfDocumentsReducer } from './use-pdf-documents.reducer';
+import type { PdfDocumentSummary } from '@helsoft/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { UsePdfDocumentsResult } from './use-pdf-documents.types';
 
-/**
- * React integration over PdfDocumentsService (tanstack-query not installed → local state).
- * Drives PDF-list Loading/Content/Empty/Error via
- * `{ documents, isLoading, error, refetch, deleteDocument }`.
- */
+export const pdfDocumentsQueryKey = ['pdf-documents'] as const;
+
 export const usePdfDocuments = (): UsePdfDocumentsResult => {
-  const [state, dispatch] = useReducer(usePdfDocumentsReducer, usePdfDocumentsInitialState);
-  const isMounted = useRef(true);
-  // Incremented to cancel an in-flight load when a newer one starts (mount or refetch).
-  const requestId = useRef(0);
+  const queryClient = useQueryClient();
 
-  useEffect(
-    () => () => {
-      isMounted.current = false;
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: pdfDocumentsQueryKey,
+    queryFn: () => PdfDocumentsService.getDocuments(),
+  });
+
+  const {
+    mutate: deleteDocument,
+    error: deleteError,
+    reset: deleteDocumentReset,
+  } = useMutation({
+    mutationFn: (id: string) => PdfDocumentsService.deleteDocument(id),
+    onSuccess: (_result, id) => {
+      queryClient.setQueryData<PdfDocumentSummary[]>(pdfDocumentsQueryKey, (current) =>
+        (current ?? []).filter((document) => document.id !== id),
+      );
     },
-    [],
-  );
+  });
 
-  const load = useCallback(() => {
-    const id = ++requestId.current;
-    dispatch({ type: 'load/start' });
-
-    void PdfDocumentsService.getDocuments()
-      .then((next) => {
-        if (id !== requestId.current || !isMounted.current) return;
-        dispatch({ type: 'load/success', documents: next });
-      })
-      .catch((cause: unknown) => {
-        if (id !== requestId.current || !isMounted.current) return;
-        dispatch({
-          type: 'load/failure',
-          error: cause instanceof Error ? cause : new Error(String(cause)),
-        });
-      });
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const refetch = useCallback(() => {
-    load();
-  }, [load]);
-
-  const deleteDocument = useCallback(async (id: string) => {
-    try {
-      await PdfDocumentsService.deleteDocument(id);
-      if (!isMounted.current) return;
-      dispatch({ type: 'delete/success', id });
-    } catch (cause) {
-      if (isMounted.current) {
-        dispatch({
-          type: 'delete/failure',
-          error: cause instanceof Error ? cause : new Error(String(cause)),
-        });
-      }
-      throw cause;
-    }
-  }, []);
+  // @s23 — the delete error is cleared before the read starts, so a later read failure (not the
+  // stale delete error) is what ends up exposed.
+  const refetchAndClearDeleteError = () => {
+    deleteDocumentReset();
+    return refetch();
+  };
 
   return {
-    documents: state.documents,
-    isLoading: state.isLoading,
-    error: state.error,
-    refetch,
+    documents: data ?? [],
+    isLoading,
+    error: deleteError ?? queryError,
+    refetch: refetchAndClearDeleteError,
     deleteDocument,
   };
 };

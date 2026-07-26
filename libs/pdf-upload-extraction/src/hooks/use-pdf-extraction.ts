@@ -32,9 +32,10 @@ type LastAttempt = {
 /**
  * React integration over `PdfExtractionService`: exposes the upload+extract action plus the
  * state `PdfUploadPanel` renders (@s1 success, @s5 processing, @s8-@s13 error). Plain-state
- * (`useReducer`), matching the `useAuth`/`useSession` precedent — not tanstack-query (spec's locked
- * hook-style decision). Remembers the last attempt's input/documentId so `retry()` (@s13) can
- * re-run the exact same extraction rather than minting a new document row.
+ * (`useReducer`). Exempt from `useMutation` — see `.agents/rules/tanstack-query.mdc`'s Exemptions
+ * section: `retry()` (@s13) must reuse the exact same `documentId` from the original attempt so
+ * a retry never mints a second document row, a contract orthogonal to mutation lifecycle state.
+ * Remembers the last attempt's input/documentId for that replay.
  */
 export const usePdfExtraction = (): UsePdfExtractionResult => {
   const { session } = useSession();

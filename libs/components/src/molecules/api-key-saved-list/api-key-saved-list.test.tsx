@@ -44,6 +44,7 @@ const defaultProps: ApiKeySavedListProps = {
   providerNameKeys,
   onReplace: jest.fn(),
   onRemove: jest.fn(),
+  children: <></>,
 };
 
 describe('ApiKeySavedList', () => {

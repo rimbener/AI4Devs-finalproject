@@ -3,6 +3,10 @@ import type { TranslationResource } from './en';
 /** German bundle. Key-aligned with `en` (compiler-enforced). Copy pending native review (R6). */
 export const de: TranslationResource = {
   translation: {
+    general: {
+      save: 'Speichern',
+      saving: 'Speichern…',
+    },
     brand: {
       name: 'AI Study Buddy',
     },
@@ -263,8 +267,6 @@ export const de: TranslationResource = {
       },
       apiKey: {
         inputLabel: 'API-Schlüssel',
-        save: 'Speichern',
-        saving: 'Wird gespeichert…',
         loadingStatus: 'Status deines API-Schlüssels wird geprüft…',
         showSettings: 'API-Schlüssel-Einstellungen anzeigen',
         screenTitle: 'API-Schlüssel-Einstellungen',

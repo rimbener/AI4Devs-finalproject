@@ -56,7 +56,7 @@ export const useApiKeyForm = ({
   // Same iOS-parity need for the isSubmitting progress label (WCAG 4.1.3).
   useEffect(() => {
     if (isSubmitting) {
-      AccessibilityInfo.announceForAccessibility(t('settings.apiKey.saving'));
+      AccessibilityInfo.announceForAccessibility(t('general.saving'));
     }
   }, [isSubmitting, t]);
 

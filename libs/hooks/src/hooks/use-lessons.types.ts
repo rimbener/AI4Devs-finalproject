@@ -5,5 +5,5 @@ export type UseLessonsResult = {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
-  deleteLesson: (id: string) => Promise<void>;
+  deleteLesson: (id: string) => void;
 };

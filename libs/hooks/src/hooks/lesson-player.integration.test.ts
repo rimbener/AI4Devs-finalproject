@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
 import { useLesson } from './use-lesson';
 
@@ -9,6 +12,12 @@ import { useLesson } from './use-lesson';
  * `from` boundary. Nothing above the DAO is mocked.
  */
 let client: SupabaseClient;
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 describe('lesson-player slice-1 integration (hook → service → DAO)', () => {
   beforeAll(() => {
@@ -43,7 +52,7 @@ describe('lesson-player slice-1 integration (hook → service → DAO)', () => {
     const select = jest.fn(() => ({ eq }));
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => useLesson('lesson-1'));
+    const { result } = renderHook(() => useLesson('lesson-1'), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 

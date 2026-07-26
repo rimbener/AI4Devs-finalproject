@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { createElement } from 'react';
 
 import { useLessons } from './use-lessons';
 
@@ -10,6 +13,12 @@ import { useLessons } from './use-lessons';
  * Mirrors `api-key.integration.test.ts`: one real client for the file.
  */
 let client: SupabaseClient;
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+};
 
 describe('signup-and-lesson-persistence slice-1 integration (hook -> service -> DAO)', () => {
   beforeAll(() => {
@@ -31,7 +40,7 @@ describe('signup-and-lesson-persistence slice-1 integration (hook -> service -> 
     const select = jest.fn(() => ({ order }));
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => useLessons());
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -58,7 +67,7 @@ describe('signup-and-lesson-persistence slice-1 integration (hook -> service -> 
     const select = jest.fn(() => ({ order }));
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => useLessons());
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.error).not.toBeNull());
 

@@ -44,12 +44,8 @@ export const ApiKeySettingsScreen = () => {
         isLoading={isLoading}
         isSubmitting={isSubmitting}
         errorMessage={errorMessage}
-        onSave={(provider, rawKey) => {
-          void saveApiKey(provider, rawKey).catch(() => {});
-        }}
-        onRemove={(provider) => {
-          void removeApiKey(provider).catch(() => {});
-        }}
+        onSave={saveApiKey}
+        onRemove={removeApiKey}
         guidanceUrls={API_KEY_SETTINGS_GUIDANCE_URLS}
         getSavedStatusLabel={getSavedStatusLabel}
         providerNameKeys={PROVIDER_NAME_KEYS}

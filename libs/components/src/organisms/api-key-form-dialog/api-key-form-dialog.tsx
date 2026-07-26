@@ -1,10 +1,11 @@
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider } from '@helsoft/types';
-import { Linking, Text, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Linking, Text, type TextInput, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-
 import { Button } from '../../atoms/button/button';
 import { RadioGroup } from '../../molecules/radio-group/radio-group';
+import { SubmittingIndicator } from '../../molecules/submitting-indicator/submitting-indicator';
 import { TextField } from '../../molecules/text-field/text-field';
 import { Dialog } from '../dialog/dialog';
 import type { ApiKeyFormDialogProps } from './api-key-form-dialog.types';
@@ -29,6 +30,13 @@ export const ApiKeyFormDialog = ({
 }: ApiKeyFormDialogProps) => {
   const { t } = useLocalization();
   const providerLabel = (p: AiProvider) => t(providerNameKeys[p]);
+  const textFieldRef = useRef<TextInput>(null);
+
+  React.useEffect(() => {
+    if (formProvider && textFieldRef.current) {
+      textFieldRef.current.focus();
+    }
+  }, [formProvider]);
 
   return (
     <Dialog
@@ -41,57 +49,66 @@ export const ApiKeyFormDialog = ({
       cancelLabel={t('settings.apiKey.removeConfirmCancelAction')}
       actions={
         <View style={styles.actionsRow}>
-          <Button variant="text" onPress={onClose}>
-            {t('settings.apiKey.removeConfirmCancelAction')}
-          </Button>
-          <Button disabled={isSaveDisabled} onPress={onSave}>
-            {t('settings.apiKey.save')}
-          </Button>
-          {isSubmitting ? (
-            <Text accessibilityLiveRegion="polite">{t('settings.apiKey.saving')}</Text>
-          ) : null}
+          {isSubmitting ? null : (
+            <>
+              <Button variant="text" disabled={isSubmitting} onPress={onClose}>
+                {t('settings.apiKey.removeConfirmCancelAction')}
+              </Button>
+
+              <Button disabled={isSaveDisabled} onPress={onSave}>
+                {t('general.save')}
+              </Button>
+            </>
+          )}
         </View>
       }
     >
       <View style={styles.form}>
-        {formMode === 'add' ? (
-          <RadioGroup
-            accessibilityLabel={t('settings.apiKey.manager.selectProvider')}
-            options={unsavedProviders.map((p) => ({
-              value: p,
-              label: providerLabel(p),
-            }))}
-            value={formProvider ?? undefined}
-            onChange={(v) => {
-              onSelectProvider(v as AiProvider);
-            }}
-          />
-        ) : formProvider ? (
-          <Text style={styles.providerLabel}>{providerLabel(formProvider)}</Text>
-        ) : null}
-        <TextField
-          label={t('settings.apiKey.inputLabel')}
-          accessibilityLabel={t('settings.apiKey.inputLabel')}
-          value={apiKey}
-          onChangeText={onApiKeyChange}
-          disabled={isSubmitting}
-          accessibilityState={{ disabled: isSubmitting }}
-          secureTextEntry
-          autoCapitalize="none"
-        />
-        {formMode === 'add' && formProvider && guidanceUrls[formProvider] ? (
-          <Button
-            variant="text"
-            onPress={() => {
-              const url = guidanceUrls[formProvider];
-              if (url) void Linking.openURL(url).catch(() => {});
-            }}
-          >
-            {t('settings.apiKey.guidanceTemplate', {
-              provider: providerLabel(formProvider),
-            })}
-          </Button>
-        ) : null}
+        {isSubmitting ? (
+          <SubmittingIndicator />
+        ) : (
+          <>
+            {formMode === 'add' ? (
+              <RadioGroup
+                accessibilityLabel={t('settings.apiKey.manager.selectProvider')}
+                options={unsavedProviders.map((p) => ({
+                  value: p,
+                  label: providerLabel(p),
+                }))}
+                value={formProvider ?? undefined}
+                onChange={(v) => {
+                  onSelectProvider(v as AiProvider);
+                }}
+              />
+            ) : formProvider ? (
+              <Text style={styles.providerLabel}>{providerLabel(formProvider)}</Text>
+            ) : null}
+            <TextField
+              ref={textFieldRef}
+              label={t('settings.apiKey.inputLabel')}
+              accessibilityLabel={t('settings.apiKey.inputLabel')}
+              value={apiKey}
+              onChangeText={onApiKeyChange}
+              disabled={isSubmitting || !formProvider}
+              accessibilityState={{ disabled: isSubmitting }}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+            {formMode === 'add' && formProvider && guidanceUrls[formProvider] ? (
+              <Button
+                variant="text"
+                onPress={() => {
+                  const url = guidanceUrls[formProvider];
+                  if (url) void Linking.openURL(url).catch(() => {});
+                }}
+              >
+                {t('settings.apiKey.guidanceTemplate', {
+                  provider: providerLabel(formProvider),
+                })}
+              </Button>
+            ) : null}
+          </>
+        )}
       </View>
     </Dialog>
   );

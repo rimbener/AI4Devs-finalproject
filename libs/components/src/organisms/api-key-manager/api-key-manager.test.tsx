@@ -14,8 +14,8 @@ const mockUseLocalization = useLocalization as jest.Mock;
 
 const tMap: Record<string, string> = {
   'settings.apiKey.inputLabel': 'API key',
-  'settings.apiKey.save': 'Save',
-  'settings.apiKey.saving': 'Saving…',
+  'general.save': 'Save',
+  'general.saving': 'Saving…',
   'settings.apiKey.loadingStatus': 'Checking…',
   'settings.apiKey.replace': 'Replace',
   'settings.apiKey.remove': 'Remove',
@@ -216,9 +216,9 @@ describe('ApiKeyManager', () => {
     expect(onSave).toHaveBeenCalledWith('groq', 'sk-test-key');
   });
 
-  // @s2 — isSubmitting disables Save and shows a progress label.
+  // @s2 — isSubmitting shows progress and hides Save (no empty-form flash).
   it('disables Save and shows a progress label while isSubmitting', async () => {
-    await render(<ApiKeyManager {...defaultProps} isSubmitting />);
+    const view = await render(<ApiKeyManager {...defaultProps} />);
 
     await act(async () => {
       fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
@@ -227,7 +227,9 @@ describe('ApiKeyManager', () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
 
-    expect(screen.getByRole('button', { name: 'Save', disabled: true })).toBeTruthy();
+    await view.rerender(<ApiKeyManager {...defaultProps} isSubmitting />);
+
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
     expect(screen.getByText('Saving…')).toBeTruthy();
   });
 
@@ -382,7 +384,7 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByRole('button', { name: /Don't have a key/ })).toBeNull();
   });
 
-  it('passes disabled accessibilityState to the key field while submitting', async () => {
+  it('keeps the progress label after isSubmitting clears until the modal closes', async () => {
     const view = await render(<ApiKeyManager {...defaultProps} />);
 
     await act(async () => {
@@ -391,10 +393,23 @@ describe('ApiKeyManager', () => {
     await act(async () => {
       fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('API key'), 'sk-test-key');
+    });
 
     await view.rerender(<ApiKeyManager {...defaultProps} isSubmitting />);
+    expect(screen.getByText('Saving…')).toBeTruthy();
 
-    expect(screen.getByLabelText('API key').props.accessibilityState).toEqual({ disabled: true });
+    // Success: submitting ends and savedKeys update in the same tick — progress must
+    // stay until close (no empty-form flash from unsavedProviders shrinking).
+    await act(async () => {
+      await view.rerender(
+        <ApiKeyManager {...defaultProps} savedKeys={[groqKey]} isSubmitting={false} />,
+      );
+    });
+
+    expect(screen.queryByText('Saving…')).toBeNull();
+    expect(screen.queryByLabelText('API key')).toBeNull();
   });
 
   it('announces loading status via the localized loading key', async () => {

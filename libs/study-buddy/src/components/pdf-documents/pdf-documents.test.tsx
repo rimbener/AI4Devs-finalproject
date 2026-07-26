@@ -98,7 +98,7 @@ const docsValue = (overrides: Partial<ReturnType<typeof usePdfDocuments>> = {}) 
   isLoading: false,
   error: null,
   refetch: jest.fn(),
-  deleteDocument: jest.fn().mockResolvedValue(undefined),
+  deleteDocument: jest.fn(),
   ...overrides,
 });
 
@@ -323,7 +323,7 @@ describe('PdfDocuments', () => {
 
   // @s12 — confirm delete calls deleteDocument.
   it('calls deleteDocument when delete is confirmed', async () => {
-    const deleteDocument = jest.fn().mockResolvedValue(undefined);
+    const deleteDocument = jest.fn();
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -353,7 +353,7 @@ describe('PdfDocuments', () => {
 
   // @s13 — dismiss keeps the document.
   it('does not call deleteDocument when the confirmation is dismissed', async () => {
-    const deleteDocument = jest.fn().mockResolvedValue(undefined);
+    const deleteDocument = jest.fn();
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -565,10 +565,10 @@ describe('PdfDocuments', () => {
     expect(firstPush).not.toHaveBeenCalled();
   });
 
-  // Mutation: empty deleteDocument deps — must call the latest deleteDocument.
+  // Mutation: deleteDocument is passed through — must call the latest identity.
   it('calls the latest deleteDocument after the hook return updates', async () => {
-    const firstDelete = jest.fn().mockResolvedValue(undefined);
-    const secondDelete = jest.fn().mockResolvedValue(undefined);
+    const firstDelete = jest.fn();
+    const secondDelete = jest.fn();
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -639,44 +639,6 @@ describe('PdfDocuments', () => {
       ...[root?.props?.style].flat(Infinity).filter(Boolean),
     ) as Record<string, unknown>;
     expect(flat.flex).toBe(1);
-  });
-
-  // Failed delete must not become an unhandled rejection.
-  it('does not leave a rejected deleteDocument promise unhandled', async () => {
-    const unhandledRejectionSpy = jest.fn();
-    process.on('unhandledRejection', unhandledRejectionSpy);
-
-    const deleteDocument = jest.fn().mockRejectedValue(new Error('delete failed'));
-    mockUsePdfDocuments.mockReturnValue(
-      docsValue({
-        documents: [
-          {
-            id: 'doc-ready',
-            filename: 'notes.pdf',
-            pageCount: 12,
-            createdAt: '2026-07-13T12:00:00.000Z',
-            status: 'ready',
-            lessonId: null,
-          },
-        ],
-        deleteDocument,
-      }),
-    );
-
-    await render(<PdfDocuments />);
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Delete notes.pdf' }));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Delete' }));
-    });
-    await act(async () => {
-      await new Promise<void>((resolve) => setImmediate(() => resolve()));
-    });
-
-    process.off('unhandledRejection', unhandledRejectionSpy);
-    expect(deleteDocument).toHaveBeenCalledWith('doc-ready');
-    expect(unhandledRejectionSpy).not.toHaveBeenCalled();
   });
 
   // Full-review major [a11y]/[code] WCAG 4.1.3 — surface delete failure while keeping content.

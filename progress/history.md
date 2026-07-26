@@ -4,6 +4,8 @@
 
 <!-- format: YYYY-MM-DD | <name> | pr_ready|done | docs/features/<name>/ | note ≤20 words -->
 
+2026-07-25 | tanstack-query-hooks-migration | pr_ready | docs/features/tanstack-query-hooks-migration/ | 7 hooks migrated to tanstack-query, 2 providers deleted, full review + mutation clean.
+
 2026-07-09 | localization-i18n | pr_ready | docs/features/localization-i18n/ | @helsoft/localization (i18next+react-i18next; en/es/pt/de); 12 tasks, 6 reviewers APPROVED, 100% mutation on changed lines (6 equivalents), DoD PASS. On branch feature-entrega2-HernanLaura.
 2026-07-10 | localization-i18n | pr_ready | docs/features/localization-i18n/ | Post-pr_ready: fixed 6 review minors (commit 7084e5f); re-review (3 rounds) surfaced FO2 (native selector group-role, Level A, pre-existing/systemic). Human risk-ACCEPTED FO1+FO2. All 6 reviewers APPROVED. Confirmed pr_ready. FO2 closure deferred to design-system follow-up.
 2026-07-10 | login-and-logout | pr_ready | docs/features/login-and-logout/ | Supabase Auth (email/password); 5 tasks (Slice 1: happy path + loading); spec + Gherkin approved (4 Open Decisions confirmed). TDD: 40 tests, all green. Reviews: 3-round loop (6 major+2 minor → all fixed, Round 3 ESCALATE_MINORS: 1 accepted test-timing flake). Mutation: 100% on changed lines (28 survivors killed via test strengthening). DoD PASS. On branch feature-entrega2-HernanLaura.
@@ -153,3 +155,7 @@
 
 2026-07-25 | agents-rules (ad hoc, no story) | n/a | — | New .agents/rules/tanstack-query.mdc (one QueryClient/QueryProvider, expose mutation primitives, setQueryData bridge, typed error guard, waitFor tests); wired into rules.md, ORCHESTRATOR.md, reviewer_slice (+ missing state-sharing entry), reviewer_engineering, implementer, global.mdc, hooks-service-dao.mdc, ORCHESTRATOR_PLAN.md; prompts.md annex (8894e54a1, 150b0090b).
 2026-07-26 | agents-rules (ad hoc, no story) | n/a | — | TDD split by file type: strict TDD stays for non-UI .ts, UI .tsx goes impl-first (tdd.mdc, implementer, reviewer_slice/engineering, ORCHESTRATOR*); tanstack-query.mdc gains useCallback anti-pattern example; create-user-story splits backend/frontend stories on supabase/ schema impact; added tanstack-query-hooks-migration user story (7d8556a96..0f5b8f44a).
+
+2026-07-26 | tanstack-query-hooks-migration | pr_ready | docs/features/tanstack-query-hooks-migration/ | Post-migration: split api-key mutations + sticky submit UX (4412da382, bae079f74).
+2026-07-26 | tanstack-query-hooks-migration | pr_ready | docs/features/tanstack-query-hooks-migration/ | Code review fixes: symmetric api-key error clearing, delete-error-before-refetch for lessons/pdf-documents, general.save/saving locale reuse, dropped unreachable logged-out isLoading AC (3382ec692, 767619672, f0491a704, 38600fc51).
+2026-07-26 | tanstack-query-hooks-migration | done | docs/features/tanstack-query-hooks-migration/ | Merged into feature-entrega3-HernanLaura; worktree removed.

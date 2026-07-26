@@ -14,7 +14,7 @@ const mockUseLocalization = useLocalization as jest.Mock;
 const t = (key: string) => {
   const map: Record<string, string> = {
     'settings.apiKey.loadingStatus': 'loading status',
-    'settings.apiKey.saving': 'saving key',
+    'general.saving': 'saving key',
   };
   return map[key] ?? key;
 };

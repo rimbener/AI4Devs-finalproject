@@ -1,37 +1,30 @@
-import { LessonImageService } from '@helsoft/supabase-services';
+import { LessonImageService, SIGNED_URL_TTL_SECONDS } from '@helsoft/supabase-services';
 import type { SlideImageRef } from '@helsoft/types';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
-import { nextRequestId } from './next-request-id';
 import type { UseSlideImageUrlResult } from './use-slide-image-url.types';
+
+/** Query key for a signed slide-image url, scoped by storage path. */
+export const slideImageQueryKey = (storagePath: string) => ['lesson-image', storagePath] as const;
+
+// Cache window derived from the published signed-URL TTL (D6): both windows sit 60s under it
+// so a served cache hit is always still a valid, unexpired URL.
+const CACHE_WINDOW_MS = (SIGNED_URL_TTL_SECONDS - 60) * 1000;
 
 /**
  * Resolves a short-lived signed URL for a slide image ref. Returns `{ url: null }` when
  * the ref is absent or resolution fails — never throws.
  */
 export const useSlideImageUrl = (imageRef?: SlideImageRef): UseSlideImageUrlResult => {
-  const [url, setUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(Boolean(imageRef?.storagePath));
-  const requestId = useRef(0);
+  const storagePath = imageRef?.storagePath;
 
-  useEffect(() => {
-    if (!imageRef?.storagePath) {
-      setUrl(null);
-      setIsLoading(false);
-      return;
-    }
+  const { data, isLoading } = useQuery({
+    queryKey: slideImageQueryKey(storagePath ?? ''),
+    queryFn: () => LessonImageService.getSignedImageUrl(storagePath as string),
+    enabled: Boolean(storagePath),
+    staleTime: CACHE_WINDOW_MS,
+    gcTime: CACHE_WINDOW_MS,
+  });
 
-    const req = nextRequestId(requestId.current);
-    requestId.current = req;
-    setIsLoading(true);
-    setUrl(null);
-
-    void LessonImageService.getSignedImageUrl(imageRef.storagePath).then((signed) => {
-      if (req !== requestId.current) return;
-      setUrl(signed);
-      setIsLoading(false);
-    });
-  }, [imageRef?.storagePath]);
-
-  return { url, isLoading };
+  return { url: data ?? null, isLoading };
 };

@@ -18,7 +18,9 @@ type UseLessonGenerationArgs = {
 
 /**
  * Local picker + missing-key gate state for the LessonGeneration feature component.
- * Handlers stay in lesson-generation.tsx (component-split.mdc).
+ * Handlers stay in lesson-generation.tsx (component-split.mdc). Exempt from `useQuery` — see
+ * `.agents/rules/tanstack-query.mdc`'s Exemptions section: `GenerationPreferenceService`'s stored
+ * preference is read once, to seed local picker state, not as an ongoing server-state read.
  */
 export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGenerationArgs) => {
   const { status, hasKey } = useApiKey();

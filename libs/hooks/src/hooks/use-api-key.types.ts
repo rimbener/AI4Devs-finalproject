@@ -1,5 +1,4 @@
 import type { AiProvider, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
-import type { ReactNode } from 'react';
 
 export type UseApiKeyResult = {
   status: ApiKeyStatus;
@@ -11,10 +10,6 @@ export type UseApiKeyResult = {
   error: ApiKeyErrorCode | null;
   /** Derived: true when status.keys.length > 0 — keeps useProfile().canCreate unchanged. */
   hasKey: boolean;
-  saveApiKey: (provider: AiProvider, rawKey: string) => Promise<void>;
-  removeApiKey: (provider: AiProvider) => Promise<void>;
-};
-
-export type ApiKeyProviderProps = {
-  children: ReactNode;
+  saveApiKey: (provider: AiProvider, rawKey: string) => void;
+  removeApiKey: (provider: AiProvider) => void;
 };

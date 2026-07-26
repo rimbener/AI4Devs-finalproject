@@ -17,6 +17,7 @@ export const ApiKeySavedList = ({
   isSubmitting = false,
   onReplace,
   onRemove,
+  children,
 }: ApiKeySavedListProps) => {
   const { t } = useLocalization();
   const providerLabel = (p: AiProvider) => t(providerNameKeys[p]);
@@ -51,6 +52,7 @@ export const ApiKeySavedList = ({
           </View>
         );
       })}
+      {children}
     </>
   );
 };

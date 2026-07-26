@@ -5,5 +5,5 @@ export type UsePdfDocumentsResult = {
   isLoading: boolean;
   error: Error | null;
   refetch: () => void;
-  deleteDocument: (id: string) => Promise<void>;
+  deleteDocument: (id: string) => void;
 };
