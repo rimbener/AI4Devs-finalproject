@@ -38,6 +38,7 @@ const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:
 
 const sharedArgs: Omit<ApiKeyManagerProps, 'savedKeys'> = {
   providers,
+  enabledProviders: providers,
   onSave: () => {},
   onRemove: () => {},
   guidanceUrls,
@@ -93,5 +94,14 @@ export const Error: Story = {
   args: {
     savedKeys: [groqKey],
     errorMessage: "Couldn't reach the server. Try again.",
+  },
+};
+
+/** A saved provider later disabled in the catalog — stays visible, badged, Remove still enabled
+ * (@s5/@s6/@s7/@s22). */
+export const DisabledProvider: Story = {
+  args: {
+    savedKeys: [groqKey],
+    enabledProviders: providers.filter((p) => p !== 'groq'),
   },
 };

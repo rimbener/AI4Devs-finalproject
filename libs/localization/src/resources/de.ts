@@ -168,6 +168,8 @@ export const de: TranslationResource = {
         documentNotReady: 'Dieses Dokument ist noch nicht bereit. Lade dein PDF erneut hoch.',
         unauthenticated: 'Bitte melde dich an, um eine Lektion zu generieren.',
         persistFailed: 'Deine Lektion konnte nicht gespeichert werden. Versuche es erneut.',
+        providerDisabled:
+          'Dieser Anbieter ist derzeit deaktiviert. Wähle einen anderen und versuche es erneut.',
         action: {
           retry: 'Erneut versuchen',
           settings: 'Zu den Einstellungen',
@@ -293,9 +295,12 @@ export const de: TranslationResource = {
           addNew: 'Neuen Anbieter hinzufügen',
           selectProvider: 'Anbieter auswählen',
           emptyMessage: 'Keine API-Schlüssel gespeichert',
+          disabled: 'Deaktiviert',
         },
         error: {
           empty: 'Gib deinen API-Schlüssel ein.',
+          providerDisabled:
+            'Dieser Anbieter ist derzeit deaktiviert und kann keinen neuen Schlüssel annehmen.',
         },
       },
     },

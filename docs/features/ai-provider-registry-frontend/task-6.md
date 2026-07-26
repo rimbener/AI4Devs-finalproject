@@ -3,7 +3,7 @@ id: task-6
 title: Show a non-color-only "Disabled" indicator on a saved, now-disabled provider
 slice: 2
 scenarios: [s5, s6, s22]
-status: todo
+status: done
 paths:
   - libs/components/src/molecules/api-key-saved-list/api-key-saved-list.tsx
   - libs/components/src/molecules/api-key-saved-list/api-key-saved-list.types.ts

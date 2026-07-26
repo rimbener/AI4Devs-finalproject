@@ -183,6 +183,9 @@ export const en = {
         documentNotReady: "This document isn't ready yet. Please re-upload your PDF.",
         unauthenticated: 'Please sign in to generate a lesson.',
         persistFailed: 'Your lesson could not be saved. Try again.',
+        // ai-provider-registry-frontend task-9, @s12 — distinct from invalidModel: points the
+        // learner at picking a different saved provider, same family/wording pattern.
+        providerDisabled: 'That provider is currently disabled. Choose another and try again.',
         action: {
           retry: 'Try again',
           settings: 'Go to Settings',
@@ -323,6 +326,9 @@ export const en = {
           addNew: 'Add new provider',
           selectProvider: 'Select provider',
           emptyMessage: 'No API keys saved',
+          // ai-provider-registry-frontend task-6, @s5/@s22 — a saved, now-disabled provider's
+          // own text label (not a color-only cue, WCAG 1.4.1).
+          disabled: 'Disabled',
         },
         error: {
           // ai-key-management task-13 (Slice 3) — spec.md Open decision 3: the defensive
@@ -332,6 +338,9 @@ export const en = {
           // ApiKeyForm's `error` prop, mirroring AuthErrorCode's own unreachable-but-defined
           // validation_error precedent.
           empty: 'Enter your API key.',
+          // ai-provider-registry-frontend task-8, @s16 — distinct from the generic network
+          // error banner.
+          providerDisabled: "This provider is currently disabled and can't accept a new key.",
         },
       },
     },

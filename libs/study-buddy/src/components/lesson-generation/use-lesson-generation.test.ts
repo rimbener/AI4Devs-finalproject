@@ -80,6 +80,65 @@ describe('useLessonGenerationForm', () => {
     }
   });
 
+  // task-7/task-9, @s9 — a disabled provider is excluded from the generate-flow picker even when
+  // the learner holds a saved key for it (Decision 5's asymmetry vs. task-6's settings list).
+  it('excludes a disabled provider from savedProviders even when a key exists (@s9)', async () => {
+    const catalogWithDisabledGroq = aiProvidersValue().providers.map((provider) =>
+      provider.id === 'groq' ? { ...provider, enabled: false } : provider,
+    );
+    mockUseAiProviders.mockReturnValue(
+      aiProvidersValue({
+        providers: catalogWithDisabledGroq,
+        enabledProviders: catalogWithDisabledGroq.filter((provider) => provider.enabled),
+      }),
+    );
+    mockUseApiKey.mockReturnValue({
+      status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.showPickers).toBe(false));
+    expect(result.current.savedProviders).toEqual([]);
+    // hasKey reflects "holds any key at all" (useApiKey, unrelated to the catalog) — still true
+    // here, so the missing-key gate itself is unaffected by the provider being disabled.
+    expect(result.current.showMissingKeyGate).toBe(false);
+  });
+
+  // task-9, @s9 — a disabled provider is excluded from savedProviders even alongside another,
+  // still-enabled saved provider.
+  it('keeps an enabled saved provider while excluding a disabled one from the same list', async () => {
+    const catalogWithDisabledGroq = aiProvidersValue().providers.map((provider) =>
+      provider.id === 'groq' ? { ...provider, enabled: false } : provider,
+    );
+    mockUseAiProviders.mockReturnValue(
+      aiProvidersValue({
+        providers: catalogWithDisabledGroq,
+        enabledProviders: catalogWithDisabledGroq.filter((provider) => provider.enabled),
+      }),
+    );
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01' },
+          { provider: 'openai', updatedAt: '2026-01-02' },
+        ],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() =>
+      expect(result.current.savedProviders).toEqual([{ id: 'openai', name: 'OpenAI' }]),
+    );
+  });
+
   // @s16 — free-BYOK without keys exposes missing-key gate and blocks generate body.
   it('sets showMissingKeyGate and omits provider/model from the generate request', async () => {
     const { result } = await renderHook(() =>
@@ -168,25 +227,27 @@ describe('useLessonGenerationForm', () => {
 
   // @s10 — a model added to the provider's catalog entry appears with no other change.
   it('reflects a newly added model in modelOptions with no app update', async () => {
+    const catalogWithNewModel = aiProvidersValue().providers.map((provider) =>
+      provider.id === 'groq'
+        ? {
+            ...provider,
+            models: [
+              ...provider.models,
+              {
+                modelId: 'openai/gpt-oss-brand-new',
+                label: 'Brand New Model',
+                vision: false,
+                isVisionDefault: false,
+                sortOrder: 4,
+              },
+            ],
+          }
+        : provider,
+    );
     mockUseAiProviders.mockReturnValue(
       aiProvidersValue({
-        providers: aiProvidersValue().providers.map((provider) =>
-          provider.id === 'groq'
-            ? {
-                ...provider,
-                models: [
-                  ...provider.models,
-                  {
-                    modelId: 'openai/gpt-oss-brand-new',
-                    label: 'Brand New Model',
-                    vision: false,
-                    isVisionDefault: false,
-                    sortOrder: 4,
-                  },
-                ],
-              }
-            : provider,
-        ),
+        providers: catalogWithNewModel,
+        enabledProviders: catalogWithNewModel,
       }),
     );
     mockUseApiKey.mockReturnValue({

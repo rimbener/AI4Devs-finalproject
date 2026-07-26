@@ -72,6 +72,27 @@ describe('ApiKeyManagerRemove', () => {
     expect(setConfirmingRemove).toHaveBeenCalledWith(null);
   });
 
+  // task-7, @s7 — the confirm action for a disabled, keyed provider completes normally: this
+  // component carries no notion of `enabled` at all, so a disabled provider's remove is
+  // identical to any other provider's — no client-side gate blocks it.
+  it('completes the confirm action normally for a disabled, keyed provider (@s7)', async () => {
+    const onRemove = jest.fn();
+    const setConfirmingRemove = jest.fn();
+    await render(
+      <ApiKeyManagerRemove
+        confirmingRemove="groq"
+        isSubmitting={false}
+        setConfirmingRemove={setConfirmingRemove}
+        onRemove={onRemove}
+      />,
+    );
+
+    fireEvent.press(screen.getByRole('button', { name: 'Confirm removal' }));
+
+    expect(onRemove).toHaveBeenCalledWith('groq');
+    expect(onRemove).toHaveBeenCalledTimes(1);
+  });
+
   it('shows the submitting indicator instead of the confirm body while removing', async () => {
     await render(
       <ApiKeyManagerRemove

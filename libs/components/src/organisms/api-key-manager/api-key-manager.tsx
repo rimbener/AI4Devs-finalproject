@@ -19,6 +19,7 @@ import { useApiKeyManager } from './use-api-key-manager';
 export const ApiKeyManager = ({
   savedKeys,
   providers,
+  enabledProviders,
   isLoading = false,
   isSubmitting = false,
   errorMessage,
@@ -47,7 +48,12 @@ export const ApiKeyManager = ({
     openAddModal,
     openReplaceModal,
     closeModal,
-  } = useApiKeyManager({ savedKeys, providers, isSubmitting, hasError: Boolean(errorMessage) });
+  } = useApiKeyManager({
+    savedKeys,
+    enabledProviders,
+    isSubmitting,
+    hasError: Boolean(errorMessage),
+  });
 
   const handleSave = () => {
     if (formProvider) {
@@ -74,6 +80,7 @@ export const ApiKeyManager = ({
           savedKeys={savedKeys}
           providers={providers}
           savedProviders={savedProviders}
+          enabledProviders={enabledProviders}
           getSavedStatusLabel={getSavedStatusLabel}
           providerNames={providerNames}
           isSubmitting={isSubmitting}

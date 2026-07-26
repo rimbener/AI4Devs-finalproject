@@ -11,6 +11,7 @@ const EMPTY_STATUS: ApiKeyStatus = { keys: [] };
 const API_KEY_ERROR_CODES: ReadonlySet<ApiKeyErrorCode> = new Set([
   'network_error',
   'validation_error',
+  'provider_disabled',
 ]);
 
 const isApiKeyErrorShape = (cause: unknown): cause is ApiKeyError =>

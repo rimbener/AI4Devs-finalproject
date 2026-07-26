@@ -3,7 +3,7 @@ id: task-7
 title: Exclude disabled providers from both "new choice" pickers; keep Remove reachable
 slice: 2
 scenarios: [s7, s8, s9]
-status: todo
+status: done
 paths:
   - libs/components/src/organisms/api-key-manager/use-api-key-manager.ts
   - libs/components/src/organisms/api-key-manager/use-api-key-manager.test.ts

@@ -68,6 +68,49 @@ describe('ApiKeyService', () => {
       });
     });
 
+    // task-8, @s16 — a save against a disabled provider surfaces the distinct provider_disabled
+    // code out of the wire body, instead of collapsing into network_error.
+    it('normalizes a provider_disabled Edge Function rejection distinctly from network_error', async () => {
+      dao.saveApiKey.mockRejectedValue(edgeFunctionError({ code: 'provider_disabled' }));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'provider_disabled',
+      });
+    });
+
+    // task-8 — an unrecognized/malformed wire body still falls back to network_error, never a
+    // raw shape leaking through.
+    it('falls back to network_error for an unrecognized wire code', async () => {
+      dao.saveApiKey.mockRejectedValue(edgeFunctionError({ code: 'not_a_real_code' }));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+      });
+    });
+
+    it('falls back to network_error when the server error body cannot be parsed', async () => {
+      dao.saveApiKey.mockRejectedValue(
+        new FunctionsHttpError({ json: () => Promise.reject(new Error('invalid JSON')) }),
+      );
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+      });
+    });
+
+    // task-10, @s17 — a save against a provider id absent from the catalog still normalizes to
+    // network_error after task-8's widening, never provider_disabled/validation_error (mirrors
+    // backend D12's "one code, one meaning" — unknown stays byte-identical to today). The wire
+    // never distinguishes "unknown" from any other transport-shaped failure, so its response is
+    // the same `{ code: 'network_error' }` body an unrecognized provider id gets today.
+    it('normalizes an unknown-provider save rejection to network_error, never provider_disabled (@s17)', async () => {
+      dao.saveApiKey.mockRejectedValue(edgeFunctionError({ code: 'network_error' }));
+
+      await expect(
+        ApiKeyService.saveApiKey('not-a-real-provider' as AiProvider, 'sk-test'),
+      ).rejects.toMatchObject({ code: 'network_error' });
+    });
+
     // @s8 — a transport failure normalizes to network_error; a retry succeeds independently
     it('normalizes a transport failure to network_error, and a retry succeeds independently', async () => {
       dao.saveApiKey.mockRejectedValueOnce(new Error('offline'));
@@ -116,6 +159,27 @@ describe('ApiKeyService', () => {
       await expect(ApiKeyService.removeApiKey('groq')).rejects.toMatchObject({
         code: 'network_error',
         message: 'Network error',
+      });
+    });
+
+    // task-10, @s18 — a remove against a provider id absent from the catalog still normalizes to
+    // network_error, unaffected by task-8 (remove was never gated by `enabled`, backend D10).
+    it('normalizes an unknown-provider remove rejection to network_error, unaffected by task-8 (@s18)', async () => {
+      dao.removeApiKey.mockRejectedValue(edgeFunctionError({ code: 'network_error' }));
+
+      await expect(
+        ApiKeyService.removeApiKey('not-a-real-provider' as AiProvider),
+      ).rejects.toMatchObject({ code: 'network_error' });
+    });
+
+    // task-8 — a structured provider_disabled rejection is defensive-only here: backend D10 never
+    // gates remove by `enabled`, but the service must still normalize the code correctly if ever
+    // returned, rather than crashing or leaking a raw shape.
+    it('normalizes a provider_disabled Edge Function rejection for remove', async () => {
+      dao.removeApiKey.mockRejectedValue(edgeFunctionError({ code: 'provider_disabled' }));
+
+      await expect(ApiKeyService.removeApiKey('groq')).rejects.toMatchObject({
+        code: 'provider_disabled',
       });
     });
   });

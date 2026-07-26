@@ -150,6 +150,17 @@ describe('ApiKeySettingsScreen', () => {
     expect(screen.getByText('settings.apiKey.error.empty')).toBeTruthy();
   });
 
+  // task-8, @s16 — provider_disabled maps to its own distinct message, not the network banner.
+  it('maps a provider_disabled error to its own message, distinct from network_error', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ error: 'provider_disabled' }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.getByText('settings.apiKey.error.providerDisabled')).toBeTruthy();
+    expect(screen.queryByText('error.network')).toBeNull();
+  });
+
   // @s8 — confirming removal calls useApiKey().removeApiKey with the provider.
   it('calls removeApiKey with the provider when the removal is confirmed', async () => {
     const removeApiKey = jest.fn().mockResolvedValue(undefined);
@@ -170,6 +181,42 @@ describe('ApiKeySettingsScreen', () => {
     });
 
     expect(removeApiKey).toHaveBeenCalledWith('groq');
+  });
+
+  // task-6, @s5/@s6 — a saved provider later disabled in the catalog stays in the saved-keys
+  // list, badged, with its key untouched.
+  it('shows the Disabled indicator on a saved provider absent from enabledProviders', async () => {
+    mockUseAiProviders.mockReturnValue(
+      aiProvidersValue({
+        enabledProviders: aiProvidersValue().providers.filter((p) => p.id !== 'groq'),
+      }),
+    );
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.getByText('settings.apiKey.manager.disabled')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'settings.apiKey.remove Groq' })).toBeTruthy();
+  });
+
+  // task-7, @s8 — a disabled, unsaved provider is excluded from the add-picker.
+  it('excludes a disabled, unsaved provider from the add modal radio group', async () => {
+    mockUseAiProviders.mockReturnValue(
+      aiProvidersValue({
+        enabledProviders: aiProvidersValue().providers.filter((p) => p.id !== 'xai'),
+      }),
+    );
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
+    });
+
+    expect(screen.queryByRole('radio', { name: 'xAI' })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Groq' })).toBeTruthy();
   });
 
   // @s1/@s3 (task-3) — every catalog provider's plain display name is offered, in catalog order.

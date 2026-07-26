@@ -236,6 +236,23 @@ describe('useApiKey', () => {
     expect(result.current.status).toEqual(savedStatus);
   });
 
+  // task-8, @s16 — a provider_disabled rejection is recognized distinctly from network_error,
+  // not swallowed by the hook's own default fallback.
+  it('sets error to provider_disabled when saveApiKey rejects with the recognized code', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    service.saveApiKey.mockRejectedValue(
+      Object.assign(new Error('provider disabled'), { code: 'provider_disabled' }),
+    );
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test');
+    });
+
+    await waitFor(() => expect(result.current.error).toBe('provider_disabled'));
+  });
+
   // @s46 — an unrecognized failure normalizes to the network error code.
   it('falls back to network_error when the rejection carries no recognized code', async () => {
     mockUseSession.mockReturnValue(authenticatedSession);

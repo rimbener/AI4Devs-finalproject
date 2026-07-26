@@ -121,7 +121,8 @@ describe('LessonGenerationService', () => {
 
   // task-13, @s15 — every DAO-thrown cause is normalized into the typed GenerationErrorCode
   // union, mirroring PdfExtractionService.normalizeExtractionError; the UI never branches on a
-  // raw Supabase/function error.
+  // raw Supabase/function error. `provider_disabled` (task-9, @s12) added to the same table —
+  // the 422 wire code for a BYOK request naming a currently-disabled provider.
   describe('server error normalization (task-13)', () => {
     it.each([
       ['invalid_key'],
@@ -133,12 +134,27 @@ describe('LessonGenerationService', () => {
       ['missing_key'],
       ['platform_key_unavailable'],
       ['persist_failed'],
+      ['provider_disabled'],
     ] as const)('normalizes a %s server error', async (errorCode) => {
       dao.generateLesson.mockRejectedValue(httpErrorWithBody({ errorCode }));
 
       await expect(
         LessonGenerationService.generate({ documentId: 'doc-1', composition: 'both' }, 'user-1'),
       ).rejects.toMatchObject({ code: errorCode });
+    });
+
+    // task-10, @s13 — an unknown-provider 422 (provider id absent from the catalog) still maps
+    // to invalid_model after task-9's provider_disabled widening — the two 422 codes must never
+    // be confused for one another.
+    it('maps an unknown-provider 422 to invalid_model, never provider_disabled (@s13)', async () => {
+      dao.generateLesson.mockRejectedValue(httpErrorWithBody({ errorCode: 'invalid_model' }));
+
+      await expect(
+        LessonGenerationService.generate(
+          { documentId: 'doc-1', composition: 'both', provider: 'groq', model: 'unknown-model' },
+          'user-1',
+        ),
+      ).rejects.toMatchObject({ code: 'invalid_model' });
     });
 
     // Defensive — a missing/unrecognized errorCode in the server body never leaks a raw shape;

@@ -3,7 +3,7 @@ id: task-9
 title: Widen GenerationErrorCode with provider_disabled (422), keep adjacent codes unchanged
 slice: 2
 scenarios: [s12, s14, s15]
-status: todo
+status: done
 paths:
   - libs/types/src/lesson-generation.ts
   - libs/types/src/lesson-generation.test.ts

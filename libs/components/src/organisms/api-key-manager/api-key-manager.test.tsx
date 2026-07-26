@@ -27,6 +27,7 @@ const tMap: Record<string, string> = {
   'settings.apiKey.manager.addNew': 'Add new provider',
   'settings.apiKey.manager.selectProvider': 'Select provider',
   'settings.apiKey.manager.emptyMessage': 'No API keys saved',
+  'settings.apiKey.manager.disabled': 'Disabled',
   'settings.apiKey.provider.groq': 'Groq',
   'settings.apiKey.provider.openai': 'OpenAI',
   'settings.apiKey.provider.anthropic': 'Anthropic',
@@ -74,6 +75,7 @@ const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:
 const defaultProps: ApiKeyManagerProps = {
   savedKeys: [],
   providers,
+  enabledProviders: providers,
   onSave: jest.fn(),
   onRemove: jest.fn(),
   guidanceUrls,
@@ -322,6 +324,35 @@ describe('ApiKeyManager', () => {
 
     expect(screen.queryByRole('radio', { name: 'Groq' })).toBeNull();
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
+  });
+
+  // task-7, @s8 — a disabled, unsaved provider is excluded from the add modal too, same as an
+  // already-saved one.
+  it('excludes a disabled, unsaved provider from the add modal radio group (@s8)', async () => {
+    await render(
+      <ApiKeyManager {...defaultProps} enabledProviders={providers.filter((p) => p !== 'xai')} />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
+
+    expect(screen.queryByRole('radio', { name: 'xAI' })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Groq' })).toBeTruthy();
+  });
+
+  // task-6, @s5/@s6/@s22 — a saved, now-disabled provider stays in the list, badged.
+  it('shows the Disabled indicator on a saved provider absent from enabledProviders', async () => {
+    await render(
+      <ApiKeyManager
+        {...defaultProps}
+        savedKeys={[groqKey]}
+        enabledProviders={providers.filter((p) => p !== 'groq')}
+      />,
+    );
+
+    expect(screen.getByText('Disabled')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove Groq' })).toBeTruthy();
   });
 
   it('shows the guidance link after selecting a provider with a configured guidanceUrl', async () => {

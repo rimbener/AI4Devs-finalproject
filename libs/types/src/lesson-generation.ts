@@ -55,6 +55,11 @@ export const GENERATION_PROGRESS_STEPS = [
  * The closed set of failure codes every generation failure — server result or client transport —
  * normalizes to (spec.md's Error contract table), so the UI never branches on a raw Supabase/
  * function/provider error (mirrors `PdfExtractionErrorCode`).
+ *
+ * `provider_disabled` (ai-provider-registry-frontend task-9, mirrors backend D13): the
+ * `generate-lesson` Edge Function's distinct 422 wire code for a free-BYOK request naming a
+ * provider that is currently disabled in the catalog — same HTTP status as `invalid_model`, but a
+ * named, distinct condition rather than folding into it.
  */
 export type GenerationErrorCode =
   | 'missing_key'
@@ -67,7 +72,8 @@ export type GenerationErrorCode =
   | 'document_not_ready'
   | 'network_error'
   | 'unauthenticated'
-  | 'persist_failed';
+  | 'persist_failed'
+  | 'provider_disabled';
 
 /** The minimal shape a normalized generation failure carries upward from
  * `LessonGenerationService` (mirrors `PdfExtractionError`/`ApiKeyError`). */

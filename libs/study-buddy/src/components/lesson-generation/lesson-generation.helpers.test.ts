@@ -119,6 +119,7 @@ describe('toPanelState', () => {
 describe('GENERATION_ERROR_KEYS (task-13)', () => {
   // @s15/@s18 — every GenerationErrorCode maps to its own i18n message key (spec.md's Error
   // contract table names these keys verbatim), so a missing mapping fails to compile.
+  // `provider_disabled` (task-9, @s12) added, distinct from `invalid_model`'s key.
   it('maps every GenerationErrorCode to its spec.md i18n key', () => {
     expect(GENERATION_ERROR_KEYS).toEqual({
       missing_key: 'generation.error.missingKey',
@@ -132,7 +133,9 @@ describe('GENERATION_ERROR_KEYS (task-13)', () => {
       network_error: 'error.network',
       unauthenticated: 'generation.error.unauthenticated',
       persist_failed: 'generation.error.persistFailed',
+      provider_disabled: 'generation.error.providerDisabled',
     });
+    expect(GENERATION_ERROR_KEYS.provider_disabled).not.toBe(GENERATION_ERROR_KEYS.invalid_model);
   });
 });
 
@@ -151,7 +154,17 @@ describe('GENERATION_ERROR_RECOVERY (task-13)', () => {
       network_error: 'retry',
       unauthenticated: 'signIn',
       persist_failed: 'retry',
+      provider_disabled: 'none',
     });
+  });
+
+  // task-9, Decision 9 — same "none" recovery family as invalid_model, since there's nothing to
+  // retry, just a different saved provider to pick.
+  it('maps provider_disabled to no recovery action, same family as invalid_model', () => {
+    expect(GENERATION_ERROR_RECOVERY.provider_disabled).toBe('none');
+    expect(GENERATION_ERROR_RECOVERY.provider_disabled).toBe(
+      GENERATION_ERROR_RECOVERY.invalid_model,
+    );
   });
 
   // @s11/@s19 — platform failures are retryable server errors, never Settings/BYOK actions.

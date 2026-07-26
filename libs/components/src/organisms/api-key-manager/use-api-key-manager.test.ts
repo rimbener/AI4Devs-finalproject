@@ -16,7 +16,9 @@ const providers: readonly AiProvider[] = [
 
 describe('useApiKeyManager', () => {
   it('starts with modal closed, no form provider, and save disabled', async () => {
-    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [], providers }));
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [], enabledProviders: providers }),
+    );
 
     expect(result.current?.modalOpen).toBe(false);
     expect(result.current?.formProvider).toBeNull();
@@ -29,7 +31,7 @@ describe('useApiKeyManager', () => {
 
   it('derives unsaved providers from savedKeys', async () => {
     const { result } = await renderHook(() =>
-      useApiKeyManager({ savedKeys: [groqKey], providers }),
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers }),
     );
 
     expect(result.current?.savedProviders.has('groq')).toBe(true);
@@ -37,30 +39,59 @@ describe('useApiKeyManager', () => {
     expect(result.current?.unsavedProviders).toContain('openai');
   });
 
-  // Decision 4 — unsavedProviders iterates the passed-in catalog order, not a hardcoded registry.
-  it('orders unsavedProviders by the passed-in providers list, not alphabetically', async () => {
+  // Decision 4 — unsavedProviders iterates the passed-in enabledProviders order, not a
+  // hardcoded registry (task-7 moved this from `providers` to `enabledProviders`).
+  it('orders unsavedProviders by the passed-in enabledProviders list, not alphabetically', async () => {
     const reordered: readonly AiProvider[] = ['xai', 'groq', 'deepseek'];
 
     const { result } = await renderHook(() =>
-      useApiKeyManager({ savedKeys: [], providers: reordered }),
+      useApiKeyManager({ savedKeys: [], enabledProviders: reordered }),
     );
 
     expect(result.current?.unsavedProviders).toEqual(['xai', 'groq', 'deepseek']);
   });
 
   // Reordering the catalog reorders unsavedProviders with no other code change (@s20 analog).
-  it('recomputes unsavedProviders order when the providers list itself reorders', async () => {
+  it('recomputes unsavedProviders order when the enabledProviders list itself reorders', async () => {
     const { result, rerender } = await renderHook(
-      ({ providers: p }: { providers: readonly AiProvider[] }) =>
-        useApiKeyManager({ savedKeys: [], providers: p }),
-      { initialProps: { providers } },
+      ({ enabledProviders }: { enabledProviders: readonly AiProvider[] }) =>
+        useApiKeyManager({ savedKeys: [], enabledProviders }),
+      { initialProps: { enabledProviders: providers } },
     );
 
     expect(result.current?.unsavedProviders[0]).toBe('groq');
 
-    await rerender({ providers: ['deepseek', 'groq', 'openai', 'anthropic', 'google', 'xai'] });
+    await rerender({
+      enabledProviders: ['deepseek', 'groq', 'openai', 'anthropic', 'google', 'xai'],
+    });
 
     expect(result.current?.unsavedProviders[0]).toBe('deepseek');
+  });
+
+  // task-7, @s8 — a disabled, unsaved provider never appears in unsavedProviders (the add
+  // picker's options), because it's already absent from the passed-in enabledProviders — not
+  // because this hook re-derives an `enabled` check of its own.
+  it('excludes a disabled, unsaved provider from unsavedProviders (@s8)', async () => {
+    const enabledProviders = providers.filter((p) => p !== 'openai');
+
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [], enabledProviders }),
+    );
+
+    expect(result.current?.unsavedProviders).not.toContain('openai');
+    expect(result.current?.unsavedProviders).toContain('groq');
+  });
+
+  // task-7 — the saved-list's own `savedProviders` (task-6's row-membership signal) is
+  // unaffected by enabledProviders — only unsavedProviders (the add-picker) is filtered.
+  it('leaves savedProviders unaffected by enabledProviders', async () => {
+    const enabledProviders = providers.filter((p) => p !== 'groq');
+
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders }),
+    );
+
+    expect(result.current?.savedProviders.has('groq')).toBe(true);
   });
 
   it('marks allSaved when every provider has a saved key', async () => {
@@ -73,14 +104,18 @@ describe('useApiKeyManager', () => {
       { provider: 'deepseek', updatedAt: '2026-01-01T00:00:00.000Z' },
     ];
 
-    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: allKeys, providers }));
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: allKeys, enabledProviders: providers }),
+    );
 
     expect(result.current?.allSaved).toBe(true);
     expect(result.current?.unsavedProviders).toHaveLength(0);
   });
 
   it('enables save once a non-blank key is entered', async () => {
-    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [], providers }));
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [], enabledProviders: providers }),
+    );
 
     await act(async () => {
       result.current?.setFormProvider('groq');
@@ -94,7 +129,7 @@ describe('useApiKeyManager', () => {
 
   it('keeps save disabled while submitting', async () => {
     const { result } = await renderHook(() =>
-      useApiKeyManager({ savedKeys: [], providers, isSubmitting: true }),
+      useApiKeyManager({ savedKeys: [], enabledProviders: providers, isSubmitting: true }),
     );
 
     await act(async () => {
@@ -109,7 +144,7 @@ describe('useApiKeyManager', () => {
 
   it('tracks confirmingRemove via setConfirmingRemove', async () => {
     const { result } = await renderHook(() =>
-      useApiKeyManager({ savedKeys: [groqKey], providers }),
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers }),
     );
 
     await act(async () => {
@@ -130,7 +165,7 @@ describe('useApiKeyManager', () => {
     };
     const { result, rerender } = await renderHook(
       ({ savedKeys }: { savedKeys: SavedProviderKey[] }) =>
-        useApiKeyManager({ savedKeys, providers }),
+        useApiKeyManager({ savedKeys, enabledProviders: providers }),
       { initialProps: { savedKeys: [groqKey] } },
     );
 
@@ -144,7 +179,9 @@ describe('useApiKeyManager', () => {
   });
 
   it('keeps save disabled for whitespace-only keys', async () => {
-    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [], providers }));
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [], enabledProviders: providers }),
+    );
 
     await act(async () => {
       result.current?.setFormProvider('groq');
@@ -158,7 +195,7 @@ describe('useApiKeyManager', () => {
 
   it('openAddModal opens the modal in add mode with a cleared form', async () => {
     const { result } = await renderHook(() =>
-      useApiKeyManager({ savedKeys: [groqKey], providers }),
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers }),
     );
 
     await act(async () => {
@@ -179,7 +216,7 @@ describe('useApiKeyManager', () => {
 
   it('openReplaceModal opens the modal with the provider fixed', async () => {
     const { result } = await renderHook(() =>
-      useApiKeyManager({ savedKeys: [groqKey], providers }),
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers }),
     );
 
     await act(async () => {
@@ -193,7 +230,9 @@ describe('useApiKeyManager', () => {
   });
 
   it('closeModal clears modal state', async () => {
-    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [], providers }));
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [], enabledProviders: providers }),
+    );
 
     await act(async () => {
       result.current?.openAddModal();
@@ -210,7 +249,9 @@ describe('useApiKeyManager', () => {
   });
 
   it('selectProvider sets the provider and clears a draft key', async () => {
-    const { result } = await renderHook(() => useApiKeyManager({ savedKeys: [], providers }));
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [], enabledProviders: providers }),
+    );
 
     await act(async () => {
       result.current?.openAddModal();
@@ -229,7 +270,7 @@ describe('useApiKeyManager', () => {
   it('keeps dialogIsSubmitting true and closes the modal when a submit succeeds', async () => {
     const { result, rerender } = await renderHook(
       ({ savedKeys, isSubmitting }: { savedKeys: SavedProviderKey[]; isSubmitting: boolean }) =>
-        useApiKeyManager({ savedKeys, providers, isSubmitting }),
+        useApiKeyManager({ savedKeys, enabledProviders: providers, isSubmitting }),
       { initialProps: { savedKeys: [], isSubmitting: false } },
     );
 
@@ -249,7 +290,7 @@ describe('useApiKeyManager', () => {
   it('drops dialogIsSubmitting and keeps the modal open when a submit fails', async () => {
     const { result, rerender } = await renderHook(
       ({ isSubmitting, hasError }: { isSubmitting: boolean; hasError: boolean }) =>
-        useApiKeyManager({ savedKeys: [], providers, isSubmitting, hasError }),
+        useApiKeyManager({ savedKeys: [], enabledProviders: providers, isSubmitting, hasError }),
       { initialProps: { isSubmitting: false, hasError: false } },
     );
 

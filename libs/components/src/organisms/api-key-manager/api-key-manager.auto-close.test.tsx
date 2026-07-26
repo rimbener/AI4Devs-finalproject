@@ -41,6 +41,7 @@ const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:
 const defaultProps: ApiKeyManagerProps = {
   savedKeys: [],
   providers,
+  enabledProviders: providers,
   onSave: jest.fn(),
   onRemove: jest.fn(),
   guidanceUrls,

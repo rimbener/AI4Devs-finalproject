@@ -11,6 +11,8 @@ import { StyleSheet } from 'react-native-unistyles';
 const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
   network_error: 'error.network',
   validation_error: 'settings.apiKey.error.empty',
+  // task-8, @s16 — a save against a disabled provider gets distinct copy from network_error.
+  provider_disabled: 'settings.apiKey.error.providerDisabled',
 };
 
 /**
@@ -21,7 +23,7 @@ const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
  * both the catalog and the key status settle (@s11) — no new loading UI.
  */
 export const ApiKeySettingsScreen = () => {
-  const { providers, isLoading: isCatalogLoading } = useAiProviders();
+  const { providers, enabledProviders, isLoading: isCatalogLoading } = useAiProviders();
   const {
     status,
     isLoading: isKeyLoading,
@@ -33,6 +35,11 @@ export const ApiKeySettingsScreen = () => {
   const { t, locale } = useLocalization();
 
   const providerIds = providers.map((provider) => provider.id);
+  // task-6/task-7, Decision 5/12 — the catalog's enabled subset, threaded to ApiKeyManager as
+  // plain ids (mirrors providerIds above): drives the saved-list's "Disabled" indicator (task-6)
+  // and the add-picker's unsavedProviders filter (task-7), never re-derived from `providers`
+  // downstream.
+  const enabledProviderIds = enabledProviders.map((provider) => provider.id);
   const providerNames = Object.fromEntries(
     providers.map((provider) => [provider.id, provider.name]),
   ) as Record<AiProvider, string>;
@@ -59,6 +66,7 @@ export const ApiKeySettingsScreen = () => {
       <ApiKeyManager
         savedKeys={status.keys}
         providers={providerIds}
+        enabledProviders={enabledProviderIds}
         isLoading={isCatalogLoading || isKeyLoading}
         isSubmitting={isSubmitting}
         errorMessage={errorMessage}

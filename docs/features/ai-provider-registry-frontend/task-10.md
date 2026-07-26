@@ -3,7 +3,7 @@ id: task-10
 title: Prove the "unknown provider" paths are unaffected by both widenings
 slice: 2
 scenarios: [s13, s17, s18]
-status: todo
+status: done
 paths:
   - libs/supabase-services/src/services/lesson-generation.service.test.ts
   - libs/supabase-services/src/services/api-key.service.test.ts

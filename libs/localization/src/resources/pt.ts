@@ -164,6 +164,8 @@ export const pt: TranslationResource = {
         documentNotReady: 'Este documento ainda não está pronto. Reenvie seu PDF.',
         unauthenticated: 'Entre na sua conta para gerar uma lição.',
         persistFailed: 'Não foi possível salvar sua lição. Tente novamente.',
+        providerDisabled:
+          'Esse provedor está desativado no momento. Escolha outro e tente novamente.',
         action: {
           retry: 'Tentar novamente',
           settings: 'Ir para Configurações',
@@ -288,9 +290,12 @@ export const pt: TranslationResource = {
           addNew: 'Adicionar novo provedor',
           selectProvider: 'Selecionar provedor',
           emptyMessage: 'Nenhuma chave de API salva',
+          disabled: 'Desativado',
         },
         error: {
           empty: 'Informe sua chave de API.',
+          providerDisabled:
+            'Este provedor está desativado no momento e não pode receber uma nova chave.',
         },
       },
     },

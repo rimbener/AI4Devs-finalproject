@@ -165,6 +165,8 @@ export const es: TranslationResource = {
         documentNotReady: 'Este documento aún no está listo. Vuelve a subir tu PDF.',
         unauthenticated: 'Inicia sesión para generar una lección.',
         persistFailed: 'No se pudo guardar tu lección. Vuelve a intentarlo.',
+        providerDisabled:
+          'Ese proveedor está deshabilitado actualmente. Elige otro e inténtalo de nuevo.',
         action: {
           retry: 'Volver a intentar',
           settings: 'Ir a Ajustes',
@@ -289,9 +291,12 @@ export const es: TranslationResource = {
           addNew: 'Agregar nuevo proveedor',
           selectProvider: 'Seleccionar proveedor',
           emptyMessage: 'No hay claves de API guardadas',
+          disabled: 'Deshabilitado',
         },
         error: {
           empty: 'Ingresa tu clave de API.',
+          providerDisabled:
+            'Este proveedor está deshabilitado actualmente y no puede recibir una nueva clave.',
         },
       },
     },

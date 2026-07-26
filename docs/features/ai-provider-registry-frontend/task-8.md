@@ -3,7 +3,7 @@ id: task-8
 title: Widen ApiKeyErrorCode with provider_disabled and stop swallowing it to network_error
 slice: 2
 scenarios: [s16]
-status: todo
+status: done
 paths:
   - libs/types/src/api-key-error.ts
   - libs/types/src/api-key-error.test.ts

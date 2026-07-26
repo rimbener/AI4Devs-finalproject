@@ -77,6 +77,8 @@ export const GENERATION_ERROR_KEYS: Record<GenerationErrorCode, string> = {
   network_error: 'error.network',
   unauthenticated: 'generation.error.unauthenticated',
   persist_failed: 'generation.error.persistFailed',
+  // task-9, @s12 — a disabled provider gets its own copy, distinct from invalid_model's.
+  provider_disabled: 'generation.error.providerDisabled',
 };
 
 /** The recovery-affordance category per code (task-13.md's "Recovery per code" table): `'none'`
@@ -96,6 +98,9 @@ export const GENERATION_ERROR_RECOVERY: Record<GenerationErrorCode, GenerationEr
   network_error: 'retry',
   unauthenticated: 'signIn',
   persist_failed: 'retry',
+  // Decision 9 — same family as invalid_model: nothing to retry, just a different provider to
+  // pick, so no action button.
+  provider_disabled: 'none',
 };
 
 /** The recovery action's `t()` label key per actionable category (`'none'` has no button, so no

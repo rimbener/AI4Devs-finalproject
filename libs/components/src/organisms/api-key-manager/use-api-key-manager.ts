@@ -11,9 +11,14 @@ export type { ApiKeyFormMode };
 
 type UseApiKeyManagerArgs = {
   savedKeys: SavedProviderKey[];
-  /** Ordered provider ids driving unsavedProviders' order (Decision 4 — no client re-sort;
-   * the wiring layer passes the catalog's already-sorted order through unchanged). */
-  providers: readonly AiProvider[];
+  /** Providers currently enabled in the catalog (task-7, Decision 5/12) — threaded in from the
+   * wiring layer's `useAiProviders().enabledProviders`; this hook never re-derives an `enabled`
+   * check itself. Drives `unsavedProviders`' order and membership: intersected with "not already
+   * saved" only, so a disabled, unsaved provider is excluded because it's already absent here,
+   * never via a second condition. The saved-list's own row order/membership (task-6) comes from
+   * `ApiKeyManager`'s separate, unfiltered `providers` prop, passed straight to
+   * `ApiKeySavedList` — this hook has no notion of the full catalog list. */
+  enabledProviders: readonly AiProvider[];
   isSubmitting?: boolean;
   hasError?: boolean;
 };
@@ -24,7 +29,7 @@ type UseApiKeyManagerArgs = {
  */
 export const useApiKeyManager = ({
   savedKeys,
-  providers,
+  enabledProviders,
   isSubmitting = false,
   hasError = false,
 }: UseApiKeyManagerArgs) => {
@@ -50,9 +55,12 @@ export const useApiKeyManager = ({
   }
 
   const savedProviders = useMemo(() => new Set(savedKeys.map((k) => k.provider)), [savedKeys]);
+  // task-7, @s8 — intersects the given enabledProviders with "not already saved" only; a
+  // disabled, unsaved provider is excluded because it's already absent from enabledProviders,
+  // never via a `p.enabled` check re-derived here.
   const unsavedProviders = useMemo(
-    () => providers.filter((p) => !savedProviders.has(p)),
-    [providers, savedProviders],
+    () => enabledProviders.filter((p) => !savedProviders.has(p)),
+    [enabledProviders, savedProviders],
   );
   const allSaved = unsavedProviders.length === 0;
   const isEmpty = savedKeys.length === 0;

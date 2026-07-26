@@ -34,6 +34,7 @@ const meta = {
     savedKeys: [groqKey],
     providers,
     savedProviders: new Set<AiProvider>(['groq']),
+    enabledProviders: providers,
     getSavedStatusLabel,
     providerNames,
     isSubmitting: false,
@@ -60,5 +61,12 @@ export const Multiple: Story = {
 export const Submitting: Story = {
   args: {
     isSubmitting: true,
+  },
+};
+
+/** A saved provider later disabled in the catalog — stays visible, badged (@s5/@s6/@s22). */
+export const DisabledProvider: Story = {
+  args: {
+    enabledProviders: providers.filter((p) => p !== 'groq'),
   },
 };

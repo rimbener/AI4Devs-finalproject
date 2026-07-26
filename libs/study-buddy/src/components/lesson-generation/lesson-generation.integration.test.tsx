@@ -12,28 +12,31 @@ jest.mock('@helsoft/hooks', () => ({
   // integration test's docstring scope is LessonGeneration -> useLessonGeneration ->
   // LessonGenerationService -> LessonGenerationDao; the provider catalog is an orthogonal
   // concern already covered by use-ai-providers's own hook/service/DAO tests.
-  useAiProviders: jest.fn(() => ({
-    providers: [
-      {
-        id: 'groq',
-        name: 'Groq',
-        guidanceUrl: 'https://console.groq.com/keys',
-        enabled: true,
-        sortOrder: 1,
-        models: [
-          {
-            modelId: 'openai/gpt-oss-20b',
-            label: 'GPT OSS 20B',
-            vision: false,
-            isVisionDefault: false,
-            sortOrder: 1,
-          },
-        ],
-      },
-    ],
-    enabledProviders: [],
-    isLoading: false,
-  })),
+  useAiProviders: jest.fn(() => {
+    const groqEntry = {
+      id: 'groq',
+      name: 'Groq',
+      guidanceUrl: 'https://console.groq.com/keys',
+      enabled: true,
+      sortOrder: 1,
+      models: [
+        {
+          modelId: 'openai/gpt-oss-20b',
+          label: 'GPT OSS 20B',
+          vision: false,
+          isVisionDefault: false,
+          sortOrder: 1,
+        },
+      ],
+    };
+    return {
+      providers: [groqEntry],
+      // task-9, @s9 — useLessonGenerationForm now reads enabledProviders (not providers), so
+      // this mock must carry the same enabled groq entry there too.
+      enabledProviders: [groqEntry],
+      isLoading: false,
+    };
+  }),
   useApiKey: jest.fn(() => ({
     status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
     isLoading: false,

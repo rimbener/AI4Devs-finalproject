@@ -1,94 +1,70 @@
-# TDD log — ai-provider-registry-frontend, Slice 1 (task-1..5)
+# TDD log — ai-provider-registry-frontend
 
-## @s → test map
+## @s → test map (Slice 1, task-1..5)
 | @s | Test |
 |---|---|
-| s1 | `api-key-settings-screen.test.tsx` "renders the masked saved-status..." / "lists every catalog provider display name..." |
-| s2 | `api-key-settings-screen.test.tsx` "opens the groq guidance URL from the catalog..." |
-| s3 | `api-key-settings-screen.test.tsx` provider order tests; `api-key-saved-list.test.tsx` "renders rows in the order of the passed-in providers prop..."; `use-api-key-manager.test.ts` order tests |
-| s4 | `use-lesson-generation.test.ts` "exposes modelOptions from the selected provider catalog entry"; `lesson-generation.helpers.test.ts` `resolveGenerationSelection` |
-| s10 | `use-lesson-generation.test.ts` "reflects a newly added model in modelOptions with no app update" |
-| s11 | `api-key-settings-screen.test.tsx` "shows the loading placeholder while useAiProviders().isLoading is true" |
-| s19 | `use-ai-providers.test.ts` "passes the pinned six-provider/thirteen-model fixture..."; `api-key-settings-screen.test.tsx` "shows the six catalog providers with unchanged names and guidance links..."; `use-lesson-generation.test.ts` "matches AI_PROVIDERS/AI_MODEL_REGISTRY order and content..." |
-| (foundation, no @s) | `ai-provider.test.ts`, `ai-providers.dao.test.ts`, `ai-providers.service.test.ts`, `use-ai-providers.test.ts` |
+| s1 | `api-key-settings-screen.test.tsx` masked saved-status / catalog provider names |
+| s2 | `api-key-settings-screen.test.tsx` groq guidance URL from catalog |
+| s3 | `api-key-settings-screen.test.tsx`/`api-key-saved-list.test.tsx`/`use-api-key-manager.test.ts` order |
+| s4 | `use-lesson-generation.test.ts` modelOptions; `lesson-generation.helpers.test.ts` `resolveGenerationSelection` |
+| s10 | `use-lesson-generation.test.ts` newly added model reflected |
+| s11 | `api-key-settings-screen.test.tsx` loading placeholder |
+| s19 | `use-ai-providers.test.ts` / `api-key-settings-screen.test.tsx` / `use-lesson-generation.test.ts` fixture-pinned regression |
 
-## Cycles
-- **task-1** `ai-provider.ts`: added `AiProviderCatalogEntry`/`AiProviderCatalogModel`; removed named
-  `AiModelEntry`/`AiProviderModels` types (kept `AI_MODEL_REGISTRY`'s constant with an equivalent
-  inline type, per task-11 scope). Test: `ai-provider.test.ts` shape-lock test — green.
-- **task-1** `AiProvidersDao.getCatalog`: RED (`ai-providers.dao.test.ts`, module missing) → GREEN
-  (single `select('*, ai_provider_models(*)')`, no `.order()`, raw passthrough) → no refactor needed.
-- **task-1** `AiProvidersService.getCatalog`/`getEnabledCatalog`: RED (`ai-providers.service.test.ts`)
-  → GREEN (camelCase mapping + two-level sort_order sort; catch-to-`[]`) → no refactor needed.
-- **task-2** `useAiProviders`: RED (`use-ai-providers.test.ts`, module missing) → GREEN (`useQuery`
-  `staleTime: Infinity`, `useSessionGate().deriveIsLoading`, `enabledProviders` via `useMemo`) →
-  no refactor needed.
-- **task-3** `useApiKeyManager`: RED (new `providers` param + order tests) → GREEN (`providers`
-  replaces `AI_PROVIDERS` for `unsavedProviders`) — impl-first `.tsx` cascade: `api-key-manager.tsx`,
-  `api-key-form-dialog.tsx`, `api-key-saved-list.tsx` updated to take `providers`/`providerNames`
-  (renamed from `providerNameKeys`, plain strings, no more `t()`); stories + unit tests updated to
-  match (all green, e2e re-run green — see below).
-- **task-3** `ApiKeySettingsScreen`: impl-first — wired `useAiProviders()` alongside `useApiKey()`;
-  builds `providerNames`/`guidanceUrls` from the catalog; `isLoading` ORs both hooks. Unit tests
-  updated (plain display names replace i18n-key assertions) — green.
-- **task-4** `lesson-generation.helpers.ts` (`isAiProvider`, `isCuratedModel`,
-  `resolveGenerationSelection`): RED (`lesson-generation.helpers.test.ts`, 9 failing against old
-  `AI_MODEL_REGISTRY`/`AI_PROVIDERS`-backed impl) → GREEN (catalog-entry-based guards/fallback) →
-  no refactor needed.
-- **task-4** `useLessonGenerationForm`: RED (`use-lesson-generation.test.ts`, 13 failing) → GREEN
-  (`useAiProviders()` feeds `savedProviderEntries`/`savedProviders`/`modelOptions`, all
-  catalog-ordered) → no refactor needed.
-- **task-4** `lesson-generation.tsx`/`provider-selector.tsx`/`model-selector.tsx`: impl-first —
-  `savedProviders: {id,name}[]`, `modelOptions: {id,label}[]` (renamed from `labelKey`), plain
-  strings, no `t()` for provider/model names; `isAiProvider` call site resourced against
-  `savedProviders.map(p=>p.id)`. Cascaded to `lesson-generation-panel.types.ts`,
-  `lesson-generation-panel.test.tsx`/`.stories.tsx`, `lesson-generation-panel-controls.test.tsx`.
-- Shared fixture `libs/study-buddy/src/test-utils/ai-provider-test-factories.ts` (6-provider/13-model
-  catalog pinned to today's exact `AI_MODEL_REGISTRY`/`AI_PROVIDERS` values) reused by
-  `api-key-settings-screen.test.tsx`, `use-lesson-generation.test.ts`, `lesson-generation.test.tsx`.
-- Storybook mock `.storybook/mocks/hooks.ts` (study-buddy): added `useAiProviders`/
-  `configureAiProvidersMock` stand-in (same 6-provider default) so `ApiKeySettingsScreen`'s story
-  keeps working through the alias seam.
-- **task-5** `use-ai-providers.fixture.ts`: RED (`use-ai-providers.test.ts` new `@s19` case, module
-  missing) → GREEN (6-provider/13-model `AI_PROVIDER_CATALOG_FIXTURE`, pinned verbatim from the
-  backend's `gherkin-scenarios.md` `@s5`; barrel-exported from `@helsoft/hooks`) → no refactor.
-  Corrects 2 label typos latent in task-3/4's `ai-provider-test-factories.ts` copy (`GPT-OSS`
-  hyphen, `DeepSeek V4` capitalization) — that copy is left as-is (out of `paths`); task-9/12/13
-  retire it for this fixture.
-- **task-5** re-assertion: `use-ai-providers.test.ts`, `api-key-settings-screen.test.tsx`,
-  `use-lesson-generation.test.ts` each gained one `@s19` test off `AI_PROVIDER_CATALOG_FIXTURE`,
-  diffing names/guidance against `API_KEY_SETTINGS_GUIDANCE_URLS` and `modelOptions`/
-  `savedProviders` against `AI_PROVIDERS`/`AI_MODEL_REGISTRY` — all green. (Placed first in its
-  `describe`; appended-last collided with a pre-existing unmount test's dangling `act()` — a
-  `@testing-library/react-native` ordering artifact, not a code bug.)
-- **task-5** `.storybook/mocks/hooks.ts`: swapped inline partial `DEFAULT_AI_PROVIDER_CATALOG` for
-  the fixture via the existing relative-import seam (mirrors `useBreakpoint`); no story exercises
-  models/keys by default, so rendering is unchanged — confirmed via `tsc --noEmit` over `src` +
-  `.storybook` (outside `check-types`'s normal scope).
+**Slice 1 summary:** `ai-provider.ts` gained `AiProviderCatalogEntry`/`Model`; `AiProvidersDao.getCatalog`
++ `AiProvidersService.getCatalog`/`getEnabledCatalog` (task-1); `useAiProviders` hook (task-2);
+`useApiKeyManager`/`ApiKeyManager`/`ApiKeyFormDialog`/`ApiKeySavedList` take `providers`/`providerNames`
+instead of `AI_PROVIDERS`/`providerNameKeys` (task-3); `lesson-generation.helpers.ts`/
+`useLessonGenerationForm`/`ProviderSelector`/`ModelSelector` catalog-backed (task-4); pinned
+`AI_PROVIDER_CATALOG_FIXTURE` fixture + `.storybook/mocks/hooks.ts` wired to it (task-5). All RED→GREEN,
+no refactor needed. Slice gate: types/supabase-services/hooks/components/study-buddy tests +
+check-types + lint all green; e2e green for `@helsoft/components` (api-key-manager, api-key-form-dialog,
+lesson-generation-panel); `@helsoft/study-buddy` e2e blocked by a pre-existing unrelated `expo-router/ui`
+resolution issue, covered instead by unit + integration tests.
 
-## Integration
-- `lesson-generation.integration.test.tsx` (component → hook → service → DAO, real Supabase client
-  mocked only at the network boundary) updated: `useAiProviders` mocked the same way
-  `useApiKey`/`useProfile` already are here (orthogonal to this file's own DAO-chain scope) — green,
-  proves catalog-sourced `provider`/`model` still reach `generate-lesson`'s request body unchanged.
+## @s → test map (Slice 2, task-6..10)
+| @s | Test |
+|---|---|
+| s5 | `api-key-saved-list.test.tsx`/`api-key-manager.test.tsx`/`api-key-settings-screen.test.tsx` "shows the Disabled indicator..." |
+| s6 | same tests — row/key stay present, not auto-removed |
+| s7 | `api-key-manager-remove.test.tsx` "completes the confirm action normally for a disabled, keyed provider" |
+| s8 | `use-api-key-manager.test.ts`/`api-key-manager.test.tsx`/`api-key-settings-screen.test.tsx` "excludes a disabled, unsaved provider..." |
+| s9 | `use-lesson-generation.test.ts` "excludes a disabled provider from savedProviders even when a key exists" |
+| s12 | `lesson-generation.service.test.ts` `it.each` `provider_disabled`; `lesson-generation.helpers.test.ts` distinct key |
+| s13 | `lesson-generation.service.test.ts` "maps an unknown-provider 422 to invalid_model, never provider_disabled" |
+| s14/s15 | `lesson-generation.service.test.ts` `it.each` `invalid_model`/`platform_key_unavailable` (unchanged) |
+| s16 | `api-key.service.test.ts` "normalizes a provider_disabled Edge Function rejection..."; `use-api-key.test.ts`; `api-key-settings-screen.test.tsx` "maps a provider_disabled error..." |
+| s17 | `api-key.service.test.ts`/`api-key.dao.test.ts` "normalizes/re-throws an unknown-provider save..." |
+| s18 | `api-key.service.test.ts`/`api-key.dao.test.ts` "normalizes/re-throws an unknown-provider remove..." |
+| s22 | `api-key-saved-list.test.tsx` "renders the Disabled indicator as real text content, not a color-only marker" |
 
-## Slice gate
-- `pnpm --filter @helsoft/types test` / `@helsoft/supabase-services` / `@helsoft/hooks` /
-  `@helsoft/components` / `@helsoft/study-buddy` — all green (13/298/157/491/304 tests resp.,
-  task-5 added 1 to `@helsoft/hooks` and 2 to `@helsoft/study-buddy`).
-- `pnpm turbo run check-types` (repo-wide) — clean.
-- `pnpm turbo run lint` (5 touched workspaces) — clean.
-- `pnpm format` — applied (import order only).
-- e2e (`playwright test --reporter=list`, non-interactive):
-  - `@helsoft/components`: api-key-manager (11), api-key-form-dialog (part of the 11),
-    lesson-generation-panel (13) — all green on a clean run (first attempt hit cold-dev-server
-    warmup timeouts, confirmed by an immediate rerun passing 100%).
-  - `@helsoft/study-buddy`: blocked by a pre-existing, unrelated environment issue — `pnpm dev`
-    fails to resolve `expo-router/ui` from `web-bottom-tabs.tsx` (untouched by this slice; git blame
-    predates this feature) under this sandbox's node_modules layout, so the whole story graph
-    fails to build standalone. Coverage for the two study-buddy consumers (`ApiKeySettingsScreen`,
-    `LessonGeneration`) instead comes from their unit tests (exact string assertions matching the
-    e2e specs' expectations) + `lesson-generation.integration.test.tsx`'s real hook→service→DAO
-    chain; the presentational organisms they wire (`ApiKeyManager`, `ApiKeyFormDialog`,
-    `LessonGenerationPanel`) are e2e-proven in `@helsoft/components` above.
-- No hardcoded strings/colors/dims introduced; no shared atom edited.
+**Slice 2 summary:**
+- **task-6**: `ApiKeySavedListProps`/`ApiKeyManagerProps` gain `enabledProviders: readonly AiProvider[]`
+  (array of ids, mirrors `providers`). `ApiKeySavedList` renders a plain-text "Disabled" chip next to a
+  row absent from `enabledProviders` — `providers`/`savedProviders` untouched, so the row/Remove action
+  stay present (@s5/@s6). New locale key `settings.apiKey.manager.disabled` (all 4 bundles).
+- **task-7**: `useApiKeyManager` drops its `providers` arg entirely — `unsavedProviders` now derives
+  from the new `enabledProviders` arg intersected with "not saved", never a re-derived `enabled` check.
+  `useLessonGenerationForm` (study-buddy) switches from `useAiProviders().providers` to
+  `.enabledProviders` for `savedProviderEntries`. `ApiKeyManagerRemove` unchanged (no `enabled` notion at
+  all) — @s7 is a regression-lock test only.
+- **task-8**: `ApiKeyErrorCode` widened with `provider_disabled`. `api-key.service.ts` gained
+  `normalizeApiKeyError`/`readFunctionErrorCode`/`errorCodeFromBody` (mirrors
+  `lesson-generation.service.ts`), replacing the blanket `catch { throw networkError() }` in
+  `saveApiKey`/`removeApiKey`. `api-key.dao.ts` unchanged (`throw error` already raw). `use-api-key.ts`'s
+  `API_KEY_ERROR_CODES` Set + `api-key-settings-screen.tsx`'s `API_KEY_ERROR_KEYS` gained the code.
+- **task-9**: `GenerationErrorCode` widened with `provider_disabled`; `GENERATION_ERROR_CODES`,
+  `GENERATION_ERROR_KEYS` (`generation.error.providerDisabled`), `GENERATION_ERROR_RECOVERY` (`'none'`,
+  same family as `invalid_model`) all gained the code.
+- **task-10**: regression-only, no production code — added unknown-provider assertions to
+  `lesson-generation.service.test.ts` (@s13), `api-key.service.test.ts`/`api-key.dao.test.ts` (@s17/@s18),
+  each asserting the mapped code itself stays `invalid_model`/`network_error`.
+- New locale keys `settings.apiKey.error.providerDisabled` + `generation.error.providerDisabled`
+  (distinct copy from `network_error`/`invalid_model`), all 4 bundles; `platform_key_unavailable` gets
+  no new copy (Decision 10).
+
+**Slice gate:** `@helsoft/types` 48, `@helsoft/supabase-services` 308 (+10), `@helsoft/hooks` 158 (+1),
+`@helsoft/components` 500 (+9), `@helsoft/study-buddy` 310 (+6), `@helsoft/localization` 245 — all green.
+`pnpm turbo run check-types` (repo-wide) clean. `pnpm turbo run lint` (repo-wide) clean after `biome
+check --write` on touched workspaces (import/format only). No hardcoded strings/colors introduced; the
+"Disabled" indicator uses `theme.colors.outline`/`onSurfaceVariant` + `theme.shape.chip`, no new tokens.
