@@ -68,4 +68,20 @@ describe('loadProviderCatalog', () => {
 
     await expect(loadProviderCatalog(client, 'unknown')).resolves.toBeNull();
   });
+
+  // @s21/@s26 (reviewer_slice round-1 fix) — a real Supabase/postgrest query failure resolves
+  // as `{ data: null, error }`, it does not reject the promise. loadProviderCatalog must surface
+  // that as a thrown error (matching the sibling `if (error) throw error;` RPC convention),
+  // never silently degrade it to "provider unknown" (`null`).
+  it('throws when the query resolves with an error, instead of returning null', async () => {
+    const maybeSingle = jest.fn().mockResolvedValue({
+      data: null,
+      error: new Error('catalog read failed'),
+    });
+    const eq = jest.fn().mockReturnValue({ maybeSingle });
+    const select = jest.fn().mockReturnValue({ eq });
+    const from = jest.fn().mockReturnValue({ select });
+
+    await expect(loadProviderCatalog({ from }, 'anthropic')).rejects.toThrow('catalog read failed');
+  });
 });

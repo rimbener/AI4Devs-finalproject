@@ -61,18 +61,29 @@ const toProviderEntry = (row: RawProviderRow): ProviderEntry => ({
 });
 
 /** Loads one provider + its models in catalog order, or `null` when the id is unknown (s10/s11).
- * Scoped single-provider read (D8) — neither caller ever needs the other five providers. */
+ * Scoped single-provider read (D8) — neither caller ever needs the other five providers.
+ *
+ * A genuine query failure (RLS block, connection drop, DB outage) resolves as `{ data: null,
+ * error }`, not a rejected promise -- `@supabase/supabase-js`/postgrest-js only rejects for an
+ * explicit `.throwOnError()` (unused in this repo) or a truly exceptional client bug. So `error`
+ * must be checked and re-thrown here (D6 fail-closed; reviewer_slice round-1, slice 2), matching
+ * the sibling `if (error) throw error;` convention at every other RPC call site in these two
+ * functions (generate-lesson's acquirePlatformSlot/releasePlatformSlot,
+ * manage-api-key's removeApiKey/storeApiKey) -- otherwise a real outage is silently
+ * indistinguishable from "provider unknown" to every caller relying on fail-closed behaviour. */
 export const loadProviderCatalog = async (
   client: CatalogQueryClient,
   providerId: string,
 ): Promise<ProviderEntry | null> => {
-  const { data } = await client
+  const { data, error } = await client
     .from('ai_providers')
     .select(
       'id, name, guidance_url, enabled, sort_order, ai_provider_models(model_id, label, vision, is_vision_default, sort_order)',
     )
     .eq('id', providerId)
     .maybeSingle();
+
+  if (error) throw error;
 
   return data ? toProviderEntry(data) : null;
 };

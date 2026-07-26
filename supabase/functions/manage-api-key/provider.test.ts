@@ -43,9 +43,10 @@ Deno.test('guardRemoveProvider allows an enabled provider entry', () => {
   assertEquals(guardRemoveProvider(enabledEntry), { ok: true });
 });
 
-// @s26 — a catalog read failure propagates rather than resolving to null/false; index.ts's
-// existing top-level try/catch is what turns this propagation into the fail-closed 502
-// network_error response (task-10 note: no new branch, just verified propagation here).
+// @s26 — a genuinely exceptional client rejection (not the ordinary DB-failure shape below) still
+// propagates rather than being swallowed; index.ts's existing top-level try/catch is what turns
+// this propagation into the fail-closed 502 network_error response (task-10 note: no new branch,
+// just verified propagation here).
 Deno.test(
   'loadProviderCatalog propagates a rejected catalog read instead of swallowing it',
   async () => {
@@ -54,6 +55,33 @@ Deno.test(
         select: () => ({
           eq: () => ({
             maybeSingle: () => Promise.reject(new Error('catalog read failed')),
+          }),
+        }),
+      }),
+    };
+
+    await assertRejects(
+      () => loadProviderCatalog(failingClient, 'anthropic'),
+      Error,
+      'catalog read failed',
+    );
+  },
+);
+
+// @s26 (reviewer_slice round-1 fix) — a real Supabase/postgrest query failure (RLS block,
+// connection drop, DB outage) RESOLVES as `{ data: null, error }`; it does not reject the
+// promise. Only this shape genuinely proves the s26 fail-closed claim -- the rejection case
+// above alone would let a real DB outage silently pass through as `null` ("provider unknown")
+// if `loadProviderCatalog` didn't also check `error`.
+Deno.test(
+  'loadProviderCatalog throws on a real resolved-error catalog read (not just a rejection)',
+  async () => {
+    const failingClient = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({ data: null, error: new Error('catalog read failed') }),
           }),
         }),
       }),

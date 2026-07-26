@@ -119,3 +119,155 @@ in `libs/supabase-services/src/services/`.
 - **Accessibility (WCAG 2.2 AA)** — **N/A**: no UI added or touched by this slice (spec.md: "UI
   states: None — no UI in scope"; confirmed by diff — no `.tsx` file present).
 
+
+## Slice 2 — round 1 (commit `5fd162f74`)
+
+**Scope reviewed**: `git diff a6b9c3d0f 5fd162f74` (task-7..task-10) — `generate-lesson/_shared/lesson-generation.route.ts`,
+`lesson-generation.validation.ts`, `_shared/types.ts`, `generate-lesson/index.ts`,
+`manage-api-key/provider.ts`, `manage-api-key/index.ts`, `manage-api-key/provider.test.ts`,
+`libs/supabase-services/src/services/lesson-generation.{key-routing.integration,validation}.test.ts`,
+plus `tdd.md`/`task-7..10.md` doc updates.
+
+**Verdict: CHANGES_REQUESTED** — 1 finding, RESOLVED by `implementer` in a follow-up commit (no
+re-review round remains per protocol; see the finding's fix note below).
+
+### Findings
+
+1. **`[tdd]`/`[code-quality]` (D6/D9 fail-closed correctness) — RESOLVED — Major.** Fix:
+   `loadProviderCatalog` (`supabase/functions/_shared/provider-catalog.ts`) now destructures
+   `{ data, error }` and does `if (error) throw error;` before its `data ? … : null` return,
+   matching the sibling `if (error) throw error;` convention. TDD'd RED→GREEN: added a failing
+   Jest case (`provider-catalog.test.ts`, "throws when the query resolves with an error, instead
+   of returning null") mocking `maybeSingle` as a **resolved** `{ data: null, error }` (the real
+   Supabase/postgrest failure shape, not a rejected promise) — failed against the old
+   data-only destructure, passed once `error` was checked. Then, per the fix note, added a
+   second, additional case alongside each existing rejection-based test (kept, since a genuinely
+   exceptional client rejection is still a real, if rarer, failure mode) rather than replacing it:
+   - `libs/supabase-services/src/services/lesson-generation.key-routing.integration.test.ts` —
+     new case "propagates a real resolved-error catalog read (not just a rejected promise)" wires
+     `loadProviderEntry` to the *real* `loadProviderCatalog` against a fake client that resolves
+     `{ data: null, error }`, proving `route.ts`'s propagation holds for the actual failure shape
+     s21 names (not just a mocked rejection).
+   - `supabase/functions/manage-api-key/provider.test.ts` — new Deno test "loadProviderCatalog
+     throws on a real resolved-error catalog read (not just a rejection)", same resolved-error
+     shape, proving s26's claim for real.
+   Re-ran the full gate: `pnpm --filter @helsoft/supabase-services test` (34/34 suites, 288/288
+   tests, +2 from this fix), `check-types`, repo-wide `check-types`/`lint` (14/14), `deno test
+   --no-check=remote .` in `manage-api-key` (18/18) and `deno check` on all its files — all green.
+   `libs/types`/`libs/` scope boundaries (D11/D13/D15) still held — only the pre-existing shared
+   `_shared/provider-catalog.ts` and the two named test files changed. Original finding, unchanged
+   below:
+
+   `supabase/functions/_shared/provider-catalog.ts:69-75` (`loadProviderCatalog`, unchanged by
+   this slice but the sole dependency this slice's new fail-closed claims rest on):
+   ```ts
+   const { data } = await client
+     .from('ai_providers')
+     .select(...)
+     .eq('id', providerId)
+     .maybeSingle();
+   return data ? toProviderEntry(data) : null;
+   ```
+   This destructures only `{ data }` and silently discards `error`. `@supabase/supabase-js`'s
+   query builder (`@supabase/postgrest-js@2.110.0`, `PostgrestBuilder.then()` /
+   `processResponse`) **resolves** with `{ data: null, error }` on a genuine DB/network failure —
+   it only **rejects** for a caller-invoked `.throwOnError()` (not used anywhere in this repo,
+   confirmed via `grep -rn "throwOnError"`) or truly exceptional client bugs (aborted requests).
+   So a real catalog-read failure (RLS block, connection drop, DB outage) never reaches a `throw`
+   here — it resolves with `data === null`, which `loadProviderCatalog` maps to `null`,
+   **indistinguishable from "provider unknown."**
+
+   This directly contradicts this slice's own explicit, tested claims:
+   - `docs/features/ai-provider-registry-backend/task-8.md` (s21) / `tdd.md` cycle log: "a
+     throwing catalog read → generation refused via the existing `generation_failed` **500**
+     catch-all… no fallback list" — in reality it silently degrades to `invalid_model` **422**
+     (the *unknown provider* branch), the exact same status a typo'd provider id gets.
+   - `docs/features/ai-provider-registry-backend/task-10.md` (s26) / `tdd.md`: "a throwing
+     catalog read → the existing catch-all responds **502** `{ code: 'network_error' }`" — in
+     reality `guardSaveProvider(null)`/`guardRemoveProvider(null)` fire first, returning
+     **400** `{ code: 'network_error' }` from `dispatch` itself, never reaching the 502 catch-all.
+
+   The new tests that back these claims mock the failure unrealistically:
+   `supabase/functions/manage-api-key/provider.test.ts:56` (`maybeSingle: () =>
+   Promise.reject(new Error('catalog read failed'))`) and
+   `libs/supabase-services/src/services/lesson-generation.key-routing.integration.test.ts:358`
+   (`loadProviderEntry = jest.fn().mockRejectedValue(...)`) both simulate a **rejected promise**,
+   which is not how a real Supabase query failure surfaces by default — so neither test actually
+   exercises the scenario it's named for ("the catalog read will fail", `gherkin-scenarios.md`
+   `@s21`/`@s26`). This is exactly the "RED-with-no-code-needed" claim the task asked to verify
+   by reading the surrounding code rather than taking it on faith — the code was read, and the
+   claim does not hold for the real failure mode, only for the mocked one.
+
+   Net effect isn't fail-*open* (no SDK call is made, no key is stored, no Vault read happens
+   either way — the safety-critical property in D6 is preserved), but it **is** a broken,
+   explicitly-documented-and-"tested" contract: a genuine backend outage is silently reported as a
+   client-facing "invalid model"/"unknown provider" error instead of the intended
+   `generation_failed`/`network_error` fail-closed signal, which would mask a real infra incident
+   from monitoring/on-call as ordinary user error. Every other query in these two call graphs
+   follows the opposite, correct convention right next to this one — e.g.
+   `supabase/functions/generate-lesson/index.ts`'s `acquirePlatformSlot`/`releasePlatformSlot`
+   (`if (error) throw error;`) and `manage-api-key/index.ts:136` (`if (error) throw error;` inside
+   `removeApiKey`) — making `loadProviderCatalog`'s silent swallow an inconsistency with the
+   codebase's own established pattern, not a deliberate design choice (no `risks.md`/`spec.md`
+   note documents it as accepted).
+
+   **Fix**: `loadProviderCatalog` should destructure `{ data, error }` and `if (error) throw
+   error;` before the `data ? … : null` return, matching the sibling RPC calls' convention, so the
+   catch-alls this slice's tests already assert on genuinely receive the failure. Then re-mock
+   `provider.test.ts`'s s26 case and `key-routing.integration.test.ts`'s s21 case as
+   `maybeSingle: () => Promise.resolve({ data: null, error: new Error(...) })` (not
+   `Promise.reject`) to prove the fix against the real failure shape, or add that as a second,
+   additional case alongside the existing rejection one.
+
+### Checks that passed (no findings)
+
+- **Wire contract (D10/D11/D12)** — verified exactly: `manage-api-key/index.ts:113-166`'s
+  `dispatch` loads the catalog entry once per branch, before any RPC
+  (`save_api_key`/`remove_api_key`), and `provider.ts`'s `guardSaveProvider`/`guardRemoveProvider`
+  produce the full matrix precisely — save+disabled → 400 `provider_disabled` (no Vault write),
+  save+unknown → 400 `network_error` (byte-identical shape/status to the pre-slice `dispatch ===
+  null` path), remove+disabled → allowed 200 (`guardRemoveProvider` never inspects `enabled`),
+  remove+unknown → 400 `network_error`. Confirmed via `provider.test.ts`'s s22-s25 Deno tests.
+- **D13/D14 distinction** — confirmed genuinely distinguished: BYOK disabled →
+  `validateByokGenerationRequest`/`resolveByokGenerationKey` (`lesson-generation.validation.ts:21-33`)
+  reject as `provider_disabled` **before** `readUserApiKey` is called (asserted via
+  `expect(readUserApiKey).not.toHaveBeenCalled()` in the Jest mirror); mapped to 422 in
+  `generate-lesson/index.ts`'s status ladder. Platform disabled →
+  `lesson-generation.route.ts:64-69`'s own `groq`-only gate rejects as `platform_key_unavailable`
+  **before** `resolveLessonGenerationKeyForPlan`/`acquirePlatformSlot`, unchanged 503 mapping — a
+  structurally separate branch from the BYOK gate, not an approximation. Confirmed `libs/types/src/lesson-generation.ts`
+  and `libs/types/src/api-key-error.ts` untouched (`git diff a6b9c3d0f 5fd162f74 -- libs/types`
+  empty) — only the Edge-side `_shared/types.ts` mirror widened, per D11/D13 scope.
+- **`[types]`** — no repeat of the slice-1 finding: `ByokValidationResult`/`ByokKeyResolutionResult`
+  (widened, `lesson-generation.validation.ts`) and `ProviderGuardOutcome`/`ProviderGuardErrorResult`
+  (`provider.ts`/`index.ts`) are each declared and consumed within a single file (no explicit
+  cross-file type import of a type used in ≥2 files left un-extracted). `ProviderGuardErrorResult`
+  in `index.ts` intentionally mirrors only the wire-level `{ code }` shape of
+  `ProviderGuardOutcome`'s error variants (per its own comment) rather than importing/aliasing it —
+  a defensible, explicit boundary (D11: Edge-local shape, not `@helsoft/types`' `ApiKeyErrorCode`),
+  not an unextracted shared type.
+- **D9 (load once per request, no double-fetch)** — `generate-lesson/index.ts:232-241`: the
+  removed "post-hoc platform entry reload" is genuinely dead code, not a silent regression —
+  `providerEntry` is populated as a side effect of the single `loadProviderEntry` closure
+  (`index.ts:239-241`) that `route.ts` already calls once per branch (named provider on BYOK, hard-coded
+  `groq` on platform, `lesson-generation.route.ts:64-69`), and is read again at `index.ts:381` for
+  vision-model resolution on a successful route. No second catalog read occurs on either path.
+- **Order of checks in `manage-api-key`** — confirmed: the `enabled` guard
+  (`index.ts:123-127` for remove, `:151-155` for save) runs immediately after `loadProviderCatalog`
+  and strictly before `handleRemoveApiKey`/`handleSaveApiKey` (which issue the
+  `remove_api_key`/`save_api_key` RPCs) — a disabled-provider save never touches Vault.
+- **No hardcoded provider list remains** — confirmed via grep: `AI_PROVIDERS`/`isAiProvider` fully
+  deleted from `manage-api-key/provider.ts`; `generate-lesson/_shared/models.ts` only retains
+  `AiProvider = string`/`PLATFORM_TEXT_MODEL_ID`, no registry.
+- **`libs/` scope boundary (D11/D13/D15)** — `git diff a6b9c3d0f 5fd162f74 --stat -- libs/` shows
+  only the two Jest test files under `libs/supabase-services/src/services/` touched; `libs/types/`
+  untouched.
+- **`[hooks-service-dao]` / `[atomic-design]` / `[component-split]` / `[state]` /
+  `[state-sharing]` / `[tanstack-query]` / `[i18n]` / `[e2e]` / `[global]`** — N/A, same
+  justification as Slice 1: no `.tsx`, no `libs/hooks`/`libs/components` code touched (confirmed —
+  diff stat above lists only `.ts` files); kebab-case filenames preserved; no new files added (all
+  changes are modifications to existing files, confirmed via `git diff --diff-filter=A/D`, both
+  empty); comments explain *why* (D-numbered decisions), consistent with the established verbose
+  why-comment style in this same tree from Slice 1.
+- **Accessibility (WCAG 2.2 AA)** — **N/A**: no UI added or touched by this slice (no `.tsx` in the
+  diff; spec.md confirms no UI states owned by this backend story).

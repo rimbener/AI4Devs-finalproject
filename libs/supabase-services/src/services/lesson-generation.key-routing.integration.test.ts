@@ -1,3 +1,4 @@
+import { loadProviderCatalog } from '../../../../supabase/functions/_shared/provider-catalog';
 import {
   callProviderWithResolvedKey,
   resolveLessonGenerationKeyForPlan,
@@ -356,6 +357,45 @@ describe('generate-lesson key routing integration', () => {
   it('propagates a catalog read failure instead of falling back to any hardcoded list', async () => {
     const readUserApiKey = jest.fn();
     const loadProviderEntry = jest.fn().mockRejectedValue(new Error('catalog read failed'));
+
+    await expect(
+      handleLessonGenerationRoute({
+        userId: 'user-1',
+        requestBody: {
+          documentId: 'doc-1',
+          composition: 'both',
+          provider: 'anthropic',
+          model: 'claude-haiku-4-5',
+        },
+        readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
+        readUserApiKey,
+        loadProviderEntry,
+        platformApiKey: 'platform-secret',
+        acquirePlatformSlot: jest.fn().mockResolvedValue(true),
+      }),
+    ).rejects.toThrow('catalog read failed');
+    expect(readUserApiKey).not.toHaveBeenCalled();
+  });
+
+  // @s21 (reviewer_slice round-1 fix) — the mock above simulates a rejected promise, which is
+  // not how a real Supabase/postgrest query failure surfaces (it resolves `{ data: null, error
+  // }`; only `.throwOnError()`, unused in this repo, or a genuinely exceptional client bug
+  // rejects). This case runs the real `loadProviderCatalog` against that real resolved-error
+  // shape, proving the propagation claim actually holds for the failure mode s21 names.
+  it('propagates a real resolved-error catalog read (not just a rejected promise)', async () => {
+    const readUserApiKey = jest.fn();
+    const failingClient = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () =>
+              Promise.resolve({ data: null, error: new Error('catalog read failed') }),
+          }),
+        }),
+      }),
+    };
+    const loadProviderEntry = (providerId: string) =>
+      loadProviderCatalog(failingClient, providerId);
 
     await expect(
       handleLessonGenerationRoute({
