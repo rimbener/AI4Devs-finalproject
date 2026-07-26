@@ -91,3 +91,80 @@ re-discover this as new.
 
 ## Not re-litigated (already resolved per spec.md/review-slice.md)
 D4 (service-role read), D6 (fail-closed genuinely fixed and re-verified above), D7 (no SDK-capability guard, accepted risk), D9 (no cache, @s28-tested), D10 (save/remove asymmetry), D14 (platform route keeps `platform_key_unavailable`) — all confirmed still holding across the full diff, not restated as new findings.
+
+## Round 2 (fix-only re-review, commit `83c0504c3`, CI green @ `83c0504c3`)
+
+**CI (re-run once by `reviews_lead`, not by me): green @ `83c0504c3`** — `pnpm lint` 14/14, `pnpm
+check-types` 14/14, `pnpm --filter @helsoft/supabase-services test` 35/35 suites / 290/290 tests,
+`deno test --no-check=remote .` in `manage-api-key` 18/18, `deno check *.ts` in `manage-api-key`
+clean.
+
+**Scope check (own verification, not taken on trust)**: `git log --oneline f3eb14a8c..HEAD` shows
+exactly two commits since the round-1-reviewed sha: `4588fbd43` (docs-only, round-1 review
+write-up) and `83c0504c3` (the fix). `git diff --stat f3eb14a8c..HEAD` confirms the only
+non-docs file touched is `supabase/functions/manage-api-key/index.ts` (+13/-12); `tasks.md` is a
+one-line docs edit. So round 1's "verified clean" sections (fail-closed correctness, rejection
+matrix, migrations, cross-layer wiring, TDD coverage, architecture/layering, the rest of
+security/performance) had zero code to re-drift against — re-confirmed by direct re-read of
+`_shared/provider-catalog.ts` (fail-closed `if (error) throw error;` before the `data ? … : null`
+return, byte-identical to round 1) and the migration's `revoke all … from anon, authenticated` /
+`grant select … to authenticated` / `grant all … to service_role` triad on both
+`ai_providers`/`ai_provider_models` (byte-identical to round 1), rather than re-derived from
+nothing.
+
+### Finding #1 — `[arch]` Minor — RE-VERIFIED RESOLVED
+
+Read the full current `supabase/functions/manage-api-key/index.ts` (210 lines) and the exact
+`git diff f3eb14a8c..HEAD -- supabase/functions/manage-api-key/index.ts` produced by the fix
+commit, not just the implementer's changelog note. Confirmed directly, not on the strength of the
+prior "Resolved" note alone:
+
+- `import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';` (line 7) —
+  the real type is now imported, not synthesized.
+- `listUserApiKeys` (line 66-69) declares `adminClient: SupabaseClient` — the real type, not
+  `AnySupabaseClient`.
+- `dispatch` (line 116-120) declares `adminClient: SupabaseClient` — same.
+- `AnySupabaseClient`/`any` (lines 25-26) is now used **only** as an inline
+  `adminClient as AnySupabaseClient` cast at the two `loadProviderCatalog(...)` call sites: line
+  126 (remove branch) and line 154 (save branch). Grepped the whole file for `AnySupabaseClient`
+  and `: any` — no third occurrence anywhere.
+- Every other `adminClient` use in the file is confirmed back under real `SupabaseClient` type
+  checking, un-widened: `.from('user_ai_keys').select('provider, updated_at').eq('user_id',
+  userId)` (lines 70-73), `.rpc('remove_api_key', { p_user_id, p_provider })` (lines 135-138),
+  `.rpc('save_api_key', { p_user_id, p_provider, p_api_key })` (lines 164-168).
+- No regression introduced by the fix commit itself: the diff touches only the import line, the
+  block comment above `AnySupabaseClient`, the two function signatures, and the two call sites —
+  no logic, no control flow, no error handling changed. `errorStatus`, `authenticateCaller`, the
+  `Deno.serve` handler's try/catch/fail-closed-502 path, and `logEvent`'s redacted-log call are
+  byte-identical to round 1.
+
+**Verdict on finding #1: genuinely fixed.** Marking `resolved` (upgraded from round 1's
+implementer-claimed "Resolved" to reviewer-verified).
+
+### Fresh full-diff pass (all four lenses)
+
+- **Code quality/TDD**: no new production `.ts` code beyond the two-line signature change + two
+  inline casts (test-first non-UI discipline not re-triggered — this is a type-annotation-only
+  fix, no new behavior, no new test surface required or added; CI's unchanged 18/18 Deno + 35/35
+  Jest counts confirm no behavior moved). No `console.log`/debug leftovers introduced. No new
+  magic numbers, no duplication.
+- **Architecture/layering**: fix is entirely internal to one Edge Function's file-local type
+  annotations; no cross-layer import changed, no DTO shape changed, no new dependency.
+- **Performance**: N/A change surface (type-only fix, zero runtime behavior difference — same
+  query, same RPC calls, same call count). Round 1's "single scoped query per request" finding
+  still holds, unaffected.
+- **Security (OWASP)**: no new attack surface. If anything, this fix *improves* the security
+  posture marginally versus round 1 by restoring compile-time type safety on the two `.rpc(...)`
+  calls (`save_api_key`/`remove_api_key`) and the `user_ai_keys` select — round 1 already judged
+  the pre-fix state "not a security leak," and the fix removes even that residual risk by
+  re-narrowing the type surface. No secrets, no PII, no new trust-boundary crossing.
+
+**Zero new findings.** No blocker, major, or minor beyond the now-resolved finding #1. The two
+round-1 informational items (duplicate `AiProvider` type declaration; D4's unconsumed
+`authenticated`-role RLS policy pending the frontend story) are unchanged, still informational,
+still not new gaps — re-confirmed by direct grep/read this round, not restated as new findings.
+
+## Round 2 verdict: APPROVED
+
+Zero open findings of any severity. Finding #1 is resolved and reviewer-verified (not
+implementer-claim-only). Fresh full-diff pass found nothing new.
