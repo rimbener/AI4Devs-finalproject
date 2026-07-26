@@ -168,8 +168,9 @@ describe('useLessons', () => {
     expect(result.current.lessons).toEqual(lessons);
   });
 
-  // @s16 — deleteError ?? queryError: a stale delete error outranks a later read failure.
-  it('keeps a delete error ahead of a later read failure after refetch', async () => {
+  // @s16 — the delete error is cleared before the read starts, so a later read failure (not the
+  // stale delete error) is what ends up exposed.
+  it('clears the delete error before refetching, exposing a later read failure instead', async () => {
     const deleteFailure = new Error('LessonsService.deleteLesson: failed to delete lesson');
     const readFailure = new Error('LessonsService.getLessons: failed to load lessons');
     service.getLessons.mockResolvedValueOnce(lessons).mockRejectedValueOnce(readFailure);
@@ -187,8 +188,30 @@ describe('useLessons', () => {
       result.current.refetch();
     });
 
-    await waitFor(() => expect(service.getLessons).toHaveBeenCalledTimes(2));
-    expect(result.current.error).toBe(deleteFailure);
+    await waitFor(() => expect(result.current.error).toBe(readFailure));
+    expect(service.getLessons).toHaveBeenCalledTimes(2);
+    expect(result.current.lessons).toEqual(lessons);
+  });
+
+  // @s16 — a refetch that succeeds after a failed delete clears the delete error entirely.
+  it('clears a prior delete error once a refetch succeeds', async () => {
+    const deleteFailure = new Error('LessonsService.deleteLesson: failed to delete lesson');
+    service.getLessons.mockResolvedValue(lessons);
+    service.deleteLesson.mockRejectedValue(deleteFailure);
+    const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.deleteLesson('lesson-2');
+    });
+    await waitFor(() => expect(result.current.error).toBe(deleteFailure));
+
+    await act(async () => {
+      result.current.refetch();
+    });
+
+    await waitFor(() => expect(result.current.error).toBeNull());
     expect(result.current.lessons).toEqual(lessons);
   });
 });

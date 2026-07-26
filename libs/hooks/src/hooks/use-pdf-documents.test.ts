@@ -185,8 +185,9 @@ describe('usePdfDocuments', () => {
     expect(result.current.documents).toEqual(documents);
   });
 
-  // @s23 — deleteError ?? queryError: a stale delete error outranks a later read failure.
-  it('keeps a delete error ahead of a later read failure after refetch', async () => {
+  // @s23 — the delete error is cleared before the read starts, so a later read failure (not the
+  // stale delete error) is what ends up exposed.
+  it('clears the delete error before refetching, exposing a later read failure instead', async () => {
     const deleteFailure = new Error(
       'PdfDocumentsService.deleteDocument: failed to delete document',
     );
@@ -206,8 +207,32 @@ describe('usePdfDocuments', () => {
       result.current.refetch();
     });
 
-    await waitFor(() => expect(service.getDocuments).toHaveBeenCalledTimes(2));
-    expect(result.current.error).toBe(deleteFailure);
+    await waitFor(() => expect(result.current.error).toBe(readFailure));
+    expect(service.getDocuments).toHaveBeenCalledTimes(2);
+    expect(result.current.documents).toEqual(documents);
+  });
+
+  // @s23 — a refetch that succeeds after a failed delete clears the delete error entirely.
+  it('clears a prior delete error once a refetch succeeds', async () => {
+    const deleteFailure = new Error(
+      'PdfDocumentsService.deleteDocument: failed to delete document',
+    );
+    service.getDocuments.mockResolvedValue(documents);
+    service.deleteDocument.mockRejectedValue(deleteFailure);
+    const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.deleteDocument('doc-2');
+    });
+    await waitFor(() => expect(result.current.error).toBe(deleteFailure));
+
+    await act(async () => {
+      result.current.refetch();
+    });
+
+    await waitFor(() => expect(result.current.error).toBeNull());
     expect(result.current.documents).toEqual(documents);
   });
 });
