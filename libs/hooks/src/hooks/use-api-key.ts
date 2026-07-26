@@ -1,10 +1,10 @@
 import { ApiKeyService } from '@helsoft/supabase-services';
 import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 import type { UseApiKeyResult } from './use-api-key.types';
-import { useSession } from './use-session';
+import { useSessionGate } from './use-session-gate';
 
 const EMPTY_STATUS: ApiKeyStatus = { keys: [] };
 
@@ -19,9 +19,17 @@ const isApiKeyErrorShape = (cause: unknown): cause is ApiKeyError =>
 /** Query key for a learner's key status, scoped by user id (D1) — never leaks across users. */
 export const apiKeyStatusQueryKey = (userId: string) => ['api-key', 'status', userId] as const;
 
-/** Tagged union so save/remove share one mutation slot (D3) — see use-api-key's module doc. */
+/**
+ * Tagged union so save/remove share one mutation slot (D3) — see use-api-key's module doc.
+ * Deliberately excludes the raw key: TanStack's `MutationCache` retains a settled mutation's
+ * `state.variables` for up to `gcTime` (stock 5 min) after every call, on every platform
+ * including web — so anything passed as `variables` here would sit in-memory, reachable via
+ * `queryClient.getMutationCache()`, far longer than its useful life (round 1 full-review
+ * security finding). The raw key instead flows through `pendingRawKeyRef` below, never through
+ * the mutation's own state.
+ */
 type ApiKeyMutationVariables =
-  | { kind: 'save'; provider: AiProvider; rawKey: string }
+  | { kind: 'save'; provider: AiProvider }
   | { kind: 'remove'; provider: AiProvider };
 
 /**
@@ -33,14 +41,16 @@ type ApiKeyMutationVariables =
  * Two consumers under the same QueryClient share one read — no provider needed (s49).
  */
 export const useApiKey = (): UseApiKeyResult => {
-  const { session, isLoading: isSessionLoading } = useSession();
-  const sessionUserId = session?.user?.id;
+  const { sessionUserId, enabled, deriveIsLoading } = useSessionGate();
   const queryClient = useQueryClient();
+  // Holds the raw key only for the duration of the in-flight `saveApiKey` call — never passed
+  // as a mutation variable, and cleared as soon as the mutation settles (see the type doc above).
+  const pendingRawKeyRef = useRef<string | null>(null);
 
   const { data, isPending } = useQuery({
     queryKey: apiKeyStatusQueryKey(sessionUserId ?? ''),
     queryFn: () => ApiKeyService.getApiKeyStatus(),
-    enabled: Boolean(sessionUserId) && !isSessionLoading,
+    enabled,
   });
 
   const {
@@ -50,17 +60,21 @@ export const useApiKey = (): UseApiKeyResult => {
   } = useMutation({
     mutationFn: (variables: ApiKeyMutationVariables) =>
       variables.kind === 'save'
-        ? ApiKeyService.saveApiKey(variables.provider, variables.rawKey)
+        ? ApiKeyService.saveApiKey(variables.provider, pendingRawKeyRef.current ?? '')
         : ApiKeyService.removeApiKey(variables.provider),
     onSuccess: (nextStatus) => {
       if (!sessionUserId) return;
       queryClient.setQueryData(apiKeyStatusQueryKey(sessionUserId), nextStatus);
     },
+    onSettled: () => {
+      pendingRawKeyRef.current = null;
+    },
   });
 
   const saveApiKey = useCallback(
     async (provider: AiProvider, rawKey: string) => {
-      await mutateAsync({ kind: 'save', provider, rawKey });
+      pendingRawKeyRef.current = rawKey;
+      await mutateAsync({ kind: 'save', provider });
     },
     [mutateAsync],
   );
@@ -74,7 +88,7 @@ export const useApiKey = (): UseApiKeyResult => {
 
   // A disabled query reports isPending: true — only treat that as loading while authenticated,
   // so the unauthenticated case reads { isLoading: false, status: { keys: [] } } (s38).
-  const isLoading = isSessionLoading || (Boolean(sessionUserId) && isPending);
+  const isLoading = deriveIsLoading(isPending);
   const status = data ?? EMPTY_STATUS;
   const hasKey = useMemo(() => status.keys.length > 0, [status]);
   const error = mutationError

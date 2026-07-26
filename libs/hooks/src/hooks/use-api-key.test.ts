@@ -356,4 +356,26 @@ describe('useApiKey', () => {
 
     expect(JSON.stringify(result.current)).not.toContain('sk-should-never-be-retained');
   });
+
+  // @s50-security — round 1 full-review finding: the raw key must never be retained in
+  // TanStack's MutationCache either, not just absent from the hook's returned value. A stock
+  // 5-minute gcTime otherwise keeps `mutation.state.variables.rawKey` reachable via
+  // `queryClient.getMutationCache()` long after the save settled.
+  it('never writes the raw key into the mutation cache after a saveApiKey call', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    service.saveApiKey.mockResolvedValue(keysStatus(['groq']));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper(queryClient) });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    await act(async () => {
+      await result.current.saveApiKey('groq', 'sk-should-never-be-cached');
+    });
+
+    const cachedVariables = queryClient
+      .getMutationCache()
+      .getAll()
+      .map((mutation) => JSON.stringify(mutation.state.variables));
+    expect(cachedVariables.join('|')).not.toContain('sk-should-never-be-cached');
+  });
 });

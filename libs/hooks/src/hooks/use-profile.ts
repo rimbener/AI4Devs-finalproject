@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react';
 
 import { useApiKey } from './use-api-key';
 import type { UseProfileResult } from './use-profile.types';
-import { useSession } from './use-session';
+import { useSessionGate } from './use-session-gate';
 
 /** Query key for a learner's profile+plan, scoped by user id (D1) — never leaks across users. */
 export const profileQueryKey = (userId: string) => ['profile', userId] as const;
@@ -16,8 +16,7 @@ export const profileQueryKey = (userId: string) => ['profile', userId] as const;
  * QueryClient share one read — no provider needed (s58).
  */
 export const useProfile = (): UseProfileResult => {
-  const { session, isLoading: isSessionLoading } = useSession();
-  const sessionUserId = session?.user?.id;
+  const { sessionUserId, enabled, deriveIsLoading } = useSessionGate();
   const { hasKey, isLoading: isApiKeyLoading } = useApiKey();
 
   const {
@@ -28,7 +27,7 @@ export const useProfile = (): UseProfileResult => {
   } = useQuery({
     queryKey: profileQueryKey(sessionUserId ?? ''),
     queryFn: () => ProfileService.getProfile(),
-    enabled: Boolean(sessionUserId) && !isSessionLoading,
+    enabled,
   });
 
   // ProfileDao rethrows the raw Supabase/Postgrest error object, not an Error instance — normalize
@@ -45,7 +44,7 @@ export const useProfile = (): UseProfileResult => {
 
   // A disabled query reports isPending: true — only treat that as loading while authenticated,
   // so the unauthenticated case reads { isLoading: false, profile: null } (s52).
-  const isLoading = isSessionLoading || isApiKeyLoading || (Boolean(sessionUserId) && isPending);
+  const isLoading = deriveIsLoading(isPending) || isApiKeyLoading;
 
   const profile = useMemo(() => {
     if (!data || isLoading || error) return null;
