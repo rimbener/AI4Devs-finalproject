@@ -3,7 +3,7 @@ id: task-4
 title: Migrate the generate-flow provider/model pickers onto the live catalog
 slice: 1
 scenarios: [s4, s10]
-status: todo
+status: done
 paths:
   - libs/study-buddy/src/components/lesson-generation/use-lesson-generation.ts
   - libs/study-buddy/src/components/lesson-generation/use-lesson-generation.test.ts

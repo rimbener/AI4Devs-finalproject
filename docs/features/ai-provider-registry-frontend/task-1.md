@@ -3,7 +3,7 @@ id: task-1
 title: Add the catalog types + AiProvidersDao/Service reading the whole ordered catalog
 slice: 1
 scenarios: []
-status: todo
+status: done
 paths:
   - libs/types/src/ai-provider.ts
   - libs/types/src/ai-provider.test.ts

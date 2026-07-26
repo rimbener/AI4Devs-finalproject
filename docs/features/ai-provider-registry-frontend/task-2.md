@@ -3,7 +3,7 @@ id: task-2
 title: Add the useAiProviders hook over AiProvidersService
 slice: 1
 scenarios: []
-status: todo
+status: done
 paths:
   - libs/hooks/src/hooks/use-ai-providers.ts
   - libs/hooks/src/hooks/use-ai-providers.types.ts

@@ -3,7 +3,7 @@ id: task-3
 title: Migrate the settings screen + saved-keys list + add-key dialog onto the live catalog
 slice: 1
 scenarios: [s1, s2, s3, s11]
-status: todo
+status: done
 paths:
   - libs/study-buddy/src/components/api-key-settings-screen/api-key-settings-screen.tsx
   - libs/study-buddy/src/components/api-key-settings-screen/api-key-settings-screen.test.tsx
