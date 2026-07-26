@@ -23,7 +23,7 @@ A fast quality gate before a vertical slice closes. One agent, scoped strictly t
 - **`state-sharing.mdc`** — React Context when prop-drilling is deep (≥2–3 pass-through levels) or a large props bag is threaded only to reach a deep child; prefer props for one-hop / shallow cases.
 - **`types.mdc`** — multi-file types live in `*.types.ts`, exported only, no runtime logic; not exported from the implementation file.
 - **`i18n.mdc`** — user-facing text via `t('ns.key')` inline; no `labels`/`copy` object of pre-resolved `t()` calls (key dictionaries like `GENERATION_ERROR_KEYS` are the only allowed collection).
-- **`tdd.mdc`** — Three Laws / Red→Green→Refactor evidence; every `@s` the slice owns maps to ≥ 1 concrete test (check `tdd.md`); no production code no test demands (scope not inflated); no hardcoded strings/colors/dimensions.
+- **`tdd.mdc`** — TDD **by file type**: non-UI `.ts` (services/DAOs/hooks/helpers/reducers) is **test-first** (Red→Green→Refactor evidence in `tdd.md`; no production code no test demands); UI `.tsx` is **implementation-first** — verify the order **impl → stories → interaction e2e → unit tests** and that all four exist (no test-first evidence expected for `.tsx`; a component still needs `<name>.test.tsx` + a `.stories.tsx`, and an interaction e2e when it has interaction). Every `@s` the slice owns maps to ≥ 1 concrete test; no hardcoded strings/colors/dimensions.
 - **`pre-slice-checklist.mdc`** — the recurring review findings from past runs.
 - **`e2e.mdc`** — Playwright `.e2e.js` are **interaction-only**; flag (and require removal of) any e2e that just renders a story / asserts elements are present — that's unit-test territory. A component with no interaction gets no e2e.
 

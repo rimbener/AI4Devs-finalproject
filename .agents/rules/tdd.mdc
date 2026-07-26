@@ -1,19 +1,24 @@
 ---
-description: TDD rules for the implementer — Three Laws, Red→Green→Refactor, vertical slices. Loaded on demand, not injected into every agent.
+description: TDD rules for the implementer — TDD for non-UI (.ts) code; UI (.tsx) is implementation-first. Loaded on demand, not injected into every agent.
 alwaysApply: false
 ---
 
-# TDD — Three Laws & Red→Green→Refactor (TypeScript)
+# TDD (non-UI `.ts`) & UI build order (`.tsx`) — TypeScript
 
-The `implementer` obeys these. Every line of production code exists because a failing test demanded it first.
+The build discipline is **decided by file type**:
 
-## The Three Laws (non-negotiable)
+- **Non-UI `.ts` code** (services, DAOs, hooks, `*.helpers.ts`, `*.reducer.ts`, pure logic) → **strict TDD** (Three Laws, Red→Green→Refactor). Every line of that code exists because a failing test demanded it first.
+- **UI `.tsx` components** → **implementation-first**, NOT test-first. Build the component, then its stories, then interaction e2e, then its unit tests — in that order (below).
+
+This split holds even inside one component folder: the `.tsx` is impl-first, but its co-located `.ts` (`use-<name>.ts`, `<name>.helpers.ts`, `<name>.reducer.ts`) is TDD'd test-first.
+
+## Non-UI `.ts` — the Three Laws (non-negotiable)
 
 1. **No production code** except to make a failing test pass.
 2. **No more of a test** than is sufficient to fail — and *not compiling / not importing counts as failing*.
 3. **No more production code** than is sufficient to pass the one failing test.
 
-## The cycle (small, repeated)
+### The cycle (small, repeated)
 
 ```
 RED      → write ONE test that fails (derives from the next @s in gherkin-scenarios.md)
@@ -21,20 +26,28 @@ GREEN    → the minimum implementation that makes it pass
 REFACTOR → with the bar green, remove duplication, improve names, shorten functions
 ```
 
+- Applies to `use-*.test.ts`, `*.service.test.ts`, `*.dao.test.ts`, `*.helpers.test.ts`, `*.reducer.test.ts` (Jest; mock `getSupabase()`/`fetch` or the layer below). Implement following `Component → Hook → Service → DAO` (`.agents/rules/hooks-service-dao.mdc`); data-fetching hooks use tanstack-query (`.agents/rules/tanstack-query.mdc`); related local state ≥3 fields → `useReducer` (`.agents/rules/state.mdc`).
 - One `@s` scenario at a time. Do not pre-write tests for future scenarios.
 - A test that passes on the first run proves nothing — tighten it or be suspicious.
 - Refactor **only on green**. If tests are red, you fix, you don't refactor.
-- Re-run tests after every change — but **cheaply**: during cycles run only the affected workspace + test file (`pnpm --filter <ws> test -- <test-file> --silent`); the full workspace suite and repo-wide `pnpm lint` / `pnpm check-types` (with `--output-logs=errors-only`) run once, at the slice gate. Never paste reporter output into artifacts or chat.
 
-## What "a test" means here (by artifact type)
+## UI `.tsx` — implementation-first order (NOT TDD)
 
-- **UI component** → `<name>.test.tsx` (Jest + `@testing-library/react-native`), driven first. Assert rendering per prop, each of the 4 UI states (Loading/Content/Error/Empty) where applicable, conditional branches, handler/callback wiring, and accessibility roles/labels. **Required for every component** — this is what makes UI both TDD- and mutation-testable. Then the component, then the Storybook story, then a Playwright e2e via the `storybook-e2e-tests` skill (which owns the `.e2e.js` conventions and location — `libs/<lib>/tests/e2e/…` mirroring `src/`, **not** co-located).
-- **Logic (hook/service/DAO)** → `use-*.test.ts`, `*.service.test.ts`, `*.dao.test.ts` (Jest; mock `getSupabase()`/`fetch` or the layer below). Then implement following `Component→Hook→Service→DAO` (`.agents/rules/hooks-service-dao.mdc`); hook/component related local state ≥3 fields → `useReducer` (`.agents/rules/state.mdc`).
-- **Always** → one **integration test** across the vertical slice (e.g. hook→service→DAO with a mocked Supabase client, or a Playwright flow across composed components).
+For a UI component, do **not** write the test first. Build in this order:
+
+1. **Implementation** — `<name>.tsx` (reuse tokens/components + `DESIGN.md`; translate a screenshot if provided; obey `atomic-design.mdc` / `component-split.mdc`).
+2. **Stories** — `<name>.stories.tsx` covering the 4 UI states (Loading/Content/Error/Empty) where applicable.
+3. **Interaction e2e** — a Playwright `.e2e.js` via the `storybook-e2e-tests` skill, **only for real interaction flows** (`.agents/rules/e2e.mdc` — never a render-only "it renders" e2e; a component with no interaction gets none). Location `libs/<lib>/tests/e2e/…` mirroring `src/`, not co-located.
+4. **Unit tests (last)** — `<name>.test.tsx` (Jest + `@testing-library/react-native`): rendering per prop, each of the 4 UI states, conditional branches, handler/callback wiring, accessibility roles/labels. **Still required for every component** — it owns static rendering/presence and is what makes the `.tsx` mutation-testable (mutation runs later, after all slices).
+
+## Both paths
+
+- **One integration test** across the vertical slice (e.g. hook→service→DAO with a mocked Supabase client, or a Playwright flow across composed components).
+- Re-run tests after every change — but **cheaply**: during work run only the affected workspace + test file (`pnpm --filter <ws> test -- <test-file> --silent`); the full workspace suite and repo-wide `pnpm lint` / `pnpm check-types` (with `--output-logs=errors-only`) run once, at the slice gate. Never paste reporter output into artifacts or chat.
 
 ## Vertical slices (build order)
 
-The feature ships as thin end-to-end slices; each slice is its own set of Red→Green→Refactor cycles, its own commit, and its own gate. Do not start slice N+1 until slice N's gate passes.
+The feature ships as thin end-to-end slices; each slice is its own build (TDD cycles for `.ts`, impl-first order for `.tsx`), its own commit, and its own gate. Do not start slice N+1 until slice N's gate passes.
 
 | Slice | Scope | Commit |
 |---|---|---|

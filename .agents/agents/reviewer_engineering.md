@@ -11,7 +11,7 @@ You are the **sole reviewer of the full review** (run once after all slices; des
 
 ## Code quality & TDD
 - Every `@s` in `gherkin-scenarios.md` maps to ≥ 1 concrete test (check `tdd.md`).
-- Evidence of Red→Green→Refactor; **no production code that no test demands** (scope not inflated).
+- **TDD by file type** (`tdd.mdc`): non-UI `.ts` (services/DAOs/hooks/helpers/reducers) is **test-first** — expect Red→Green→Refactor evidence and **no production `.ts` code that no test demands** (scope not inflated). UI `.tsx` is **implementation-first** (no test-first evidence expected) — instead verify each touched component has its `<name>.test.tsx`, a `<name>.stories.tsx`, and an interaction `.e2e.js` where it has interaction.
 - Short functions, one reason to change, revealing names, no duplication, no magic numbers; SOLID, YAGNI, KISS, DRY.
 - Correct error contract; no `console.log` / debug leftovers; no TODOs without an issue.
 - Functional React only; `Props` type present; kebab-case filenames.

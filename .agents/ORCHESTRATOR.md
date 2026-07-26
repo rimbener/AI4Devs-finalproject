@@ -8,7 +8,7 @@ Takes one user story from `user-stories/` to a validated, PR-ready feature throu
 
 - **One worktree per feature**, always cut from the **delivery branch** (`feature-entrega*`), never a blind `main` — via `.agents/scripts/bootstrap-worktree.sh`. All work — docs + code — happens there; the human merges the PR. **One feature at a time** (`progress/current.md`).
 - **State on disk, not in chat.** Agents write to `docs/features/<name>/` and return one reference line (anti-"telephone" rule).
-- **Strict TDD.** No production code without a failing test that demands it.
+- **TDD by file type.** Non-UI `.ts` (services/DAOs/hooks/helpers/reducers) is strict TDD — no production code without a failing test that demands it. UI `.tsx` is implementation-first: impl → stories → interaction e2e → unit tests (`.agents/rules/tdd.mdc`).
 - **The review is the whole game.** Agents draft; judgment prunes. **Validation is compute-bound** — mutation proves the tests bite.
 - **Escalate, don't fake.** The mutation gate is escalate-only — unmet after 2 rounds → `ESCALATE`; agents never rewrite survivors as PASS or invent `human-excluded` waivers.
 - **Review history is durable.** `review*.md` are kept forever (findings marked resolved), never emptied — retros depend on the trail.
@@ -26,7 +26,7 @@ pending
         (+ risks.md → gitignored tmp/<name>/, landed in docs/ at PR time)              [spec_drafted]
   → spec_reviewer             → review-spec.md; vets the WRITTEN bundle
         (1 round: reviews once, spec_partner fixes every finding, no re-review)         [spec_ready]
-  → implementer       → per vertical slice: build (TDD) → reviewer_slice (ONE agent,
+  → implementer       → per vertical slice: build (TDD for .ts / impl-first for .tsx) → reviewer_slice (ONE agent,
         checks all .agents/rules/ + design + accessibility; 1 round, no re-review)
         → fix every finding → commit; no slice N+1 until findings fixed                 [in_progress]
   ── quality gate (after all slices) ──
@@ -48,7 +48,7 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 | `orchestrator_lead` | orchestrates all | `progress/*`, phase in `tasks.md` | no |
 | `spec_partner` | 1 — plan mode: grill (`grill-me`) → plan → (after approval) author spec + `gherkin-scenarios.md` | spec bundle + `gherkin-scenarios.md` | no |
 | `spec_reviewer` | 1 — spec review (post-approval, on the written bundle) | `review-spec.md` | no |
-| `implementer` | 2 — build (TDD) | `src/`, `tests/`, `tdd.md`, task statuses | **yes** |
+| `implementer` | 2 — build (TDD for `.ts` / impl-first for `.tsx`) | `src/`, `tests/`, `tdd.md`, task statuses | **yes** |
 | `reviewer_slice` | 2 — per slice (all `.agents/rules/` + design + accessibility, one agent) | `review-slice.md` | no |
 | `reviews_lead` | 3 — full review round (CI once, invokes the sole reviewer) | `review.md` | no |
 | `reviewer_engineering` (code · architecture · performance · security) | 3 — full review's sole reviewer | `review-engineering.md` | no |

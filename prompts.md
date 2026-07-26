@@ -486,7 +486,7 @@ These prompts drove refinement, reconciliation and review across the documents r
 
 3. I want to add a rule .agents/rules/e2e.mdc to specify that only e2e tests with real interaction are created, so never create e2e tests that only render a storybook story and asserts that the elements are there, unit tests are already covering that, so only e2e tests with interactions
 
-4. write the prompts into prompts.md
+4. I want to add a .agents/rules/state-sharing.mdc file where it says that Context should be used to avoid large prop-drilling or many levels of prop-drilling
 
 ---
 
@@ -498,7 +498,16 @@ These prompts drove refinement, reconciliation and review across the documents r
 
 2. add the prompt into prompts.md
 
-5. I want to add a .agents/rules/state-sharing.mdc file where it says that Context should be used to avoid large prop-drilling or many levels of prop-drilling
+---
+
+## Anexo — Prompts de la sesión: TDD solo para código no-UI; UI implementation-first
+
+> Prompts del usuario (verbatim, en orden) de la sesión que cambió la disciplina de build por tipo de archivo: **TDD estricto solo para código no-UI `.ts`** (services/DAOs/hooks/helpers/reducers), y para archivos UI `.tsx` **primero la implementación, luego las stories, luego los e2e de interacción, y por último los unit tests** (nunca test-first). Se actualizó `tdd.mdc`, `implementer.md`, las rúbricas de `reviewer_slice`/`reviewer_engineering`, `ORCHESTRATOR.md`, el comando y `ORCHESTRATOR_PLAN.md`.
+
+1. I want to change the orchestrator so it only uses TDD for non-UI code. So it will use it for Backend code, for hooks/services/daos/helpers or any .ts file, but never for UI  .tsx files. For UI files it should work on the implementation first, then on the stories, the e2e tests that probe interaction, and finally on the unit tests
+
+2. ok, save the previous prompt in prompts.md
+
 
 6. /commit
 

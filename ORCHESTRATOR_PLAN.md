@@ -21,7 +21,7 @@ This orchestrator blends two references:
 |---|---|---|---|
 | Entry | "implement next pending feature" | `/spec FEAT-XXX` | User-story `.md` file in `user-stories/pending/`, named on the command line (moved pending → in-progress → done as it runs) |
 | Spec + Contract | `spec_partner` debates → `project-spec.md`; separate `gherkin_author` | `/spec` → spec + risks + tasks + qa | **`spec_partner` runs in plan mode**: grills read-only → presents a **plan** → **single human gate approves the plan up front** → then authors spec.md + risks.md + tasks.md + `gherkin-scenarios.md` (Gherkin via the `gherkin-authoring` skill), which **`spec_reviewer` vets** |
-| Build | `implementer` strict TDD | Code Agent by vertical slice | **`implementer`**, strict TDD **by vertical slice** (1→2→3), branching by artifact type (UI vs logic), always integration tests |
+| Build | `implementer` strict TDD | Code Agent by vertical slice | **`implementer`** by vertical slice (1→2→3): **TDD for non-UI `.ts`**, **implementation-first for UI `.tsx`** (impl → stories → interaction e2e → unit tests), always integration tests |
 | Review | single `judge` | `/arch` + `/security` separately | **Two cadences:** per-slice light review (`reviewer_slice`, checks the slice against **all `.agents/rules/` + design + accessibility**) during the build, then a **single-reviewer full round** after all slices — `reviewer_engineering` (code · architecture · performance · security) — driven by **`reviews_lead`**, which runs CI once and turns the findings into one change request to the implementer (design & accessibility stay at the slice level) |
 | Mutation | custom `mutate.py` | — | **StrykerJS** with per-feature score thresholds |
 | DoD / PR | — | `/pr` PR Guardian (validates DoD **and** opens PR) | **`dod_validator`** — validates the full DoD only; PR creation is a manual human step |
@@ -42,7 +42,7 @@ Everything the orchestrator generates must obey the project's existing rules (ca
 - **i18n / labels** (`i18n.mdc`): user-facing text always via `t('namespace.key')` **inline at the usage site** — never a `labels` variable/object of pre-resolved `t()` calls; the only allowed collection is a **key dictionary** mapping a domain value → translation key (e.g. `GENERATION_ERROR_KEYS`).
 - **Conventions**: functional React only, no Redux; always a `Props` type; kebab-case filenames; `.web.tsx` for platform-specific; Conventional Commits.
 - **Testing** (`global.mdc` + `e2e.mdc`):
-  - Storybook components → **Jest + React Native Testing Library** unit tests (`<name>.test.tsx`, co-located — rendering/props/states/handlers/a11y) **plus** **Storybook + Playwright** e2e **only when there is a real interaction** (`e2e.mdc` — never a render-only "it renders" e2e; no interaction → no `.e2e.js`). E2e live under `tests/e2e/`, mirroring the component's `src/` path; stories reached via `/?path=/story/...` inside `frameLocator('iframe[title="storybook-preview-iframe"]')`; components port 6007, lib-with-storybook 6006. The orchestrator **requires the Jest unit test on every component** so TDD and mutation testing apply to UI too.
+  - Storybook components → **Jest + React Native Testing Library** unit tests (`<name>.test.tsx`, co-located — rendering/props/states/handlers/a11y) **plus** **Storybook + Playwright** e2e **only when there is a real interaction** (`e2e.mdc` — never a render-only "it renders" e2e; no interaction → no `.e2e.js`). E2e live under `tests/e2e/`, mirroring the component's `src/` path; stories reached via `/?path=/story/...` inside `frameLocator('iframe[title="storybook-preview-iframe"]')`; components port 6007, lib-with-storybook 6006. The orchestrator **requires the Jest unit test on every component** so **mutation testing** applies to UI too — though for `.tsx` those unit tests are written **last** (implementation-first order), not test-first; only non-UI `.ts` is TDD (`tdd.mdc`).
   - Hooks/services/DAOs/non-Storybook components → **Jest + React Native Testing Library** (`*.dao.test.ts`, `*.service.test.ts`, `*.test.ts`).
   - Supabase queries → **Supabase Test Helpers**.
 - **Backend**: Supabase; schema changes via migrations (`npx supabase migration new`, `npx supabase db push`).
@@ -182,7 +182,7 @@ flowchart TD
     SR -->|"findings → fix (1 round, no re-review)"| AUTHOR
 
     SR -->|"spec_ready"| P3G
-    subgraph P3G["② implementer — strict TDD, one slice at a time (each slice: build → rules+design review → next) (in_progress)"]
+    subgraph P3G["② implementer — one slice at a time: TDD for .ts / impl-first for .tsx (build → rules+design review → next) (in_progress)"]
         direction LR
         S1["Slice 1<br/>Happy path + Loading"] --> S2["Slice 2<br/>Empty + Error + Retry"] --> S3["Slice 3<br/>Analytics + Flag + a11y + i18n"] --> INT["Integration tests"]
     end
@@ -242,10 +242,10 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
 - **Single round:** `spec_reviewer` reviews the written bundle **once**; `spec_partner` fixes **every** finding; then → `spec_ready` (no re-review pass). A finding `spec_partner` can't resolve → the lead **escalates** to the human. (This runs after the plan gate, so scope is already approved; a fix that would materially change the approved plan is re-surfaced to the human.)
 - **⏸ HUMAN GATE (single, up front — on the PLAN):** before any file is written, `orchestrator_lead` presents `spec_partner`'s **plan** (spec overview + task/slice breakdown + `@s` scenario outline) and **waits for one explicit approval**. The human can send edits back to `spec_partner` (re-grill/re-plan) or approve → `approved`. Only then does `spec_partner` author the bundle, and `spec_reviewer` vets the written artifacts (a fix that would materially change the approved plan is re-surfaced to the human). Approving the plan is the cheapest place to correct scope, intent, and contract — before anything is authored.
 
-### Phase 2 — `implementer` (Build, strict TDD)
+### Phase 2 — `implementer` (Build — TDD for non-UI `.ts`, implementation-first for UI `.tsx`)
 - **Tools:** `Read, Write, Edit, Glob, Grep, Bash`.
 - **Preconditions:** feature is `approved`; `docs/features/<name>/gherkin-scenarios.md` exists. Otherwise stop. Reads the feature's `task-N.md` files and works them in slice order, flipping each task's `status` (`todo → in_progress → done`) as it goes.
-- **The Three Laws (non-negotiable):** (1) no production code except to pass a failing test; (2) no more test than needed to fail (not compiling counts as failing); (3) no more production than needed to pass. Cycle **Red → Green → Refactor**, one scenario `@s` at a time, logging each cycle and the `@s → test` map to `docs/features/<name>/tdd.md`.
+- **Discipline by file type (`tdd.mdc`):** **non-UI `.ts`** (services/DAOs/hooks/`*.helpers.ts`/`*.reducer.ts`/pure logic) is **strict TDD** — the Three Laws: (1) no production code except to pass a failing test; (2) no more test than needed to fail (not compiling counts as failing); (3) no more production than needed to pass; cycle **Red → Green → Refactor**, one `@s` at a time. **UI `.tsx`** is **implementation-first** (not test-first): impl → stories → interaction e2e → unit tests (see the artifact block below). Log each `.ts` cycle and each UI artifact + the `@s → test` map to `docs/features/<name>/tdd.md`.
 - **Vertical slices (build in this order, one slice at a time):** the feature is delivered as thin end-to-end slices, each shippable and each its own mini TDD loop. The implementer does **not** start Slice 2 until Slice 1's slice-gate passes. Scenarios (`@s`) from the `gherkin-scenarios.md` are grouped onto slices in `tasks.md`.
 
   | Slice | Scope | Scenarios it covers | Conventional commit |
@@ -257,11 +257,11 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
   **Per-slice gate** (before the commit and before the next slice): the slice's `@s` scenarios are covered by passing tests; `pnpm --filter <ws> test` (+ relevant `test:e2e`) green; `pnpm lint` + `pnpm check-types` clean; no hardcoded strings/colors/dims; **and a light `reviewer_slice` review (checks the slice against all `.agents/rules/` + design + accessibility, invoked directly by `orchestrator_lead`)** runs — **1 round**: reviews once, findings fixed via TDD, no re-review (unresolvable → escalate). Then the Conventional Commit is made. Each slice is logged as its own block in `docs/features/<name>/tdd.md`. Non-UI/logic-only features still slice by risk (happy path → error/edge → observability) even without the 4 UI states.
 - **What it generates within each slice, by artifact type:**
 
-  **a. UI component** (Storybook-backed, atomic design) — TDD-driven exactly like logic:
-  - **Unit tests first — REQUIRED for every component** (`<name>.test.tsx`, Jest + RN Testing Library, co-located): drive the component through Red→Green→Refactor. Assert rendering per prop, each of the 4 UI states (where applicable), conditional branches, callback/handler wiring, and accessibility roles/labels. This is what lets **TDD *and* mutation testing** apply to UI components, not just logic.
-  - Component: `libs/<lib>/src/<atoms|molecules|organisms|templates|pages>/<name>/<name>.tsx` — **always reuse existing tokens/components**; if the story references a pasted screenshot, translate it to the design system, otherwise build from the spec. (No Figma in this repo — no Figma MCP step.)
-  - Story: `<name>.stories.tsx` (follow `lib-with-storybook` patterns; cover the 4 states).
-  - Visual/interaction e2e: `<name>.e2e.js` under `tests/e2e/` (Playwright against the story) — guards rendered appearance and cross-component interaction the unit test can't. (Playwright is outside Stryker's scope; the Jest unit test is what mutation bites.)
+  **a. UI component** (`.tsx`, Storybook-backed, atomic design) — **implementation-first, in this order** (NOT test-first):
+  1. **Component:** `libs/<lib>/src/<atoms|molecules|organisms|templates|pages>/<name>/<name>.tsx` — **always reuse existing tokens/components**; if the story references a pasted screenshot, translate it to the design system, otherwise build from the spec. (No Figma in this repo — no Figma MCP step.) Its co-located `.ts` (`use-<name>.ts`, `<name>.helpers.ts`, `<name>.reducer.ts`) is still **TDD'd test-first**.
+  2. **Story:** `<name>.stories.tsx` (follow `lib-with-storybook` patterns; cover the 4 states).
+  3. **Interaction e2e:** `<name>.e2e.js` under `tests/e2e/` (Playwright against the story) — **only for real interaction flows** (`e2e.mdc`; a component with no interaction gets none). (Playwright is outside Stryker's scope.)
+  4. **Unit tests last — still REQUIRED for every component** (`<name>.test.tsx`, Jest + RN Testing Library, co-located): rendering per prop, each of the 4 UI states, conditional branches, callback/handler wiring, accessibility roles/labels. Owns static rendering/presence, and is what makes the `.tsx` **mutation-testable** (mutation runs later, after all slices).
 
   **b. Logic / business rules** (hooks / services / DAOs):
   - Unit tests first: `*.service.test.ts`, `*.dao.test.ts`, `use-*.test.ts` (mock Supabase `getSupabase()`/`fetch` or the layer below).
