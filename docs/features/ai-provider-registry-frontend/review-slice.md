@@ -98,3 +98,76 @@ No new UI states or visual elements introduced — this slice re-sources existin
 ## Slice 2/3 (disabled-provider indicator, error-code widening, locale copy, dead-code cleanup)
 
 Out of scope for this round — not yet built.
+
+## Slice 1, task-5 increment (`@s19` zero-regression fixture) — `reviewer_slice`, round 1
+
+**Verdict: APPROVED**
+
+Scope reviewed: `git show 465269403` only (task-5's diff, built after task-1..4 were already
+approved above — that diff is not re-reviewed). Cross-checked against `task-5.md`, `tdd.md`'s
+task-5 entries, `libs/types/src/ai-provider.ts` (`AI_PROVIDERS`/`AI_MODEL_REGISTRY`/
+`API_KEY_SETTINGS_GUIDANCE_URLS`), and `libs/localization/src/resources/en.ts`.
+
+No blocking findings.
+
+### Verified correctness of the pinned fixture
+
+- `libs/hooks/src/hooks/use-ai-providers.fixture.ts`'s `AI_PROVIDER_CATALOG_FIXTURE` — 6 providers/
+  13 models — matches `AI_PROVIDERS`' canonical id order, `AI_MODEL_REGISTRY`'s per-provider model
+  ids/vision flags/visionDefault, `API_KEY_SETTINGS_GUIDANCE_URLS`' URLs, and the resolved English
+  model-label strings in `libs/localization/src/resources/en.ts` (e.g. `gptOss20b: 'GPT-OSS 20B'`,
+  `v4Flash: 'DeepSeek V4 Flash'`) exactly, field by field, provider by provider.
+
+### Requested spot-check — the two label-typo fixes left out of scope
+
+Confirmed reasonable, not a latent bug requiring an in-scope fix now:
+- `libs/study-buddy/src/test-utils/ai-provider-test-factories.ts` (task-3/4, untouched by this
+  commit — not in task-5's `paths`) still has `'GPT OSS 20B'`/`'GPT OSS 120B'` (no hyphen) and
+  `'DeepSeek v4 Flash'`/`'DeepSeek v4 Pro'` (lowercase v), diverging from the real i18n resource
+  strings that the new, correctly-pinned `AI_PROVIDER_CATALOG_FIXTURE` in `@helsoft/hooks` uses.
+- Confirmed low-risk to defer: every existing assertion against that factory's typo'd labels
+  (`lesson-generation.test.tsx:183,266,941,965`, `use-lesson-generation.test.ts:163-164`) is
+  self-consistent — the mock's label is asserted against itself, never diffed against the real
+  `en.ts` string — so the typo doesn't mask a production bug or a false-positive test; it's cosmetic
+  test-fixture drift only.
+- `task-5.md`'s Notes and the task-5 `tdd.md` entry both explicitly name this divergence and defer
+  its retirement to task-9/12/13 (when the old factory is deleted in favor of this fixture) —
+  consistent with Decision 13 and with not widening this round's scope beyond task-5's `paths`.
+
+### Rule-by-rule pass (no violations found)
+
+- `global.mdc` — kebab-case (`use-ai-providers.fixture.ts`), barrel-exported
+  (`libs/hooks/src/hooks/index.ts`); the fixture's doc comment explains *why* (single source of
+  truth, drift-prevention rationale, Decision 13 cite), not a restatement of *what* the array
+  contains.
+- `hooks-service-dao.mdc` / `tanstack-query.mdc` — no hook/service/DAO logic touched; existing
+  `useAiProviders` query behavior unchanged.
+- `atomic-design.mdc` / `component-split.mdc` / `state.mdc` / `state-sharing.mdc` — no components
+  or local/shared state touched; N/A for this increment.
+- `types.mdc` — the fixture file is a data constant (`.fixture.ts`), correctly not a `.types.ts`;
+  no type declarations added outside `libs/types`.
+- `i18n.mdc` — no new user-facing `t()`/labels/copy pattern introduced; catalog `name`/`label`
+  fields are plain display data mirroring the DB, matching the pre-existing (task-1..4-approved)
+  pattern, not translation keys.
+- `tdd.mdc` — `use-ai-providers.fixture.ts` is non-UI `.ts`; `tdd.md`'s task-5 entry documents
+  RED (new `@s19` test fails on missing module — "not importing counts as failing") → GREEN
+  (minimal fixture added) → no refactor needed, satisfying strict TDD for this file. `@s19` maps to
+  3 concrete tests (`use-ai-providers.test.ts`, `api-key-settings-screen.test.tsx`,
+  `use-lesson-generation.test.ts`), one per migrated consumer, all sourced from the one fixture —
+  matches the `@s → test` table. No hardcoded strings/colors/dimensions of the kind this rule
+  guards against — the pinned values are intentionally-literal regression data, the documented
+  purpose of this fixture. `tdd.md` is 7913 bytes, under the 8000-byte budget.
+- `pre-slice-checklist.mdc` — new public symbol (`AI_PROVIDER_CATALOG_FIXTURE`) barrel-exported; no
+  shared atom touched; `jest.mock('@helsoft/hooks', () => ({ ...jest.requireActual(...), ... }))` in
+  both consumer test files correctly preserves the real fixture export through the partial mock (no
+  breakage from the new barrel entry).
+- `e2e.mdc` — no e2e files added or touched; the three new tests are unit tests (Jest +
+  `@testing-library/react-native`), not Playwright — N/A.
+
+### Design (`.agents/DESIGN.md`) / Accessibility (WCAG 2.2 AA)
+
+**N/A** — this is a test-only/fixture commit (a data constant, its consuming unit tests, a
+Storybook mock swap, and doc updates). No `.tsx` production component, style, or markup changed;
+the Storybook mock swap (`'.storybook/mocks/hooks.ts'`) only changes which data a mock hook returns
+in tests/stories, not any rendered UI, role, or label.
+
