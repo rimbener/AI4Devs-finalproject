@@ -188,3 +188,145 @@ reflagged as new.
 ideally add the cache-inspecting regression test) before this feature is approved. The `enabled`/
 `isLoading` duplication and the carried-forward `use-session.ts` ref-initializer note are
 non-blocking and may be deferred.
+
+---
+
+## Round 2 — verdict: APPROVED
+
+Scope: `git diff 0f5bb0622..6883a9aca` (the fix commit) plus current-state reads of every touched
+file and its full test file. CI trusted per `reviews_lead`: **CI green @ 6883a9aca** (`pnpm lint`
+14/14, `pnpm turbo run check-types --force` 14/14, `pnpm turbo run test --force` 12/12) — not
+re-run here.
+
+### Round-1 finding 1 [security][major] — RESOLVED, re-verified
+
+`libs/hooks/src/hooks/use-api-key.ts:31-33,44,48,61-71,74-79` re-read in full.
+
+- `ApiKeyMutationVariables`'s `save` branch is now `{ kind: 'save'; provider: AiProvider }` — no
+  `rawKey` field exists in the type at all, so `mutation.state.variables` structurally cannot carry
+  the raw key for a save, success or failure, because the value handed to `mutateAsync` (line 77:
+  `{ kind: 'save', provider }`) never contains it in the first place — not merely cleared after the
+  fact.
+- `pendingRawKeyRef` (line 48, `useRef<string | null>(null)`) is set at `use-api-key.ts:76`
+  immediately before `mutateAsync`, read once inside `mutationFn` at line 63
+  (`pendingRawKeyRef.current ?? ''`), and cleared in `onSettled` at `use-api-key.ts:69-71`.
+  `onSettled` (unlike `onSuccess`/`onError`) fires on **both** outcomes in TanStack Query v5 — traced
+  against the installed `@tanstack/query-core@5.101.4` source
+  (`node_modules/.pnpm/@tanstack+query-core@5.101.4/.../build/legacy/mutation.cjs:169-183`): the
+  `onSettled` callbacks run unconditionally after either the success branch or the caught-error
+  branch, before `execute()` returns. So a failed `saveApiKey` clears the ref exactly the same as a
+  successful one — no failure-path leak.
+- No `onMutate`/optimistic-update path exists in this hook (grepped `use-api-key.ts` — only
+  `onSuccess`/`onSettled` are wired), and no second call site constructs
+  `ApiKeyMutationVariables` — `saveApiKey` (line 74-80) and `removeApiKey` (line 82-87) are the only
+  two `mutateAsync` callers, both in this one file. `removeApiKey` never touches
+  `pendingRawKeyRef`, so its path is unaffected and not newly broken.
+- **Test genuinely regression-tests the vulnerability.** `use-api-key.test.ts:364-380` ("never
+  writes the raw key into the mutation cache after a saveApiKey call") calls `saveApiKey('groq',
+  'sk-should-never-be-cached')` then inspects `queryClient.getMutationCache().getAll()` and asserts
+  none of the mutations' `JSON.stringify(state.variables)` contains the raw key. Mentally reverting
+  to pre-fix code (`{ kind: 'save', provider, rawKey }` as the mutation variables, `rawKey` passed
+  straight from `saveApiKey`'s argument) — the settled mutation's `state.variables` would literally
+  be `{ kind: 'save', provider: 'groq', rawKey: 'sk-should-never-be-cached' }`, and
+  `JSON.stringify(...)` would contain the literal string — the assertion would fail. Confirmed this
+  is a real regression test, not a name that outruns its assertion (the s50-round-1 gap this task
+  flagged).
+- **Verdict: RESOLVED.** Structurally impossible for `rawKey` to reach the mutation cache post-fix,
+  for either outcome.
+
+**New, non-blocking observation (not in either round-1 finding, surfaced by this round's fresh
+trace):** the fix trades a race-free design (each `mutateAsync` call previously carried its own
+self-contained `variables` object) for a single shared `pendingRawKeyRef`. If `saveApiKey` were
+invoked a second time before the first call's `mutationFn` has read the ref (e.g. two overlapping,
+un-awaited calls — `mutateAsync`'s actual `mutationFn` invocation happens inside an async
+`retryer.start()` chain, not synchronously at the `mutate()` call site, per
+`mutation.cjs:96-153`), the second call's `pendingRawKeyRef.current = rawKey` assignment (line 76)
+could overwrite the first's value before the first's `mutationFn` reads it, causing the wrong raw
+key to be sent for the first call's provider. Pre-fix code had no such race (each call's `rawKey`
+traveled with its own `variables` object). This is consistent with — not a violation of — the
+hook's existing single-mutation-slot design (D3, one `isSubmitting`/error slot shared by
+save/remove, meaning the hook already assumes at most one in-flight mutation at a time), and no
+current call site invokes `saveApiKey` without awaiting/disabling the submit control first. This
+is an **advisory note, not a scored finding** (no blocking/major/minor severity assigned — it does
+not factor into this round's verdict): worth a one-line comment on `pendingRawKeyRef` noting the
+single-in-flight assumption, or a future guard, should the team ever allow overlapping saves.
+
+### Round-1 finding 2 [code][minor] — RESOLVED, re-verified
+
+`libs/hooks/src/hooks/use-session-gate.ts` + `.types.ts` + consumers re-read in full.
+
+- **Placement/typing.** `useSessionGate()` (`use-session-gate.ts:12-20`) is a small, correctly
+  typed (`UseSessionGateResult`, co-located in `use-session-gate.types.ts` per `types.mdc`) pure
+  composition over `useSession()`. It lives in `libs/hooks/src/hooks/` alongside the hooks it serves
+  and is **not** re-exported from `libs/hooks/src/hooks/index.ts` (confirmed — the barrel lists all
+  11 other `use-*` hooks/types but no `use-session-gate` entry) or from `libs/hooks/src/index.ts`.
+  One nuance the implementer's own comment slightly overstates: `use-auth.helpers.ts` (the cited
+  precedent) exports plain non-hook helper functions (`isAuthErrorShape`, `toErrorCode`), whereas
+  `useSessionGate` is itself a genuine hook (composes `useSession()`, i.e. subject to the Rules of
+  Hooks) using the `use-{feature}.ts` naming pattern that `hooks-service-dao.mdc`'s canonical
+  example pairs with barrel export. This is a very minor naming-convention nuance, not a layering
+  violation (`useSessionGate` still only wraps a hook, never a DAO/service directly, and un-exported
+  internal composition hooks are a reasonable and common React pattern) — **not a finding**, noted
+  for completeness only since the task asked to compare it against the cited convention explicitly.
+- **Zero behavior drift — verified line-by-line for both consumers.**
+  - `use-api-key.ts`: old `enabled: Boolean(sessionUserId) && !isSessionLoading` (pre-fix) ==
+    `useSessionGate()`'s `enabled` (`use-session-gate.ts:14`, identical expression) — same line,
+    same boolean algebra. Old `isLoading = isSessionLoading || (Boolean(sessionUserId) &&
+    isPending)` == `deriveIsLoading(isPending)` (`use-api-key.ts:91` calling
+    `use-session-gate.ts:17-18`, byte-identical expression body). Pass.
+  - `use-profile.ts`: same `enabled` identity. Old `isLoading = isSessionLoading || isApiKeyLoading
+    || (Boolean(sessionUserId) && isPending)` vs new `deriveIsLoading(isPending) || isApiKeyLoading`
+    (`use-profile.ts:47`) — algebraically identical by associativity/commutativity of `||`
+    (`(A || B) || C === (A || C) || B`, all boolean, no short-circuit side effects on either side to
+    reorder around). The extra `isApiKeyLoading` term is correctly ORed **on top of**
+    `useSessionGate()`'s output, not lost or double-counted — confirmed it appears exactly once,
+    outside `deriveIsLoading`'s own internal OR, matching the pre-fix structure exactly.
+- **New test.** `use-session-gate.test.ts` (4 cases, `use-session-gate.test.ts:1-59`): authenticated
+  + settled → `enabled: true`, `deriveIsLoading(false): false`; no session → `enabled: false`,
+  `deriveIsLoading(true): false` (a disabled query's stray `isPending: true` must never leak as
+  loading); session itself still resolving → `enabled: false`, `deriveIsLoading(false): true`
+  (loading regardless of query-pending); authenticated + settled → `deriveIsLoading` mirrors the
+  query's own pending flag both ways. These four cases meaningfully cover the full 2x2 gating
+  contract (`isSessionLoading` × `hasUser`) that both consumers depend on — pass.
+- **Verdict: RESOLVED.** Pure refactor, no behavior change, correctly scoped/typed/un-exported.
+
+### Fresh full-diff pass (net-new items beyond the two findings' direct fix)
+
+- **Public return shape of `useApiKey`/`useProfile` — unchanged.** `git diff 0f5bb0622..6883a9aca`
+  touches zero lines of `use-api-key.types.ts` / `use-profile.types.ts` (confirmed: empty diff on
+  both files). `UseApiKeyResult`/`UseProfileResult` are structurally identical pre/post-fix; no
+  field became optional/required, no new field added. check-types passing corroborates this but was
+  independently confirmed by the empty type-file diff, not just trusted from CI.
+- **Barrel (`index.ts`) changes — none.** `libs/hooks/src/hooks/index.ts` has no diff in this fix
+  commit (confirmed via `git diff --stat` on the file — no hunk); `use-session-gate.ts`/`.types.ts`
+  are correctly the two new files that stay un-barreled, per the finding-2 fixup.
+- **No unrelated/opportunistic changes.** The fix commit's file list is exactly: `use-api-key.ts`,
+  `use-api-key.test.ts`, `use-profile.ts`, `use-session-gate.ts` (new), `use-session-gate.types.ts`
+  (new), `use-session-gate.test.ts` (new), plus the docs/tasks/tdd trail files. Nothing outside the
+  two findings' direct scope; no drive-by refactors, no dependency bumps, no unrelated file touched.
+- **s45-s47 untouched, still intact.** Re-read `use-api-key.test.ts:200-255` directly: all three
+  tests (`sets error to the normalized code and preserves status after a failed saveApiKey`, `falls
+  back to network_error when the rejection carries no recognized code`, `clears an error left by a
+  failed saveApiKey once removeApiKey succeeds`) are present, unmodified, and structurally intact
+  (error-normalization + D3 cross-clearing semantics both still asserted). Matches implementer's
+  claim; CI green corroborates they pass.
+
+## Lens summary — round 2
+
+- **Code quality & TDD** — pass. Both round-1 findings resolved via TDD (new regression tests for
+  each); one advisory (non-scored) observation surfaced (shared-ref race across overlapping
+  un-awaited `saveApiKey` calls) — does not factor into the verdict, recorded for a future pass.
+- **Architecture & layering** — pass. `useSessionGate` composes only `useSession()` (a hook), never
+  a DAO/service; correctly un-exported from the barrel; `types.mdc` co-location respected
+  (`use-session-gate.types.ts`).
+- **Performance** — N/A/unchanged for this round's diff (pure refactor + a `useRef`, no new
+  renders/round-trips introduced; `useSessionGate`'s `deriveIsLoading` is a plain function, not
+  memoized, but it's O(1) boolean algebra called at most twice a render — no perf concern).
+- **Security** — the round-1 blocking finding is resolved; structurally confirmed the raw key
+  cannot reach `queryClient.getMutationCache()` for either a successful or failed save.
+
+**Verdict: APPROVED** — both round-1 findings (1 major/security, 1 minor/code) confirmed resolved
+by direct code/test inspection, not just by trusting the implementer's account. Zero new
+blocking/major/minor findings from the fresh full-diff pass; one advisory (non-scored) observation
+(shared-ref race on overlapping un-awaited `saveApiKey` calls) noted for the trail, not required to
+fix.

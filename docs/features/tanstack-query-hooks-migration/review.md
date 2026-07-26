@@ -1,6 +1,6 @@
 ---
 feature: tanstack-query-hooks-migration
-review_round: 1
+review_round: 2
 ---
 
 # Full review — tanstack-query-hooks-migration
@@ -64,6 +64,22 @@ of the configured `gcTime`. Root-caused instead: `rawKey` no longer flows throug
 call" — inspects `queryClient.getMutationCache().getAll()` post-settle. Full technical trace in
 `review-engineering.md`. Existing s45-s47 (error persistence/clearing) untouched, still green.
 
+**Round 2 re-verification: RESOLVED, confirmed.** `reviewer_engineering` re-read
+`use-api-key.ts:31-33,44,48,61-71,74-80` in full and traced the installed
+`@tanstack/query-core@5.101.4` source directly (not just trusted the implementer's account):
+`ApiKeyMutationVariables`'s `save` branch structurally no longer has a `rawKey` field, so
+`mutation.state.variables` cannot carry it for either outcome; `pendingRawKeyRef` is cleared in
+`onSettled`, which fires on both success and failure per the traced library source, so no
+failure-path leak; no `onMutate`/optimistic path or second call site exists; `removeApiKey` is
+unaffected. Confirmed the new regression test (`use-api-key.test.ts:364-380`) would genuinely fail
+against the pre-fix code (mentally reverting, `JSON.stringify(state.variables)` would contain the
+literal raw-key string) — a real regression test, not a name that outruns its assertion. **New
+advisory (non-scored, not a finding):** the shared `pendingRawKeyRef` reintroduces a latent race
+if `saveApiKey` were invoked twice without awaiting (pre-fix, each call's `variables` was
+self-contained); consistent with the hook's existing single-mutation-slot (D3) design and no
+current call site does this — recorded for a future hardening pass, not blocking, not scored.
+Full trace in `review-engineering.md` Round 2 section.
+
 ### [code][minor] — RESOLVED (implementer fixup, see below)
 **`enabled`/`isLoading` session-gating duplicated verbatim across the two user-scoped hooks**
 
@@ -85,6 +101,20 @@ internal — not barrel-exported, same convention as `use-auth.helpers.ts`) retu
 `use-profile.ts` now consume it in place of their own `useSession()` + inline derivations. New
 `use-session-gate.test.ts` (4 cases); pure refactor — both hooks' existing suites pass unchanged.
 
+**Round 2 re-verification: RESOLVED, confirmed.** `reviewer_engineering` re-read
+`use-session-gate.ts`/`.types.ts` and both consumers line-by-line: `enabled` is identity-identical
+to the pre-fix expression; `use-api-key.ts`'s old `isLoading` derivation matches
+`deriveIsLoading(isPending)` byte-for-byte; `use-profile.ts`'s extra `isApiKeyLoading` term is
+still correctly ORed on top of `deriveIsLoading(isPending)`, not lost or double-counted (confirmed
+algebraically equivalent to the pre-fix triple-OR by associativity/commutativity, no short-circuit
+side effects to reorder around). Confirmed `use-session-gate.ts`/`.types.ts` are not barrel-exported
+(`libs/hooks/src/hooks/index.ts` has zero diff and lists no entry for them) and correctly co-locate
+types per `types.mdc`. The 4-case `use-session-gate.test.ts` meaningfully covers the full 2×2
+gating contract (`isSessionLoading` × `hasUser`). One minor naming-precision nuance noted but not
+scored as a finding: `useSessionGate` is itself a genuine hook (composes `useSession()`), whereas
+the cited `use-auth.helpers.ts` precedent exports plain non-hook functions — no layering violation,
+not blocking. Full trace in `review-engineering.md` Round 2 section.
+
 ### [perf][non-blocking, carried forward from slice 0] — ACCEPTED (round 1)
 **`use-session.ts:17-19` `useRef` initializer re-evaluates a cache lookup every render**
 
@@ -92,9 +122,8 @@ Already flagged and explicitly accepted as non-blocking in the slice-0 `reviewer
 (`review-slice.md`, Slice 0 section: "Functionally correct... just a redundant cache read on
 subsequent renders. No rule in `.agents/rules/` requires lazy-init here"). Still present after
 every later slice touched the file; re-confirmed still negligible (an in-memory `Map` lookup, not
-a network round-trip) by `reviewer_engineering` in this round. **Accepted, not reopened** — no
-rule requires a fix, and re-litigating an already-accepted non-blocking observation isn't this
-role's job. Recorded here only so the durable trail shows it was re-examined, not missed.
+a network round-trip) by `reviewer_engineering` in round 1. Untouched by the round-1 rework diff;
+not re-litigated in round 2 per this role's scoping rules. **Accepted, not reopened.**
 
 ---
 
@@ -136,13 +165,35 @@ Verified by `reviewer_engineering` against the whole diff (not slice-by-slice); 
      matches the deleted reducer's guard exactly; `use-profile.test.ts` carries the regression
      test. No loose end.
 
+## Round 2 — fresh full-diff pass (net-new items beyond the two findings' direct fix)
+
+Verified by `reviewer_engineering` against the fix commit (`0f5bb0622..6883a9aca`) plus current
+file state, full detail in `review-engineering.md`:
+
+- **Public return shapes of `useApiKey`/`useProfile` — unchanged.** Zero diff on
+  `use-api-key.types.ts`/`use-profile.types.ts`; no field became optional/required, no new field
+  added.
+- **Barrel (`index.ts`) — no changes.** `libs/hooks/src/hooks/index.ts` has zero diff in the fix
+  commit; the two new `use-session-gate.*` files correctly stay un-barreled.
+- **No unrelated/opportunistic changes** — fix commit's file list is exactly the two findings'
+  direct scope (`use-api-key.ts/.test.ts`, `use-profile.ts`, three new `use-session-gate.*` files,
+  plus trail docs). No drive-by refactors, no dependency bumps.
+- **s45-s47 (error persistence/clearing)** re-read directly in `use-api-key.test.ts:200-255` —
+  present, unmodified, structurally intact; CI green corroborates they pass.
+
 ## Lens N/A record
 
 Neither lens was marked N/A by `reviewer_engineering` — both performance (caching/retry defaults
 across 7 migrated hooks) and security (an API-key hook, cross-user cache-key design) genuinely
-apply to this diff, and both were fully exercised.
+apply to this diff, and both were fully exercised, in both rounds.
 
 ---
+
+## CI (round 2, run once by reviews_lead, forced/no-cache)
+
+`pnpm lint` — 14/14 packages green. `pnpm turbo run check-types --force` — 14/14 packages green.
+`pnpm turbo run test --output-logs=errors-only --force` — 12/12 tasks green.
+CI green @ `feat/tanstack-query-hooks-migration` HEAD (`6883a9aca`).
 
 ## Verdict — round 1: CHANGES_REQUESTED
 
@@ -166,5 +217,18 @@ increment `review_round` in `tasks.md`.
 Both findings above fixed via TDD (see per-finding "Resolved" notes and full technical trace in
 `review-engineering.md`). `@helsoft/hooks` 19 suites/142 tests green; `pnpm turbo run test
 --force` 12/12 and `pnpm turbo run check-types --force` 14/14 green repo-wide; `pnpm format` /
-`pnpm --filter @helsoft/hooks lint` clean. Awaiting round 2 `reviewer_engineering` re-review to
-confirm and update the verdict.
+`pnpm --filter @helsoft/hooks lint` clean. Fix commit `6883a9aca`.
+
+## Verdict — round 2: APPROVED
+
+Both round-1 findings re-verified resolved by direct code/test inspection (not just trusting the
+implementer's account) — see per-finding "Round 2 re-verification" notes above. Zero new
+blocking/major/minor findings from this round's fresh full-diff pass. One new advisory
+(non-scored, not a finding) surfaced this round — a latent shared-ref race in `use-api-key.ts` if
+`saveApiKey` were ever called twice without awaiting — recorded above and in `review-engineering.md`
+for a future hardening pass; does not block, no severity assigned, no current call site triggers
+it. The carried-forward `use-session.ts` perf note remains ACCEPTED, not reopened.
+
+**This review round is CLOSED at APPROVED.** `review_round` incremented to 2 in `tasks.md`.
+Full findings trail above is retained per this role's durable-record requirement — never emptied.
+Next: `mutation_tester` (StrykerJS, once) per the pipeline, then `dod_validator`.
