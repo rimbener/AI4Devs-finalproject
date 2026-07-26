@@ -10,6 +10,6 @@ export type UseApiKeyResult = {
   error: ApiKeyErrorCode | null;
   /** Derived: true when status.keys.length > 0 — keeps useProfile().canCreate unchanged. */
   hasKey: boolean;
-  saveApiKey: (provider: AiProvider, rawKey: string) => Promise<void>;
-  removeApiKey: (provider: AiProvider) => Promise<void>;
+  saveApiKey: (provider: AiProvider, rawKey: string) => void;
+  removeApiKey: (provider: AiProvider) => void;
 };

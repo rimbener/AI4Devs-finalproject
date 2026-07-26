@@ -32,14 +32,6 @@ export const SavedLessons = () => {
     router.push('/pdf-files');
   }, [router]);
 
-  const onDelete = useCallback(
-    (id: string) => {
-      // SignOut pattern: swallow so a rethrown hook error never floats unhandled.
-      void deleteLesson(id).catch(() => {});
-    },
-    [deleteLesson],
-  );
-
   // accessibilityLiveRegion covers Android/Web; iOS needs announceForAccessibility (WCAG 4.1.3).
   useEffect(() => {
     if (state === 'content' && error) {
@@ -60,7 +52,7 @@ export const SavedLessons = () => {
         lessons={items}
         onOpenLesson={onOpenLesson}
         onRetry={refetch}
-        onDelete={onDelete}
+        onDelete={deleteLesson}
       />
       {state === 'content' && error ? (
         <Text accessibilityLiveRegion="assertive" style={styles.deleteError}>

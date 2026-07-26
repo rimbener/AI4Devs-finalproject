@@ -35,18 +35,6 @@ export const PdfDocuments = () => {
     [documents, router],
   );
 
-  const handleDelete = useCallback(
-    (id: string) => {
-      // SignOut pattern: swallow so a rethrown hook error never floats unhandled.
-      void deleteDocument(id).catch(() => {});
-    },
-    [deleteDocument],
-  );
-
-  const handleRefetch = useCallback(() => {
-    void refetch();
-  }, [refetch]);
-
   // accessibilityLiveRegion covers Android/Web; iOS needs announceForAccessibility (WCAG 4.1.3).
   useEffect(() => {
     if (state === 'content' && error) {
@@ -59,8 +47,8 @@ export const PdfDocuments = () => {
       <TabsHeader title={t('pdfList.heading')}>
         {canCreate ? (
           <NewLessonDialog
-            onExtracted={handleRefetch}
-            onGenerated={handleRefetch}
+            onExtracted={refetch}
+            onGenerated={refetch}
             generateDocumentId={generateDocumentId}
             onGenerateHandled={() => setGenerateDocumentId(undefined)}
           />
@@ -73,7 +61,7 @@ export const PdfDocuments = () => {
         onGenerate={canCreate ? setGenerateDocumentId : undefined}
         onOpenLesson={handleOpenLesson}
         onRetry={refetch}
-        onDelete={handleDelete}
+        onDelete={deleteDocument}
       />
       {state === 'content' && error ? (
         <Text accessibilityLiveRegion="assertive" style={styles.deleteError}>

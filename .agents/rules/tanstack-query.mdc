@@ -102,33 +102,95 @@ export const useSignOut = (): UseSignOutResult => {
   };
 };
 ```
+```tsx
+// ❌ don't — add unnecessary useCallback for the refetch function
+export const useLesson = (id: string): UseLessonResult => {
+  const {
+    data,
+    isLoading,
+    error,
+    refetch: queryRefetch,
+  } = useQuery({
+    queryKey: lessonQueryKey(id),
+    queryFn: () => LessonsService.getLesson(id),
+  });
+
+  const refetch = useCallback(() => {
+    void queryRefetch();
+  }, [queryRefetch]);
+
+  return {
+    lesson: data ?? null,
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+
+// ✅ do — refetch function is already stable
+export const useLesson = (id: string): UseLessonResult => {
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: lessonQueryKey(id),
+    queryFn: () => LessonsService.getLesson(id),
+  });
+
+  return {
+    lesson: data ?? null,
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+```
 
 - Prefer one hook per independent action (`useSignOut` alongside `useAuth`'s `signIn`) over one hook owning every mutation for a domain — unless there are multiple actions used from the same file, or there is shared code between the actions in the hook.
 - Only expose `reset` when a consumer needs to clear a stale error manually (e.g. dismissing a banner) — a fresh `mutate` call already clears it on its own.
 - Normalize the mutation's raw `error` through a typed guard (`isXErrorShape` / `toErrorCode`) so the UI only ever sees a closed error-code union, never an unchecked cast. Extract that guard into a shared `use-{domain}.helpers.ts` (e.g. `use-auth.helpers.ts`) once more than one hook in the domain needs it.
+- Don't add unnecessary `useCallback`s to the hook body — `useMutation` already returns stable functions.
+- Prefer to create the query key it inline, don't add a function to create it, unless there is some complexity to it or the key is shared.
 
-### One tagged-union mutation per shared error/pending slot (D3)
+### Two mutations sharing one error/pending slot, cross-reset (D3)
 
 The "same file / shared code" carve-out above has a concrete trigger: when the hook's **public
 contract** exposes a single `error`/`isPending`-shaped slot for what the service layer sees as
-several distinct actions (e.g. save vs. remove), model it as **one** `useMutation` over a tagged
-union of variables rather than one mutation per action. Two separate mutations would need their
-own `reset()` calls wired into each other to fake the shared, cross-clearing slot the contract
-promises (a successful remove must clear an error left by a failed save) — one mutation gets that
-for free because there is only ever one `error`/`isPending` to read.
+several distinct actions (e.g. save vs. remove). Keep the actions as **separate `useMutation`s**
+(so each mutation's `mutationFn` stays a plain single-purpose call and no tagged-union variable
+type is needed), and derive the shared slot: `isPending: a.isPending || b.isPending`,
+`error: a.error ?? b.error`. The one thing this needs that a single mutation gets for free: each
+action's `onSuccess` must call the **other** mutation's `reset()`, so a success on either side
+clears a stale error left by the other (the contract promises this cross-clearing — a successful
+remove clears an error left by a failed save). Declaring both with `const` in the same hook body
+is safe even though each references the other before its own declaration line: neither `onSuccess`
+callback runs synchronously during the initial call, only later when a mutation actually settles,
+by which point both bindings exist.
 
 ```typescript
 // use-api-key.ts
-type ApiKeyMutationVariables =
-  | { kind: 'save'; provider: AiProvider; rawKey: string }
-  | { kind: 'remove'; provider: AiProvider };
-
-const { mutateAsync, isPending: isSubmitting, error } = useMutation({
-  mutationFn: (variables: ApiKeyMutationVariables) =>
-    variables.kind === 'save'
-      ? ApiKeyService.saveApiKey(variables.provider, variables.rawKey)
-      : ApiKeyService.removeApiKey(variables.provider),
+const saveMutation = useMutation({
+  mutationFn: (provider: AiProvider) => ApiKeyService.saveApiKey(provider, pendingRawKeyRef.current ?? ''),
+  onSuccess: (nextStatus) => {
+    queryClient.setQueryData(apiKeyStatusQueryKey(userId), nextStatus);
+    removeMutation.reset();
+  },
 });
+
+const removeMutation = useMutation({
+  mutationFn: (provider: AiProvider) => ApiKeyService.removeApiKey(provider),
+  onSuccess: (nextStatus) => {
+    queryClient.setQueryData(apiKeyStatusQueryKey(userId), nextStatus);
+    saveMutation.reset();
+  },
+});
+
+const isSubmitting = saveMutation.isPending || removeMutation.isPending;
+const error = saveMutation.error ?? removeMutation.error;
 ```
 
 Keep genuinely independent actions (different files, no shared `error`/`isPending` contract) as

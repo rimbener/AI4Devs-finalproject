@@ -138,11 +138,11 @@ describe('useLessons', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.lessons).toEqual(lessons);
 
-    await act(async () => {
-      await result.current.deleteLesson('lesson-2');
+    act(() => {
+      result.current.deleteLesson('lesson-2');
     });
 
-    expect(service.deleteLesson).toHaveBeenCalledWith('lesson-2');
+    await waitFor(() => expect(service.deleteLesson).toHaveBeenCalledWith('lesson-2'));
     await waitFor(() =>
       expect(result.current.lessons).toEqual([
         { id: 'lesson-1', title: 'Older', createdAt: '2026-07-12T12:00:00.000Z' },
@@ -151,7 +151,7 @@ describe('useLessons', () => {
     expect(service.getLessons).toHaveBeenCalledTimes(1);
   });
 
-  // @s15 — a failed delete rejects to the caller and leaves the list unchanged.
+  // @s15 — a failed delete surfaces via error and leaves the list unchanged (mutate is void).
   it('deleteLesson leaves the list unchanged and sets error when the service rejects', async () => {
     const failure = new Error('LessonsService.deleteLesson: failed to delete lesson');
     service.getLessons.mockResolvedValue(lessons);
@@ -160,17 +160,16 @@ describe('useLessons', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.deleteLesson('lesson-2')).rejects.toBe(failure);
+    act(() => {
+      result.current.deleteLesson('lesson-2');
     });
 
-    expect(result.current.lessons).toEqual(lessons);
     await waitFor(() => expect(result.current.error).toBe(failure));
+    expect(result.current.lessons).toEqual(lessons);
   });
 
-  // @s16 — a delete error outranks a read error, and a refetch clears it before exposing a
-  // later read failure.
-  it('refetch clears a delete error and exposes a later read failure instead', async () => {
+  // @s16 — deleteError ?? queryError: a stale delete error outranks a later read failure.
+  it('keeps a delete error ahead of a later read failure after refetch', async () => {
     const deleteFailure = new Error('LessonsService.deleteLesson: failed to delete lesson');
     const readFailure = new Error('LessonsService.getLessons: failed to load lessons');
     service.getLessons.mockResolvedValueOnce(lessons).mockRejectedValueOnce(readFailure);
@@ -179,8 +178,8 @@ describe('useLessons', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.deleteLesson('lesson-2')).rejects.toBe(deleteFailure);
+    act(() => {
+      result.current.deleteLesson('lesson-2');
     });
     await waitFor(() => expect(result.current.error).toBe(deleteFailure));
 
@@ -188,7 +187,8 @@ describe('useLessons', () => {
       result.current.refetch();
     });
 
-    await waitFor(() => expect(result.current.error).toBe(readFailure));
+    await waitFor(() => expect(service.getLessons).toHaveBeenCalledTimes(2));
+    expect(result.current.error).toBe(deleteFailure);
     expect(result.current.lessons).toEqual(lessons);
   });
 });

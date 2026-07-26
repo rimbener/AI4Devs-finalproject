@@ -36,18 +36,11 @@ export const useLessonAttempt = (): UseLessonAttemptResult => {
 
   const { mutate, variables } = mutation;
 
-  const saveAttempt = useCallback(
-    (input: NewLessonAttempt) => {
-      if (isSaving.current) return;
-      isSaving.current = true;
-      mutate(input);
-    },
-    // Stryker disable next-line ArrayDeclaration: equivalent mutant — TanStack's MutationObserver
-    // binds `mutate` once in its constructor (`this.mutate = this.mutate.bind(this)` in
-    // `@tanstack/query-core`), so it's referentially stable for the life of this hook instance
-    // regardless of what's in this array.
-    [mutate],
-  );
+  const saveAttempt = (input: NewLessonAttempt) => {
+    if (isSaving.current) return;
+    isSaving.current = true;
+    mutate(input);
+  };
 
   const retry = useCallback(() => {
     if (isSaving.current) return;

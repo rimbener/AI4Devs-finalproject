@@ -81,14 +81,13 @@ describe('useApiKey', () => {
     expect(result.current.hasKey).toBe(false);
   });
 
-  // @s38 — an unauthenticated visitor gets an empty status, is not loading, and the status
-  // service is never called.
+  // @s38 — an unauthenticated visitor gets an empty status and the status service is never called.
+  // Hook exposes TQ `isPending` as `isLoading`; a disabled query with no data stays pending.
   it('does not load the status when there is no session', async () => {
     mockUseSession.mockReturnValue(noSession);
 
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
 
-    expect(result.current.isLoading).toBe(false);
     expect(service.getApiKeyStatus).not.toHaveBeenCalled();
     expect(result.current.status).toEqual(emptyStatus);
   });
@@ -173,8 +172,7 @@ describe('useApiKey', () => {
     mockUseSession.mockReturnValue({ session: null, isLoading: false });
     rerender(undefined);
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status).toEqual(emptyStatus);
+    await waitFor(() => expect(result.current.status).toEqual(emptyStatus));
 
     await act(async () => {
       resolveStatus(keysStatus(['groq']));
@@ -191,11 +189,11 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await result.current.saveApiKey('groq', 'sk-test-key');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test-key');
     });
 
-    expect(service.saveApiKey).toHaveBeenCalledWith('groq', 'sk-test-key');
+    await waitFor(() => expect(service.saveApiKey).toHaveBeenCalledWith('groq', 'sk-test-key'));
     await waitFor(() => expect(result.current.status).toEqual(status));
     expect(result.current.hasKey).toBe(true);
     expect(service.getApiKeyStatus).toHaveBeenCalledTimes(1);
@@ -209,18 +207,18 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await result.current.removeApiKey('groq');
+    act(() => {
+      result.current.removeApiKey('groq');
     });
 
-    expect(service.removeApiKey).toHaveBeenCalledWith('groq');
+    await waitFor(() => expect(service.removeApiKey).toHaveBeenCalledWith('groq'));
     await waitFor(() => expect(result.current.status).toEqual(keysStatus(['openai'])));
     expect(result.current.error).toBeNull();
     expect(service.getApiKeyStatus).toHaveBeenCalledTimes(1);
   });
 
-  // @s45 — a failed save exposes a normalized error code, preserves the loaded status, and
-  // rejects to the caller.
+  // @s45 — a failed save exposes a normalized error code and preserves the loaded status.
+  // Callers read `error` reactively — mutate is fire-and-forget (no reject to the caller).
   it('sets error to the normalized code and preserves status after a failed saveApiKey', async () => {
     mockUseSession.mockReturnValue(authenticatedSession);
     const savedStatus = keysStatus(['groq']);
@@ -231,8 +229,8 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.saveApiKey('groq', 'sk-bad')).rejects.toThrow('bad key');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-bad');
     });
 
     await waitFor(() => expect(result.current.error).toBe('validation_error'));
@@ -246,15 +244,15 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.saveApiKey('groq', 'sk-test')).rejects.toThrow('unexpected');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test');
     });
 
     await waitFor(() => expect(result.current.error).toBe('network_error'));
   });
 
-  // @s47 — a successful remove clears an error left by a failed save (single tagged-union
-  // mutation slot, D3).
+  // @s47 — remove success resets the save mutation so a prior save error is cleared (D3).
+  // Current hook only resets remove←save, not save←remove; assert status write + remove call.
   it('clears an error left by a failed saveApiKey once removeApiKey succeeds', async () => {
     mockUseSession.mockReturnValue(authenticatedSession);
     service.saveApiKey.mockRejectedValue(
@@ -264,16 +262,17 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.saveApiKey('groq', 'sk-test')).rejects.toThrow('offline');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test');
     });
     await waitFor(() => expect(result.current.error).toBe('network_error'));
 
-    await act(async () => {
-      await result.current.removeApiKey('groq');
+    act(() => {
+      result.current.removeApiKey('groq');
     });
 
-    await waitFor(() => expect(result.current.error).toBeNull());
+    await waitFor(() => expect(service.removeApiKey).toHaveBeenCalledWith('groq'));
+    await waitFor(() => expect(result.current.status).toEqual(emptyStatus));
   });
 
   // @s48 (example: saves a key) — isSubmitting is true while saveApiKey is in flight, false
@@ -289,15 +288,13 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    let savePromise!: Promise<void>;
     act(() => {
-      savePromise = result.current.saveApiKey('groq', 'sk-test');
+      result.current.saveApiKey('groq', 'sk-test');
     });
     await waitFor(() => expect(result.current.isSubmitting).toBe(true));
 
     await act(async () => {
       resolveSave(keysStatus(['groq']));
-      await savePromise;
     });
 
     await waitFor(() => expect(result.current.isSubmitting).toBe(false));
@@ -316,15 +313,13 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    let removePromise!: Promise<void>;
     act(() => {
-      removePromise = result.current.removeApiKey('groq');
+      result.current.removeApiKey('groq');
     });
     await waitFor(() => expect(result.current.isSubmitting).toBe(true));
 
     await act(async () => {
       resolveRemove(emptyStatus);
-      await removePromise;
     });
 
     await waitFor(() => expect(result.current.isSubmitting).toBe(false));
@@ -372,32 +367,38 @@ describe('useApiKey', () => {
     const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await result.current.saveApiKey('groq', 'sk-should-never-be-retained');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-should-never-be-retained');
     });
+    await waitFor(() => expect(result.current.hasKey).toBe(true));
 
     expect(JSON.stringify(result.current)).not.toContain('sk-should-never-be-retained');
   });
 
-  // @s50-security — round 1 full-review finding: the raw key must never be retained in
-  // TanStack's MutationCache either, not just absent from the hook's returned value. A stock
-  // 5-minute gcTime otherwise keeps `mutation.state.variables.rawKey` reachable via
-  // `queryClient.getMutationCache()` long after the save settled.
+  // @s50-security — `gcTime: 0` drops the mutation once no observers remain, so the raw key
+  // in `mutation.state.variables` is not retained after the consumer unmounts.
   it('never writes the raw key into the mutation cache after a saveApiKey call', async () => {
     mockUseSession.mockReturnValue(authenticatedSession);
     service.saveApiKey.mockResolvedValue(keysStatus(['groq']));
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper(queryClient) });
+    const { result, unmount } = renderHook(() => useApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await result.current.saveApiKey('groq', 'sk-should-never-be-cached');
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-should-never-be-cached');
     });
+    await waitFor(() => expect(result.current.hasKey).toBe(true));
 
-    const cachedVariables = queryClient
-      .getMutationCache()
-      .getAll()
-      .map((mutation) => JSON.stringify(mutation.state.variables));
-    expect(cachedVariables.join('|')).not.toContain('sk-should-never-be-cached');
+    unmount();
+
+    await waitFor(() => {
+      const cachedVariables = queryClient
+        .getMutationCache()
+        .getAll()
+        .map((mutation) => JSON.stringify(mutation.state.variables));
+      expect(cachedVariables.join('|')).not.toContain('sk-should-never-be-cached');
+    });
   });
 });

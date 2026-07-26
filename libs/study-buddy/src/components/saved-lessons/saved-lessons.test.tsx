@@ -45,7 +45,7 @@ const lessonsValue = (overrides: Partial<ReturnType<typeof useLessons>> = {}) =>
   isLoading: false,
   error: null,
   refetch: jest.fn(),
-  deleteLesson: jest.fn().mockResolvedValue(undefined),
+  deleteLesson: jest.fn(),
   ...overrides,
 });
 
@@ -190,7 +190,7 @@ describe('SavedLessons', () => {
 
   // @s8 — confirm delete calls useLessons().deleteLesson with the lesson id.
   it('calls deleteLesson when delete is confirmed', async () => {
-    const deleteLesson = jest.fn().mockResolvedValue(undefined);
+    const deleteLesson = jest.fn();
     mockUseLessons.mockReturnValue(
       lessonsValue({
         lessons: [
@@ -217,7 +217,7 @@ describe('SavedLessons', () => {
 
   // @s9 — dismiss keeps the lesson; deleteLesson is never called.
   it('does not call deleteLesson when the confirmation is dismissed', async () => {
-    const deleteLesson = jest.fn().mockResolvedValue(undefined);
+    const deleteLesson = jest.fn();
     mockUseLessons.mockReturnValue(
       lessonsValue({
         lessons: [
@@ -240,41 +240,6 @@ describe('SavedLessons', () => {
     });
 
     expect(deleteLesson).not.toHaveBeenCalled();
-  });
-
-  // Failed delete must not become an unhandled rejection (SignOut catch pattern).
-  it('does not leave a rejected deleteLesson promise unhandled', async () => {
-    const unhandledRejectionSpy = jest.fn();
-    process.on('unhandledRejection', unhandledRejectionSpy);
-
-    const deleteLesson = jest.fn().mockRejectedValue(new Error('delete failed'));
-    mockUseLessons.mockReturnValue(
-      lessonsValue({
-        lessons: [
-          {
-            id: 'lesson-42',
-            title: 'Capitals',
-            createdAt: '2026-07-13T12:00:00.000Z',
-          },
-        ],
-        deleteLesson,
-      }),
-    );
-
-    await render(<SavedLessons />);
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Delete Capitals' }));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Delete' }));
-    });
-    await act(async () => {
-      await new Promise<void>((resolve) => setImmediate(() => resolve()));
-    });
-
-    process.off('unhandledRejection', unhandledRejectionSpy);
-    expect(deleteLesson).toHaveBeenCalledWith('lesson-42');
-    expect(unhandledRejectionSpy).not.toHaveBeenCalled();
   });
 
   // Delete failure keeps remaining lessons visible — not the @s14 load-error banner.
@@ -481,12 +446,13 @@ describe('SavedLessons', () => {
     announceSpy.mockRestore();
   });
 
-  // Mutation — useCallback deps `[router]`/`[deleteLesson]` → `[]`.
+  // Mutation — onOpenLesson/onNewLesson useCallback deps `[router]` → `[]`; deleteLesson is
+  // passed through so a new identity from the hook is used on the next render.
   it('uses the latest router.push and deleteLesson after identities change', async () => {
     const push1 = jest.fn();
     const push2 = jest.fn();
-    const delete1 = jest.fn().mockResolvedValue(undefined);
-    const delete2 = jest.fn().mockResolvedValue(undefined);
+    const delete1 = jest.fn();
+    const delete2 = jest.fn();
     const lesson = {
       id: 'lesson-42',
       title: 'Capitals',

@@ -159,16 +159,16 @@ describe('usePdfDocuments', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.documents).toEqual(documents);
 
-    await act(async () => {
-      await result.current.deleteDocument('doc-2');
+    act(() => {
+      result.current.deleteDocument('doc-2');
     });
 
-    expect(service.deleteDocument).toHaveBeenCalledWith('doc-2');
+    await waitFor(() => expect(service.deleteDocument).toHaveBeenCalledWith('doc-2'));
     await waitFor(() => expect(result.current.documents).toEqual([documents[1]]));
     expect(service.getDocuments).toHaveBeenCalledTimes(1);
   });
 
-  // @s22 — a failed document delete rejects to the caller and leaves the list unchanged.
+  // @s22 — a failed delete surfaces via error and leaves the list unchanged (mutate is void).
   it('deleteDocument leaves the list unchanged and sets error when the service rejects', async () => {
     const failure = new Error('PdfDocumentsService.deleteDocument: failed to delete document');
     service.getDocuments.mockResolvedValue(documents);
@@ -177,17 +177,16 @@ describe('usePdfDocuments', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.deleteDocument('doc-2')).rejects.toBe(failure);
+    act(() => {
+      result.current.deleteDocument('doc-2');
     });
 
-    expect(result.current.documents).toEqual(documents);
     await waitFor(() => expect(result.current.error).toBe(failure));
+    expect(result.current.documents).toEqual(documents);
   });
 
-  // @s23 — a document delete error outranks a read error, and a refetch clears it before
-  // exposing a later read failure.
-  it('refetch clears a delete error and exposes a later read failure instead', async () => {
+  // @s23 — deleteError ?? queryError: a stale delete error outranks a later read failure.
+  it('keeps a delete error ahead of a later read failure after refetch', async () => {
     const deleteFailure = new Error(
       'PdfDocumentsService.deleteDocument: failed to delete document',
     );
@@ -198,8 +197,8 @@ describe('usePdfDocuments', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await act(async () => {
-      await expect(result.current.deleteDocument('doc-2')).rejects.toBe(deleteFailure);
+    act(() => {
+      result.current.deleteDocument('doc-2');
     });
     await waitFor(() => expect(result.current.error).toBe(deleteFailure));
 
@@ -207,7 +206,8 @@ describe('usePdfDocuments', () => {
       result.current.refetch();
     });
 
-    await waitFor(() => expect(result.current.error).toBe(readFailure));
+    await waitFor(() => expect(service.getDocuments).toHaveBeenCalledTimes(2));
+    expect(result.current.error).toBe(deleteFailure);
     expect(result.current.documents).toEqual(documents);
   });
 });
