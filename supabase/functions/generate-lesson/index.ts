@@ -21,6 +21,7 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@4';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
+import { loadProviderCatalog, type ProviderEntry } from '../_shared/provider-catalog.ts';
 import { assembleGeneratedLesson } from './_shared/lesson-generation.assembly.ts';
 import { GenerationTimeoutError, mapGenerationError } from './_shared/lesson-generation.errors.ts';
 import {
@@ -137,10 +138,11 @@ type SlideAnchorSummary = { index: number; title: string; content: string };
  * decision for an image, which `applyVisionPlacements` already degrades to text-only (@s12). */
 const runVisionPlacement = async (
   ctx: GenerationContext,
+  entry: ProviderEntry | null,
   images: { imageId: string; bytes: Uint8Array }[],
   slides: SlideAnchorSummary[],
 ): Promise<VisionPlacementDecision[]> => {
-  const visionModelId = resolveVisionModelForPlacement(ctx.provider, ctx.model);
+  const visionModelId = resolveVisionModelForPlacement(entry, ctx.model);
   if (!visionModelId) return [];
 
   const visionModel = createProviderModel(ctx.provider, ctx.apiKey)(visionModelId);
@@ -220,11 +222,21 @@ Deno.serve(async (req) => {
     return errorResponse(req, 'document_not_ready', 422);
   }
 
+  // Loaded once per request (D9 -- never re-read, never cached across invocations) and threaded
+  // into both model validation (task-4) and vision-model resolution (task-5) below. `loadProviderEntry`
+  // fires only on the BYOK route (route.ts's own gate); the platform route loads groq's entry
+  // separately, once, right before vision resolution (task-7 adds its `enabled` check on this path).
+  let providerEntry: ProviderEntry | null = null;
+
   let resolvedKey: Awaited<ReturnType<typeof handleLessonGenerationRoute>>;
   try {
     resolvedKey = await handleLessonGenerationRoute({
       userId: user.id,
       requestBody: body,
+      loadProviderEntry: async (providerId) => {
+        providerEntry = await loadProviderCatalog(adminClient, providerId);
+        return providerEntry;
+      },
       readPlanFlags: async (userId) => {
         const { data: profileRow, error: profileError } = await adminClient
           .from('profiles')
@@ -291,6 +303,12 @@ Deno.serve(async (req) => {
               : 422,
     );
   }
+  // The platform path never runs through loadProviderEntry above (that gate is BYOK-only) but
+  // still needs groq's entry for vision resolution below -- loaded once, same as the BYOK path.
+  if (resolvedKey.source === 'platform' && !providerEntry) {
+    providerEntry = await loadProviderCatalog(adminClient, 'groq');
+  }
+
   const images = (resolvedKey.imageMetadata ?? []) as DocumentImageRow[];
 
   const promptImages: PromptImageManifestEntry[] = images.map((image) => ({
@@ -357,7 +375,7 @@ Deno.serve(async (req) => {
             content: slide.content ?? '',
           }));
           visionDecisions = await callProviderWithResolvedKey(resolvedKey, () =>
-            runVisionPlacement(generationCtx, downloaded, slideSummaries),
+            runVisionPlacement(generationCtx, providerEntry, downloaded, slideSummaries),
           );
         }
       } catch {

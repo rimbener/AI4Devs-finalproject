@@ -3,7 +3,7 @@ id: task-1
 title: Create the ai_providers + ai_provider_models tables with RLS, grants and seed
 slice: 1
 scenarios: [s1, s2, s3, s4, s5, s6, s7]
-status: todo
+status: done
 paths: [supabase/migrations/<ts1>_ai_provider_registry.sql]
 ---
 

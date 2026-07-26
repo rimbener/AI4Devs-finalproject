@@ -3,7 +3,7 @@ id: task-6
 title: Wire generate-lesson to load the catalog entry once per request (BYOK happy path)
 slice: 1
 scenarios: [s16]
-status: todo
+status: done
 paths:
   - supabase/functions/generate-lesson/index.ts
   - supabase/functions/generate-lesson/_shared/lesson-generation.route.ts

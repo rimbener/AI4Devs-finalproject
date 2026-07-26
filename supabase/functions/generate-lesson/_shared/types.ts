@@ -5,7 +5,9 @@
 
 export type LessonComposition = 'instructional-only' | 'activity-only' | 'both';
 
-export type AiProvider = 'groq' | 'openai' | 'anthropic' | 'google' | 'xai' | 'deepseek';
+// Widened to a plain string (ai-provider-registry-backend, D6) — provider identity now comes
+// from the ai_providers catalog table, not a hardcoded union.
+export type AiProvider = string;
 
 export type GenerateLessonRequest = {
   documentId: string;

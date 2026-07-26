@@ -3,7 +3,7 @@ id: task-5
 title: Resolve the image-placement vision model from the catalog entry
 slice: 1
 scenarios: [s13, s14, s15]
-status: todo
+status: done
 paths:
   - supabase/functions/generate-lesson/_shared/lesson-generation.vision-model.ts
   - libs/supabase-services/src/services/lesson-generation.vision-model.test.ts

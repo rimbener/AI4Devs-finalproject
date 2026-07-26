@@ -1,56 +1,65 @@
-import {
-  resolveVisionModelForPlacement,
-  resolveVisionModelFromRegistry,
-} from '../../../../supabase/functions/generate-lesson/_shared/lesson-generation.vision-model';
+import type { ProviderEntry } from '../../../../supabase/functions/_shared/provider-catalog';
+import { resolveVisionModelForPlacement } from '../../../../supabase/functions/generate-lesson/_shared/lesson-generation.vision-model';
 
-describe('resolveVisionModelFromRegistry', () => {
-  const registry = {
-    groq: {
-      models: [
-        { id: 'text-only', labelKey: 'x', vision: false },
-        { id: 'vision-model', labelKey: 'y', vision: true },
-      ],
-      visionDefault: 'vision-model',
+const withVisionDefault: ProviderEntry = {
+  id: 'groq',
+  name: 'Groq',
+  guidanceUrl: null,
+  enabled: true,
+  sortOrder: 1,
+  models: [
+    {
+      modelId: 'text-only',
+      label: 'Text Only',
+      vision: false,
+      isVisionDefault: false,
+      sortOrder: 1,
     },
-    noVision: {
-      models: [{ id: 'text-only', labelKey: 'z', vision: false }],
-      visionDefault: null,
+    {
+      modelId: 'vision-model',
+      label: 'Vision Model',
+      vision: true,
+      isVisionDefault: true,
+      sortOrder: 2,
     },
-  };
+  ],
+};
 
-  // @s13 — selected vision-capable model is used for placement.
-  it('returns the selected model when it is vision-capable', () => {
-    expect(resolveVisionModelFromRegistry(registry, 'groq', 'vision-model')).toBe('vision-model');
-  });
-
-  // @s14 — non-vision selected model falls back to the provider vision default.
-  it('returns visionDefault when the selected model is not vision-capable', () => {
-    expect(resolveVisionModelFromRegistry(registry, 'groq', 'text-only')).toBe('vision-model');
-  });
-
-  // @s15 — null visionDefault skips the vision call (degrade to text-only).
-  it('returns null when the selected model is not vision-capable and visionDefault is null', () => {
-    expect(resolveVisionModelFromRegistry(registry, 'groq' as never, 'text-only')).toBe(
-      'vision-model',
-    );
-    expect(
-      resolveVisionModelFromRegistry(
-        { noVision: registry.noVision },
-        'noVision' as never,
-        'text-only',
-      ),
-    ).toBeNull();
-  });
-});
+const withoutVisionDefault: ProviderEntry = {
+  id: 'noVision',
+  name: 'No Vision',
+  guidanceUrl: null,
+  enabled: true,
+  sortOrder: 1,
+  models: [
+    {
+      modelId: 'text-only',
+      label: 'Text Only',
+      vision: false,
+      isVisionDefault: false,
+      sortOrder: 1,
+    },
+  ],
+};
 
 describe('resolveVisionModelForPlacement', () => {
-  // @s14 — groq text model falls back to the curated vision default.
-  it('falls back to groq visionDefault for a non-vision text model', () => {
-    expect(resolveVisionModelForPlacement('groq', 'openai/gpt-oss-20b')).toBe('qwen/qwen3.6-27b');
+  // @s13 — a vision-capable selected model is used directly for placement.
+  it('returns the selected model when it is vision-capable', () => {
+    expect(resolveVisionModelForPlacement(withVisionDefault, 'vision-model')).toBe('vision-model');
   });
 
-  // @s13 — openai vision model is used directly.
-  it('uses a vision-capable selected model directly', () => {
-    expect(resolveVisionModelForPlacement('openai', 'gpt-5.6-luna')).toBe('gpt-5.6-luna');
+  // @s14 — a text-only selected model falls back to the entry's vision-default model.
+  it('returns the entry vision-default model when the selected model is not vision-capable', () => {
+    expect(resolveVisionModelForPlacement(withVisionDefault, 'text-only')).toBe('vision-model');
+  });
+
+  // @s15 — no vision-default model on the entry degrades to text-only (null).
+  it('returns null when the selected model is not vision-capable and the entry has no vision default', () => {
+    expect(resolveVisionModelForPlacement(withoutVisionDefault, 'text-only')).toBeNull();
+  });
+
+  // @s15 — no entry at all (unknown provider) also degrades to text-only.
+  it('returns null when there is no entry', () => {
+    expect(resolveVisionModelForPlacement(null, 'text-only')).toBeNull();
   });
 });

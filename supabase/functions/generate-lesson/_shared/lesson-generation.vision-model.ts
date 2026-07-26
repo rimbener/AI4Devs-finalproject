@@ -1,28 +1,20 @@
 // Vision-placement model auto-selection (@s13/@s14/@s15) — Jest-tested via import (task-10).
-import {
-  AI_MODEL_REGISTRY,
-  type AiProvider,
-  type AiProviderModels,
-} from './models.ts';
+// Resolves entirely from the caller-injected catalog `ProviderEntry` (task-3) instead of the
+// deleted module-level AI_MODEL_REGISTRY (task-4) — a request's entry is loaded once and threaded
+// down (D9), so this stays a pure function of its input, never re-reading anything itself.
+import type { ProviderEntry } from '../../_shared/provider-catalog.ts';
 
-export type VisionModelRegistry = Readonly<Record<string, AiProviderModels>>;
-
-/** Pure helper — selected-if-vision → visionDefault → null (skip vision, degrade to text-only). */
-export const resolveVisionModelFromRegistry = (
-  registry: VisionModelRegistry,
-  provider: AiProvider,
+/** Pure resolver — selected-if-vision → entry's isVisionDefault model → null (skip vision, degrade
+ * to text-only). At most one model per provider can carry `isVisionDefault` (task-1's partial
+ * unique index), so the first match needs no tie-breaking. */
+export const resolveVisionModelForPlacement = (
+  entry: ProviderEntry | null,
   selectedModelId: string,
 ): string | null => {
-  const providerEntry = registry[provider];
-  if (!providerEntry) return null;
+  if (!entry) return null;
 
-  const selected = providerEntry.models.find((entry) => entry.id === selectedModelId);
+  const selected = entry.models.find((model) => model.modelId === selectedModelId);
   if (selected?.vision) return selectedModelId;
-  return providerEntry.visionDefault;
-};
 
-/** Resolves the vision model for image placement using the live curated registry. */
-export const resolveVisionModelForPlacement = (
-  provider: AiProvider,
-  selectedModelId: string,
-): string | null => resolveVisionModelFromRegistry(AI_MODEL_REGISTRY, provider, selectedModelId);
+  return entry.models.find((model) => model.isVisionDefault)?.modelId ?? null;
+};

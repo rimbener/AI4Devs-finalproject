@@ -4,7 +4,90 @@ import {
 } from '../../../../supabase/functions/generate-lesson/_shared/lesson-generation.key-source';
 import { handleLessonGenerationRoute } from '../../../../supabase/functions/generate-lesson/_shared/lesson-generation.route';
 
+const anthropicEntry = {
+  id: 'anthropic',
+  name: 'Anthropic',
+  guidanceUrl: null,
+  enabled: true,
+  sortOrder: 3,
+  models: [
+    {
+      modelId: 'claude-haiku-4-5',
+      label: 'Claude Haiku 4.5',
+      vision: true,
+      isVisionDefault: true,
+      sortOrder: 1,
+    },
+  ],
+};
+
+const groqEntry = {
+  id: 'groq',
+  name: 'Groq',
+  guidanceUrl: null,
+  enabled: true,
+  sortOrder: 1,
+  models: [
+    {
+      modelId: 'openai/gpt-oss-20b',
+      label: 'GPT-OSS 20B',
+      vision: false,
+      isVisionDefault: false,
+      sortOrder: 1,
+    },
+  ],
+};
+
+const openaiEntry = {
+  id: 'openai',
+  name: 'OpenAI',
+  guidanceUrl: null,
+  enabled: true,
+  sortOrder: 2,
+  models: [
+    {
+      modelId: 'gpt-5.6-luna',
+      label: 'GPT-5.6 Luna',
+      vision: true,
+      isVisionDefault: true,
+      sortOrder: 1,
+    },
+  ],
+};
+
 describe('generate-lesson key routing integration', () => {
+  // @s16 — the catalog entry is loaded exactly once for a BYOK request, and generation proceeds
+  // entirely on that entry's provider/model metadata.
+  it('loads the provider catalog entry once and resolves BYOK generation from it', async () => {
+    const loadProviderEntry = jest.fn().mockResolvedValue(anthropicEntry);
+    const readUserApiKey = jest.fn().mockResolvedValue('secret-key');
+
+    await expect(
+      handleLessonGenerationRoute({
+        userId: 'user-1',
+        requestBody: {
+          documentId: 'doc-1',
+          composition: 'both',
+          provider: 'anthropic',
+          model: 'claude-haiku-4-5',
+        },
+        readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
+        readUserApiKey,
+        loadProviderEntry,
+        platformApiKey: 'platform-secret',
+        acquirePlatformSlot: jest.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      source: 'user',
+      apiKey: 'secret-key',
+      provider: 'anthropic',
+      model: 'claude-haiku-4-5',
+    });
+    expect(loadProviderEntry).toHaveBeenCalledTimes(1);
+    expect(loadProviderEntry).toHaveBeenCalledWith('anthropic');
+  });
+
   // @s10/@s18 — the platform control flow never executes the Vault reader and the provider
   // receives the platform key selected by the resolver.
   it('routes platform generation exclusively through the platform key', async () => {
@@ -47,6 +130,7 @@ describe('generate-lesson key routing integration', () => {
       },
       readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
       readUserApiKey,
+      loadProviderEntry: jest.fn().mockResolvedValue(groqEntry),
       platformApiKey: 'platform-secret',
       acquirePlatformSlot: jest.fn().mockResolvedValue(true),
     });
@@ -94,6 +178,7 @@ describe('generate-lesson key routing integration', () => {
         },
         readPlanFlags,
         readUserApiKey,
+        loadProviderEntry: jest.fn().mockResolvedValue(openaiEntry),
         platformApiKey: 'platform-secret',
         acquirePlatformSlot: jest.fn().mockResolvedValue(true),
       }),
@@ -125,6 +210,7 @@ describe('generate-lesson key routing integration', () => {
         },
         readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
         readUserApiKey,
+        loadProviderEntry: jest.fn().mockResolvedValue(groqEntry),
         platformApiKey: 'platform-secret',
         acquirePlatformSlot: jest.fn().mockResolvedValue(true),
       }),
@@ -199,6 +285,7 @@ describe('generate-lesson key routing integration', () => {
         },
         readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
         readUserApiKey: jest.fn().mockResolvedValue(null),
+        loadProviderEntry: jest.fn().mockResolvedValue(openaiEntry),
         platformApiKey: 'platform-secret',
         acquirePlatformSlot: jest.fn().mockResolvedValue(true),
         readImageMetadata,

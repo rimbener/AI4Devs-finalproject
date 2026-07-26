@@ -1,3 +1,4 @@
+import type { ProviderEntry } from '../../_shared/provider-catalog.ts';
 import { resolveLessonGenerationKeyForPlan } from './lesson-generation.key-source.ts';
 import { resolveByokGenerationKey } from './lesson-generation.validation.ts';
 import type { AiProvider } from './models.ts';
@@ -12,6 +13,10 @@ type HandleLessonGenerationRouteInput = {
   requestBody: unknown;
   readPlanFlags: (userId: string) => Promise<PlanFlags | null>;
   readUserApiKey: (provider: AiProvider) => Promise<string | null>;
+  // Loads the requested provider's catalog entry once per request (D9 — no cache, no re-read);
+  // `null` when the id is unknown to the catalog. Optional so BYOK-agnostic call sites (platform
+  // path, malformed-request tests) needn't wire it — omitting it fails closed (@s21/D6).
+  loadProviderEntry?: (providerId: string) => Promise<ProviderEntry | null>;
   platformApiKey?: string | null;
   acquirePlatformSlot: (userId: string) => Promise<boolean>;
   releasePlatformSlot?: (userId: string) => Promise<void>;
@@ -23,6 +28,7 @@ export const handleLessonGenerationRoute = async ({
   requestBody,
   readPlanFlags,
   readUserApiKey,
+  loadProviderEntry,
   platformApiKey,
   acquirePlatformSlot,
   releasePlatformSlot,
@@ -35,8 +41,12 @@ export const handleLessonGenerationRoute = async ({
   }
 
   if (!planFlags.usePlatformKey) {
+    // The catalog is read once, right here, for the named provider (@s16) — never re-read within
+    // the request (D9). An unstringly-typed/absent provider never reaches the loader.
+    const providerId = typeof body.provider === 'string' ? body.provider : null;
+    const entry = providerId ? ((await loadProviderEntry?.(providerId)) ?? null) : null;
     const byok = await resolveByokGenerationKey({
-      provider: body.provider,
+      entry,
       model: body.model,
       readUserApiKey,
     });

@@ -3,7 +3,7 @@ id: task-2
 title: Replace user_ai_keys.provider's CHECK constraint with a real foreign key
 slice: 1
 scenarios: [s8, s9]
-status: todo
+status: done
 paths: [supabase/migrations/<ts2>_user_ai_keys_provider_fk.sql]
 ---
 

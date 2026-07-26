@@ -3,7 +3,7 @@ id: task-3
 title: Add the shared provider-catalog module (pure predicates + scoped loader)
 slice: 1
 scenarios: [s10, s11]
-status: todo
+status: done
 paths:
   - supabase/functions/_shared/provider-catalog.ts
   - libs/supabase-services/src/services/provider-catalog.test.ts

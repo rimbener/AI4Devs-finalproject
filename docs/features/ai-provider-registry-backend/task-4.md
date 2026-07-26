@@ -3,7 +3,7 @@ id: task-4
 title: Delete the hardcoded model registry, widen AiProvider to string, validate models from the catalog
 slice: 1
 scenarios: [s12, s19]
-status: todo
+status: done
 paths:
   - supabase/functions/generate-lesson/_shared/models.ts
   - supabase/functions/generate-lesson/_shared/lesson-generation.validation.ts
