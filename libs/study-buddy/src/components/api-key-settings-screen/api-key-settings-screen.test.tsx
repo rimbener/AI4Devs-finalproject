@@ -1,20 +1,22 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
+  useAiProviders: jest.fn(),
   useApiKey: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
 
-import { useApiKey } from '@helsoft/hooks';
+import { useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import { API_KEY_SETTINGS_GUIDANCE_URLS } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
+import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { ApiKeySettingsScreen } from './api-key-settings-screen';
 
+const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 
@@ -35,6 +37,7 @@ const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => (
 describe('ApiKeySettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAiProviders.mockReturnValue(aiProvidersValue());
     mockUseApiKey.mockReturnValue(apiKeyValue());
   });
 
@@ -68,7 +71,7 @@ describe('ApiKeySettingsScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
     });
     await act(async () => {
-      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.groq' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
     await act(async () => {
       fireEvent.changeText(screen.getByLabelText('settings.apiKey.inputLabel'), 'sk-test-key');
@@ -94,9 +97,7 @@ describe('ApiKeySettingsScreen', () => {
 
     const expectedDate = new Date(updatedAt).toLocaleDateString('en');
     expect(
-      screen.getByText(
-        `settings.apiKey.savedStatus:{"provider":"settings.apiKey.provider.groq","date":"${expectedDate}"}`,
-      ),
+      screen.getByText(`settings.apiKey.savedStatus:{"provider":"Groq","date":"${expectedDate}"}`),
     ).toBeTruthy();
   });
 
@@ -122,7 +123,7 @@ describe('ApiKeySettingsScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
     });
     await act(async () => {
-      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.groq' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
 
     expect(screen.getByRole('button', { name: 'general.save', disabled: true })).toBeTruthy();
@@ -159,7 +160,7 @@ describe('ApiKeySettingsScreen', () => {
     await act(async () => {
       fireEvent.press(
         screen.getByRole('button', {
-          name: 'settings.apiKey.remove settings.apiKey.provider.groq',
+          name: 'settings.apiKey.remove Groq',
         }),
       );
     });
@@ -170,7 +171,8 @@ describe('ApiKeySettingsScreen', () => {
     expect(removeApiKey).toHaveBeenCalledWith('groq');
   });
 
-  it('lists every provider name key in the add modal radio group', async () => {
+  // @s1/@s3 (task-3) — every catalog provider's plain display name is offered, in catalog order.
+  it('lists every catalog provider display name in the add modal radio group', async () => {
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -179,30 +181,13 @@ describe('ApiKeySettingsScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
     });
 
-    for (const key of [
-      'settings.apiKey.provider.groq',
-      'settings.apiKey.provider.openai',
-      'settings.apiKey.provider.anthropic',
-      'settings.apiKey.provider.google',
-      'settings.apiKey.provider.xai',
-      'settings.apiKey.provider.deepseek',
-    ]) {
-      expect(screen.getByRole('radio', { name: key })).toBeTruthy();
+    for (const name of ['Groq', 'OpenAI', 'Anthropic', 'Google', 'xAI', 'DeepSeek']) {
+      expect(screen.getByRole('radio', { name })).toBeTruthy();
     }
   });
 
-  it('preserves every provider guidance URL constant', () => {
-    expect(API_KEY_SETTINGS_GUIDANCE_URLS).toEqual({
-      groq: 'https://console.groq.com/keys',
-      openai: 'https://platform.openai.com/api-keys',
-      anthropic: 'https://console.anthropic.com/settings/keys',
-      google: 'https://aistudio.google.com/app/apikey',
-      xai: 'https://console.x.ai',
-      deepseek: 'https://platform.deepseek.com/api_keys',
-    });
-  });
-
-  it('opens the groq guidance URL when the guidance link is pressed', async () => {
+  // @s2 — the guidance link offered comes from the live catalog's guidanceUrl, not a constant.
+  it('opens the groq guidance URL from the catalog when the guidance link is pressed', async () => {
     const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
     mockUseLocalization.mockReturnValue(
       localizationValue({
@@ -217,17 +202,29 @@ describe('ApiKeySettingsScreen', () => {
       fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
     });
     await act(async () => {
-      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.groq' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'Groq' }));
     });
     await act(async () => {
       fireEvent.press(
         screen.getByRole('button', {
-          name: 'settings.apiKey.guidanceTemplate:{"provider":"settings.apiKey.provider.groq"}',
+          name: 'settings.apiKey.guidanceTemplate:{"provider":"Groq"}',
         }),
       );
     });
 
     expect(openURL).toHaveBeenCalledWith('https://console.groq.com/keys');
     openURL.mockRestore();
+  });
+
+  // @s1/@s3 (task-3, s11 foundation) — the screen withholds the picker/list while the catalog
+  // itself is still loading, keeping today's existing loading affordance (no stale flash).
+  it('shows the loading placeholder while useAiProviders().isLoading is true', async () => {
+    mockUseAiProviders.mockReturnValue(aiProvidersValue({ isLoading: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.queryByLabelText('settings.apiKey.inputLabel')).toBeNull();
+    expect(screen.queryByText('settings.apiKey.manager.emptyMessage')).toBeNull();
   });
 });

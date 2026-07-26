@@ -7,16 +7,19 @@ jest.mock('@helsoft/services', () => ({
 
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
+  useAiProviders: jest.fn(),
   useApiKey: jest.fn(),
   useProfile: jest.fn(),
 }));
 
-import { useApiKey, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
+import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
 import { useLessonGenerationForm } from './use-lesson-generation';
 
+const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
@@ -25,6 +28,7 @@ describe('useLessonGenerationForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetStoredPreference.mockResolvedValue(null);
+    mockUseAiProviders.mockReturnValue(aiProvidersValue());
     mockUseProfile.mockReturnValue({
       profile: { keySource: 'user', canCreate: false },
     });
@@ -44,6 +48,31 @@ describe('useLessonGenerationForm', () => {
     expect(result.current.showPickers).toBe(false);
     expect(result.current.canGenerate).toBe(false);
     expect(result.current.buildGenerateRequest()).toBeNull();
+  });
+
+  // s3 (task-3, re-exercised here) — savedProviders carries the catalog's plain display name,
+  // in catalog order, not an AiProvider[] of bare ids.
+  it('exposes savedProviders as { id, name } pairs in catalog order', async () => {
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'openai', updatedAt: '2026-01-02' },
+          { provider: 'groq', updatedAt: '2026-01-01' },
+        ],
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBeDefined());
+
+    expect(result.current.savedProviders).toEqual([
+      { id: 'groq', name: 'Groq' },
+      { id: 'openai', name: 'OpenAI' },
+    ]);
   });
 
   // @s11 — switching provider resets model via selectProvider.
@@ -72,6 +101,66 @@ describe('useLessonGenerationForm', () => {
 
     expect(result.current.selectedProvider).toBe('openai');
     expect(result.current.selectedModel).toBe('gpt-5.6-luna');
+  });
+
+  // @s4/@s10 — modelOptions for the selected provider come from that provider's catalog entry,
+  // in sortOrder, with label as a plain string (no labelKey).
+  it('exposes modelOptions from the selected provider catalog entry', async () => {
+    mockUseApiKey.mockReturnValue({
+      status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBe('groq'));
+
+    expect(result.current.modelOptions).toEqual([
+      { id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' },
+      { id: 'openai/gpt-oss-120b', label: 'GPT OSS 120B' },
+      { id: 'qwen/qwen3.6-27b', label: 'Qwen 3.6 27B' },
+    ]);
+  });
+
+  // @s10 — a model added to the provider's catalog entry appears with no other change.
+  it('reflects a newly added model in modelOptions with no app update', async () => {
+    mockUseAiProviders.mockReturnValue(
+      aiProvidersValue({
+        providers: aiProvidersValue().providers.map((provider) =>
+          provider.id === 'groq'
+            ? {
+                ...provider,
+                models: [
+                  ...provider.models,
+                  {
+                    modelId: 'openai/gpt-oss-brand-new',
+                    label: 'Brand New Model',
+                    vision: false,
+                    isVisionDefault: false,
+                    sortOrder: 4,
+                  },
+                ],
+              }
+            : provider,
+        ),
+      }),
+    );
+    mockUseApiKey.mockReturnValue({
+      status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBe('groq'));
+
+    expect(result.current.modelOptions).toEqual(
+      expect.arrayContaining([{ id: 'openai/gpt-oss-brand-new', label: 'Brand New Model' }]),
+    );
   });
 
   // @s20 — valid stored preference preselects provider and model on open.
@@ -127,7 +216,7 @@ describe('useLessonGenerationForm', () => {
   });
 
   // @s21 — retired model falls back quietly.
-  it('falls back when the stored model is no longer in the registry', async () => {
+  it('falls back when the stored model is no longer in the catalog entry', async () => {
     mockGetStoredPreference.mockResolvedValue({
       provider: 'openai',
       model: 'retired-model',

@@ -1,15 +1,24 @@
 import type { LessonGenerationPanelState } from '@helsoft/components';
 import type { LessonGenerationStage } from '@helsoft/hooks';
-import type { AiProvider, GenerationErrorCode, LessonComposition } from '@helsoft/types';
-import { AI_MODEL_REGISTRY, AI_PROVIDERS } from '@helsoft/types';
+import type {
+  AiProvider,
+  AiProviderCatalogEntry,
+  GenerationErrorCode,
+  LessonComposition,
+} from '@helsoft/types';
 
-/** Narrow runtime guard for provider RadioGroup values. */
-export const isAiProvider = (value: string): value is AiProvider =>
-  (AI_PROVIDERS as readonly string[]).includes(value);
+/** Narrow runtime guard for provider RadioGroup values, resourced against the catalog-backed
+ * saved-provider list (Decision 1/4) instead of the hardcoded `AI_PROVIDERS` registry — that
+ * constant is deleted outright by task-11, so this guard must not depend on it. */
+export const isAiProvider = (
+  providers: readonly AiProvider[],
+  value: string,
+): value is AiProvider => (providers as readonly string[]).includes(value);
 
-/** Whether `model` is still listed for `provider` in the curated registry. */
-export const isCuratedModel = (provider: AiProvider, model: string): boolean =>
-  AI_MODEL_REGISTRY[provider].models.some((entry) => entry.id === model);
+/** Whether `modelId` is still listed under `entry`'s catalog models (Decision 6) — replaces the
+ * `AI_MODEL_REGISTRY[provider]` lookup with the selected provider's own catalog entry. */
+export const isCuratedModel = (entry: AiProviderCatalogEntry, modelId: string): boolean =>
+  entry.models.some((model) => model.modelId === modelId);
 
 type GenerationSelection = {
   provider: AiProvider;
@@ -17,25 +26,26 @@ type GenerationSelection = {
 };
 
 /**
- * Resolve picker defaults from saved keys + optional stored preference (@s20/@s21).
- * Valid stored preference wins; otherwise first saved provider (fixed order) + first curated model.
+ * Resolve picker defaults from the catalog-backed saved-provider entries (already in catalog
+ * order, Decision 4) + optional stored preference (@s20/@s21). Valid stored preference wins;
+ * otherwise the first saved provider + its first catalog model (Decision 6).
  */
 export const resolveGenerationSelection = (
-  savedProviders: readonly AiProvider[],
+  savedProviders: readonly AiProviderCatalogEntry[],
   stored: GenerationSelection | null,
 ): GenerationSelection => {
-  const fallbackProvider = savedProviders[0];
-  const fallbackModel = AI_MODEL_REGISTRY[fallbackProvider].models[0]?.id ?? '';
+  const fallbackEntry = savedProviders[0];
+  const fallbackModel = fallbackEntry?.models[0]?.modelId ?? '';
 
-  if (
-    stored &&
-    savedProviders.includes(stored.provider) &&
-    isCuratedModel(stored.provider, stored.model)
-  ) {
+  const storedEntry = stored
+    ? savedProviders.find((entry) => entry.id === stored.provider)
+    : undefined;
+
+  if (stored && storedEntry && isCuratedModel(storedEntry, stored.model)) {
     return stored;
   }
 
-  return { provider: fallbackProvider, model: fallbackModel };
+  return { provider: fallbackEntry?.id as AiProvider, model: fallbackModel };
 };
 
 /** Narrow runtime guard: `LessonGenerationPanel.onCompositionChange` hands back a plain string

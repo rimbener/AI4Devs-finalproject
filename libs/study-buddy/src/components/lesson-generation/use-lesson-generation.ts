@@ -1,12 +1,6 @@
-import { useApiKey, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
-import {
-  AI_MODEL_REGISTRY,
-  AI_PROVIDERS,
-  type AiProvider,
-  type GenerateLessonRequest,
-  type LessonComposition,
-} from '@helsoft/types';
+import type { AiProvider, GenerateLessonRequest, LessonComposition } from '@helsoft/types';
 import { useEffect, useMemo, useState } from 'react';
 
 import { resolveGenerationSelection } from './lesson-generation.helpers';
@@ -21,26 +15,36 @@ type UseLessonGenerationArgs = {
  * Handlers stay in lesson-generation.tsx (component-split.mdc). Exempt from `useQuery` — see
  * `.agents/rules/tanstack-query.mdc`'s Exemptions section: `GenerationPreferenceService`'s stored
  * preference is read once, to seed local picker state, not as an ongoing server-state read.
+ *
+ * Provider/model identity, order, and curated list all come from `useAiProviders()`'s live
+ * catalog (task-4, Decisions 1/4/6) — `savedProviders` still means "has a saved key" (unchanged
+ * filter), just ordered/sourced by the catalog instead of the hardcoded `AI_PROVIDERS` registry.
  */
 export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGenerationArgs) => {
+  const { providers } = useAiProviders();
   const { status, hasKey } = useApiKey();
   const { profile } = useProfile();
   const [selectedProvider, setSelectedProvider] = useState<AiProvider | undefined>();
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
 
-  const savedProviders = useMemo(() => {
+  const savedProviderEntries = useMemo(() => {
     const saved = new Set(status.keys.map((entry) => entry.provider));
-    return AI_PROVIDERS.filter((provider) => saved.has(provider));
-  }, [status.keys]);
+    return providers.filter((provider) => saved.has(provider.id));
+  }, [providers, status.keys]);
+
+  const savedProviders = useMemo(
+    () => savedProviderEntries.map((entry) => ({ id: entry.id, name: entry.name })),
+    [savedProviderEntries],
+  );
 
   const isFreeByok = profile?.keySource === 'user';
-  const showPickers = isFreeByok && savedProviders.length > 0;
+  const showPickers = isFreeByok && savedProviderEntries.length > 0;
   const showMissingKeyGate = isFreeByok && !hasKey;
   const hasPickerSelection = !showPickers || (Boolean(selectedProvider) && Boolean(selectedModel));
   const canGenerate = Boolean(documentId) && !showMissingKeyGate && hasPickerSelection;
 
   useEffect(() => {
-    if (!showPickers || savedProviders.length === 0) return;
+    if (!showPickers || savedProviderEntries.length === 0) return;
 
     let cancelled = false;
 
@@ -48,7 +52,7 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
       const stored = await GenerationPreferenceService.getStoredPreference();
       if (cancelled) return;
 
-      const { provider, model } = resolveGenerationSelection(savedProviders, stored);
+      const { provider, model } = resolveGenerationSelection(savedProviderEntries, stored);
       setSelectedProvider(provider);
       setSelectedModel(model);
     })();
@@ -56,9 +60,12 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
     return () => {
       cancelled = true;
     };
-  }, [showPickers, savedProviders]);
+  }, [showPickers, savedProviderEntries]);
 
-  const modelOptions = selectedProvider ? AI_MODEL_REGISTRY[selectedProvider].models : [];
+  const selectedEntry = savedProviderEntries.find((entry) => entry.id === selectedProvider);
+  const modelOptions = selectedEntry
+    ? selectedEntry.models.map((model) => ({ id: model.modelId, label: model.label }))
+    : [];
 
   const buildGenerateRequest = (): GenerateLessonRequest | null => {
     if (!documentId || showMissingKeyGate) return null;
@@ -72,7 +79,8 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
 
   const selectProvider = (provider: AiProvider) => {
     setSelectedProvider(provider);
-    setSelectedModel(AI_MODEL_REGISTRY[provider].models[0]?.id);
+    const entry = savedProviderEntries.find((candidate) => candidate.id === provider);
+    setSelectedModel(entry?.models[0]?.modelId);
   };
 
   return {

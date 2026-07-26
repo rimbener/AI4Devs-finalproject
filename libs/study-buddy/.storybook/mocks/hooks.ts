@@ -10,6 +10,7 @@ export * from '../../../hooks/src/hooks/use-interaction-state';
 
 import type {
   AiProvider,
+  AiProviderCatalogEntry,
   ApiKeyErrorCode,
   ApiKeyStatus,
   GeneratedLesson,
@@ -184,6 +185,101 @@ export const useLessonAttempt = () => {
   const retry = useCallback(() => {}, []);
 
   return { status, attempt: null, saveAttempt, retry };
+};
+
+// --- useAiProviders --------------------------------------------------------------
+
+const DEFAULT_AI_PROVIDER_CATALOG: AiProviderCatalogEntry[] = [
+  {
+    id: 'groq',
+    name: 'Groq',
+    guidanceUrl: 'https://console.groq.com/keys',
+    enabled: true,
+    sortOrder: 1,
+    models: [
+      {
+        modelId: 'openai/gpt-oss-20b',
+        label: 'GPT OSS 20B',
+        vision: false,
+        isVisionDefault: false,
+        sortOrder: 1,
+      },
+    ],
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    guidanceUrl: 'https://platform.openai.com/api-keys',
+    enabled: true,
+    sortOrder: 2,
+    models: [
+      {
+        modelId: 'gpt-5.6-luna',
+        label: 'GPT-5.6 Luna',
+        vision: true,
+        isVisionDefault: true,
+        sortOrder: 1,
+      },
+    ],
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic',
+    guidanceUrl: 'https://console.anthropic.com/settings/keys',
+    enabled: true,
+    sortOrder: 3,
+    models: [],
+  },
+  {
+    id: 'google',
+    name: 'Google',
+    guidanceUrl: 'https://aistudio.google.com/app/apikey',
+    enabled: true,
+    sortOrder: 4,
+    models: [],
+  },
+  {
+    id: 'xai',
+    name: 'xAI',
+    guidanceUrl: 'https://console.x.ai',
+    enabled: true,
+    sortOrder: 5,
+    models: [],
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek',
+    guidanceUrl: 'https://platform.deepseek.com/api_keys',
+    enabled: true,
+    sortOrder: 6,
+    models: [],
+  },
+];
+
+export type AiProvidersMockConfig = {
+  providers?: AiProviderCatalogEntry[];
+  isLoading?: boolean;
+};
+
+let pendingAiProvidersConfig: AiProvidersMockConfig = {};
+
+export const configureAiProvidersMock = (config: AiProvidersMockConfig) => {
+  pendingAiProvidersConfig = config;
+};
+
+export const useAiProviders = () => {
+  const [config] = useState(() => {
+    const next = pendingAiProvidersConfig;
+    pendingAiProvidersConfig = {};
+    return next;
+  });
+  const providers = config.providers ?? DEFAULT_AI_PROVIDER_CATALOG;
+
+  return {
+    providers,
+    enabledProviders: providers.filter((provider) => provider.enabled),
+    isLoading: config.isLoading ?? false,
+  };
 };
 
 // --- useApiKey -----------------------------------------------------------------

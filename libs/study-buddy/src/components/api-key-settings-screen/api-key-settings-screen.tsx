@@ -1,12 +1,7 @@
 import { ApiKeyManager } from '@helsoft/components';
-import { useApiKey } from '@helsoft/hooks';
+import { useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import {
-  type AiProvider,
-  API_KEY_SETTINGS_GUIDANCE_URLS,
-  type ApiKeyErrorCode,
-  PROVIDER_NAME_KEYS,
-} from '@helsoft/types';
+import type { AiProvider, ApiKeyErrorCode } from '@helsoft/types';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -19,15 +14,37 @@ const API_KEY_ERROR_KEYS: Partial<Record<ApiKeyErrorCode, string>> = {
 };
 
 /**
- * ApiKeySettingsScreen — dedicated API keys screen (title + ApiKeyManager).
+ * ApiKeySettingsScreen — dedicated API keys screen (title + ApiKeyManager). Provider identity,
+ * guidance links, and order come from the live catalog (@s1/@s2/@s3) via `useAiProviders()`,
+ * never a hardcoded constant. `useAiProviders()` degrades to an empty ordered list on a catalog
+ * read failure (Decision 11), so this screen just keeps its existing loading affordance until
+ * both the catalog and the key status settle (@s11) — no new loading UI.
  */
 export const ApiKeySettingsScreen = () => {
-  const { status, isLoading, isSubmitting, error, saveApiKey, removeApiKey } = useApiKey();
+  const { providers, isLoading: isCatalogLoading } = useAiProviders();
+  const {
+    status,
+    isLoading: isKeyLoading,
+    isSubmitting,
+    error,
+    saveApiKey,
+    removeApiKey,
+  } = useApiKey();
   const { t, locale } = useLocalization();
+
+  const providerIds = providers.map((provider) => provider.id);
+  const providerNames = Object.fromEntries(
+    providers.map((provider) => [provider.id, provider.name]),
+  ) as Record<AiProvider, string>;
+  const guidanceUrls = Object.fromEntries(
+    providers
+      .filter((provider) => provider.guidanceUrl)
+      .map((provider) => [provider.id, provider.guidanceUrl as string]),
+  ) as Partial<Record<AiProvider, string>>;
 
   const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
     t('settings.apiKey.savedStatus', {
-      provider: t(PROVIDER_NAME_KEYS[provider]),
+      provider: providerNames[provider],
       date: new Date(updatedAt).toLocaleDateString(locale),
     });
 
@@ -41,14 +58,15 @@ export const ApiKeySettingsScreen = () => {
       </Text>
       <ApiKeyManager
         savedKeys={status.keys}
-        isLoading={isLoading}
+        providers={providerIds}
+        isLoading={isCatalogLoading || isKeyLoading}
         isSubmitting={isSubmitting}
         errorMessage={errorMessage}
         onSave={saveApiKey}
         onRemove={removeApiKey}
-        guidanceUrls={API_KEY_SETTINGS_GUIDANCE_URLS}
+        guidanceUrls={guidanceUrls}
         getSavedStatusLabel={getSavedStatusLabel}
-        providerNameKeys={PROVIDER_NAME_KEYS}
+        providerNames={providerNames}
       />
     </View>
   );

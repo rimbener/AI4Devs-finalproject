@@ -1,5 +1,6 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
+  useAiProviders: jest.fn(),
   useLessonGeneration: jest.fn(),
   useApiKey: jest.fn(),
   useProfile: jest.fn(),
@@ -39,16 +40,18 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
-import { useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 
+import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { LessonGeneration } from './lesson-generation';
 import { useLessonGenerationForm } from './use-lesson-generation';
 
+const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -100,6 +103,7 @@ const hookValue = (overrides: Partial<ReturnType<typeof useLessonGeneration>> = 
 describe('LessonGeneration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAiProviders.mockReturnValue(aiProvidersValue());
     mockUseLessonGenerationForm.mockImplementation(actualUseLessonGenerationForm);
     mockGetStoredPreference.mockResolvedValue(null);
     mockSetStoredPreference.mockResolvedValue(undefined);
@@ -171,16 +175,12 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     expect(screen.getByText('generation.provider.heading')).toBeTruthy();
     expect(screen.getByText('generation.model.heading')).toBeTruthy();
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
   });
 
   // @s20 — valid stored preference preselects provider and model on reopen.
@@ -205,12 +205,8 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.openai', checked: true }),
-      ).toBeTruthy();
-      expect(
-        screen.getByRole('radio', { name: 'aiModel.openai.gpt56Terra', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'OpenAI', checked: true })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'GPT-5.6 Terra', checked: true })).toBeTruthy();
     });
   });
 
@@ -232,9 +228,7 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: false }));
@@ -268,12 +262,8 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
-      expect(
-        screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
     });
   });
 
@@ -294,12 +284,10 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await act(async () => {
-      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.openai.gpt56Luna', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT-5.6 Luna', checked: true })).toBeTruthy();
   });
 
   // @s12/@s19 — free-BYOK sends provider+model; platform omits them.
@@ -926,18 +914,14 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     await act(async () => {
       capturedPanelValue.current?.onProviderChange?.('not-a-provider');
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
   });
 
   it('updates the selected model when onModelChange fires', async () => {
@@ -954,9 +938,7 @@ describe('LessonGeneration', () => {
       capturedPanelValue.current?.onModelChange?.('openai/gpt-oss-120b');
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT OSS 120B', checked: true })).toBeTruthy();
   });
 
   it('does not persist a preference on generate for the platform path', async () => {
@@ -976,11 +958,11 @@ describe('LessonGeneration', () => {
     const generate = jest.fn();
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
     mockUseLessonGenerationForm.mockReturnValue({
-      savedProviders: ['groq'],
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
       showPickers: true,
       showMissingKeyGate: false,
       canGenerate: true,
-      modelOptions: [{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }],
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' }],
       selectedProvider: 'groq',
       selectedModel: undefined,
       setSelectedModel: jest.fn(),
@@ -1019,12 +1001,10 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.anthropic' }),
-      ).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.google' })).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.xai' })).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.deepseek' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Anthropic' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Google' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'xAI' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'DeepSeek' })).toBeTruthy();
     });
   });
 
@@ -1062,9 +1042,7 @@ describe('LessonGeneration', () => {
 
     const { rerender } = await render(<LessonGeneration documentId="doc-1" />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     mockUseApiKey.mockReturnValue(
@@ -1085,8 +1063,6 @@ describe('LessonGeneration', () => {
       capturedPanelValue.current?.onProviderChange?.('anthropic');
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.anthropic', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Anthropic', checked: true })).toBeTruthy();
   });
 });

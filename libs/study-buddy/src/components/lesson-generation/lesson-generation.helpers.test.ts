@@ -1,12 +1,62 @@
-import { AI_MODEL_REGISTRY } from '@helsoft/types';
+import type { AiProviderCatalogEntry } from '@helsoft/types';
 
 import {
   GENERATION_ERROR_KEYS,
   GENERATION_ERROR_RECOVERY,
+  isAiProvider,
+  isCuratedModel,
   isLessonComposition,
   resolveGenerationSelection,
   toPanelState,
 } from './lesson-generation.helpers';
+
+const groqEntry: AiProviderCatalogEntry = {
+  id: 'groq',
+  name: 'Groq',
+  guidanceUrl: 'https://console.groq.com/keys',
+  enabled: true,
+  sortOrder: 1,
+  models: [
+    {
+      modelId: 'openai/gpt-oss-20b',
+      label: 'GPT OSS 20B',
+      vision: false,
+      isVisionDefault: false,
+      sortOrder: 1,
+    },
+    {
+      modelId: 'openai/gpt-oss-120b',
+      label: 'GPT OSS 120B',
+      vision: false,
+      isVisionDefault: false,
+      sortOrder: 2,
+    },
+  ],
+};
+
+const openaiEntry: AiProviderCatalogEntry = {
+  id: 'openai',
+  name: 'OpenAI',
+  guidanceUrl: 'https://platform.openai.com/api-keys',
+  enabled: true,
+  sortOrder: 2,
+  models: [
+    {
+      modelId: 'gpt-5.6-luna',
+      label: 'GPT-5.6 Luna',
+      vision: true,
+      isVisionDefault: true,
+      sortOrder: 1,
+    },
+    {
+      modelId: 'gpt-5.6-terra',
+      label: 'GPT-5.6 Terra',
+      vision: true,
+      isVisionDefault: false,
+      sortOrder: 2,
+    },
+  ],
+};
 
 describe('isLessonComposition', () => {
   it('accepts every LessonComposition value', () => {
@@ -17,6 +67,30 @@ describe('isLessonComposition', () => {
 
   it('rejects any other string', () => {
     expect(isLessonComposition('everything')).toBe(false);
+  });
+});
+
+describe('isAiProvider (task-4) — resourced against a catalog-backed provider list', () => {
+  it('accepts a value present in the passed-in provider list', () => {
+    expect(isAiProvider(['groq', 'openai'], 'groq')).toBe(true);
+  });
+
+  it('rejects a value absent from the passed-in provider list', () => {
+    expect(isAiProvider(['groq', 'openai'], 'anthropic')).toBe(false);
+  });
+
+  it('rejects any non-provider string', () => {
+    expect(isAiProvider(['groq', 'openai'], 'not-a-provider')).toBe(false);
+  });
+});
+
+describe('isCuratedModel (task-4) — resourced against a provider catalog entry', () => {
+  it('accepts a modelId present in the entry.models list', () => {
+    expect(isCuratedModel(groqEntry, 'openai/gpt-oss-20b')).toBe(true);
+  });
+
+  it('rejects a modelId absent from the entry.models list', () => {
+    expect(isCuratedModel(groqEntry, 'retired-model')).toBe(false);
   });
 });
 
@@ -89,8 +163,8 @@ describe('GENERATION_ERROR_RECOVERY (task-13)', () => {
   });
 });
 
-describe('resolveGenerationSelection (@s20/@s21)', () => {
-  const savedProviders = ['groq', 'openai'] as const;
+describe('resolveGenerationSelection (@s20/@s21, task-4: catalog-backed)', () => {
+  const savedProviders = [groqEntry, openaiEntry];
 
   // @s20 — valid stored preference wins.
   it('returns the stored provider and model when still valid', () => {
@@ -113,7 +187,7 @@ describe('resolveGenerationSelection (@s20/@s21)', () => {
   });
 
   // @s21 — retired model falls back quietly.
-  it('falls back when the stored model is not in the registry', () => {
+  it('falls back when the stored model is not in the catalog entry', () => {
     expect(
       resolveGenerationSelection(savedProviders, {
         provider: 'openai',
@@ -131,27 +205,18 @@ describe('resolveGenerationSelection (@s20/@s21)', () => {
   });
 
   it('falls back safely when the saved provider has no models registered', () => {
-    expect(resolveGenerationSelection(['openai'] as const, null)).toEqual({
+    expect(resolveGenerationSelection([openaiEntry], null)).toEqual({
       provider: 'openai',
       model: 'gpt-5.6-luna',
     });
   });
 
-  it('falls back to an empty model id when the registry entry has no models', () => {
-    const original = AI_MODEL_REGISTRY.openai.models;
-    Object.defineProperty(AI_MODEL_REGISTRY.openai, 'models', {
-      configurable: true,
-      value: [],
-    });
-
-    expect(resolveGenerationSelection(['openai'] as const, null)).toEqual({
+  // @s10 — a model added to (or removed from) the catalog entry is reflected with no other
+  // change: the fallback model comes from whatever entry.models currently holds.
+  it('falls back to an empty model id when the entry has no models', () => {
+    expect(resolveGenerationSelection([{ ...openaiEntry, models: [] }], null)).toEqual({
       provider: 'openai',
       model: '',
-    });
-
-    Object.defineProperty(AI_MODEL_REGISTRY.openai, 'models', {
-      configurable: true,
-      value: original,
     });
   });
 });
