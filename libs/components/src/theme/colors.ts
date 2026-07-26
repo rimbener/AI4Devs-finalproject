@@ -1,64 +1,72 @@
 /**
  * AI Study Buddy — color system (Material Design 3 tonal model).
- * Palette "Slate & Rust", ported from the design system's tokens/colors.css.
+ * Palette "Study Buddy" (adopted from the brand logo), ported from the design system's tokens/colors.css.
  * oklch ramp values are pre-converted to sRGB hex (React Native has no oklch support).
  */
 
 export const palette = {
   brand: {
-    midnight: '#1B2B3A',
-    steel: '#2E4A60',
-    rust: '#B84C2B',
+    royal: '#002C5D',
+    cyan: '#0090D8',
+    orange: '#F09030',
+    red: '#F06018',
+    gold: '#F0D860',
     offWhite: '#F2EFE9',
     white: '#FFFFFF',
   },
-  /** Steel Blue ramp (hue ~248) */
+  /** Royal Blue ramp (hue ~255) */
   primary: {
     0: '#000000',
-    10: '#0b1c2b',
-    20: '#172d42',
-    30: '#274159',
-    40: '#3b5874',
-    50: '#547594',
-    60: '#7393b1',
-    70: '#94aec8',
-    80: '#b6cade',
-    90: '#d6e3f0',
-    95: '#e9f1f9',
-    99: '#f9fcff',
+    10: '#001535',
+    20: '#00214C',
+    30: '#002D5E',
+    40: '#124784',
+    50: '#2964AA',
+    60: '#4682CC',
+    70: '#6FA1E1',
+    80: '#A1C4F1',
+    90: '#CDE0F9',
+    95: '#E7F1FE',
+    99: '#F9FCFF',
     100: '#ffffff',
   },
-  /** Midnight Slate ramp (hue ~252, low chroma) */
+  /** Azure Cyan ramp (hue ~240) */
   secondary: {
     0: '#000000',
-    10: '#0d1722',
-    20: '#1a2634',
-    30: '#2e3c4c',
-    40: '#445466',
-    50: '#607083',
-    60: '#7e8ea0',
-    70: '#9ca9b8',
-    80: '#bbc5d1',
-    90: '#d9e0e9',
-    95: '#eaeff4',
-    99: '#fafcfe',
+    10: '#002236',
+    20: '#003756',
+    30: '#00537E',
+    40: '#0070AA',
+    50: '#0091D7',
+    60: '#44A8E7',
+    70: '#79C0F1',
+    80: '#ABD7F8',
+    90: '#D2EAFC',
+    95: '#E7F4FD',
+    99: '#F8FCFF',
     100: '#ffffff',
   },
-  /** Rust ramp (hue ~42) */
+  /**
+   * Orange ramp (hue ~60).
+   * The design system's previous ramp (hue 52, seed L 0.58) was carried over
+   * from the old "Rust" ramp's lightness curve and never re-derived for the
+   * Orange seed — it rendered as a dark burnt brown (~#BD5A00) instead of the
+   * intended #F09030. Re-anchored so tertiary[45] hits the true seed color.
+   */
   tertiary: {
     0: '#000000',
-    10: '#300f02',
-    20: '#4f1b04',
-    30: '#762e0d',
-    40: '#a04318',
-    45: '#b54e21',
-    50: '#c85c2e',
-    60: '#df784e',
-    70: '#f09c7c',
-    80: '#fbbea6',
-    90: '#ffded1',
-    95: '#ffede5',
-    99: '#fffaf8',
+    10: '#2C1300',
+    20: '#5E3306',
+    30: '#965719',
+    40: '#D17C28',
+    45: '#F09031',
+    50: '#FA9633',
+    60: '#FFA74F',
+    70: '#FFBB78',
+    80: '#FFD1A4',
+    90: '#FFE7CD',
+    95: '#FFF2E5',
+    99: '#FFFBF6',
     100: '#ffffff',
   },
   /** Warm neutral ramp (hue ~85, very low chroma) */
@@ -147,7 +155,7 @@ export const lightColors: ThemeColors = {
   tertiary: palette.tertiary[45],
   onTertiary: palette.tertiary[100],
   tertiaryContainer: palette.tertiary[90],
-  onTertiaryContainer: palette.tertiary[70],
+  onTertiaryContainer: palette.tertiary[10],
   error: palette.error[40],
   onError: '#ffffff',
   errorContainer: palette.error[90],
@@ -213,7 +221,7 @@ export const darkColors: ThemeColors = {
 export const stateLayerOpacity = {
   hover: 0.08,
   focus: 0.12,
-  press: 0.24,
+  press: 0.12,
   drag: 0.16,
 } as const;
 

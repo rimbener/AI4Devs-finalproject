@@ -21,7 +21,7 @@ export const Filled: Story = {
   args: {
     name: 'check_circle',
     fill: true,
-    color: '#b54e21',
+    color: '#F09030',
   },
 };
 

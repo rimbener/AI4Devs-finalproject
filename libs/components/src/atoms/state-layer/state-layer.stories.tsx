@@ -50,5 +50,5 @@ export const Hidden: Story = {
 };
 
 export const CustomColor: Story = {
-  args: { opacity: 0.12, color: '#B84C2B' },
+  args: { opacity: 0.12, color: '#F09030' },
 };

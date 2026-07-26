@@ -1,14 +1,16 @@
 import type { ViewStyle } from 'react-native';
 
-import { hexWithOpacity, palette } from './colors';
+import { hexWithOpacity } from './colors';
 
 /**
  * AI Study Buddy — elevation (MD3 5-level shadow system).
- * Two-layer (ambient + key), neutral slate-tinted, subtle, derived from the brand midnight color.
- * `boxShadow` is supported by React Native 0.76+ and react-native-web.
+ * Two-layer (ambient + key), neutral slate-tinted, subtle — independent of the
+ * brand primary hue (matches the design system's tokens/elevation.css, which
+ * hardcodes this same neutral slate tint rather than deriving it from primary).
  */
-const ambient = hexWithOpacity(palette.brand.midnight, 0.3);
-const key = hexWithOpacity(palette.brand.midnight, 0.15);
+const SHADOW_TINT = '#1B2B3A';
+const ambient = hexWithOpacity(SHADOW_TINT, 0.3);
+const key = hexWithOpacity(SHADOW_TINT, 0.15);
 const shadow = (
   ambientY: number,
   ambientBlur: number,

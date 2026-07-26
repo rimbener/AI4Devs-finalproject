@@ -2,7 +2,7 @@
 
 Canonical design reference for any agent touching UI, copy, or design tokens. Source: **Claude Design** project ["AI Study Buddy Design System"](https://claude.ai/design/p/be7e10e0-8f41-465e-9f48-9162079c0f9c) (`project_id be7e10e0-8f41-465e-9f48-9162079c0f9c`) — read that project directly (`mcp__claude-design__read_file`/`list_files`) for full component source, `@dsCard` guideline specimens, and the `ui_kits/study-app` click-through when more detail is needed than this summary carries.
 
-Foundation: **Material Design 3**. Palette **"Slate & Rust"**. Fonts **Sora** (display/headline/title) + **IBM Plex Sans** (body/label) + IBM Plex Mono (code/data). Signature motif: the **alternating lesson/activity rhythm** — blue = instructional slide, rust = activity slide — encoded in `SlideProgress`.
+Foundation: **Material Design 3**. Palette **"Study Buddy"** (adopted from the brand logo). Fonts **Sora** (display/headline/title) + **IBM Plex Sans** (body/label) + IBM Plex Mono (code/data). Signature motif: the **alternating lesson/activity rhythm** — blue = instructional slide, orange = activity slide — encoded in `SlideProgress`.
 
 ## Already ported into this repo — reuse, don't re-derive
 
@@ -22,19 +22,19 @@ The design system's tokens and MD3 component set are already implemented here. *
 
 The repo has since added product-specific molecules/organisms beyond the design system's authored set (e.g. `lesson-list-item`, `pdf-document-list`, `web-bottom-tabs`, `account-menu`) — build new ones the same MD3 way: compose from `libs/components/src/theme` tokens and existing atoms, never introduce a new color/radius/type value ad hoc. See `.agents/rules/atomic-design.mdc` for layer placement.
 
-## Colors — "Slate & Rust"
+## Colors — "Study Buddy" (adopted from the logo)
 
 | Name | Hex | Role |
 |---|---|---|
-| Midnight Slate | `#1B2B3A` | Authority — darkest surfaces & text, hero/focus backgrounds |
-| Steel Blue | `#2E4A60` | **Primary** — key actions, active states, lesson accents |
-| Rust | `#B84C2B` | **Tertiary** accent — FABs, "correct" state, activity-slide markers, ≤10% of any screen |
+| Royal Blue | `#002C5D` | **Primary** — key actions, active states, hero/focus backgrounds |
+| Azure Cyan | `#0090D8` | **Secondary** — book pages, info accents |
+| Orange | `#F09030` | **Tertiary** accent — FABs, "correct" state, activity-slide markers, ≤10% of any screen |
+| Red-Orange | `#F06018` | Warm hi-viz accent (book outline) |
+| Gold | `#F0D860` | Brand wordmark highlight |
 | Warm Off-White | `#F2EFE9` | Neutral app canvas |
 | White | `#FFFFFF` | Raised cards & sheets |
 
-Full tonal ramps + semantic roles (`--md-primary`, `--md-surface`, …) and a dark scheme live in `tokens/colors.css` / `libs/components/src/theme/colors.ts`.
-
-**Known open item:** the supplied logo sits on a bright royal blue with orange/sky-blue/yellow accents, which doesn't match Slate & Rust. The system (and this repo's ported tokens) commit to Slate & Rust as the system palette and place the logo unmodified on its native blue tile. Reconciling the two (recolor the mark, or adopt the logo's blues as primary) is an unresolved product decision — flag it if it comes up; don't silently pick a side.
+Full tonal ramps + semantic roles (`--md-primary`, `--md-surface`, …) and a dark scheme live in `tokens/colors.css` / `libs/components/src/theme/colors.ts`. This palette is adopted directly from the brand logo (previously the system committed to a separate "Slate & Rust" palette that didn't match the logo — that mismatch is now resolved in favor of the logo's colors) and the logo sits unmodified on its native Royal Blue tile.
 
 ## Voice & content
 
@@ -50,7 +50,7 @@ This governs the *copy itself*; user-facing strings still go through `t('ns.key'
 
 ## Visual foundations
 
-- **Backgrounds:** flat color only — no gradients, photographic heroes, textures. Canvas is Warm Off-White; raised surfaces step lighter via `--md-surface-container-*`. Full-bleed Midnight Slate is reserved for hero/focus moments (generating screen, splash).
+- **Backgrounds:** flat color only — no gradients, photographic heroes, textures. Canvas is Warm Off-White; raised surfaces step lighter via `--md-surface-container-*`. Full-bleed Royal Blue is reserved for hero/focus moments (generating screen, splash), where the logomark sits on its native navy tile.
 - **Corner radii:** buttons fully rounded pills (999px); cards 12px; dialogs/sheets 28px; text fields 4px (filled, top corners); chips 8px; FAB 16px.
 - **Cards:** elevated (default: surface-container-low + elevation-1) · filled (surface-container-highest, no shadow) · outlined (1px outline-variant, no shadow). No colored left-border accents except the deliberate lesson "key term" callout (4px rust left border).
 - **Elevation:** MD3 5-level, neutral slate-tinted, two-layer (ambient + key). Most surfaces 0–1; FABs/dialogs 3; menus 2.
