@@ -24,6 +24,7 @@ import type {
 } from '@helsoft/types';
 import { useCallback, useState } from 'react';
 
+import { AI_PROVIDER_CATALOG_FIXTURE } from '../../../hooks/src/hooks/use-ai-providers.fixture';
 import { useBreakpoint as useBreakpointReal } from '../../../hooks/src/hooks/use-breakpoint';
 
 export type AuthErrorCode = 'invalid_credentials' | 'network_error';
@@ -189,73 +190,9 @@ export const useLessonAttempt = () => {
 
 // --- useAiProviders --------------------------------------------------------------
 
-const DEFAULT_AI_PROVIDER_CATALOG: AiProviderCatalogEntry[] = [
-  {
-    id: 'groq',
-    name: 'Groq',
-    guidanceUrl: 'https://console.groq.com/keys',
-    enabled: true,
-    sortOrder: 1,
-    models: [
-      {
-        modelId: 'openai/gpt-oss-20b',
-        label: 'GPT OSS 20B',
-        vision: false,
-        isVisionDefault: false,
-        sortOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    guidanceUrl: 'https://platform.openai.com/api-keys',
-    enabled: true,
-    sortOrder: 2,
-    models: [
-      {
-        modelId: 'gpt-5.6-luna',
-        label: 'GPT-5.6 Luna',
-        vision: true,
-        isVisionDefault: true,
-        sortOrder: 1,
-      },
-    ],
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    guidanceUrl: 'https://console.anthropic.com/settings/keys',
-    enabled: true,
-    sortOrder: 3,
-    models: [],
-  },
-  {
-    id: 'google',
-    name: 'Google',
-    guidanceUrl: 'https://aistudio.google.com/app/apikey',
-    enabled: true,
-    sortOrder: 4,
-    models: [],
-  },
-  {
-    id: 'xai',
-    name: 'xAI',
-    guidanceUrl: 'https://console.x.ai',
-    enabled: true,
-    sortOrder: 5,
-    models: [],
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    guidanceUrl: 'https://platform.deepseek.com/api_keys',
-    enabled: true,
-    sortOrder: 6,
-    models: [],
-  },
-];
-
+// The pinned six-provider/thirteen-model catalog (ai-provider-registry-frontend task-5,
+// spec.md Decision 13) — same relative-import seam as useBreakpoint/useInteractionState above,
+// so every existing story keeps rendering the exact catalog values today's app would show.
 export type AiProvidersMockConfig = {
   providers?: AiProviderCatalogEntry[];
   isLoading?: boolean;
@@ -273,7 +210,7 @@ export const useAiProviders = () => {
     pendingAiProvidersConfig = {};
     return next;
   });
-  const providers = config.providers ?? DEFAULT_AI_PROVIDER_CATALOG;
+  const providers = config.providers ?? AI_PROVIDER_CATALOG_FIXTURE;
 
   return {
     providers,

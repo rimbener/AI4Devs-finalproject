@@ -3,7 +3,7 @@ id: task-5
 title: Pin a fixture proving today's six providers regress zero after migration
 slice: 1
 scenarios: [s19]
-status: todo
+status: done
 paths:
   - libs/hooks/src/hooks/use-ai-providers.fixture.ts
   - libs/hooks/src/hooks/use-ai-providers.test.ts

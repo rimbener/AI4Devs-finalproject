@@ -12,8 +12,9 @@ jest.mock('@helsoft/hooks', () => ({
   useProfile: jest.fn(),
 }));
 
-import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
+import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
+import { AI_MODEL_REGISTRY, AI_PROVIDERS } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
@@ -36,6 +37,47 @@ describe('useLessonGenerationForm', () => {
       status: { keys: [] },
       hasKey: false,
     });
+  });
+
+  // @s19 — today's six seeded providers (backend gherkin-scenarios.md @s5) regress zero:
+  // fixture-driven savedProviders/modelOptions match today's hardcoded AI_PROVIDERS/
+  // AI_MODEL_REGISTRY order and content exactly, provider by provider.
+  it('matches AI_PROVIDERS/AI_MODEL_REGISTRY order and content for every provider (@s19)', async () => {
+    mockUseAiProviders.mockReturnValue({
+      providers: AI_PROVIDER_CATALOG_FIXTURE,
+      enabledProviders: AI_PROVIDER_CATALOG_FIXTURE,
+      isLoading: false,
+    });
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: AI_PROVIDERS.map((provider) => ({ provider, updatedAt: '2026-01-01' })),
+      },
+      hasKey: true,
+    });
+
+    const { result } = await renderHook(() =>
+      useLessonGenerationForm({ documentId: 'doc-1', composition: 'both' }),
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBeDefined());
+
+    expect(result.current.savedProviders).toEqual(
+      AI_PROVIDER_CATALOG_FIXTURE.map((entry) => ({ id: entry.id, name: entry.name })),
+    );
+    expect(result.current.savedProviders.map((provider) => provider.id)).toEqual(AI_PROVIDERS);
+
+    for (const provider of AI_PROVIDER_CATALOG_FIXTURE) {
+      await act(async () => {
+        result.current.selectProvider(provider.id);
+      });
+
+      expect(result.current.modelOptions).toEqual(
+        provider.models.map((model) => ({ id: model.modelId, label: model.label })),
+      );
+      expect(result.current.modelOptions.map((model) => model.id)).toEqual(
+        AI_MODEL_REGISTRY[provider.id].models.map((model) => model.id),
+      );
+    }
   });
 
   // @s16 — free-BYOK without keys exposes missing-key gate and blocks generate body.

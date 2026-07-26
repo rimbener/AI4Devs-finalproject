@@ -11,6 +11,7 @@ import type { ReactNode } from 'react';
 import { createElement } from 'react';
 
 import { AI_PROVIDERS_QUERY_KEY, useAiProviders } from './use-ai-providers';
+import { AI_PROVIDER_CATALOG_FIXTURE } from './use-ai-providers.fixture';
 import { useSession } from './use-session';
 
 const service = AiProvidersService as jest.Mocked<typeof AiProvidersService>;
@@ -106,5 +107,28 @@ describe('useAiProviders', () => {
 
     expect(queryClient.getQueryCache().find({ queryKey: AI_PROVIDERS_QUERY_KEY })).toBeDefined();
     expect(AI_PROVIDERS_QUERY_KEY).toEqual(['ai-providers', 'catalog']);
+  });
+
+  // @s19 — today's six seeded providers (backend gherkin-scenarios.md @s5) regress zero: the
+  // pinned fixture passes through the hook completely unchanged (identity, order, model count).
+  it('passes the pinned six-provider/thirteen-model fixture through unchanged (@s19)', async () => {
+    service.getCatalog.mockResolvedValue(AI_PROVIDER_CATALOG_FIXTURE);
+
+    const { result } = renderHook(() => useAiProviders(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.providers).toBe(AI_PROVIDER_CATALOG_FIXTURE);
+    expect(result.current.providers.map((provider) => provider.id)).toEqual([
+      'groq',
+      'openai',
+      'anthropic',
+      'google',
+      'xai',
+      'deepseek',
+    ]);
+    expect(
+      result.current.providers.reduce((total, provider) => total + provider.models.length, 0),
+    ).toBe(13);
+    expect(result.current.enabledProviders).toEqual(AI_PROVIDER_CATALOG_FIXTURE);
   });
 });

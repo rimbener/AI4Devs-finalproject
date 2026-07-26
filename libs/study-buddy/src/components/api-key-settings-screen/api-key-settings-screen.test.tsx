@@ -7,8 +7,9 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
 
-import { useAiProviders, useApiKey } from '@helsoft/hooks';
+import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import { API_KEY_SETTINGS_GUIDANCE_URLS } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
@@ -226,5 +227,57 @@ describe('ApiKeySettingsScreen', () => {
 
     expect(screen.queryByLabelText('settings.apiKey.inputLabel')).toBeNull();
     expect(screen.queryByText('settings.apiKey.manager.emptyMessage')).toBeNull();
+  });
+
+  // @s19 — today's six seeded providers (backend gherkin-scenarios.md @s5) regress zero: the
+  // fixture-driven add-picker shows the same six names/guidance links, in the same order, as
+  // today's hardcoded PROVIDER_NAME_KEYS/API_KEY_SETTINGS_GUIDANCE_URLS values.
+  it('shows the six catalog providers with unchanged names and guidance links (@s19)', async () => {
+    mockUseAiProviders.mockReturnValue({
+      providers: AI_PROVIDER_CATALOG_FIXTURE,
+      enabledProviders: AI_PROVIDER_CATALOG_FIXTURE,
+      isLoading: false,
+    });
+    mockUseLocalization.mockReturnValue(
+      localizationValue({
+        t: (key: string, options?: Record<string, unknown>) =>
+          options ? `${key}:${JSON.stringify(options)}` : key,
+      }),
+    );
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
+    });
+
+    expect(AI_PROVIDER_CATALOG_FIXTURE.map((entry) => entry.id)).toEqual([
+      'groq',
+      'openai',
+      'anthropic',
+      'google',
+      'xai',
+      'deepseek',
+    ]);
+
+    for (const entry of AI_PROVIDER_CATALOG_FIXTURE) {
+      expect(screen.getByRole('radio', { name: entry.name })).toBeTruthy();
+      expect(entry.guidanceUrl).toBe(API_KEY_SETTINGS_GUIDANCE_URLS[entry.id]);
+
+      await act(async () => {
+        fireEvent.press(screen.getByRole('radio', { name: entry.name }));
+      });
+      await act(async () => {
+        fireEvent.press(
+          screen.getByRole('button', {
+            name: `settings.apiKey.guidanceTemplate:{"provider":"${entry.name}"}`,
+          }),
+        );
+      });
+      expect(openURL).toHaveBeenCalledWith(entry.guidanceUrl);
+    }
+
+    openURL.mockRestore();
   });
 });

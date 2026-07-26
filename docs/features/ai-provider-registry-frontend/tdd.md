@@ -1,4 +1,4 @@
-# TDD log — ai-provider-registry-frontend, Slice 1 (task-1..4)
+# TDD log — ai-provider-registry-frontend, Slice 1 (task-1..5)
 
 ## @s → test map
 | @s | Test |
@@ -9,6 +9,7 @@
 | s4 | `use-lesson-generation.test.ts` "exposes modelOptions from the selected provider catalog entry"; `lesson-generation.helpers.test.ts` `resolveGenerationSelection` |
 | s10 | `use-lesson-generation.test.ts` "reflects a newly added model in modelOptions with no app update" |
 | s11 | `api-key-settings-screen.test.tsx` "shows the loading placeholder while useAiProviders().isLoading is true" |
+| s19 | `use-ai-providers.test.ts` "passes the pinned six-provider/thirteen-model fixture..."; `api-key-settings-screen.test.tsx` "shows the six catalog providers with unchanged names and guidance links..."; `use-lesson-generation.test.ts` "matches AI_PROVIDERS/AI_MODEL_REGISTRY order and content..." |
 | (foundation, no @s) | `ai-provider.test.ts`, `ai-providers.dao.test.ts`, `ai-providers.service.test.ts`, `use-ai-providers.test.ts` |
 
 ## Cycles
@@ -48,6 +49,22 @@
 - Storybook mock `.storybook/mocks/hooks.ts` (study-buddy): added `useAiProviders`/
   `configureAiProvidersMock` stand-in (same 6-provider default) so `ApiKeySettingsScreen`'s story
   keeps working through the alias seam.
+- **task-5** `use-ai-providers.fixture.ts`: RED (`use-ai-providers.test.ts` new `@s19` case, module
+  missing) → GREEN (6-provider/13-model `AI_PROVIDER_CATALOG_FIXTURE`, pinned verbatim from the
+  backend's `gherkin-scenarios.md` `@s5`; barrel-exported from `@helsoft/hooks`) → no refactor.
+  Corrects 2 label typos latent in task-3/4's `ai-provider-test-factories.ts` copy (`GPT-OSS`
+  hyphen, `DeepSeek V4` capitalization) — that copy is left as-is (out of `paths`); task-9/12/13
+  retire it for this fixture.
+- **task-5** re-assertion: `use-ai-providers.test.ts`, `api-key-settings-screen.test.tsx`,
+  `use-lesson-generation.test.ts` each gained one `@s19` test off `AI_PROVIDER_CATALOG_FIXTURE`,
+  diffing names/guidance against `API_KEY_SETTINGS_GUIDANCE_URLS` and `modelOptions`/
+  `savedProviders` against `AI_PROVIDERS`/`AI_MODEL_REGISTRY` — all green. (Placed first in its
+  `describe`; appended-last collided with a pre-existing unmount test's dangling `act()` — a
+  `@testing-library/react-native` ordering artifact, not a code bug.)
+- **task-5** `.storybook/mocks/hooks.ts`: swapped inline partial `DEFAULT_AI_PROVIDER_CATALOG` for
+  the fixture via the existing relative-import seam (mirrors `useBreakpoint`); no story exercises
+  models/keys by default, so rendering is unchanged — confirmed via `tsc --noEmit` over `src` +
+  `.storybook` (outside `check-types`'s normal scope).
 
 ## Integration
 - `lesson-generation.integration.test.tsx` (component → hook → service → DAO, real Supabase client
@@ -57,7 +74,8 @@
 
 ## Slice gate
 - `pnpm --filter @helsoft/types test` / `@helsoft/supabase-services` / `@helsoft/hooks` /
-  `@helsoft/components` / `@helsoft/study-buddy` — all green (13/298/156/491/302 tests resp.).
+  `@helsoft/components` / `@helsoft/study-buddy` — all green (13/298/157/491/304 tests resp.,
+  task-5 added 1 to `@helsoft/hooks` and 2 to `@helsoft/study-buddy`).
 - `pnpm turbo run check-types` (repo-wide) — clean.
 - `pnpm turbo run lint` (5 touched workspaces) — clean.
 - `pnpm format` — applied (import order only).
