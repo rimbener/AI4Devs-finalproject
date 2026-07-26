@@ -4,7 +4,7 @@
 // (provider.ts, handle-save.ts, handle-remove.ts, logger.ts). Verified here via manual
 // smoke against a running Supabase stack, per risks.md R1 (Deno/Edge sits outside the
 // Jest/Stryker harness).
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
 import { loadProviderCatalog } from '../_shared/provider-catalog.ts';
@@ -13,12 +13,15 @@ import { handleSaveApiKey, type ApiKeyStatus, type SaveApiKeyResult } from './ha
 import { logEvent } from './logger.ts';
 import { guardRemoveProvider, guardSaveProvider, type AiProvider } from './provider.ts';
 
-// The service-role client is passed to `loadProviderCatalog`'s minimal structural
-// `CatalogQueryClient` type (task-3/D5); the real `SupabaseClient`'s `.maybeSingle()` returns a
-// thenable query builder rather than a plain `Promise`, which the structural type otherwise
-// rejects. Matches generate-lesson/index.ts's own `AnySupabaseClient` escape hatch for the same
-// call (task-6/task-7 precedent) -- this file sits outside the Jest/tsc graph regardless
-// (Deno-only, verified by manual smoke, risks.md R1).
+// Cast used ONLY at the two `loadProviderCatalog(adminClient, ...)` call sites below (Full
+// review round 1, Minor finding): the real `SupabaseClient`'s `.maybeSingle()` returns a
+// thenable query builder rather than a plain `Promise`, which `loadProviderCatalog`'s minimal
+// structural `CatalogQueryClient` type (task-3/D5) otherwise rejects. Scoped narrowly so
+// `adminClient`'s every other use in this file (`.from('user_ai_keys').select(...)`, both
+// `.rpc(...)` calls) keeps real `SupabaseClient` type checking -- unlike
+// generate-lesson/index.ts's file-wide `AnySupabaseClient` (that file's `deno check` can't even
+// evaluate it today due to unrelated npm:zod resolution issues; this file's `deno check` is
+// green, so widening the whole file would give up a check that actually passes).
 // deno-lint-ignore no-explicit-any
 type AnySupabaseClient = any;
 
@@ -61,7 +64,7 @@ const errorStatus = (result: SaveApiKeyResult | RemoveApiKeyResult): number => {
 };
 
 const listUserApiKeys = async (
-  adminClient: AnySupabaseClient,
+  adminClient: SupabaseClient,
   userId: string,
 ): Promise<ApiKeyStatus> => {
   const { data, error } = await adminClient
@@ -112,7 +115,7 @@ const authenticateCaller = async (
  */
 const dispatch = async (
   body: Partial<RequestBody>,
-  adminClient: AnySupabaseClient,
+  adminClient: SupabaseClient,
   userId: string,
 ): Promise<DispatchResult | null> => {
   if (body.action === 'remove') {
@@ -120,7 +123,7 @@ const dispatch = async (
       return null;
     }
     // Remove never consults `enabled` (D10) -- only whether the provider is known at all.
-    const entry = await loadProviderCatalog(adminClient, body.provider);
+    const entry = await loadProviderCatalog(adminClient as AnySupabaseClient, body.provider);
     const guard = guardRemoveProvider(entry);
     if (!guard.ok) {
       return { status: 400, body: { code: guard.code } };
@@ -148,7 +151,7 @@ const dispatch = async (
 
   // Save is refused for a disabled provider (D10/D12), checked once the entry is loaded here,
   // before any Vault write/RPC call.
-  const entry = await loadProviderCatalog(adminClient, body.provider);
+  const entry = await loadProviderCatalog(adminClient as AnySupabaseClient, body.provider);
   const guard = guardSaveProvider(entry);
   if (!guard.ok) {
     return { status: 400, body: { code: guard.code } };

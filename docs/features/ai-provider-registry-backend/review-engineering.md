@@ -15,7 +15,7 @@ No blocker or major found. Two minor findings below; everything else checked out
 
 ## Findings
 
-### 1. `[arch]` Minor — `supabase/functions/manage-api-key/index.ts:14-23,63-77,113-173`
+### 1. `[arch]` Minor — resolved — `supabase/functions/manage-api-key/index.ts:14-23,63-77,113-173`
 The service-role `adminClient` parameter was retyped from the real `SupabaseClient` (imported
 from `jsr:@supabase/supabase-js@2`) to a locally-declared `AnySupabaseClient = any` to satisfy
 `loadProviderCatalog`'s structural `CatalogQueryClient` contract at two call sites
@@ -45,6 +45,17 @@ escape hatch scoped to the actual structural mismatch instead of the whole funct
 blocking re-review given the file's own documented manual-smoke-only verification convention
 (risks.md R1) and that no data-shape bug is actually observable today, but worth doing opportunistically
 next time this file is touched.
+
+**Resolved (implementer, same day)**: applied exactly the fix above. `listUserApiKeys` and
+`dispatch` now take `adminClient: SupabaseClient` (real type, imported from
+`jsr:@supabase/supabase-js@2`); `AnySupabaseClient` is used only as an inline
+`adminClient as AnySupabaseClient` cast at `dispatch`'s two `loadProviderCatalog(...)` call sites
+(save branch, remove branch). Every other `adminClient` use in the file
+(`.from('user_ai_keys').select(...)`, both `.rpc(...)` calls) is back under real `SupabaseClient`
+type checking. Re-ran `deno check *.ts` in `supabase/functions/manage-api-key` (clean, `index.ts`
+included), `deno test --no-check=remote .` (18/18 green), `pnpm --filter @helsoft/supabase-services
+test` (35/35 suites green), and repo-wide `pnpm format`/`check-types`/`lint` (14/14 packages
+clean, `--output-logs=errors-only`).
 
 ### 2. `[code]` Informational, not charged to this feature — duplicate `AiProvider` type declaration
 `supabase/functions/generate-lesson/_shared/types.ts:10` and

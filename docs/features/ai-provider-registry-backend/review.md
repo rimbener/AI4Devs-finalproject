@@ -31,7 +31,7 @@ reviewer recorded are informational only (no severity assigned, no action reques
 
 ### Findings
 
-1. **`[arch]` Minor — open (round 1).** `supabase/functions/manage-api-key/index.ts:14-23,63-77,113-173`.
+1. **`[arch]` Minor — resolved (round 1).** `supabase/functions/manage-api-key/index.ts:14-23,63-77,113-173`.
    The service-role `adminClient` parameter was retyped from the real `SupabaseClient` (from
    `jsr:@supabase/supabase-js@2`) to a locally-declared `AnySupabaseClient = any` to satisfy
    `loadProviderCatalog`'s structural `CatalogQueryClient` contract — but the `any` isn't scoped to
@@ -49,6 +49,13 @@ reviewer recorded are informational only (no severity assigned, no action reques
    `loadProviderCatalog(adminClient as unknown as Parameters<typeof loadProviderCatalog>[0], ...)`),
    keeping `adminClient: SupabaseClient` on `listUserApiKeys`/`dispatch` so the rest of the file's
    Supabase calls keep real type checking.
+   **Resolved**: `listUserApiKeys`/`dispatch` restored to `adminClient: SupabaseClient` (imported
+   `type SupabaseClient` from `jsr:@supabase/supabase-js@2`); `AnySupabaseClient` now only used as
+   an inline `adminClient as AnySupabaseClient` cast at the two `loadProviderCatalog(...)` call
+   sites in `dispatch` (save + remove branches). Re-verified: `deno check *.ts` in
+   `supabase/functions/manage-api-key` clean (`index.ts` included), `deno test --no-check=remote .`
+   18/18 green, `pnpm --filter @helsoft/supabase-services test` 35/35 suites green, repo-wide
+   `pnpm format`/`check-types`/`lint` clean (14/14 packages).
 
 ### Informational only — not findings requiring a fix (recorded per reviewer's own framing)
 
@@ -82,5 +89,6 @@ reviewer recorded are informational only (no severity assigned, no action reques
 
 ## Round-2 status
 
-Not yet run — pending `implementer`'s fix for the one open minor finding above, then one more
-CI + `reviewer_engineering` pass per the 2-round cap.
+Finding #1 fixed by `implementer` (see "Resolved" note above) and re-verified green (CI +
+`deno check`/`deno test`). Awaiting `reviews_lead`'s round-2 CI + `reviewer_engineering` pass
+per the 2-round cap.
