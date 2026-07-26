@@ -14,17 +14,22 @@ export type ValidatedByokRequest = {
 
 export type ByokValidationResult =
   | { ok: true; request: ValidatedByokRequest }
-  | { ok: false; errorCode: 'invalid_model' };
+  | { ok: false; errorCode: 'invalid_model' | 'provider_disabled' };
 
-/** Validates a free-BYOK generation request's catalog entry + curated model (@s12/@s18/@s19). */
+/** Validates a free-BYOK generation request's catalog entry + curated model (@s12/@s17/@s18/@s19).
+ * A disabled entry (@s17, D13) is refused before its model is even considered -- unknown (`null`)
+ * stays `invalid_model`, byte-identical to before this feature (D12). */
 export const validateByokGenerationRequest = (
   entry: ProviderEntry | null,
   model: unknown,
 ): ByokValidationResult => {
-  if (!entry || typeof model !== 'string' || !model.trim()) {
+  if (!entry) {
     return { ok: false, errorCode: 'invalid_model' };
   }
-  if (!isValidModelForProvider(entry, model)) {
+  if (!entry.enabled) {
+    return { ok: false, errorCode: 'provider_disabled' };
+  }
+  if (typeof model !== 'string' || !model.trim() || !isValidModelForProvider(entry, model)) {
     return { ok: false, errorCode: 'invalid_model' };
   }
   return { ok: true, request: { provider: entry.id, model } };
@@ -32,7 +37,7 @@ export const validateByokGenerationRequest = (
 
 export type ByokKeyResolutionResult =
   | { ok: true; apiKey: string; provider: string; model: string }
-  | { ok: false; errorCode: 'missing_key' | 'invalid_model' };
+  | { ok: false; errorCode: 'missing_key' | 'invalid_model' | 'provider_disabled' };
 
 /** Validates then resolves the named provider's Vault key (@s12/@s17). */
 export const resolveByokGenerationKey = async ({

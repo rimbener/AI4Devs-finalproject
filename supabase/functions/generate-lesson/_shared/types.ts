@@ -96,10 +96,14 @@ export type GeneratedLesson = {
 
 export type GenerationProgressStep = 'reading' | 'generating' | 'attaching';
 
+// 'provider_disabled' added for the BYOK route's @s17 (ai-provider-registry-backend, D13) --
+// this Edge-side mirror only; libs/types/src/lesson-generation.ts's union, its test, locale
+// copy and client mapping are the paired frontend story's scope, not widened here.
 export type GenerationErrorCode =
   | 'missing_key'
   | 'invalid_key'
   | 'invalid_model'
+  | 'provider_disabled'
   | 'platform_key_unavailable'
   | 'rate_limited'
   | 'timeout'

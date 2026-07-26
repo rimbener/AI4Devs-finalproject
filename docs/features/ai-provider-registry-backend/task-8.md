@@ -3,7 +3,7 @@ id: task-8
 title: Keep unknown-provider rejection unchanged and fail closed when the catalog read fails
 slice: 2
 scenarios: [s18, s21]
-status: todo
+status: done
 paths:
   - supabase/functions/generate-lesson/_shared/lesson-generation.route.ts
   - supabase/functions/generate-lesson/index.ts
@@ -16,13 +16,13 @@ before this feature, and a failed or empty catalog read refuses generation rathe
 to any hardcoded list.
 
 ## Done criteria
-- [ ] Scenarios s18, s21 covered by TDD'd Jest tests
-- [ ] Unknown provider (loader returned `null`) → `invalid_model` **422**, byte-identical to today (s18)
-- [ ] A throwing catalog read → generation refused via the existing `generation_failed` **500**
+- [x] Scenarios s18, s21 covered by TDD'd Jest tests
+- [x] Unknown provider (loader returned `null`) → `invalid_model` **422**, byte-identical to today (s18)
+- [x] A throwing catalog read → generation refused via the existing `generation_failed` **500**
       catch-all around route resolution; **no** SDK call, **no** fallback list (s21)
-- [ ] An empty/absent provider row is treated as unknown, not as enabled
-- [ ] No hardcoded provider list remains anywhere in `generate-lesson`
-- [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
+- [x] An empty/absent provider row is treated as unknown, not as enabled
+- [x] No hardcoded provider list remains anywhere in `generate-lesson`
+- [x] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
 - Decisions: **D12** (unknown stays `invalid_model`; only disabled gets the new code), **D6** (fail

@@ -61,6 +61,14 @@ export const handleLessonGenerationRoute = async ({
     };
   }
 
+  // The platform provider is hardcoded to groq (models.ts); its own `enabled` gate (@s20, D14)
+  // runs before any key resolution, exactly like the BYOK gate above -- an omitted
+  // `loadProviderEntry` (older/platform-only call sites) is treated as "no gate", not a rejection.
+  const platformEntry = (await loadProviderEntry?.('groq')) ?? null;
+  if (platformEntry && !platformEntry.enabled) {
+    return { ok: false as const, errorCode: 'platform_key_unavailable' as const };
+  }
+
   const resolvedKey = await resolveLessonGenerationKeyForPlan({
     usePlatformKey: true,
     readUserApiKey: async () => null,

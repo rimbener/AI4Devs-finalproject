@@ -45,6 +45,8 @@ const groqEntry: ProviderEntry = {
   ],
 };
 
+const disabledEntry: ProviderEntry = { ...anthropicEntry, enabled: false };
+
 describe('validateByokGenerationRequest', () => {
   // @s19 — a model absent from the entry's catalog models is rejected, and no entry (unknown
   // provider) or a missing/blank model string are rejected the same way.
@@ -65,6 +67,15 @@ describe('validateByokGenerationRequest', () => {
     expect(validateByokGenerationRequest(anthropicEntry, 'claude-haiku-4-5')).toEqual({
       ok: true,
       request: { provider: 'anthropic', model: 'claude-haiku-4-5' },
+    });
+  });
+
+  // @s17 — a disabled provider is refused regardless of an otherwise-valid model, before any
+  // model-membership check.
+  it('rejects a disabled provider entry as provider_disabled', () => {
+    expect(validateByokGenerationRequest(disabledEntry, 'claude-haiku-4-5')).toEqual({
+      ok: false,
+      errorCode: 'provider_disabled',
     });
   });
 });
@@ -113,6 +124,20 @@ describe('resolveByokGenerationKey', () => {
         readUserApiKey,
       }),
     ).resolves.toEqual({ ok: false, errorCode: 'invalid_model' });
+    expect(readUserApiKey).not.toHaveBeenCalled();
+  });
+
+  // @s17 — a disabled provider never reaches the Vault reader, even with a saved key on record.
+  it('returns provider_disabled without reading a key for a disabled provider', async () => {
+    const readUserApiKey = jest.fn().mockResolvedValue('secret-key');
+
+    await expect(
+      resolveByokGenerationKey({
+        entry: disabledEntry,
+        model: 'claude-haiku-4-5',
+        readUserApiKey,
+      }),
+    ).resolves.toEqual({ ok: false, errorCode: 'provider_disabled' });
     expect(readUserApiKey).not.toHaveBeenCalled();
   });
 });

@@ -3,7 +3,7 @@ id: task-9
 title: Replace manage-api-key's hardcoded allow-list with the catalog-backed rejection matrix
 slice: 2
 scenarios: [s22, s23, s24, s25]
-status: todo
+status: done
 paths:
   - supabase/functions/manage-api-key/provider.ts
   - supabase/functions/manage-api-key/index.ts
@@ -16,19 +16,19 @@ agreed asymmetry: saving a key for a disabled provider is refused, while removin
 allowed so a learner can revoke a credential they gave us.
 
 ## Done criteria
-- [ ] Scenarios s22–s25 covered by Deno tests (`deno test --no-check=remote .`)
-- [ ] `provider.ts`'s hardcoded `AI_PROVIDERS` list **deleted**; the guard now decides from a
+- [x] Scenarios s22–s25 covered by Deno tests (`deno test --no-check=remote .`)
+- [x] `provider.ts`'s hardcoded `AI_PROVIDERS` list **deleted**; the guard now decides from a
       `ProviderEntry` supplied by `_shared/provider-catalog.ts`
-- [ ] `index.ts` loads the entry **once** per request via the existing service-role `adminClient`
-- [ ] The full matrix, exactly:
+- [x] `index.ts` loads the entry **once** per request via the existing service-role `adminClient`
+- [x] The full matrix, exactly:
       - save + disabled → **400** `{ code: 'provider_disabled' }`, no Vault write (s22)
       - save + unknown → **400** `{ code: 'network_error' }`, unchanged from today (s23)
       - remove + disabled → **allowed**, 200 with the refreshed key list (s24)
       - remove + unknown → **400** `{ code: 'network_error' }`, unchanged from today (s25)
-- [ ] The disabled check happens **before** any `save_api_key` RPC / Vault call
-- [ ] `remove` never consults `enabled` at all — only provider existence
-- [ ] `libs/` is **not** touched by this task
-- [ ] `pnpm lint` + `pnpm check-types` green; Deno tests pass
+- [x] The disabled check happens **before** any `save_api_key` RPC / Vault call
+- [x] `remove` never consults `enabled` at all — only provider existence
+- [x] `libs/` is **not** touched by this task
+- [x] `pnpm lint` + `pnpm check-types` green; Deno tests pass
 
 ## Notes
 - Decisions: **D10** (save rejected / remove always allowed), **D12** (`provider_disabled` only for

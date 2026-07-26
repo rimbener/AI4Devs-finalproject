@@ -3,7 +3,7 @@ id: task-7
 title: Enforce the enabled flag in generate-lesson (BYOK 422 provider_disabled, platform 503)
 slice: 2
 scenarios: [s17, s20]
-status: todo
+status: done
 paths:
   - supabase/functions/generate-lesson/_shared/types.ts
   - supabase/functions/generate-lesson/_shared/lesson-generation.route.ts
@@ -17,17 +17,17 @@ new `provider_disabled` code at 422, while the platform route reuses the existin
 `platform_key_unavailable` at 503.
 
 ## Done criteria
-- [ ] Scenarios s17, s20 covered by TDD'd Jest tests
-- [ ] `GenerationErrorCode` in the **Edge-side mirror** `_shared/types.ts` widened with
+- [x] Scenarios s17, s20 covered by TDD'd Jest tests
+- [x] `GenerationErrorCode` in the **Edge-side mirror** `_shared/types.ts` widened with
       `'provider_disabled'`
-- [ ] BYOK route: entry with `enabled === false` → `provider_disabled`, mapped to **422** in
+- [x] BYOK route: entry with `enabled === false` → `provider_disabled`, mapped to **422** in
       `index.ts`'s status ladder; **no** provider SDK call, no Vault key use (s17)
-- [ ] Platform route: the platform provider's entry with `enabled === false` →
+- [x] Platform route: the platform provider's entry with `enabled === false` →
       `platform_key_unavailable`, **503**, no SDK call (s20)
-- [ ] The `enabled` check runs **before** any key resolution or SDK factory call on both routes
-- [ ] Platform route still acquires/releases its generation slot correctly when it rejects early
-- [ ] `libs/types/` is **not** touched by this task
-- [ ] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
+- [x] The `enabled` check runs **before** any key resolution or SDK factory call on both routes
+- [x] Platform route still acquires/releases its generation slot correctly when it rejects early
+- [x] `libs/types/` is **not** touched by this task
+- [x] `pnpm --filter @helsoft/supabase-services test` + `pnpm lint` + `pnpm check-types` green
 
 ## Notes
 - Decisions: **D13** (new `provider_disabled` `GenerationErrorCode` at 422, Edge-side mirror only),

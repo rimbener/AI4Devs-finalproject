@@ -1,24 +1,68 @@
-import { assertEquals } from 'jsr:@std/assert@1';
+import { assertEquals, assertRejects } from 'jsr:@std/assert@1';
 
-import { isAiProvider } from './provider.ts';
+import { loadProviderCatalog } from '../_shared/provider-catalog.ts';
+import type { ProviderEntry } from '../_shared/provider-catalog.types.ts';
+import { guardRemoveProvider, guardSaveProvider } from './provider.ts';
 
-// @s2/@s4/@s5 — the allow-list now covers all six providers
-Deno.test('isAiProvider accepts all six known providers', () => {
-  assertEquals(isAiProvider('groq'), true);
-  assertEquals(isAiProvider('openai'), true);
-  assertEquals(isAiProvider('anthropic'), true);
-  assertEquals(isAiProvider('google'), true);
-  assertEquals(isAiProvider('xai'), true);
-  assertEquals(isAiProvider('deepseek'), true);
+const enabledEntry: ProviderEntry = {
+  id: 'anthropic',
+  name: 'Anthropic',
+  guidanceUrl: null,
+  enabled: true,
+  sortOrder: 3,
+  models: [],
+};
+
+const disabledEntry: ProviderEntry = { ...enabledEntry, enabled: false };
+
+// @s22 — saving a key for a disabled provider is refused as provider_disabled.
+Deno.test('guardSaveProvider rejects a disabled provider entry as provider_disabled', () => {
+  assertEquals(guardSaveProvider(disabledEntry), { ok: false, code: 'provider_disabled' });
 });
 
-Deno.test('isAiProvider rejects an unrecognized provider string', () => {
-  assertEquals(isAiProvider('unknown'), false);
-  assertEquals(isAiProvider('azure'), false);
+// @s23 — saving a key for an unknown provider (no catalog row) stays network_error, unchanged.
+Deno.test('guardSaveProvider rejects a missing (unknown) provider entry as network_error', () => {
+  assertEquals(guardSaveProvider(null), { ok: false, code: 'network_error' });
 });
 
-Deno.test('isAiProvider rejects non-string values (including undefined/missing)', () => {
-  assertEquals(isAiProvider(undefined), false);
-  assertEquals(isAiProvider(42), false);
-  assertEquals(isAiProvider(null), false);
+Deno.test('guardSaveProvider allows an enabled provider entry', () => {
+  assertEquals(guardSaveProvider(enabledEntry), { ok: true });
 });
+
+// @s24 — removing a key for a disabled provider is always allowed; only existence matters.
+Deno.test('guardRemoveProvider allows a disabled provider entry', () => {
+  assertEquals(guardRemoveProvider(disabledEntry), { ok: true });
+});
+
+// @s25 — removing a key for an unknown provider stays network_error, unchanged.
+Deno.test('guardRemoveProvider rejects a missing (unknown) provider entry as network_error', () => {
+  assertEquals(guardRemoveProvider(null), { ok: false, code: 'network_error' });
+});
+
+Deno.test('guardRemoveProvider allows an enabled provider entry', () => {
+  assertEquals(guardRemoveProvider(enabledEntry), { ok: true });
+});
+
+// @s26 — a catalog read failure propagates rather than resolving to null/false; index.ts's
+// existing top-level try/catch is what turns this propagation into the fail-closed 502
+// network_error response (task-10 note: no new branch, just verified propagation here).
+Deno.test(
+  'loadProviderCatalog propagates a rejected catalog read instead of swallowing it',
+  async () => {
+    const failingClient = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: () => Promise.reject(new Error('catalog read failed')),
+          }),
+        }),
+      }),
+    };
+
+    await assertRejects(
+      () => loadProviderCatalog(failingClient, 'anthropic'),
+      Error,
+      'catalog read failed',
+    );
+  },
+);

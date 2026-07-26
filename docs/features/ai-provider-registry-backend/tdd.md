@@ -1,96 +1,105 @@
 ---
 feature: ai-provider-registry-backend
-slice: 1 (schema, seed, catalog read, BYOK happy path) — tasks 1-6
+slice: 2 (enabled enforcement, rejection contracts, fail-closed) — tasks 7-10
 ---
 
-# TDD log — Slice 1
+# TDD log
 
 ## Limitation (explicit)
-No live Supabase project in this sandbox — `task-1`/`task-2` migrations (SQL only, no Jest
-harness exists for SQL per risks.md R1) are verified by **SQL review against Done criteria**,
-not by `supabase db push` or a Jest test. `@s1-@s9` will be proven for real by `task-12`'s SQL
-verification script against a live project. `supabase/functions/generate-lesson/index.ts` is
-Deno-only (outside the Jest/tsc graph, per existing repo convention for this file) — wired by
-hand, flagged for manual verification after a real `supabase functions deploy` (never run from
-this pipeline).
+No live Supabase project in this sandbox — `task-1`/`task-2` migrations verified by SQL review,
+proven for real by `task-12`'s script. Both `index.ts` files (generate-lesson, manage-api-key) are
+Deno-only; `manage-api-key` has a `deno.json` so its Deno suite runs here (`deno test
+--no-check=remote .`, plus `deno check`), but `generate-lesson/index.ts` has none — its wiring
+stays hand-verified/manual-smoke per repo convention (unchanged from Slice 1).
 
-## `@s` → test map (Slice 1)
+## `@s` → test map (Slice 1, condensed)
+| `@s` | Test |
+|---|---|
+| s1-s9 | SQL review only (task-12 script) |
+| s10-s11 | `provider-catalog.test.ts` |
+| s12/s19 | `lesson-generation.validation.test.ts` |
+| s13-s15 | `lesson-generation.vision-model.test.ts` |
+| s16 | `lesson-generation.key-routing.integration.test.ts` |
+
+## Cycles (Slice 1, one line each)
+- task-1/2: migrations (SQL review, no Jest harness).
+- task-3: RED missing `loadProviderCatalog` → GREEN `ProviderEntry`/loader (s10/s11).
+- task-4: RED `ProviderEntry`-shaped validation fixtures → GREEN deleted hardcoded registries,
+  widened `AiProvider` to `string`, entry-based `isValidModelForProvider`.
+- task-5: RED `ProviderEntry` vision fixtures → GREEN collapsed to one
+  `resolveVisionModelForPlacement(entry, model)`.
+- task-6: RED s16 `loadProviderEntry`-once assertion → GREEN threaded entry through
+  route.ts/index.ts, request-scoped, never re-read (D9).
+- Review round 1 (3 findings, all resolved): extracted `provider-catalog.types.ts`; deleted dead
+  `AiModelEntry`/`AiProviderModels`; added explicit FK `on delete restrict`.
+
+## `@s` → test map (Slice 2)
 | `@s` | Behaviour | Test |
 |---|---|---|
-| s1-s7 | catalog tables, constraints, RLS, grants, seed | SQL review only (task-12 script) |
-| s8-s9 | FK RESTRICT on `user_ai_keys.provider` | SQL review only (task-12 script) |
-| s10 | read one provider + models in catalog order | `provider-catalog.test.ts` |
-| s11 | unknown provider → `null` | `provider-catalog.test.ts` |
-| s12 | model belonging to provider accepted; key resolves | `lesson-generation.validation.test.ts` |
-| s19 | model absent from provider's models rejected | `lesson-generation.validation.test.ts` |
-| s13 | vision-capable selected model used directly | `lesson-generation.vision-model.test.ts` |
-| s14 | non-vision selected model falls back to vision default | `lesson-generation.vision-model.test.ts` |
-| s15 | no vision default degrades to text-only (`null`) | `lesson-generation.vision-model.test.ts` |
-| s16 | catalog entry loaded once; BYOK generation proceeds | `lesson-generation.key-routing.integration.test.ts` |
+| s17 | BYOK disabled provider → `provider_disabled`, no Vault read | `lesson-generation.validation.test.ts` |
+| s18 | unknown provider stays `invalid_model` (unchanged) | pre-existing (slice 1) + integration test |
+| s20 | platform provider disabled → `platform_key_unavailable`, no slot acquired | `lesson-generation.key-routing.integration.test.ts` |
+| s21 | catalog throw propagates (no fallback list) | `lesson-generation.key-routing.integration.test.ts` |
+| s22 | save+disabled → 400 `provider_disabled` | `provider.test.ts` (`guardSaveProvider`) |
+| s23 | save+unknown → 400 `network_error` (unchanged) | `provider.test.ts` (`guardSaveProvider`) |
+| s24 | remove+disabled → allowed, 200 | `provider.test.ts` (`guardRemoveProvider`) |
+| s25 | remove+unknown → 400 `network_error` (unchanged) | `provider.test.ts` (`guardRemoveProvider`) |
+| s26 | catalog throw propagates in manage-api-key too | `provider.test.ts` (`loadProviderCatalog` propagation) |
 
-## Cycles
+## Cycles (Slice 2)
 
-**task-1/task-2 (migrations, no Jest harness):**
-- Wrote `20260726185408_ai_provider_registry.sql` (both tables, PK, FK cascade, vision-default
-  CHECK + partial unique index, RLS `select to authenticated`, revoke/grant trio, seed matching
-  `@s5`'s table exactly) mirroring `20260716170000_create_profiles.sql`'s shape.
-- Wrote `20260726185414_user_ai_keys_provider_fk.sql` (drop CHECK, add RESTRICT FK), timestamp
-  after task-1's. Both carry a reversibility-note header per repo convention.
+**task-7 (@s17/@s20) — BYOK + platform `enabled` gate:**
+- RED: `lesson-generation.validation.test.ts` — disabled `ProviderEntry` expected
+  `provider_disabled` from `validateByokGenerationRequest`/`resolveByokGenerationKey` (readUserApiKey
+  un-called) → failed against old 2-branch logic.
+- GREEN: `validateByokGenerationRequest` now checks `!entry` (→ `invalid_model`) before
+  `!entry.enabled` (→ `provider_disabled`) before model membership; widened both result unions.
+  Widened Edge-mirror `GenerationErrorCode` (`_shared/types.ts`) with `'provider_disabled'`
+  (D13, mirror only — `libs/types` untouched); `index.ts`'s status ladder maps it to 422 explicitly.
+- RED: new `key-routing.integration.test.ts` case — disabled groq entry via `loadProviderEntry`
+  on the platform branch expected `platform_key_unavailable` with `acquirePlatformSlot` uncalled →
+  failed (route resolved `ok: true`).
+- GREEN: `route.ts`'s platform branch now calls `loadProviderEntry?.('groq')` and rejects before
+  `resolveLessonGenerationKeyForPlan`/slot acquisition when disabled; omitted `loadProviderEntry`
+  (older call sites) is a no-op, not a rejection — zero regression on the 9 pre-existing platform
+  cases. `index.ts` simplified: the old post-hoc `providerEntry` platform fallback load is now dead
+  (route.ts's own call already populates it via the shared closure) — removed, not duplicated (D9).
 
-**task-3 — `provider-catalog.ts` (RED→GREEN per `@s`):**
-- RED: `provider-catalog.test.ts` importing non-existent `loadProviderCatalog` → compile fail.
-- GREEN: added `ProviderEntry`/`ProviderModel` types (import-free pure half) + `loadProviderCatalog`
-  (impure half, one `.maybeSingle()` query, models mapped + sorted by `sort_order`).
-- s11 passed on the same implementation with no extra code (the `data ? … : null` ternary
-  written for s10 already covers the "no row" case) — noted, not re-derived.
+**task-8 (@s18/@s21) — pin unknown + fail-closed, no new branch:**
+- s18 already green from Slice 1 (`entry === null` → `invalid_model`); added no code, only the
+  disabled-fixture tests above coexist with it unchanged.
+- RED→GREEN-with-no-code: added an integration-test case with a rejecting `loadProviderEntry` mock,
+  asserting `handleLessonGenerationRoute` rejects (propagates) and `readUserApiKey` is never
+  called — passed immediately (route.ts has no local try/catch around the loader call), proving
+  `index.ts`'s existing `catch { generation_failed 500 }` is the whole fail-closed path.
 
-**task-4 — delete hardcoded registries, widen `AiProvider`, entry-based model validation:**
-- RED: rewrote `lesson-generation.validation.test.ts` against `ProviderEntry` fixtures (entry
-  param instead of a bare `provider` string) → compile fail (`entry` unknown prop).
-- GREEN: deleted `AI_PROVIDERS`/`AI_MODEL_REGISTRY` from `models.ts`; widened `AiProvider` to
-  `string` in `models.ts` + `_shared/types.ts`; rewrote `isValidModelForProvider` /
-  `validateByokGenerationRequest` / `resolveByokGenerationKey` to take a `ProviderEntry | null`
-  and decide from its `models` array — `isAiProvider`'s hardcoded allow-list check is gone
-  entirely (unknown-provider handling is now "loader returned null", task-8's territory).
-- All 8 rewritten cases green; no fallback list remains.
+**task-9 (@s22-@s25) — catalog-backed guard replaces the allow-list:**
+- RED: rewrote `provider.test.ts` against `ProviderEntry` fixtures, importing not-yet-existing
+  `guardSaveProvider`/`guardRemoveProvider` → compile fail.
+- GREEN: `provider.ts` — deleted `AI_PROVIDERS`/`isAiProvider`; widened `AiProvider` to `string`;
+  added the two guards (`!entry` → `network_error`; save also checks `!entry.enabled` →
+  `provider_disabled`; remove never checks `enabled`). `index.ts`'s `dispatch` now loads the entry
+  once via `loadProviderCatalog(adminClient, ...)` per action branch (before any RPC), calls the
+  matching guard, and returns `{status:400, body:{code}}` on rejection — matrix matches D10/D12
+  exactly. Fixed a real `deno check` regression from an earlier draft (splitting the action/provider
+  narrowing broke discriminated-union narrowing on `body.apiKey`) by keeping the original nested/
+  combined-`||` structure per branch.
+- Adopted `AnySupabaseClient = any` locally (mirrors generate-lesson/index.ts's own escape hatch)
+  since the real `SupabaseClient`'s `.maybeSingle()` return type doesn't structurally satisfy
+  `loadProviderCatalog`'s minimal `CatalogQueryClient` contract.
 
-**task-5 — vision resolution from the injected entry:**
-- RED: rewrote `lesson-generation.vision-model.test.ts` around `ProviderEntry` fixtures →
-  compile fail (`ProviderEntry` not assignable to old `string` provider param).
-- GREEN: collapsed `resolveVisionModelFromRegistry` + `resolveVisionModelForPlacement` into one
-  `resolveVisionModelForPlacement(entry, selectedModelId)`: selected-if-vision → entry's
-  `isVisionDefault` model → `null`. All 4 cases (incl. `null` entry) green.
-
-**task-6 — thread the loaded entry through `route.ts` + `index.ts`:**
-- RED: added an s16 test to `lesson-generation.key-routing.integration.test.ts` asserting
-  `loadProviderEntry` is called once with the provider id and BYOK resolves on the returned
-  entry → compile fail (`loadProviderEntry` unknown prop on `HandleLessonGenerationRouteInput`).
-- GREEN: added optional `loadProviderEntry` dependency to `handleLessonGenerationRoute`; BYOK
-  branch loads the entry once (string-typed provider only) and threads it into
-  `resolveByokGenerationKey`. Wired `index.ts` to supply it via `loadProviderCatalog(adminClient,
-  providerId)` (the existing service-role client, no new client — D4), caching the loaded entry
-  in a request-scoped `let` and reusing it (never re-reading) for vision-model resolution
-  (`runVisionPlacement` now takes the entry). Platform path (still hardcoded to `groq`) loads
-  groq's entry separately once, immediately after `resolvedKey` resolves, preserving its existing
-  vision-placement behaviour — `enabled` enforcement on that path is task-7's job, not this one's.
-- Regression fix: 4 pre-existing BYOK-success cases in the integration test predate the catalog
-  and had no `loadProviderEntry` mock — added `groqEntry`/`openaiEntry`/`anthropicEntry`
-  fixtures and wired the mock into each so they keep passing under the new entry-required gate.
-
-## Slice 1 review-round-1 fix-up (commit after `28258cfe9`)
-`reviewer_slice` CHANGES_REQUESTED, 3 findings (see `review-slice.md`), all RESOLVED:
-1. Extracted `ProviderEntry`/`ProviderModel` into `provider-catalog.types.ts` (types.mdc); the 6
-   consumers + `provider-catalog.ts` itself re-pointed; `CatalogQueryClient` un-exported (private).
-2. Deleted dead `AiModelEntry`/`AiProviderModels` from `models.ts` (no reachable consumer);
-   corrected task-4.md's Done criteria to match.
-3. Added explicit `on delete restrict` to the FK migration + fixed the header's `NO ACTION` vs
-   `RESTRICT` default claim; corrected task-2.md accordingly.
-Re-ran the full gate below after each fix — all green, no test behaviour changed.
+**task-10 (@s26) — fail-closed, no new branch:**
+- RED→GREEN-with-no-code: added a Deno test constructing a fake catalog client whose
+  `.maybeSingle()` rejects, asserting `loadProviderCatalog` propagates rather than swallowing —
+  passed immediately, proving `dispatch`'s uncaught `await loadProviderCatalog(...)` reaches
+  `index.ts`'s existing `catch { logEvent(redacted); 502 network_error }` unchanged.
 
 ## Slice gate
-- `pnpm --filter @helsoft/supabase-services test` — 34 suites / 281 tests green.
-- `pnpm --filter @helsoft/supabase-services check-types` — clean.
-- `pnpm check-types` (repo-wide, `--output-logs=errors-only`) — 14/14 packages clean.
-- `pnpm format` — 2 files reformatted (test fixtures), no logic change; re-ran tests after, green.
-- `pnpm lint` (repo-wide, `--output-logs=errors-only`) — 14/14 packages clean.
-- `manage-api-key/`, `libs/types/` untouched (D15/slice-2 scope), confirmed via `git status`.
+- `pnpm --filter @helsoft/supabase-services test` — 34 suites / 286 tests green.
+- `deno test --no-check=remote .` (manage-api-key) — 17/17 green; `deno check index.ts` clean.
+- `pnpm --filter @helsoft/supabase-services check-types` + repo-wide `pnpm check-types`
+  (`--output-logs=errors-only`, 14/14 packages) — clean.
+- `pnpm format` — 1 whitespace fix, no logic change; re-ran tests after, green.
+- `pnpm lint` (repo-wide, `--output-logs=errors-only`) — 14/14 packages clean (`supabase/functions`
+  is Biome-ignored repo-wide, unchanged from Slice 1).
+- `libs/` untouched by tasks 7-10 (confirmed via `git status`) — D11/D13/D15 scope boundaries held.

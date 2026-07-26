@@ -224,9 +224,11 @@ Deno.serve(async (req) => {
   }
 
   // Loaded once per request (D9 -- never re-read, never cached across invocations) and threaded
-  // into both model validation (task-4) and vision-model resolution (task-5) below. `loadProviderEntry`
-  // fires only on the BYOK route (route.ts's own gate); the platform route loads groq's entry
-  // separately, once, right before vision resolution (task-7 adds its `enabled` check on this path).
+  // into model validation (task-4), the BYOK/platform `enabled` gate (task-7), and vision-model
+  // resolution (task-5) below. route.ts calls this same callback for whichever provider id its
+  // active branch needs -- the named provider on the BYOK route, hardcoded groq on the platform
+  // route -- so `providerEntry` is already populated by the time handleLessonGenerationRoute
+  // resolves, on either route.
   let providerEntry: ProviderEntry | null = null;
 
   let resolvedKey: Awaited<ReturnType<typeof handleLessonGenerationRoute>>;
@@ -291,7 +293,7 @@ Deno.serve(async (req) => {
     } catch {
       // best-effort; still return the typed generation error
     }
-    return errorResponse(req, 
+    return errorResponse(req,
       resolvedKey.errorCode,
       resolvedKey.errorCode === 'platform_key_unavailable'
         ? 503
@@ -299,16 +301,16 @@ Deno.serve(async (req) => {
           ? 429
           : resolvedKey.errorCode === 'generation_failed'
             ? 500
-            : resolvedKey.errorCode === 'invalid_model'
+            // invalid_model (@s18/@s19) and provider_disabled (@s17, D13) share 422 -- the BYOK
+            // route's own disabled-provider status, matching invalid_model's existing status.
+            : resolvedKey.errorCode === 'invalid_model' || resolvedKey.errorCode === 'provider_disabled'
               ? 422
               : 422,
     );
   }
-  // The platform path never runs through loadProviderEntry above (that gate is BYOK-only) but
-  // still needs groq's entry for vision resolution below -- loaded once, same as the BYOK path.
-  if (resolvedKey.source === 'platform' && !providerEntry) {
-    providerEntry = await loadProviderCatalog(adminClient, 'groq');
-  }
+  // No fallback load here: route.ts's platform branch already called loadProviderEntry('groq')
+  // for its own @s20 gate above, so `providerEntry` already holds groq's entry for vision
+  // resolution below on a successful platform route -- re-reading it would violate D9.
 
   const images = (resolvedKey.imageMetadata ?? []) as DocumentImageRow[];
 

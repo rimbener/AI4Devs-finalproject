@@ -271,6 +271,44 @@ describe('generate-lesson key routing integration', () => {
     ).resolves.toEqual({ ok: false, errorCode: 'rate_limited' });
   });
 
+  // @s20 — the platform provider's own catalog entry being disabled refuses platform generation
+  // as platform_key_unavailable, before any slot is acquired or key resolved.
+  it('rejects platform generation when the platform provider entry is disabled', async () => {
+    const acquirePlatformSlot = jest.fn().mockResolvedValue(true);
+    const loadProviderEntry = jest.fn().mockResolvedValue({ ...groqEntry, enabled: false });
+
+    await expect(
+      handleLessonGenerationRoute({
+        userId: 'user-1',
+        requestBody: { documentId: 'doc-1', composition: 'both' },
+        readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: true }),
+        readUserApiKey: jest.fn(),
+        loadProviderEntry,
+        platformApiKey: 'platform-secret',
+        acquirePlatformSlot,
+      }),
+    ).resolves.toEqual({ ok: false, errorCode: 'platform_key_unavailable' });
+    expect(loadProviderEntry).toHaveBeenCalledWith('groq');
+    expect(acquirePlatformSlot).not.toHaveBeenCalled();
+  });
+
+  // @s20 — an enabled platform provider entry is a no-op for the existing platform success path.
+  it('still resolves platform generation when the platform provider entry is enabled', async () => {
+    const loadProviderEntry = jest.fn().mockResolvedValue(groqEntry);
+
+    await expect(
+      handleLessonGenerationRoute({
+        userId: 'user-1',
+        requestBody: { documentId: 'doc-1', composition: 'both' },
+        readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: true }),
+        readUserApiKey: jest.fn(),
+        loadProviderEntry,
+        platformApiKey: 'platform-secret',
+        acquirePlatformSlot: jest.fn().mockResolvedValue(true),
+      }),
+    ).resolves.toMatchObject({ ok: true, source: 'platform' });
+  });
+
   it('rejects an unresolved key before loading image metadata', async () => {
     const readImageMetadata = jest.fn().mockResolvedValue([]);
 
@@ -310,5 +348,31 @@ describe('generate-lesson key routing integration', () => {
       }),
     ).resolves.toEqual({ ok: false, errorCode: 'invalid_model' });
     expect(readImageMetadata).not.toHaveBeenCalled();
+  });
+
+  // @s21 — a failed catalog read propagates rather than being swallowed into a fallback list;
+  // index.ts's existing try/catch around this call is what turns the rejection into
+  // generation_failed 500 (task-8 note: no new branch, just verified propagation here).
+  it('propagates a catalog read failure instead of falling back to any hardcoded list', async () => {
+    const readUserApiKey = jest.fn();
+    const loadProviderEntry = jest.fn().mockRejectedValue(new Error('catalog read failed'));
+
+    await expect(
+      handleLessonGenerationRoute({
+        userId: 'user-1',
+        requestBody: {
+          documentId: 'doc-1',
+          composition: 'both',
+          provider: 'anthropic',
+          model: 'claude-haiku-4-5',
+        },
+        readPlanFlags: jest.fn().mockResolvedValue({ usePlatformKey: false }),
+        readUserApiKey,
+        loadProviderEntry,
+        platformApiKey: 'platform-secret',
+        acquirePlatformSlot: jest.fn().mockResolvedValue(true),
+      }),
+    ).rejects.toThrow('catalog read failed');
+    expect(readUserApiKey).not.toHaveBeenCalled();
   });
 });
