@@ -271,3 +271,93 @@ re-review round remains per protocol; see the finding's fix note below).
   why-comment style in this same tree from Slice 1.
 - **Accessibility (WCAG 2.2 AA)** — **N/A**: no UI added or touched by this slice (no `.tsx` in the
   diff; spec.md confirms no UI states owned by this backend story).
+
+## Slice 3 — round 1 (commit `2bd27f92e`)
+
+**Scope reviewed**: `git diff ab32b5a54 2bd27f92e` (task-11..task-12) — new
+`libs/supabase-services/src/services/provider-catalog.integration.test.ts` (207 lines, 2 tests),
+`tmp/ai-provider-registry-backend/verify-provider-registry.sql` (282 lines, gitignored/not
+committed — reviewed on disk), `tdd.md` rewrite (slice 3 log), `task-11.md`/`task-12.md` status
+flips to `done`. No production code, no migration file touched by this commit (confirmed:
+`git diff ab32b5a54 2bd27f92e --stat -- supabase/migrations/` is empty).
+
+**Verdict: APPROVED** — no findings.
+
+### Verification detail (why this passed)
+
+- **`[tdd]` `@s28` no-cache proof, verified line by line** —
+  `provider-catalog.integration.test.ts:164-206`: `buildCatalogClient()` is called **once** per
+  `it` block; the returned `client` object and the `loadProviderEntry` closure over it are reused
+  unchanged across both `handleLessonGenerationRoute` calls. Only `setRow(...)` mutates the shared
+  closure variable the mocked `maybeSingle` reads from (`:32-39`) — no new client, no new loader
+  instance, no new mock is constructed between the two calls. This is the correct shape to catch a
+  future memoisation regression: if someone added a module-level cache to `loadProviderCatalog`,
+  the second call would still see the first (enabled) row and this test would fail exactly as
+  task-11.md's notes demand ("Write it so it would."). The `readUserApiKey` call-count assertion
+  (`:205`, called once, not twice) is an observable route-decision consequence (validation short-
+  circuits before Vault read, confirmed against the real
+  `resolveByokGenerationKey`/`validateByokGenerationRequest` in `lesson-generation.validation.ts`),
+  not an internal-call-order assertion — satisfies task-11's Done-criteria bullet on that point.
+  This is **not** two fresh-mock calls proving nothing about caching — verified this is the one
+  place a subtly wrong test could look right, and it isn't wrong.
+- **Genuine integration, not a re-implementation** — all four imports
+  (`loadProviderCatalog`, `handleLessonGenerationRoute`, `isValidModelForProvider`,
+  `resolveVisionModelForPlacement`, `:8-11`) resolve to the real production modules under
+  `supabase/functions/`; read each one directly and confirmed the test's expectations
+  (`invalid_model`/`provider_disabled`/vision-fallback-to-default) match their actual logic
+  (`lesson-generation.validation.ts:6-34`, `lesson-generation.vision-model.ts:9-18`,
+  `lesson-generation.route.ts:27-52`). Mock boundary is the `from().select().eq().maybeSingle()`
+  chain (`:32-39`), identical to the established `provider-catalog.test.ts` precedent — the query
+  wiring itself is exercised, not bypassed. No regex-over-source-text shortcut (pre-slice-checklist).
+- **`tmp/ai-provider-registry-backend/verify-provider-registry.sql` confirmed genuinely
+  uncommitted** — absent from `git show 2bd27f92e --stat`; `git check-ignore -v` confirms `tmp/`
+  matches root `.gitignore:55`. Read the 282-line file directly on disk (Read tool works outside
+  git). Content matches every task-12 Done-criteria bullet: §1 schema existence (s1), §2/§3
+  transaction-wrapped rejection proofs for the vision-default uniqueness index and the
+  vision-implies-capable check (s2/s3, each rolled back), §4 cascade-delete proof (s4), §5 a
+  symmetric two-way `except` diff of live rows against the exact `gherkin-scenarios.md` `@s5`
+  table (providers **and** models, `sort_order` included) — cross-checked the expected rows in
+  the script against the actual seed `insert` statements in
+  `supabase/migrations/20260726185408_ai_provider_registry.sql:66-91`: identical, byte for byte.
+  §6/§7 `set role authenticated` / `set role anon` reads (s6/s7, never service_role, per risks.md
+  R5) plus a `pg_policies` check for zero write policies. §8/§9 an `auth.users`-scoped FK proof
+  (s8/s9) that skips gracefully with no test user. Deploy-ordering requirement stated explicitly
+  near the top, naming both migration filenames and the fail-closed consequence (risks.md R2).
+  Studio-edit runbook section is concrete (rename/disable/reorder/add-model/change-vision-default
+  statements), matching task-12's Done-criteria bullet and risks.md R3/R4's assignment.
+- **Task-12 verifies, does not edit, task-1/task-2's migration headers** — confirmed by re-reading
+  both migration files directly: neither was touched by this commit (empty `--stat` for
+  `supabase/migrations/` between `ab32b5a54` and `2bd27f92e`), and both headers do carry what the
+  SQL script's tail comment claims (task-1: reversibility note + groq blast-radius warning,
+  `20260726185408_ai_provider_registry.sql:9-16`; task-2: reversibility note,
+  `20260726185414_user_ai_keys_provider_fk.sql:18-22`). The script's own honest note that task-1's
+  header doesn't itself carry the concrete Studio-edit playbook (only names the rationale) is
+  accurate — confirmed by reading the full 92-line migration file; no runbook exists elsewhere in
+  it — and correctly reconciled against risks.md R3/R4's explicit assignment of that playbook to
+  task-12, so this is not a gap.
+- **`[types]`** — the test-local `CatalogRow` type (`:13-26`) is used only within this one file;
+  correctly not extracted to a `*.types.ts` (types.mdc only requires extraction for cross-file
+  use).
+- **`[global]`/`[tdd]` byte budget** — `tdd.md` is 6174 bytes (< 8000-byte budget), log-only
+  (no pasted test bodies/diffs), one line per cycle; `@s → test` map complete through `@s28`; all
+  28 scenarios now accounted for (s1-s9 SQL-verified, s10-s28 Jest/Deno-tested).
+- **No production code in this slice** — confirmed via `git diff --diff-filter=A/M -- '*.ts'
+  ':(exclude)*.test.ts'` equivalent check (only the test file and doc files changed) — the Three
+  Laws' RED-phase expectation doesn't apply verbatim (no new prod code to demand a test), matching
+  task-11.md's own framing of this task as pure verification of already-shipped Slice 1/2 logic;
+  `tdd.md` states this explicitly rather than fabricating a RED phase that didn't happen.
+- **`[hooks-service-dao]` / `[atomic-design]` / `[component-split]` / `[state]` /
+  `[state-sharing]` / `[tanstack-query]` / `[i18n]` / `[e2e]`** — N/A, same justification as
+  Slices 1/2: no `.tsx`, no `libs/hooks`/`libs/components` code in this diff.
+- **Accessibility (WCAG 2.2 AA)** — **N/A**: no UI added or touched by this slice (no `.tsx` in
+  the diff).
+
+### Carry-forward note (non-blocking, out of this slice's diff — for `reviews_lead`)
+
+- `supabase/functions/manage-api-key/index.ts`'s locally-declared `AnySupabaseClient = any`
+  (introduced in Slice 2, task-9, per `tdd.md`'s Slice-2 cycle log) is a deliberate escape hatch
+  documented at the time (`SupabaseClient`'s `.maybeSingle()` return type doesn't structurally
+  satisfy `loadProviderCatalog`'s minimal `CatalogQueryClient` contract) but widens an `any` at a
+  boundary that otherwise fail-closes strictly. Not part of Slice 3's diff — flagging for the full
+  `reviewer_engineering` pass to judge whether a narrower structural type is worth the churn now
+  that all three slices have landed.
