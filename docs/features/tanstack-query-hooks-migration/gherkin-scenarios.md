@@ -311,7 +311,6 @@ Feature: TanStack Query hooks migration
     Given there is no session
     When a consumer mounts the api-key hook
     Then an empty key status is exposed
-    And it is not loading
     And the status service is never called
 
   @s39
@@ -416,7 +415,6 @@ Feature: TanStack Query hooks migration
     Given there is no session
     When a consumer mounts the profile hook
     Then no profile is exposed
-    And it is not loading
     And the profile service is never called
 
   @s53

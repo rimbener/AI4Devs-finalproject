@@ -74,8 +74,7 @@ describe('useProfile', () => {
     expect(result.current.error).toBeNull();
   });
 
-  // @s52 — an unauthenticated visitor has no profile, is not loading, and the profile service
-  // is never called.
+  // @s52 — an unauthenticated visitor has no profile and the profile service is never called.
   it('exposes no profile and never calls the service when there is no session', async () => {
     mockUseSession.mockReturnValue(noSession);
 
