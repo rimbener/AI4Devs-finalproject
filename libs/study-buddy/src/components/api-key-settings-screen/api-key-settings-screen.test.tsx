@@ -73,7 +73,7 @@ describe('ApiKeySettingsScreen', () => {
     await act(async () => {
       fireEvent.changeText(screen.getByLabelText('settings.apiKey.inputLabel'), 'sk-test-key');
     });
-    fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.save' }));
+    fireEvent.press(screen.getByRole('button', { name: 'general.save' }));
 
     expect(saveApiKey).toHaveBeenCalledWith('groq', 'sk-test-key');
   });
@@ -125,9 +125,7 @@ describe('ApiKeySettingsScreen', () => {
       fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.groq' }));
     });
 
-    expect(
-      screen.getByRole('button', { name: 'settings.apiKey.save', disabled: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'general.save', disabled: true })).toBeTruthy();
   });
 
   // @s7/@s9 — a network_error maps to the network message.

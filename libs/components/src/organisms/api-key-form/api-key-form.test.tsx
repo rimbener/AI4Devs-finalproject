@@ -33,8 +33,8 @@ const labels = {
 const t = (key: string) => {
   const map: Record<string, string> = {
     'settings.apiKey.inputLabel': labels.inputLabel,
-    'settings.apiKey.save': labels.save,
-    'settings.apiKey.saving': labels.saving,
+    'general.save': labels.save,
+    'general.saving': labels.saving,
     'settings.apiKey.loadingStatus': labels.loadingStatus,
     'settings.apiKey.replace': labels.replace,
     'settings.apiKey.remove': labels.remove,

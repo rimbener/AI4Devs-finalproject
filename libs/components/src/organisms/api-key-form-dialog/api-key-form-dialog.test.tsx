@@ -14,7 +14,7 @@ const mockUseLocalization = useLocalization as jest.Mock;
 
 const tMap: Record<string, string> = {
   'settings.apiKey.inputLabel': 'API key',
-  'settings.apiKey.save': 'Save',
+  'general.save': 'Save',
   'general.saving': 'Saving…',
   'settings.apiKey.replace': 'Replace',
   'settings.apiKey.removeConfirmCancelAction': 'Cancel',

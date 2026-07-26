@@ -56,7 +56,7 @@ export const ApiKeyFormDialog = ({
               </Button>
 
               <Button disabled={isSaveDisabled} onPress={onSave}>
-                {t('settings.apiKey.save')}
+                {t('general.save')}
               </Button>
             </>
           )}

@@ -61,7 +61,7 @@ export const ApiKeyForm = ({
   // remove), whichever branch (input or masked) is currently showing. accessibilityLiveRegion
   // covers Android/Web (WCAG 4.1.3) — the isSubmitting effect in the hook covers iOS VoiceOver.
   const progressLabel = isSubmitting ? (
-    <Text accessibilityLiveRegion="polite">{t('settings.apiKey.saving')}</Text>
+    <Text accessibilityLiveRegion="polite">{t('general.saving')}</Text>
   ) : null;
 
   return (
@@ -103,7 +103,7 @@ export const ApiKeyForm = ({
           />
           <View style={styles.actionsRow}>
             <Button disabled={isSaveDisabled} onPress={() => onSave(apiKey)}>
-              {t('settings.apiKey.save')}
+              {t('general.save')}
             </Button>
             {progressLabel}
           </View>
