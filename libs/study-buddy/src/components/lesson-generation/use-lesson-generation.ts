@@ -20,7 +20,7 @@ type UseLessonGenerationArgs = {
  * catalog (task-4, Decisions 1/4/6) — `savedProviders` still means "has a saved key" (unchanged
  * filter), just ordered/sourced by the catalog instead of the hardcoded `AI_PROVIDERS` registry.
  *
- * task-9, @s9 (Decision 5) — `savedProviderEntries` is derived from `enabledProviders`, not the
+ * task-7, @s9 (Decision 5) — `savedProviderEntries` is derived from `enabledProviders`, not the
  * full `providers` list: a disabled provider is excluded from the generate-flow picker even when
  * the learner holds a saved key for it (unlike the settings list, task-6, which keeps it visible).
  */

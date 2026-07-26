@@ -4,6 +4,7 @@ import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { Button } from '../../atoms/button/button';
+import { Chip } from '../../atoms/chip/chip';
 import type { ApiKeySavedListProps } from './api-key-saved-list.types';
 
 /**
@@ -40,9 +41,7 @@ export const ApiKeySavedList = ({
                 {isDisabled ? (
                   // @s5/@s22 — a real text label, not a color swatch/icon alone (WCAG 1.4.1):
                   // conveyed to sighted users and assistive tech alike via its own text content.
-                  <Text style={styles.disabledIndicator}>
-                    {t('settings.apiKey.manager.disabled')}
-                  </Text>
+                  <Chip label={t('settings.apiKey.manager.disabled')} />
                 ) : null}
               </View>
               <View style={styles.actionsRow}>
@@ -84,17 +83,6 @@ const styles = StyleSheet.create((theme) => ({
   savedStatusLabel: {
     ...theme.typography.bodyMedium,
     color: theme.colors.onSurfaceVariant,
-  },
-  // @s5/@s22 — a bordered text chip, not a color-only dot: the "Disabled" word itself is what
-  // conveys the state (WCAG 1.4.1), the border/shape is purely a visual affordance on top.
-  disabledIndicator: {
-    ...theme.typography.labelSmall,
-    color: theme.colors.onSurfaceVariant,
-    borderWidth: 1,
-    borderColor: theme.colors.outline,
-    borderRadius: theme.shape.chip,
-    paddingHorizontal: theme.spacing.s2,
-    paddingVertical: theme.spacing.s0,
   },
   actionsRow: {
     flexDirection: 'row',
