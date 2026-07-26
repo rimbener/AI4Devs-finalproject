@@ -64,6 +64,55 @@ export const useSignOut = (): UseSignOutResult => {
 - Prefer one hook per independent action (`useSignOut` alongside `useAuth`'s `signIn`) over one hook owning every mutation for a domain. unless there are multiple actions used from the same file, or there are shared code between the actions in the hook.
 - Only expose `reset` when a consumer needs to clear a stale error manually (e.g. dismissing a banner) — a fresh `mutate` call already clears it on its own.
 - Normalize the mutation's raw `error` through a typed guard (`isXErrorShape` / `toErrorCode`) so the UI only ever sees a closed error-code union, never an unchecked cast. Extract that guard into a shared `use-{domain}.helpers.ts` (e.g. `use-auth.helpers.ts`) once more than one hook in the domain needs it.
+- Don't add unnecessary `useCallback`s to the hook body — `useMutation` already returns stable functions.
+
+```tsx
+// ❌ don't — add unnecessary useCallback for the refetch function
+export const useLesson = (id: string): UseLessonResult => {
+  const {
+    data,
+    isLoading,
+    error,
+    refetch: queryRefetch,
+  } = useQuery({
+    queryKey: lessonQueryKey(id),
+    queryFn: () => LessonsService.getLesson(id),
+  });
+
+  const refetch = useCallback(() => {
+    void queryRefetch();
+  }, [queryRefetch]);
+
+  return {
+    lesson: data ?? null,
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+
+// ✅ do — refetch function is already stable
+export const useLesson = (id: string): UseLessonResult => {
+  const {
+    data,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: lessonQueryKey(id),
+    queryFn: () => LessonsService.getLesson(id),
+  });
+
+  return {
+    lesson: data ?? null,
+    isLoading,
+    error,
+    refetch,
+  };
+};
+
+```
 
 ## Testing
 
