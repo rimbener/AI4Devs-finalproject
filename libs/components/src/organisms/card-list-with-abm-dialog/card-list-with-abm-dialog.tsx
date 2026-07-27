@@ -63,7 +63,7 @@ export const CardListWithABMDialog = <TItem,>({
   getRemoveAccessibilityLabel,
   isSubmitting,
 }: CardListWithABMDialogProps<TItem>) => {
-  const { dialogState, openEditDialog, openRemoveDialog, closeDialog } =
+  const { dialogState, isOpen, openEditDialog, openRemoveDialog, closeDialog } =
     useCardListWithABMDialog<TItem>();
 
   const keyExtractor = useCallback(
@@ -150,7 +150,7 @@ export const CardListWithABMDialog = <TItem,>({
         />
       )}
       <Dialog
-        open={dialogState?.type === 'edit'}
+        open={isOpen && dialogState?.type === 'edit'}
         {...dialogInteractionProps}
         headline={editDialogTitle}
         confirmLabel={editSubmitLabel}
@@ -160,7 +160,7 @@ export const CardListWithABMDialog = <TItem,>({
         {renderDialogBody('edit', renderEditForm)}
       </Dialog>
       <Dialog
-        open={dialogState?.type === 'remove'}
+        open={isOpen && dialogState?.type === 'remove'}
         {...dialogInteractionProps}
         headline={removeDialogTitle}
         confirmLabel={removeSubmitLabel}

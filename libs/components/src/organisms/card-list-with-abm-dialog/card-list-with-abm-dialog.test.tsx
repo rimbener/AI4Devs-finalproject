@@ -4,10 +4,24 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
 
+// @s19/@s20 — spy on Dialog while fully delegating to its real implementation (no behavior
+// change: every other test in this file still exercises the real Dialog/Modal gating). This
+// lets us inspect the exact `open`/`children` props CardListWithABMDialog hands the shared
+// (non-owned, atom-ban) Dialog organism at the moment `closeDialog` runs — the actual bug-fix
+// locus — without editing or replacing Dialog/Modal itself.
+jest.mock('../dialog/dialog', () => {
+  const actual = jest.requireActual('../dialog/dialog');
+  return {
+    ...actual,
+    Dialog: jest.fn(actual.Dialog),
+  };
+});
+
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 import { Text } from 'react-native';
-
+import { Dialog } from '../dialog/dialog';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
   CardListWithABMDialog,
@@ -16,6 +30,24 @@ import {
   cardListItemRemoveTestId,
 } from './card-list-with-abm-dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
+
+type DialogMockProps = { open: boolean; headline?: string; children: ReactNode };
+const DialogMock = Dialog as unknown as jest.Mock<ReactNode, [DialogMockProps]>;
+const lastCallFor = (headline: string): DialogMockProps => {
+  const calls = DialogMock.mock.calls.filter(([props]) => props.headline === headline);
+  const lastCall = calls.at(-1);
+  if (!lastCall) throw new Error(`no Dialog render captured for headline "${headline}"`);
+  return lastCall[0];
+};
+// Reads the plain-string body a renderEditForm/renderRemoveConfirmation `<Text>` element
+// carries. Deliberately shallow (not a deep `toEqual` of the whole React element): React
+// elements can carry dev-only internals (e.g. class-component instance getters) whose deep
+// traversal recurses pathologically in Jest's equality algorithm — comparing the actual
+// rendered content is both the real assertion and the safe one.
+const bodyText = (node: ReactNode): string => {
+  const element = node as { props?: { children?: unknown } } | null;
+  return String(element?.props?.children ?? '');
+};
 
 type StoryItem = { note: string };
 
@@ -70,6 +102,11 @@ const mockUseLocalization = useLocalization as jest.Mock;
 describe('CardListWithABMDialog', () => {
   beforeEach(() => {
     mockUseLocalization.mockReturnValue({ t: (key: string) => key });
+    // Keeps the Dialog spy's recorded call history scoped to one test at a time — this suite
+    // renders/re-renders Dialog many times per test, and leaving decades of prior renders'
+    // full props (nested element trees) accumulated across every test in this file is what
+    // blows the worker's heap, not anything under test.
+    DialogMock.mockClear();
   });
 
   // @s1 — populated list renders title, add button, and each item's content.
@@ -351,6 +388,56 @@ describe('CardListWithABMDialog', () => {
 
     expect(onRemoveConfirm).not.toHaveBeenCalled();
     expect(screen.queryByText('Remove card')).toBeNull();
+  });
+
+  // @s19 — post-pr_ready bug fix: closing the edit dialog must not flash empty content.
+  // Regression check on the root cause: `closeDialog` used to null `dialogState`
+  // synchronously, so `renderDialogBody` returned null for the remainder of the shared
+  // Dialog's fade-out. Proven here at the exact locus of the fix — the props
+  // CardListWithABMDialog hands the (non-owned, atom-ban) Dialog organism — since the
+  // Modal itself is fully hidden/instant in this test environment and can't carry an
+  // observable mid-fade state.
+  it('keeps supplying the edit dialog its last content in the same render Close flips open false', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
+      );
+    });
+    const openProps = lastCallFor('Edit card');
+    expect(openProps.open).toBe(true);
+    expect(bodyText(openProps.children)).toBe('Edit form for item-1');
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel'));
+    });
+    const closedProps = lastCallFor('Edit card');
+
+    expect(closedProps.open).toBe(false);
+    expect(bodyText(closedProps.children)).toBe('Edit form for item-1');
+  });
+
+  // @s20 — same guarantee for the remove dialog.
+  it('keeps supplying the remove dialog its last content in the same render Close flips open false', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemRemoveTestId('item-2'))).getByRole('button'),
+      );
+    });
+    const openProps = lastCallFor('Remove card');
+    expect(openProps.open).toBe(true);
+    expect(bodyText(openProps.children)).toBe('Remove item-2?');
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Keep it'));
+    });
+    const closedProps = lastCallFor('Remove card');
+
+    expect(closedProps.open).toBe(false);
+    expect(bodyText(closedProps.children)).toBe('Remove item-2?');
   });
 
   it('only one dialog is open at a time — opening remove after edit closes the edit dialog', async () => {

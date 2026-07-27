@@ -2,22 +2,12 @@
 
 ## Slice 1 (task-1) — Render titled card list with disabled/show flags and empty state
 
-UI `.tsx` organism, implementation-first. No hook this slice (no dialog state yet).
-
-Files: `.types.ts` (`CardListItem<TItem>` + slice-1 props), `.tsx` (title/add-`Button`/
-`FlatList` of `Card` rows; disabled row = `theme.disabledOpacity`; edit/remove `IconButton`s
-gated by `showEditButton`/`showRemoveButton`), `.stories.tsx` (Populated/EmptyWithMessage/
-EmptyWithoutMessage/DisabledCard/EditOnlyCard/RemoveOnlyCard/Interactive), `.e2e.js` (add-tap
-counter), `.test.tsx`.
-
+UI `.tsx` organism, implementation-first. No hook this slice.
+Files: `.types.ts`, `.tsx`, `.stories.tsx`, `.e2e.js`, `.test.tsx`.
 @s → test: @s1 title/add/one-Card-per-item · @s2 disabled opacity+disabled icons · @s3/@s4
 show*Button hides only that icon · @s15/@s16 empty-state · @s17 onAddPress (+e2e).
-
 Decisions: `IconButton` has no `testID` — wrapped each icon in a local `View testID=...`
-(atom-ban). Add `Button` needs explicit `accessibilityLabel`. Per-item edit/remove accessible
-names + `onPress` deferred to slice 2/3.
-
-Gate: 69 suites/499 tests green · e2e 1 passed · check-types/lint/format clean.
+(atom-ban). Gate: 69 suites/499 tests green · e2e 1 passed · check-types/lint/format clean.
 
 ## Slice 2 (task-2) — Wire edit/remove dialogs via the shared Dialog organism
 
@@ -98,3 +88,39 @@ reach "dialog open" state, since open-dialog state is internal to the hook (not 
 tests/e2e/organisms/card-list-with-abm-dialog --reporter=list` — 5 passed. `check-types`/`lint`
 (workspace + repo-wide) / `pnpm format` — clean. No hardcoded accessible-name strings — all via
 `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`. No leftover task-2/3 deferral comments.
+
+## Post-pr_ready bug fix (mini-gate) — empty-dialog flash on close
+
+Root cause: `closeDialog()` nulled `dialogState` synchronously while the shared `Dialog`'s
+`Modal` (`animationType="fade"`) fades out over its own duration — `renderDialogBody` returned
+null for the remainder of the fade, flashing an empty dialog.
+
+Fix (`use-card-list-with-abm-dialog.ts`): added a second `isOpen` boolean, decoupled from
+`dialogState`. `openEditDialog`/`openRemoveDialog` set both `dialogState` and `isOpen=true`;
+`closeDialog` only flips `isOpen=false` — `dialogState` (last `{type,item}`) is never cleared,
+so only the next `open*Dialog` call replaces it. `card-list-with-abm-dialog.tsx`: `Dialog`'s
+`open` gated on `isOpen && dialogState?.type === 'edit'|'remove'`; `renderDialogBody`/
+`handleEditConfirm`/`handleRemoveConfirm` keep reading `dialogState` unconditionally (unchanged).
+No edit to `Dialog`/`Modal` (atom/organism ban respected).
+
+### @s → test map
+| Scenario | Test |
+|---|---|
+| @s19 | `use-...test.ts`: `closeDialog` flips `isOpen` false, keeps last `dialogState` (edit) · `.test.tsx`: `keeps supplying the edit dialog its last content in the same render Close flips open false` |
+| @s20 | `use-...test.ts`: same for remove · `.test.tsx`: same test, remove dialog |
+
+`.test.tsx` gained a `jest.mock('../dialog/dialog', ...)` — `jest.fn(actual.Dialog)`, fully
+delegating (no behavior change to any other test) — to inspect the `open`/`children` props
+`CardListWithABMDialog` hands `Dialog` at the exact tick `closeDialog` runs (the real Modal is
+instant-hide under the RN jest mock, so a plain DOM query can't observe a mid-fade state).
+Gotcha: comparing captured React elements with `toEqual` recurses pathologically (dev-only
+class-component getters) — assert the rendered body's plain string content instead.
+`use-...test.ts`'s old "closeDialog clears dialogState back to null" assertion is now inverted
+(dialogState persists); added an "opening after closing replaces the stale dialogState" case.
+
+### Gate
+`@helsoft/components lint check-types test` — 70 suites / 529 tests green. `playwright test
+tests/e2e/organisms/card-list-with-abm-dialog --reporter=list` — 5 passed (unchanged, no new
+e2e — animation-timing behavior isn't reliably assertable via Playwright without flakiness;
+covered at the hook/component prop level instead). `pnpm format` clean. @s7–@s10/@s11–@s13
+unaffected (same assertions, still green).
