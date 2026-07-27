@@ -233,3 +233,75 @@ All DoD gates passed (same 9 categories as initial pass). Re-validation confirms
 
 **Verdict: PASS** — feature is ready for PR (manual human gate).
 
+
+---
+
+## Re-validation (second post-pr_ready mini-gate) — 2026-07-27
+
+**Context**: Feature remained at `pr_ready` following the first re-validation (empty-dialog flash fix, documented above). After the first re-validation closed `APPROVED`, the human requested a second, purely structural mini-gate: promote `CardListRow` from an inline, unexported organism-private component to its own reusable molecule in `libs/components/src/molecules/card-list-row/`, matching this lib's `PdfDocumentListItem` precedent. This is a pure architectural clean-up — no prop/behavior/scenario change.
+
+### Molecule extraction & architecture fix
+
+**Commits involved:**
+- `e4b2a5a54` (initial extraction) — moved `CardListRow` from inline to molecule; **surfaced one major arch finding** (reverse dependency: molecule importing organism types)
+- `f753311a5` (fix) — flattened `CardListRowProps` to primitives, reintroduced thin `CardListRowAdapter` in the organism (mirrors `PdfDocumentListRow` precedent)
+- `21f161e94` (kill pass) — added unit test to kill 2 testID-export mutation survivors introduced during extraction
+
+**Validation performed:**
+
+1. **Molecule is architecturally sound** (no reverse dependency):
+   - `card-list-row.types.ts` imports only `ReactNode` from React — zero organism import
+   - `CardListRowProps` is fully flat/primitive (`content`, `disabled?`, `showEditButton?`, `showRemoveButton?`, `onEditPress/onRemovePress: () => void`, `editAccessibilityLabel`, `removeAccessibilityLabel`, `testID?`/`editTestID?`/`removeTestID?`)
+   - Organism maintains private `CardListRowAdapter<TItem>` (lines 27-71) that maps `CardListItem<TItem>` + builder props down to flat molecule props at the `renderItem` call site
+   - Matches `PdfDocumentListItem` precedent exactly (molecule stays portable; domain-specific mapping stays in organism)
+
+2. **Molecule has its own `.stories.tsx`**:
+   - `libs/components/src/molecules/card-list-row/card-list-row.stories.tsx` (1,164 bytes)
+   - Covers: BothIcons, EditOnly, RemoveOnly, Disabled
+   - Closes atomic-design.mdc gap (every component ships co-located stories — no exceptions)
+
+3. **All @s1–@s20 scenarios still pass**:
+   - Unit tests: `card-list-with-abm-dialog.test.tsx` 30/30 passed (including the testID-builder assertion)
+   - Molecule tests: `card-list-row.test.tsx` 10/10 passed (flat-prop shape, all coverage preserved)
+   - E2E: 5/5 passed (no regression)
+   - Full suite: 71 suites / 534 tests green via `pnpm test`
+
+4. **Full review "CardListRow extraction" section: APPROVED**:
+   - Initial delta (`e4b2a5a54`): `CHANGES_REQUESTED` (1 major finding — reverse import)
+   - Fix delta (`f753311a5`): `APPROVED` (major finding genuinely resolved, zero new findings)
+   - Review trail: `review.md` lines 251–462 and `review-engineering.md` carry full lens-by-lens detail (code quality/TDD, architecture, performance, security — all clean apart from the one major, now fixed)
+
+5. **Mutation score re-run post-extraction: 97.50%** (back to baseline):
+   - Round 6 (post-extraction): 95.00% (2 pre-existing survivors relocated + 2 new testID-export survivors)
+   - Round 7 (testID kill pass): 97.50% (78 killed / 90 total, 0 ignored, 2 survived, 2 errors)
+   - The 2 survivors: `ConditionalExpression` `true` at lines 134/142 (relocated from 98/106, same unreachable-guard reasoning, unchanged since Rounds 1–5, documented-equivalent)
+   - The 2 new testID survivors resolved: added unit test `"builds the row/edit/remove testID strings in the documented format"` (kills `StringLiteral`/`ArrowFunction` mutants on `cardListItemCardTestId` export)
+
+6. **spec.md / mutation.md / dod.md consistency**:
+   - `spec.md` line 49: "Post-`pr_ready` architecture fix (mini-gate): `CardListRow` promoted to its own molecule... Moved to `libs/components/src/molecules/card-list-row/`; the organism now imports it instead of defining it inline."
+   - `spec.md` line 50: "Mutation score accepted at 97.2%... now `:134,142` after the `CardListRow` molecule extraction below shifted line numbers — same `handleEditConfirm`/`handleRemoveConfirm` code, unmoved"
+   - `mutation.md` Round 7: "97.50%, 2 survivors — both the pre-existing documented-equivalent `ConditionalExpression` survivors at lines 134/142 (relocated by the Round 6 molecule extraction, untouched, unchanged reasoning)"
+   - `mutation.md` notes Round 6/7 errors (theme-factory `StyleSheet.create` errors): "Plus one more of the same kind now surfacing from the `CardListRow` molecule's own theme factory, both treated-as-detected"
+
+7. **CI gates all green**:
+   - `pnpm lint` — green (biome check, 290 files in @helsoft/components)
+   - `pnpm check-types` — green (tsc --noEmit, 14 workspaces)
+   - `pnpm test` — green (71 suites / 534 tests, including molecule's 10 new tests)
+   - E2E (`--reporter=list`): 5/5 passed (no new e2e needed — animation timing not Playwright-assertable per `tdd.md` rationale, covered at hook/component level)
+
+### Conclusion
+
+All DoD gates confirmed passed after the molecule extraction mini-gate:
+- **Functionality**: @s1–@s20 all pass (no scenario change, pure structural move)
+- **Code quality**: TDD discipline held (molecule tests are genuine, non-degraded coverage); no debug leftovers
+- **Architecture**: Atomic-design compliance restored (every component now ships `.stories.tsx`); reverse dependency fixed (molecule stays portable, organism owns the adapter)
+- **Design system**: No token changes (same `Card`, `IconButton` atoms used in molecule as in organism)
+- **Security/OWASP**: N/A (continued — only UI organism touched)
+- **Accessibility/WCAG**: All prior a11y gates held (accessible names, touch targets, color contrast, keyboard access unchanged)
+- **Testing rigor**: Unit + E2E + Storybook + Mutation all held; mutation score restored to 97.50% baseline
+- **Observability & i18n**: No hardcoded strings, no logging (unchanged)
+
+**Verdict: PASS** — feature is ready for PR (manual human gate).
+
+**Reference line**: `dod_validator` / second re-validation after CardListRow extraction mini-gate / 2026-07-27.
+
