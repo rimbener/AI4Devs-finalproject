@@ -90,9 +90,12 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
     else if (recovery === 'signIn') router.push('/login');
   }, [recovery, retry, router]);
 
-  const handleCompositionChange = useCallback((value: string) => {
+  // Stable handler identity without useCallback (avoids the empty-deps ArrayDeclaration mutant
+  // — same pattern as use-lesson-player.ts's `handlers` ref). setComposition is stable (useState)
+  // and isLessonComposition is a module-level import, so this closes over nothing that changes.
+  const handleCompositionChange = useRef((value: string) => {
     if (isLessonComposition(value)) setComposition(value);
-  }, []);
+  }).current;
 
   const handleProviderChange = useCallback(
     (value: string) => {

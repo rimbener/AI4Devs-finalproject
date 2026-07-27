@@ -206,6 +206,27 @@ describe('ApiKeyFormDialog', () => {
     openURL.mockRestore();
   });
 
+  // `const url = guidanceUrls[formProvider]; if (url) void Linking.openURL(url).catch(...)`
+  // — the onPress handler re-reads guidanceUrls fresh at press-time (not just the render-time
+  // check that gates whether the button exists at all). Mutate the same guidanceUrls object
+  // reference (no re-render) so the button stays mounted while its URL disappears, proving the
+  // `if (url)` guard — not just "the button is visible" — is what prevents opening a stale/gone
+  // URL.
+  it('skips opening the URL if it is gone from guidanceUrls by press-time', async () => {
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined as never);
+    const urls: Partial<Record<AiProvider, string>> = { groq: 'https://console.groq.com/keys' };
+    await render(<ApiKeyFormDialog {...defaultProps} formProvider="groq" guidanceUrls={urls} />);
+
+    delete urls.groq;
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: "Don't have a key? Get one from Groq" }));
+    });
+
+    expect(openURL).not.toHaveBeenCalled();
+    openURL.mockRestore();
+  });
+
   it('lists only the unsavedProviders passed in', async () => {
     await render(<ApiKeyFormDialog {...defaultProps} unsavedProviders={['openai', 'anthropic']} />);
 

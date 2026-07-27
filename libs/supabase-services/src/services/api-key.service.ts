@@ -1,9 +1,5 @@
 import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
-import {
-  FunctionsFetchError,
-  FunctionsHttpError,
-  FunctionsRelayError,
-} from '@supabase/supabase-js';
+import { FunctionsHttpError } from '@supabase/supabase-js';
 
 import { ApiKeyDao } from '../dao/api-key.dao';
 import { toTypedError } from '../utils/typed-error';
@@ -58,9 +54,13 @@ const normalizeApiKeyError = async (cause: unknown): Promise<Error & ApiKeyError
     const code = await readFunctionErrorCode(cause);
     return toApiKeyError(code, API_KEY_ERROR_MESSAGES[code]);
   }
-  if (cause instanceof FunctionsFetchError || cause instanceof FunctionsRelayError) {
-    return networkError();
-  }
+  // Unlike lesson-generation.service.ts's normalizeGenerationError (which distinguishes
+  // FunctionsFetchError/FunctionsRelayError from other causes with a *different* fallback code),
+  // ApiKeyErrorCode has no third "unexpected cause" code to fall back to beyond network_error —
+  // validation_error and provider_disabled are only ever produced above, from a real HTTP
+  // response. So every non-HTTP cause (transport failure or anything else) is already
+  // network_error either way; a dedicated FunctionsFetchError/FunctionsRelayError branch here
+  // would be genuinely dead code, not just untested.
   return networkError();
 };
 

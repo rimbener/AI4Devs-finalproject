@@ -46,7 +46,6 @@ export const ApiKeyFormDialog = ({
           ? `${t('settings.apiKey.replace')} ${providerLabel(formProvider)}`
           : t('settings.apiKey.manager.addNew')
       }
-      cancelLabel={t('settings.apiKey.removeConfirmCancelAction')}
       actions={
         <View style={styles.actionsRow}>
           {isSubmitting ? null : (

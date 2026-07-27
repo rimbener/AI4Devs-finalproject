@@ -48,7 +48,11 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
   const canGenerate = Boolean(documentId) && !showMissingKeyGate && hasPickerSelection;
 
   useEffect(() => {
-    if (!showPickers || savedProviderEntries.length === 0) return;
+    // `savedProviderEntries.length === 0` is redundant here, not just unlikely: showPickers
+    // (line 45) is itself `isFreeByok && savedProviderEntries.length > 0`, so whenever entries is
+    // empty, showPickers is already false and `!showPickers` alone already returns early — the
+    // dropped disjunct could never be the deciding term in any reachable render.
+    if (!showPickers) return;
 
     let cancelled = false;
 

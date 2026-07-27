@@ -79,6 +79,25 @@ describe('ModelSelector', () => {
     expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(1);
   });
 
+  // `modelOptions[0]?.id ?? ''` — proves both the optional chaining and the '' fallback
+  // literal matter. A genuinely sparse `modelOptions` (hole at index 0 — malformed/defensive
+  // case; a dense `undefined` element would instead crash unrelated code at line 19's
+  // `model.id` inside the `.map`, which isn't what this line's `?.` guards) must not throw,
+  // and the resolved value must be the exact empty string (matching an option whose id is
+  // ''), not merely "no crash": without `?.` this throws (`undefined.id`); with any fallback
+  // literal other than '' this would check no radio instead of the empty-id one.
+  it('falls back to the empty string, matching an empty-id option, when modelOptions[0] is a hole', async () => {
+    const sparseOptions: Array<{ id: string; label: string }> = new Array(3);
+    sparseOptions[1] = { id: '', label: 'Untitled' };
+    sparseOptions[2] = { id: 'a', label: 'A' };
+
+    await renderSelector(baseValue({ modelOptions: sparseOptions, selectedModel: undefined }));
+
+    expect(screen.getByRole('radio', { name: 'Untitled', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'A', checked: false })).toBeTruthy();
+    expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(1);
+  });
+
   it('calls onModelChange when another model is chosen', async () => {
     const onModelChange = jest.fn();
     await renderSelector(baseValue({ onModelChange }));

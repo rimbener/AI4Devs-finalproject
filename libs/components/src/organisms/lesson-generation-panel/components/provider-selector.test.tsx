@@ -61,6 +61,23 @@ describe('ProviderSelector', () => {
     expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(1);
   });
 
+  // `savedProviders[0]?.id` — proves the `?.` matters for a genuinely sparse savedProviders
+  // (hole at index 0 — malformed/defensive case; a dense `undefined` element would instead
+  // crash unrelated code at line 19's `provider.id` inside the `.map`, which isn't what this
+  // line's `?.` guards). Without `?.` this throws (`undefined.id`); with `?.` it resolves to
+  // undefined and renders with nothing checked, instead of crashing.
+  it('renders without throwing, with nothing checked, when savedProviders[0] is a hole', async () => {
+    const sparseProviders: Array<{ id: 'groq' | 'openai'; name: string }> = new Array(2);
+    sparseProviders[1] = { id: 'openai', name: 'OpenAI' };
+
+    await renderSelector(
+      baseValue({ savedProviders: sparseProviders, selectedProvider: undefined }),
+    );
+
+    expect(screen.getByRole('radio', { name: 'OpenAI', checked: false })).toBeTruthy();
+    expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(0);
+  });
+
   it('calls onProviderChange when another provider is chosen', async () => {
     const onProviderChange = jest.fn();
     await renderSelector(baseValue({ onProviderChange }));
