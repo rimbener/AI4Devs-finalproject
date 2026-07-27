@@ -166,3 +166,4 @@
 2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | New generic CardListWithABMDialog organism; mutation 97.2% human-accepted (2 equivalent mutants).
 2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Mini-gate bug fix: decoupled isOpen from dialogState, stops empty-dialog flash on close (@s19/@s20, 8aa12b28e).
 2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Mini-gate closed: full review APPROVED, mutation re-run 97.44% (same 2 equivalents), DoD re-PASS.
+2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | 2nd mini-gate: CardListRow promoted to molecule; fixed reverse molecule-organism import finding; mutation 97.50%, DoD re-PASS.
