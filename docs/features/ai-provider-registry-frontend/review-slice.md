@@ -306,3 +306,117 @@ re-review per the one-round slice gate) — see `[resolved]` notes below.
   new UI shell, so the existing announcement behavior for that slot carries over unchanged.
 - `api-key-saved-list.test.tsx`/`api-key-manager.test.tsx`/`api-key-settings-screen.test.tsx` assert
   the indicator/error copy via `getByText`/`getByRole`, not implementation detail.
+
+## Slice 3 (task-11..14, final slice) — `reviewer_slice`, round 1 — 2026-07-26
+
+**Verdict: APPROVED**
+
+Scope reviewed: `git show bbde00928` (task-11 dead-constant/locale-key deletion → task-12
+reorder/rename propagation proof → task-13 cross-layer integration test → task-14 wrap-up sweep),
+against every rule in `.agents/rules/*.mdc`, `.agents/DESIGN.md`, and WCAG 2.2 AA, cross-checked
+against `spec.md` (Decisions 1-3, 12, 13), `gherkin-scenarios.md` (`@s20`, `@s21`, `@s23`),
+`task-11.md`…`task-14.md`, and `tdd.md`'s slice-3 `@s → test` map.
+
+No blocking findings.
+
+### Independent verification of task-11/14's grep + check-types claims (re-run myself, not trusted blind)
+
+- Repo-wide grep for `AI_PROVIDERS`, `AI_MODEL_REGISTRY`, `PROVIDER_NAME_KEYS`,
+  `API_KEY_SETTINGS_GUIDANCE_URLS`, `aiModel.`, `settings.apiKey.provider.` across all `.ts`/`.tsx`
+  (excluding `node_modules`): **zero matches**. A second, unfiltered pass confirms the only
+  remaining hits anywhere in the tree are historical planning docs (`docs/features/**`,
+  `user-stories/**`) — exactly the claimed exception, nothing else. `@s23` genuinely holds.
+- `pnpm turbo run check-types` (all 14 packages, repo-wide): all cached green, `FULL TURBO`
+  — confirms task-14's own criterion, no compile fallout from deleting
+  `libs/types/src/api-key-settings.ts` or the two `ai-provider.ts` constants.
+- `pnpm turbo run lint` on the 6 touched workspaces: clean, no fixes applied.
+- `pnpm turbo run test` re-run for all 6 touched workspaces: counts match `tdd.md`'s claimed
+  gate exactly — `@helsoft/types` 38, `@helsoft/hooks` 160 (+2), `@helsoft/supabase-services` 308,
+  `@helsoft/components` 500, `@helsoft/study-buddy` 311 (+1), `@helsoft/localization` 245 — all
+  passed, no skips.
+- `libs/study-buddy/.storybook/mocks/hooks.ts` and `libs/activities/.storybook/mocks/hooks.ts`
+  (the files task-11's own Notes flagged as easy-to-miss, uncovered by `pnpm test`): grepped
+  directly, zero references to any deleted constant.
+
+### Rule-by-rule pass (no violations found)
+
+- `global.mdc` — kebab-case preserved; every touched comment explains *why* the old name is gone
+  (task-11 cite) rather than restating *what* the surrounding code does — verified across
+  `ai-provider.ts`, `lesson-generation.ts`, `use-lesson-generation.ts`, `provider.ts` (Deno),
+  `use-ai-providers.fixture.ts`, `ai-provider-test-factories.ts`. No new component added, so no new
+  Storybook-story obligation from this slice.
+- `hooks-service-dao.mdc` — task-13's integration test mocks only the Supabase client boundary
+  (`client.from('ai_providers').select`), never `useAiProviders`/`useApiKeyManager`/
+  `useLessonGenerationForm` themselves, so the real Hook→Service→DAO chain is what's actually
+  exercised, per its own done-criteria. `useApiKeyManager` is a local-state hook (`useReducer` +
+  derived `useMemo`s, no service/DAO call of its own) — barrel-exporting it from
+  `organisms/index.ts` does not introduce a new data-fetching entry point or bypass the layering;
+  it stays a UI-state hook, now just reachable outside its own component folder. Scope of the
+  export is a single named hook (one line), added solely because task-13's cross-layer test (in a
+  different workspace, `@helsoft/study-buddy`) needs the real hook, not a re-mock of it — reasonable
+  and narrowly-scoped, not a broad internals-to-public sweep. D12 ("components stay presentational")
+  is unaffected: `ApiKeySettingsScreen`/`useLessonGenerationForm` remain the only two
+  `useAiProviders()` callers; nothing here adds a third.
+- `tanstack-query.mdc` — task-12's two new `use-ai-providers.test.ts` cases and task-13's
+  integration test both wrap `renderHook` in a real `QueryClientProvider` and use `waitFor`; the
+  reorder/rename cases drive the change via `queryClient.invalidateQueries` on the *same* mounted
+  hook/`QueryClient` (no remount, no second `QueryClient`) — exactly what's needed to falsify a
+  hypothetical module-level memoization ahead of `useQuery`, per task-12's own done-criteria.
+- `state-sharing.mdc` / `state.mdc` — no new local or shared state introduced this slice; N/A.
+- `atomic-design.mdc` — no new/changed component markup or styles in this slice (pure deletion +
+  test files); N/A for token/atom reuse this round.
+- `component-split.mdc` — `use-api-key-manager.ts`'s existing split (hook/reducer/component)
+  untouched in shape; only its barrel visibility changed.
+- `types.mdc` — `libs/types/src/api-key-settings.ts` deleted outright (was export-only, no runtime
+  logic — correctly a `.ts` under `libs/types`, not a `.types.ts`, per the pre-existing convention
+  for that lib); `ai-provider.ts` keeps only the `AiProvider` union + the already-approved
+  `AiProviderCatalogEntry`/`Model` types, no runtime constant left behind. `UseApiKeyManagerArgs` in
+  `use-api-key-manager.ts` stays un-exported (single-file-local type, correctly not lifted to a
+  `.types.ts` since it's private) — the barrel change exports only the function.
+- `i18n.mdc` — `aiModel.*`/`settings.apiKey.provider.*` removed from all four bundles (en/es/pt/de),
+  symmetrically, key-for-key; no `labels`/`copy` pre-resolved-`t()` dictionary reintroduced;
+  `migration-coverage.test.ts` re-run green with no code change needed (it flattens `en.ts`
+  dynamically, confirmed by direct test run — 19/19 passing).
+- `tdd.mdc` — task-12/13 are non-UI `.ts` test files (hook test, cross-layer integration test) →
+  strict-TDD lane; task-12 adds test cases only, explicitly no production change (per its own Notes
+  and confirmed by the diff — `use-ai-providers.ts` itself is untouched in this commit), which is
+  consistent with the Three Laws (a passing assertion against already-correct production code is
+  not a TDD violation when the task's own scope says "prove", not "build"). Task-13's integration
+  test is the one test in the whole feature explicitly licensed to span three modules
+  (`libs/hooks`/`@helsoft/components`/`libs/study-buddy` local hook), per its own Notes citing
+  `libs/hooks`' one-directional dependency graph — verified correct: `libs/hooks/package.json` has
+  no dependency on `@helsoft/components` or `@helsoft/study-buddy`, confirming the test could only
+  live where it was placed. `@s20`/`@s21`/`@s23` each map to ≥1 concrete test per the `@s → test`
+  table; task-14 owns no new scenario (wrap-up only), correctly reflected in its own frontmatter
+  (`scenarios: []`). `tdd.md` is 6523 bytes, under the 8000-byte budget, terse log style maintained
+  (no pasted diffs/test bodies).
+- `pre-slice-checklist.mdc` — new public symbol (`useApiKeyManager` from `organisms/index.ts`)
+  barrel-exported; no shared atom touched (diff has zero `libs/components/src/atoms` changes); no
+  `AccessibilityInfo` direct calls introduced; tests run via `pnpm turbo run test`/`pnpm --filter`,
+  never `yarn test-ci`.
+- `e2e.mdc` — no `.e2e.js` files added or touched this slice; none of task-11-14's changes are a new
+  interactive UI surface (deletions, a hook-level reorder test, and a hook-level integration test) —
+  consistent with "a component with no interaction gets no e2e," and no render-only e2e was added
+  in its place.
+
+### Design (`.agents/DESIGN.md`) / Accessibility (WCAG 2.2 AA)
+
+**N/A** — this slice touches zero rendered UI (`.tsx` markup/styles unchanged outside comment
+edits); it is entirely type/constant deletion, locale-key deletion, and two new non-UI `.ts` test
+files (a hook unit test and a hook-level cross-layer integration test). No new component, role,
+label, color, or touch target introduced or at risk. `@s22` (non-color-only "Disabled" indicator)
+was already discharged and unaffected in slice 2 — confirmed by an unchanged `@helsoft/components`
+test count (500, identical to slice 2's post-fix total) and zero diff under
+`libs/components/src/molecules/api-key-saved-list/api-key-saved-list.tsx` in this commit.
+
+### Feature-level wrap-up confirmed
+
+- `tasks.md`/every `task-N.md` frontmatter shows `status: done` for all 14 tasks; no `todo`/
+  `in_progress` remaining.
+- `AiProviderCatalogEntry`/`AiProviderCatalogModel` (`@helsoft/types`), `AiProvidersDao`/
+  `AiProvidersService` (`@helsoft/supabase-services`), `useAiProviders`/`AI_PROVIDERS_QUERY_KEY`
+  (`@helsoft/hooks`) all confirmed reachable from their workspace's public barrel via direct grep
+  against each `index.ts` (all resolve through pre-existing `export * from './ai-provider'` /
+  `'./ai-providers.dao'` / `'./ai-providers.service'` / `'./use-ai-providers'` wildcard lines — no
+  barrel omission).
+- Feature is ready for `reviews_lead`'s full review + `mutation_tester`'s StrykerJS pass.
