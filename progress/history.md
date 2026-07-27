@@ -165,3 +165,5 @@
 2026-07-27 | ai-provider-registry-backend + frontend | done | docs/features/ai-provider-registry-backend/, docs/features/ai-provider-registry-frontend/ | Merged into feature-entrega3-HernanLaura via PR #13 (c06ecabea); worktree removed. Post-merge fix folded in: useApiKey().isLoading now uses deriveIsLoading (disabled-query isPending v5 gotcha left the app on a blank white page for logged-out visitors), cherry-picked from 38bdcf3c2.
 2026-07-27 | orchestrator-gate (ad hoc, no story) | n/a | — | Human gate moved to post-spec_reviewer: approve written spec + Gherkin once; no plan-mode up-front approval (d02d25260).
 2026-07-27 | splash-screen-logomark (story only) | n/a | — | Pending user story: native splash logomark on Royal Blue until auth/profile resolves (67c19af6c). Assets PNGs left untracked.
+2026-07-27 | orchestrator-mutation-rereview (ad hoc, no story) | n/a | — | Mutation fix that changes production source re-triggers bounded full review; test-only kill skips it (01ce5eb56).
+2026-07-27 | splash-screen-logomark (assets) | n/a | — | Tracked logo-full.png + logomark.png under apps/app-study-buddy/assets (e8a9133a2).
