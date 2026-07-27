@@ -248,8 +248,162 @@ No change request issued — nothing for `implementer` to fix this round.
 
 ---
 
+## Post-pr_ready mini-gate review — CardListRow extraction
+
+**Context.** The feature was already `pr_ready` (Round 2 above, APPROVED; plus the empty-dialog
+flash mini-gate above, also APPROVED; plus a human-accepted 97.2% mutation score — see
+`mutation.md`). The human then asked for a second, purely structural mini-gate: promote
+`CardListRow` — previously an inline, unexported component in `card-list-with-abm-dialog.tsx` with
+no `.stories.tsx` of its own — to its own molecule, `libs/components/src/molecules/card-list-row/`,
+matching this lib's `PdfDocumentListItem` precedent. Full rationale in `spec.md`'s last "Open
+decisions" entry ("Post-`pr_ready` architecture fix (mini-gate)"). Intended as a pure structural
+move: no prop/behavior/API change, no new `@s` scenarios.
+
+**Commit reviewed (delta only):** `e4b2a5a54` — `refactor(components): extract CardListRow to its
+own molecule`, on top of the empty-dialog-flash mini-gate HEAD above. Touches:
+- New: `libs/components/src/molecules/card-list-row/card-list-row.tsx`, `.types.ts`,
+  `.stories.tsx`, `.test.tsx`.
+- Modified: `libs/components/src/molecules/index.ts` (barrel export added);
+  `organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx` (`CardListRow` definition
+  removed, now imports it from the molecule);
+  `organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.test.tsx` (row-level tests moved
+  out, organism-level tests kept).
+- Doc-only: `spec.md`, `tdd.md`.
+
+Doc-only follow-up commit `902b30c87` (touches only `tasks.md`, flips status to `in_review`) is
+not itself part of the reviewed delta. Not a re-review of the whole feature — Round 1/Round 2/the
+empty-dialog-flash mini-gate above are not re-litigated (all already `resolved`/`APPROVED`).
+
+**CI (run once by `reviews_lead`, not the reviewer):**
+- `pnpm lint` — green, repo-wide (turbo, 14 packages).
+- `pnpm check-types` — green, repo-wide (turbo, 14 packages, full cache hit).
+- `pnpm test` — green, repo-wide (turbo, 12 packages with tests); `@helsoft/components` explicitly
+  reflected in the run: 71 suites / 534 tests passed, including the new
+  `libs/components/src/molecules/card-list-row/card-list-row.test.tsx`.
+- Feature e2e — `tests/e2e/organisms/card-list-with-abm-dialog/` run explicitly
+  (`--reporter=list`): 5/5 passed, single parallel run, no flake observed.
+- **CI green @ `902b30c87`** (current worktree HEAD).
+
+**Reviewer invoked:** `reviewer_engineering`, scoped to the extraction delta only (commit
+`e4b2a5a54` in full, plus the current full contents of every touched file and the cited precedent,
+`pdf-document-list-item`/`pdf-document-list`). Full findings recorded in `review-engineering.md`
+under "## Post-pr_ready mini-gate delta review — CardListRow extraction (architecture/molecule
+split)".
+
+### Verdict: CHANGES_REQUESTED
+
+One major finding below (architecture/layering) — blocks approval per protocol (any finding, any
+severity, blocks). Everything else — code quality/TDD, performance, security — checked clean, zero
+findings.
+
+### Findings
+
+1. **[arch] major — `resolved`** — Fixed: `CardListRowProps` flattened to primitives (`content`,
+   `disabled?`, `showEditButton?`/`showRemoveButton?`, `onEditPress: () => void`,
+   `onRemovePress: () => void`, `editAccessibilityLabel`/`removeAccessibilityLabel: string`,
+   `testID?`/`editTestID?`/`removeTestID?: string`) — zero import from
+   `organisms/card-list-with-abm-dialog/*`. Reintroduced a thin, unexported, generic
+   `CardListRowAdapter` in `card-list-with-abm-dialog.tsx` (mirroring `pdf-document-list.tsx`'s
+   `PdfDocumentListRow`) that maps `CardListItem<TItem>` + the organism's builder-prop/callback
+   vocabulary down to `CardListRow`'s flat props at the `renderItem` call site; the three
+   `card-list-with-abm-dialog-*` testID-literal helpers moved back to the organism (they were
+   never a portable-molecule concern). `card-list-row.tsx`/`.stories.tsx`/`.test.tsx` updated to
+   the flat shape with equivalent coverage; `card-list-with-abm-dialog.test.tsx`'s testID-helper
+   import switched to the organism module. `pnpm --filter @helsoft/components lint check-types
+   test` green (71 suites/533 tests) and the feature's Playwright e2e re-run 5/5 passed; no `@s`
+   scenario changed. Full detail in `review-engineering.md`'s "Fix applied (implementer)" note
+   under the same section.
+
+   Original finding — `CardListRow`'s new molecule types file inverts the atomic-design
+   dependency direction the refactor was supposed to fix, and does not actually match the
+   precedent its own `spec.md` rationale claims to mirror.
+
+   `libs/components/src/molecules/card-list-row/card-list-row.types.ts:1`:
+   ```ts
+   import type { CardListItem } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types';
+   ```
+   `CardListRowProps<TItem>` (`card-list-row.types.ts:6-12`) is defined entirely in terms of this
+   imported **organism** type (`item: CardListItem<TItem>`, `onEditPress: (item: CardListItem<TItem>) => void`,
+   etc.) — the molecule imports its whole prop shape from the organism it was extracted out of.
+   The call site confirms there is no flattening/adapter step left anywhere:
+   `card-list-with-abm-dialog.tsx:60-68`'s `renderItem` passes the organism's full generic
+   `CardListItem<TItem>` straight through to `<CardListRow item={item} .../>` with zero mapping.
+
+   Compare against the precedent `spec.md`'s rationale explicitly cites, `pdf-document-list-item`:
+   `PdfDocumentListItemProps` (`libs/components/src/molecules/pdf-document-list-item/pdf-document-list-item.types.ts:3-12`)
+   is fully flat/primitive (`filename: string`, `status: PdfDocumentStatus`, `createdAt: string`,
+   `pageCount: number | null`, plain `onGenerate?`/`onOpenLesson`/`onDelete?` callbacks) — **zero
+   import from `organisms/pdf-document-list/pdf-document-list.types.ts`**. The organism keeps its
+   own thin, unexported, `memo`-wrapped adapter row, `PdfDocumentListRow`
+   (`organisms/pdf-document-list/pdf-document-list.tsx:19-23,164-187`), which is the piece that
+   maps the organism's `PdfDocumentListItemData` DTO down to the molecule's flat props at the call
+   site — that adapter is intentionally *not* promoted to the molecule layer, precisely so the
+   molecule stays organism-agnostic.
+
+   This is a real violation of `.agents/rules/atomic-design.mdc`'s "Compose upward" principle
+   (an atom never imports a molecule — applied one level up here: a molecule should not import
+   from the organism that consumes it) and of the same file's molecule contract ("still portable
+   and reusable — drop in wherever that pattern is needed"): `CardListRow` cannot currently be
+   dropped into an unrelated context without also importing `card-list-with-abm-dialog.types.ts`,
+   coupling it to that one organism's generic `TItem`/dialog-orchestration vocabulary
+   (`getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` builder-function props, not resolved
+   strings). Legal TypeScript, not a runtime bug (CI green, behavior unchanged) — but it does not
+   deliver what `spec.md`'s rationale claims ("it's a composed unit… not organism-specific chrome" /
+   "matches this lib's own precedent"): the precedent's whole point is that the molecule *isn't*
+   organism-specific, and this one still is.
+   - **Fix (implementer, TDD):** flatten `CardListRowProps` to primitives (`content: ReactNode`,
+     `disabled?: boolean`, `showEditButton?/showRemoveButton?: boolean`, `onEditPress: () => void`,
+     `onRemovePress: () => void`, `editAccessibilityLabel: string`, `removeAccessibilityLabel:
+     string` — resolved by the caller, not builder functions) and reintroduce a thin, unexported
+     row-adapter in the organism (mirroring `PdfDocumentListRow`) that maps `CardListItem<TItem>` →
+     those flat props at the call site. This is the true structural mirror of the cited precedent.
+     (Alternative if the human instead accepts the generic-payload coupling as an intentional,
+     narrower exception for this generic-over-`TItem` case: `spec.md`'s rationale must be amended
+     to say so explicitly rather than claim full alignment with a precedent it doesn't structurally
+     match — but flattening is the reviewer's and reviews_lead's recommended path, since it fully
+     achieves the mini-gate's own stated goal.)
+
+### Lenses checked, no findings this round
+
+See `review-engineering.md`'s "## Post-pr_ready mini-gate delta review — CardListRow extraction
+(architecture/molecule split)" section for full detail (not copied here in full per protocol —
+summary only): code quality/TDD discipline (no new `@s` scenarios needed, confirmed genuinely a
+pure structural move; new `.test.tsx`/`.stories.tsx` for the molecule are genuine, non-degraded
+coverage — icon visibility, disabled state, per-item accessible names, press callbacks, all three
+testID-helper exports preserved verbatim, all moved 1:1 out of the organism's old test with no gap;
+story covers BothIcons/EditOnly/RemoveOnly/Disabled meaningfully, nothing broken in the move),
+architecture/layering aside from finding 1 (`Component → Hook` chain untouched, no DAO/service
+import, barrel wiring in `molecules/index.ts` correct and matches the `pdf-document-list-item`
+entry's exact two-line shape), performance (confirmed genuinely neutral — same `memo` +
+generic-preserving cast, same `useCallback`'d `onEditPress`/`onRemovePress` call-throughs,
+byte-identical to the pre-move inline code, only the module boundary changed), security (N/A,
+confirmed via targeted grep across both touched directories — no service/DAO/auth/network/storage/
+Supabase surface, no secrets/env reads, no logging).
+
+### Notes for the fix (implementer, TDD)
+
+- Finding 1: `libs/components/src/molecules/card-list-row/card-list-row.types.ts:1` — remove the
+  `import type { CardListItem } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types'`
+  dependency. Flatten `CardListRowProps<TItem>` to primitive/resolved props (no organism-owned
+  generic type), and add a thin, unexported adapter component in
+  `card-list-with-abm-dialog.tsx` (mirroring `pdf-document-list.tsx:19-23,164-187`'s
+  `PdfDocumentListRow`) that maps the organism's `CardListItem<TItem>` down to the molecule's flat
+  props at the `renderItem` call site (`card-list-with-abm-dialog.tsx:60-68`).
+- This is a pure structural fix — no new `@s` scenario, no behavior change expected. Existing
+  `card-list-row.test.tsx`/`.stories.tsx` will need updating to the new flat prop shape (still
+  genuine coverage, same assertions, different prop names/values); existing
+  `card-list-with-abm-dialog.test.tsx`/`.e2e.js` assertions should continue to pass unmodified
+  (organism-level behavior is unaffected).
+- Re-run `pnpm --filter @helsoft/components lint check-types test` and this feature's Playwright
+  e2e suite after the fix.
+- If the fix is instead to keep the coupling and amend `spec.md`'s rationale (the documented
+  alternative above), that still requires human sign-off on the amended rationale before this
+  mini-gate can close — the reviewer's/reviews_lead's recommended path is the flattening fix.
+
+---
+
 *Full findings trail retained above — nothing deleted. Round 1's two minor findings and Round 2's
-verification remain marked `resolved`; the post-`pr_ready` mini-gate delta review above is a clean
-`APPROVED` round with zero findings of any severity. `review-engineering.md` carries the full
-lens-by-lens detail for every round, including this mini-gate delta, under its own matching
-section headers.*
+verification remain marked `resolved`; the empty-dialog-flash mini-gate is a clean `APPROVED` round
+with zero findings of any severity; the CardListRow-extraction mini-gate above has one `open`
+major finding blocking approval this round. `review-engineering.md` carries the full lens-by-lens
+detail for every round, including both mini-gates, under its own matching section headers.*

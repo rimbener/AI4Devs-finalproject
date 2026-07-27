@@ -207,3 +207,156 @@ and body content (what `bodyText` checks) — no other props of `closedProps` ne
 ### Notes for the fix
 
 None — this delta is clean at all four lenses. No follow-up requested.
+
+## Post-pr_ready mini-gate delta review — CardListRow extraction (architecture/molecule split)
+
+**Scope:** delta-only review of commit `e4b2a5a54` ("refactor(components): extract CardListRow to
+its own molecule") on top of the already-`APPROVED` HEAD (Round 1/Round 2/empty-dialog-flash
+mini-gate all closed, not re-litigated). Doc-only follow-up `902b30c87` (touches only `tasks.md`)
+explicitly out of scope per instructions. Reviewed `git show --stat e4b2a5a54` and the full
+`git show e4b2a5a54` diff, plus the current full contents of every touched file and the cited
+precedent (`molecules/pdf-document-list-item/pdf-document-list-item.types.ts`,
+`organisms/pdf-document-list/pdf-document-list.tsx`).
+
+**CI:** green @ `902b30c87` (`pnpm lint`/`check-types`/`test` repo-wide — 71 suites/534 tests in
+`@helsoft/components`, including the new `card-list-row.test.tsx`; feature e2e 5/5, no flake) —
+taken as given per protocol, not re-run.
+
+### Verdict: CHANGES_REQUESTED
+
+One major architecture finding (below); everything else checked clean — see per-lens summary.
+
+### Findings
+
+1. **[arch] major** — `CardListRow`'s new molecule types file inverts the atomic-design
+   dependency direction the refactor was supposed to fix, and does not actually match the
+   precedent its own rationale (`docs/features/card-list-with-abm-dialog/spec.md`'s "Post-`pr_ready`
+   architecture fix (mini-gate)" entry) claims to mirror.
+
+   `libs/components/src/molecules/card-list-row/card-list-row.types.ts:1`:
+   ```ts
+   import type { CardListItem } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types';
+   ```
+   `CardListRowProps<TItem>` (`card-list-row.types.ts:6-12`) is defined entirely in terms of this
+   imported organism type (`item: CardListItem<TItem>`, `onEditPress: (item: CardListItem<TItem>) => void`,
+   etc.) — i.e. the molecule imports its whole prop shape from the organism it was extracted out
+   of. The call site confirms there is no flattening/adapter step left anywhere:
+   `card-list-with-abm-dialog.tsx:60-68`'s `renderItem` passes the organism's full generic
+   `CardListItem<TItem>` straight through as `<CardListRow item={item} onEditPress={openEditDialog}
+   onRemovePress={openRemoveDialog} .../>` with zero mapping.
+
+   Compare against the precedent the spec.md rationale explicitly cites,
+   `pdf-document-list-item`: `PdfDocumentListItemProps`
+   (`libs/components/src/molecules/pdf-document-list-item/pdf-document-list-item.types.ts:3-12`)
+   is fully flat/primitive (`filename: string`, `status: PdfDocumentStatus`, `createdAt: string`,
+   `pageCount: number | null`, plain `onGenerate?`/`onOpenLesson`/`onDelete?` callbacks) — **zero
+   import from `organisms/pdf-document-list/pdf-document-list.types.ts`**. The organism keeps its
+   own thin, unexported, `memo`-wrapped adapter row, `PdfDocumentListRow`
+   (`organisms/pdf-document-list/pdf-document-list.tsx:19-23,164-187`), which is the piece that
+   maps the organism's `PdfDocumentListItemData` DTO down to the molecule's flat props at the call
+   site (`:177-186`) — that adapter is intentionally *not* promoted to the molecule layer, precisely
+   so the molecule stays organism-agnostic.
+
+   This is a real violation of `.agents/rules/atomic-design.mdc:8` ("Compose upward. An atom never
+   imports a molecule…") applied one level up (a molecule should not import from the organism that
+   consumes it) and of the same file's molecule contract (line 23: "Still portable and reusable —
+   drop in wherever that pattern is needed"): `CardListRow` cannot currently be dropped into an
+   unrelated context without also importing `card-list-with-abm-dialog.types.ts`, coupling it to
+   that one organism's generic `TItem`/dialog-orchestration vocabulary
+   (`getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` builder-function props, not resolved
+   strings). It is legal TypeScript (`CardListItem` is exported, so no `types.mdc` private-type leak),
+   and it is not a runtime bug — CI is green and behavior is unchanged — but it does not deliver
+   what `spec.md`'s rationale claims ("it's a composed unit… not organism-specific chrome" / "matches
+   this lib's own precedent"): the precedent's whole point is that the molecule *isn't*
+   organism-specific, and this one still is. Recommend before closing this mini-gate: either (a)
+   flatten `CardListRowProps` to primitives (`content: ReactNode`, `disabled?: boolean`,
+   `showEditButton?/showRemoveButton?: boolean`, `onEditPress: () => void`, `onRemovePress: () =>
+   void`, `editAccessibilityLabel: string`, `removeAccessibilityLabel: string` — resolved by the
+   caller) and reintroduce a thin, unexported `CardListWithABMDialogRow` adapter in the organism
+   that maps `CardListItem<TItem>` → those flat props at the call site (true mirror of
+   `PdfDocumentListRow`), or (b) if the team accepts the generic-payload coupling as an intentional,
+   narrower exception for this generic-over-`TItem` case, update `spec.md`'s rationale to say so
+   explicitly rather than claim full alignment with a precedent it doesn't structurally match.
+
+### Lenses checked, no findings
+
+- **Code quality/TDD** — no new `@s` scenarios (commit message and `tdd.md` both state this is a
+  pure structural move); no `@s` needs new test mapping. `card-list-row.test.tsx` is genuine,
+  non-degraded coverage of the moved unit, not a verbatim copy with gaps: icon visibility
+  (`:387-409`, @s3/@s4 + both-omitted case), disabled state incl. exact opacity value and
+  `accessibilityState.disabled` on both icons (`:412-437`, @s2), per-item accessible names built
+  from `get*AccessibilityLabel(item)` (`:372-384`, @s14), press-callback forwarding for both edit
+  and remove with cross-checks that the *other* handler is not called (`:441-471`), the exported
+  testID-helper literal templates (`:365-369`), and the row-layout flex assertions moved verbatim
+  from the organism's old test (`:475-494`). All were removed from `card-list-with-abm-dialog.test.tsx`
+  at the same lines they were added to the molecule's test — no coverage gap, confirmed by reading
+  both full diffs side by side. `card-list-row.stories.tsx` covers BothIcons (default `meta.args`),
+  EditOnly, RemoveOnly, Disabled — each a distinct, renderable `Story` object with valid
+  `CardListItem<StoryFlashcard>` args (no missing required prop, no `undefined`-callback path that
+  would throw on render) — meaningful, not just present. TDD-by-file-type: both new files are UI
+  (`.tsx`/`.stories.tsx`), implementation-first per `tdd.mdc` — no test-first evidence expected, and
+  none of the three required co-located artifacts (`.tsx`, `.stories.tsx`, `.test.tsx`) is missing.
+  No `console.log`/debug leftovers, no bare TODOs (grep clean). Functional React only; `Props` type
+  (`CardListRowProps`) present and correctly promoted to `.types.ts` now that it's shared across two
+  files (component + test) instead of component-private. Kebab-case filenames throughout
+  (`card-list-row/card-list-row.tsx`, `.types.ts`, `.stories.tsx`, `.test.tsx`). i18n: no
+  user-facing strings added or changed by this move (all chrome still caller-supplied via props,
+  unchanged from Round 1).
+- **Architecture/layering (aside from finding 1)** — `Component → Hook` chain untouched (this
+  delta doesn't touch `use-card-list-with-abm-dialog.ts`). No DAO/service/cross-layer import
+  introduced. `molecules/index.ts:5-6` barrel wiring is correctly shaped and alphabetically placed —
+  `export * from './card-list-row/card-list-row'` + `export type * from
+  './card-list-row/card-list-row.types'`, matching the `pdf-document-list-item` entry's exact
+  two-line export shape (`molecules/index.ts:21-22`). No new dependency added. `CardListItem<TItem>`
+  itself is not a DTO (no DAO in this feature) — it's the organism's own public domain type, so no
+  DTO-leak violation independent of finding 1.
+- **Performance** — confirmed genuinely neutral, not a regression or improvement:
+  `card-list-row.tsx:23-31` — same `memo(function CardListRow<TItem>(...) {...}) as <TItem>(props:
+  CardListRowProps<TItem>) => ReactNode` cast, same `useCallback(() => onEditPress(item),
+  [onEditPress, item])` / `useCallback(() => onRemovePress(item), [onRemovePress, item])` pattern,
+  byte-identical to the pre-move inline definition (diffed old `card-list-with-abm-dialog.tsx:167-216`
+  against new `card-list-row.tsx:23-73` — only the import paths' relative depth and the module
+  boundary changed, confirmed both files sit at the same `src/`-relative depth
+  (`src/molecules/card-list-row/` vs `src/organisms/card-list-with-abm-dialog/`) so `../../atoms/...`
+  and `../../theme/spacing` resolve identically). `FlatList` usage, `keyExtractor`/`renderItem`
+  `useCallback` stabilization in the organism unaffected by this delta. No new N+1/network
+  round-trips (no network surface in this diff).
+- **Security** — **N/A.** Confirmed via `grep -rn "console\.|process\.env|SECRET|API_KEY|fetch(|supabase"`
+  across both touched directories (`molecules/card-list-row/`, `organisms/card-list-with-abm-dialog/`):
+  no matches. Pure presentational move within `@helsoft/components` — no new service/DAO/auth/
+  network/storage/Supabase surface, no secrets/env reads, no logging, no PII sink. OWASP Top
+  10/MASVS: no applicable surface in this delta.
+
+### Confirmations (specific checks requested)
+
+- **No-op verification** — prop surface, behavior, `memo`/`useCallback` wrapping, and all three
+  testID exports (`cardListItemCardTestId`/`cardListItemEditTestId`/`cardListItemRemoveTestId`)
+  preserved verbatim (same literal template strings, same call sites) — confirmed by diffing the
+  removed block in `card-list-with-abm-dialog.tsx` against the new `card-list-row.tsx` line by
+  line; only the module boundary changed.
+- **Barrel wiring** — correct, matches precedent shape (see Architecture bullet above).
+- **Test/story coverage genuineness** — confirmed genuine, not degraded (see Code quality bullet
+  above); nothing visibly broken in the move (no lost testID, no lost accessible name, no story
+  that would fail to render).
+
+### Fix applied (implementer) — finding 1 resolved
+
+`CardListRowProps` (`libs/components/src/molecules/card-list-row/card-list-row.types.ts`)
+flattened to primitives — `content: ReactNode`, `disabled?`, `showEditButton?`/`showRemoveButton?`,
+`onEditPress: () => void`, `onRemovePress: () => void`, `editAccessibilityLabel`/
+`removeAccessibilityLabel: string`, plus `testID?`/`editTestID?`/`removeTestID?: string` (mirrors
+`Card`'s own `testID?` prop) — zero import from `organisms/card-list-with-abm-dialog/*`.
+`card-list-row.tsx` is now a plain (non-generic) memoized component; no more generic-preserving
+cast needed. A new unexported, generic `CardListRowAdapter` in `card-list-with-abm-dialog.tsx`
+(mirroring `pdf-document-list.tsx`'s `PdfDocumentListRow`) maps the organism's `CardListItem<TItem>`
++ its builder-prop/callback vocabulary down to `CardListRow`'s flat props at the `renderItem` call
+site — item-bound `onEditPress`/`onRemovePress` closures, resolved accessible-name strings, and the
+three testID literals (`cardListItemCardTestId`/`cardListItemEditTestId`/`cardListItemRemoveTestId`,
+moved back to `card-list-with-abm-dialog.tsx` since they are this organism's own literal templates,
+not a portable molecule concern) all now live in the adapter, not the molecule. `card-list-row.tsx`/
+`.stories.tsx`/`.test.tsx` updated to the flat shape (same coverage — icon visibility, disabled
+state, accessible names, press callbacks, layout — now driven by plain caller-supplied testID
+strings instead of `item.id`-derived ones). `card-list-with-abm-dialog.test.tsx`'s import of the
+testID helpers switched to `./card-list-with-abm-dialog`; no other test changes needed (organism
+behavior unchanged). `pnpm --filter @helsoft/components lint check-types test` green (71
+suites/533 tests) and the feature's Playwright e2e re-run 5/5 passed. No `@s` scenario changed.

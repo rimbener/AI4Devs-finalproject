@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { Button } from '../../atoms/button/button';
@@ -16,6 +16,59 @@ export const CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID = 'card-list-with-abm-dialog
 // (`undefined`/`null` would fall through to it) to hide the cancel/submit row while
 // isSubmitting is true.
 const EMPTY_DIALOG_ACTIONS = <></>;
+
+/** testID for a row's `Card` wrapper (its opacity carries the disabled visual, @s2). */
+export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;
+/** testID prefix for a row's edit icon. */
+export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog-edit-${id}`;
+/** testID prefix for a row's remove icon. */
+export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
+
+type CardListRowAdapterProps<TItem> = {
+  item: CardListItem<TItem>;
+  onEditPress: (item: CardListItem<TItem>) => void;
+  onRemovePress: (item: CardListItem<TItem>) => void;
+  getEditAccessibilityLabel: (item: CardListItem<TItem>) => string;
+  getRemoveAccessibilityLabel: (item: CardListItem<TItem>) => string;
+};
+
+/**
+ * CardListRowAdapter — thin, organism-owned mapping from this organism's generic
+ * `CardListItem<TItem>` (plus its accessible-name-builder/press-handler props) down to the
+ * portable `CardListRow` molecule's flat prop shape: resolved accessible-name strings,
+ * item-bound press callbacks, and this organism's own testID literals
+ * (`cardListItemCardTestId`/`cardListItemEditTestId`/`cardListItemRemoveTestId`). Mirrors
+ * `pdf-document-list.tsx`'s `PdfDocumentListRow` adapter — the molecule itself never sees
+ * `CardListItem<TItem>`. Memoized + `useCallback`'d call-throughs for the same reason as that
+ * precedent (full-review minor [perf]): keeps per-cell handler identity stable across parent
+ * `FlatList` re-renders.
+ */
+const CardListRowAdapter = memo(function CardListRowAdapter<TItem>({
+  item,
+  onEditPress,
+  onRemovePress,
+  getEditAccessibilityLabel,
+  getRemoveAccessibilityLabel,
+}: CardListRowAdapterProps<TItem>) {
+  const handleEditPress = useCallback(() => onEditPress(item), [onEditPress, item]);
+  const handleRemovePress = useCallback(() => onRemovePress(item), [onRemovePress, item]);
+
+  return (
+    <CardListRow
+      content={item.content}
+      disabled={item.disabled}
+      showEditButton={item.showEditButton}
+      showRemoveButton={item.showRemoveButton}
+      onEditPress={handleEditPress}
+      onRemovePress={handleRemovePress}
+      editAccessibilityLabel={getEditAccessibilityLabel(item)}
+      removeAccessibilityLabel={getRemoveAccessibilityLabel(item)}
+      testID={cardListItemCardTestId(item.id)}
+      editTestID={cardListItemEditTestId(item.id)}
+      removeTestID={cardListItemRemoveTestId(item.id)}
+    />
+  );
+}) as <TItem>(props: CardListRowAdapterProps<TItem>) => ReactNode;
 
 /**
  * CardListWithABMDialog — titled `Card` list with an add button and, per item, optional
@@ -59,7 +112,7 @@ export const CardListWithABMDialog = <TItem,>({
 
   const renderItem = useCallback(
     ({ item }: { item: CardListItem<TItem> }) => (
-      <CardListRow
+      <CardListRowAdapter
         item={item}
         onEditPress={openEditDialog}
         onRemovePress={openRemoveDialog}

@@ -84,3 +84,20 @@ to match shifted `handleEditConfirm`/`handleRemoveConfirm` line numbers (code it
 Stryker-disable comment references a literal line number, so none needed updating).
 Gate: 71 suites/534 tests green · e2e 5 passed (testIDs unchanged) · check-types/lint/format
 clean (workspace + repo-wide).
+
+## Mini-gate review fix — flatten CardListRowProps (drop organism-type import)
+
+Full-review [arch] major: molecule imported `CardListItem<TItem>` from the organism it was
+extracted out of — reverse dependency, didn't match `pdf-document-list-item`'s flat precedent.
+Fix: flattened `CardListRowProps` to primitives (`content`, `disabled?`, `showEditButton?`/
+`showRemoveButton?`, `onEditPress: () => void`, `onRemovePress: () => void`,
+`editAccessibilityLabel`/`removeAccessibilityLabel: string`, `testID?`/`editTestID?`/
+`removeTestID?: string` — mirrors `Card`'s own `testID?`). `card-list-row.tsx` is now a plain
+(non-generic) `memo`d component — no cast needed. Reintroduced a thin, unexported, generic
+`CardListRowAdapter` in `card-list-with-abm-dialog.tsx` (mirrors `PdfDocumentListRow`) mapping
+`CardListItem<TItem>` down to the flat props at the `renderItem` call site; the three
+`cardListItem*TestId` helpers moved back to the organism (their own literal templates, never a
+molecule concern). Pure structural fix — no `@s` scenario changed; `card-list-row.test.tsx`/
+`.stories.tsx` updated to the flat shape with equivalent coverage.
+Gate: 71 suites/533 tests green · e2e 5 passed (testIDs unchanged) · check-types/lint/format
+clean (workspace + repo-wide).

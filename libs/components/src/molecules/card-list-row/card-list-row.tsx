@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { Card } from '../../atoms/card/card';
@@ -7,60 +6,54 @@ import { IconButton } from '../../atoms/icon-button/icon-button';
 import { layout } from '../../theme/spacing';
 import type { CardListRowProps } from './card-list-row.types';
 
-/** testID for a row's `Card` wrapper (its opacity carries the disabled visual, @s2). */
-export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;
-/** testID prefix for a row's edit icon. */
-export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog-edit-${id}`;
-/** testID prefix for a row's remove icon. */
-export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
-
 /**
- * CardListRow — one `CardListWithABMDialog` row: `Card` wrapping the caller's content plus
- * optional edit/remove icons. Icons are wrapped in a local testID `View` rather than the shared
- * `IconButton` atom gaining a `testID` prop (atom-ban).
- * Each icon's accessible name is built per-action by the caller-supplied
- * `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` props (WCAG 4.1.2 — `IconButton`
- * always renders `accessibilityRole="button"`, so an accessible name must not be missing).
- * Memoized — keeps per-cell handlers stable across parent `FlatList` re-renders
- * (full-review minor [perf]; mirrors `pdf-document-list.tsx`'s `PdfDocumentListRow`).
+ * CardListRow — a portable card-list row: `Card` wrapping the caller's content plus optional
+ * edit/remove icon affordances. Fully organism-agnostic (see `card-list-row.types.ts`) — any
+ * caller resolves its own accessible names, press handlers, and testIDs. Icons are wrapped in a
+ * local testID `View` rather than the shared `IconButton` atom gaining a `testID` prop
+ * (atom-ban). Each icon's accessible name comes from the caller-resolved
+ * `editAccessibilityLabel`/`removeAccessibilityLabel` props (WCAG 4.1.2 — `IconButton` always
+ * renders `accessibilityRole="button"`, so an accessible name must not be missing).
+ * Memoized — keeps per-cell renders cheap when a caller reuses this row inside a virtualized
+ * list (full-review minor [perf]; mirrors `pdf-document-list.tsx`'s `PdfDocumentListRow`).
  */
-export const CardListRow = memo(function CardListRow<TItem>({
-  item,
+export const CardListRow = memo(function CardListRow({
+  content,
+  disabled,
+  showEditButton,
+  showRemoveButton,
   onEditPress,
   onRemovePress,
-  getEditAccessibilityLabel,
-  getRemoveAccessibilityLabel,
-}: CardListRowProps<TItem>) {
-  const handleEditPress = useCallback(() => onEditPress(item), [onEditPress, item]);
-  const handleRemovePress = useCallback(() => onRemovePress(item), [onRemovePress, item]);
-
+  editAccessibilityLabel,
+  removeAccessibilityLabel,
+  testID,
+  editTestID,
+  removeTestID,
+}: CardListRowProps) {
   return (
-    <Card
-      testID={cardListItemCardTestId(item.id)}
-      style={item.disabled ? styles.disabledCard : undefined}
-    >
+    <Card testID={testID} style={disabled ? styles.disabledCard : undefined}>
       <View style={styles.row}>
-        <View style={styles.content}>{item.content}</View>
+        <View style={styles.content}>{content}</View>
         <View style={styles.actions}>
-          {item.showEditButton ? (
-            <View testID={cardListItemEditTestId(item.id)}>
+          {showEditButton ? (
+            <View testID={editTestID}>
               <IconButton
                 icon="edit"
                 size={layout.touchTarget}
-                disabled={item.disabled}
-                accessibilityLabel={getEditAccessibilityLabel(item)}
-                onPress={handleEditPress}
+                disabled={disabled}
+                accessibilityLabel={editAccessibilityLabel}
+                onPress={onEditPress}
               />
             </View>
           ) : null}
-          {item.showRemoveButton ? (
-            <View testID={cardListItemRemoveTestId(item.id)}>
+          {showRemoveButton ? (
+            <View testID={removeTestID}>
               <IconButton
                 icon="delete"
                 size={layout.touchTarget}
-                disabled={item.disabled}
-                accessibilityLabel={getRemoveAccessibilityLabel(item)}
-                onPress={handleRemovePress}
+                disabled={disabled}
+                accessibilityLabel={removeAccessibilityLabel}
+                onPress={onRemovePress}
               />
             </View>
           ) : null}
@@ -68,7 +61,7 @@ export const CardListRow = memo(function CardListRow<TItem>({
       </View>
     </Card>
   );
-}) as <TItem>(props: CardListRowProps<TItem>) => ReactNode;
+});
 
 const styles = StyleSheet.create((theme) => ({
   disabledCard: {

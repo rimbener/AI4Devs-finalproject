@@ -21,14 +21,12 @@ import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { Text } from 'react-native';
-import {
-  cardListItemEditTestId,
-  cardListItemRemoveTestId,
-} from '../../molecules/card-list-row/card-list-row';
 import { Dialog } from '../dialog/dialog';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
   CardListWithABMDialog,
+  cardListItemEditTestId,
+  cardListItemRemoveTestId,
 } from './card-list-with-abm-dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
 
