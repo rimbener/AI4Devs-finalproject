@@ -282,7 +282,7 @@ empty-dialog-flash mini-gate above are not re-litigated (all already `resolved`/
   `libs/components/src/molecules/card-list-row/card-list-row.test.tsx`.
 - Feature e2e — `tests/e2e/organisms/card-list-with-abm-dialog/` run explicitly
   (`--reporter=list`): 5/5 passed, single parallel run, no flake observed.
-- **CI green @ `902b30c87`** (current worktree HEAD).
+- **CI green @ `902b30c87`** (current worktree HEAD at that time).
 
 **Reviewer invoked:** `reviewer_engineering`, scoped to the extraction delta only (commit
 `e4b2a5a54` in full, plus the current full contents of every touched file and the cited precedent,
@@ -290,7 +290,7 @@ empty-dialog-flash mini-gate above are not re-litigated (all already `resolved`/
 under "## Post-pr_ready mini-gate delta review — CardListRow extraction (architecture/molecule
 split)".
 
-### Verdict: CHANGES_REQUESTED
+### Verdict (initial): CHANGES_REQUESTED
 
 One major finding below (architecture/layering) — blocks approval per protocol (any finding, any
 severity, blocks). Everything else — code quality/TDD, performance, security — checked clean, zero
@@ -298,7 +298,7 @@ findings.
 
 ### Findings
 
-1. **[arch] major — `resolved`** — Fixed: `CardListRowProps` flattened to primitives (`content`,
+1. **[arch] major — `resolved` (fix verified below)** — Fixed: `CardListRowProps` flattened to primitives (`content`,
    `disabled?`, `showEditButton?`/`showRemoveButton?`, `onEditPress: () => void`,
    `onRemovePress: () => void`, `editAccessibilityLabel`/`removeAccessibilityLabel: string`,
    `testID?`/`editTestID?`/`removeTestID?: string`) — zero import from
@@ -313,6 +313,10 @@ findings.
    test` green (71 suites/533 tests) and the feature's Playwright e2e re-run 5/5 passed; no `@s`
    scenario changed. Full detail in `review-engineering.md`'s "Fix applied (implementer)" note
    under the same section.
+
+   **Fix-delta verification (`reviewer_engineering`, delta review of commit `f753311a5`):**
+   confirmed resolved — full detail in the "Fix verification — round 2 of this mini-gate"
+   subsection below.
 
    Original finding — `CardListRow`'s new molecule types file inverts the atomic-design
    dependency direction the refactor was supposed to fix, and does not actually match the
@@ -400,10 +404,68 @@ Supabase surface, no secrets/env reads, no logging).
   alternative above), that still requires human sign-off on the amended rationale before this
   mini-gate can close — the reviewer's/reviews_lead's recommended path is the flattening fix.
 
+### Fix verification — round 2 of this mini-gate
+
+**Commit reviewed (delta only):** `f753311a5` — `fix(components): flatten CardListRow props, add
+organism-owned adapter`, the only commit on top of the round-1-of-this-mini-gate HEAD (`902b30c87`)
+reviewed above (`git diff 902b30c87 f753311a5`). Touches (production): `card-list-row.types.ts`,
+`card-list-row.tsx`, `card-list-with-abm-dialog.tsx`; (tests) `card-list-row.stories.tsx`,
+`card-list-row.test.tsx`, `card-list-with-abm-dialog.test.tsx`; (doc-only) `tdd.md` plus this file
+and `review-engineering.md`.
+
+**CI (run once by `reviews_lead`, not the reviewer):**
+- `pnpm lint` — green, repo-wide (turbo, 14 packages).
+- `pnpm check-types` — green, repo-wide (turbo, 14 packages, full cache hit).
+- `@helsoft/components` test suite explicitly re-run, not cache-trusted (`pnpm exec jest`): 71
+  suites / 533 tests passed, including `card-list-row.test.tsx` (flat-prop shape) and
+  `card-list-with-abm-dialog.test.tsx` (organism-level `@s`-scenarios plus the testID-helper
+  import switch).
+- Feature e2e — `tests/e2e/organisms/card-list-with-abm-dialog/` re-run explicitly
+  (`--reporter=list`): 5/5 passed, single run, no flake observed.
+- **CI green @ `f753311a5`.**
+
+**Reviewer invoked:** `reviewer_engineering`, scoped to the fix delta only (`git diff 902b30c87
+f753311a5` plus full current contents of every touched file and the `pdf-document-list`/
+`pdf-document-list-item` precedent), confirming three explicit questions per protocol:
+
+- **(a) Flat/portable molecule types** — confirmed clean. `card-list-row.types.ts:1` now imports
+  only `ReactNode` from `react`; the prior organism import is gone. `CardListRowProps` (no longer
+  generic) is fully flat/primitive, structurally matching `PdfDocumentListItemProps` — the
+  precedent match is now genuine, not merely claimed.
+- **(b) Adapter preserves all prior behavior** — confirmed clean. The new `CardListRowAdapter`
+  (`card-list-with-abm-dialog.tsx:38-72`) reproduces the three testID literal templates
+  byte-identically (`cardListItemCardTestId`/`cardListItemEditTestId`/`cardListItemRemoveTestId`,
+  now exported from the organism module — `card-list-with-abm-dialog.test.tsx`'s import switch
+  resolves correctly, no stale reference to the old molecule path remains), resolves accessible
+  names at the adapter boundary via `getEditAccessibilityLabel(item)`/`getRemoveAccessibilityLabel(item)`
+  exactly as before, and wraps item-bound press callbacks with correct `useCallback` deps
+  (`[onEditPress, item]`/`[onRemovePress, item]`) — same shape as the already-`resolved` Round-2
+  perf fix, just relocated one layer up. Verified end-to-end via the organism's unchanged `@s5`-`@s9`
+  tests: item-bound routing (item-2's edit opens item-2's dialog, item-1's remove confirms against
+  item-1 only) still holds.
+- **(c) No new issue introduced by the fix itself** — confirmed clean. No duplication/double-
+  wrapping (the molecule no longer wraps handlers at all — exactly one `useCallback` binding point
+  now, in the adapter). The generic-preserving `as <TItem>(props: CardListRowAdapterProps<TItem>)
+  => ReactNode` cast is the same accepted, compile-time-only idiom already cleared in Round 2.
+  `card-list-row.test.tsx`/`.stories.tsx` updated to the flat shape with equivalent, non-degraded
+  coverage. No stale/orphaned imports or dead exports (both barrels use wildcard re-exports, no
+  manual list to update). Security grep across both touched directories: still N/A, consistent with
+  every prior round.
+
+Full delta analysis recorded in `review-engineering.md` under "## Post-pr_ready mini-gate
+fix-delta review — CardListRow flatten + organism-owned adapter".
+
+### Verdict: APPROVED
+
+**Zero new findings.** The one `[arch] major` finding above is confirmed genuinely resolved by
+`f753311a5`; nothing new was introduced by the fix itself. CI green @ `f753311a5`. This mini-gate
+is now closed with a clean approval — nothing outstanding for `implementer` to fix.
+
 ---
 
 *Full findings trail retained above — nothing deleted. Round 1's two minor findings and Round 2's
 verification remain marked `resolved`; the empty-dialog-flash mini-gate is a clean `APPROVED` round
-with zero findings of any severity; the CardListRow-extraction mini-gate above has one `open`
-major finding blocking approval this round. `review-engineering.md` carries the full lens-by-lens
-detail for every round, including both mini-gates, under its own matching section headers.*
+with zero findings of any severity; the CardListRow-extraction mini-gate's one major finding is
+now confirmed `resolved` (fix verified in commit `f753311a5`) and that section closes `APPROVED`.
+`review-engineering.md` carries the full lens-by-lens detail for every round, including both
+mini-gates and this fix-delta verification, under its own matching section headers.*

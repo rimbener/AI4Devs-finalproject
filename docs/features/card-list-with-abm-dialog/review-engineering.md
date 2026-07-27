@@ -360,3 +360,134 @@ strings instead of `item.id`-derived ones). `card-list-with-abm-dialog.test.tsx`
 testID helpers switched to `./card-list-with-abm-dialog`; no other test changes needed (organism
 behavior unchanged). `pnpm --filter @helsoft/components lint check-types test` green (71
 suites/533 tests) and the feature's Playwright e2e re-run 5/5 passed. No `@s` scenario changed.
+
+## Post-pr_ready mini-gate fix-delta review — CardListRow flatten + organism-owned adapter
+
+**Scope:** delta-only review of `implementer`'s fix commit `f753311a5` ("fix(components): flatten
+CardListRow props, add organism-owned adapter") — the ONLY commit on top of the previously-reviewed
+HEAD `902b30c87` (`git diff 902b30c87 f753311a5`). Resolves the one `[arch] major` finding from the
+"Post-`pr_ready` mini-gate review — CardListRow extraction" section above (reverse
+molecule→organism dependency). That finding's original reasoning is not re-litigated — only whether
+it is now genuinely resolved and whether the resolution itself introduces anything new, per this
+round's four explicit questions (a/b/c).
+
+**CI:** green @ `f753311a5` — taken as given per protocol, not re-run by this reviewer.
+
+**`git show --stat f753311a5`:** touched files — `card-list-row.types.ts`, `card-list-row.tsx`,
+`card-list-row.stories.tsx`, `card-list-row.test.tsx` (molecule), `card-list-with-abm-dialog.tsx`,
+`card-list-with-abm-dialog.test.tsx` (organism), plus `review.md`/`review-engineering.md`/`tdd.md`
+(doc-only). No other production file touched.
+
+### (a) Flat/portable molecule types — CONFIRMED CLEAN
+
+`card-list-row.types.ts:1` now imports only `type { ReactNode } from 'react'`; the prior
+`import type { CardListItem } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types'`
+is gone. `CardListRowProps` is fully flat/primitive: `content: ReactNode`, `disabled?: boolean`,
+`showEditButton?/showRemoveButton?: boolean`, `onEditPress: () => void`, `onRemovePress: () =>
+void`, `editAccessibilityLabel/removeAccessibilityLabel: string`, `testID?/editTestID?/removeTestID?:
+string`. Grepped the whole `molecules/card-list-row/` tree for any `organisms/` or
+`card-list-with-abm-dialog` reference — none found (`card-list-row.tsx`, `.types.ts` both clean;
+`.test.tsx`/`.stories.tsx` are test/story fixtures, not the production import graph, and both are
+also clean — confirmed below). `CardListRowProps` is no longer generic (`CardListRowProps`, not
+`CardListRowProps<TItem>`), matching `PdfDocumentListItemProps`'s non-generic shape exactly — the
+structural match to the precedent is now genuine, not merely claimed: both molecules take plain
+primitives/callbacks and own zero knowledge of their respective organism's generic/DTO vocabulary.
+
+### (b) Adapter preserves all prior behavior — CONFIRMED CLEAN
+
+`CardListRowAdapter` (`card-list-with-abm-dialog.tsx:38-72`), unexported, generic, `memo`-wrapped,
+cast `as <TItem>(props: CardListRowAdapterProps<TItem>) => ReactNode` (same idiom already accepted
+for `CardListRow` itself pre-fix and for `PdfDocumentListRow`'s non-generic case).
+
+- **testIDs** — `cardListItemCardTestId`/`cardListItemEditTestId`/`cardListItemRemoveTestId`
+  (`:21-25`) moved back verbatim — same three literal template strings, byte-identical to what was
+  in the molecule before this fix and to the original pre-extraction versions (`` `card-list-with-abm-dialog-card-${id}` ``
+  etc.). `card-list-with-abm-dialog.test.tsx`'s import switched from
+  `'../../molecules/card-list-row/card-list-row'` to `'./card-list-with-abm-dialog'` (`:26-29`) —
+  resolves correctly (both names are now exported from the organism module, confirmed by reading the
+  full diff: `export const cardListItem*TestId` sit at organism top-level, `card-list-with-abm-dialog.tsx:21-25`).
+  Since `check-types`/`test` are green at this SHA, the import resolves and every existing
+  `cardListItemEditTestId('item-2')`/`cardListItemRemoveTestId('item-1')` call site in that test
+  file still produces the exact same testID strings against the exact same rendered DOM.
+- **Accessible names** — `getEditAccessibilityLabel(item)`/`getRemoveAccessibilityLabel(item)`
+  resolved at the adapter boundary (`:66-67`: `editAccessibilityLabel={getEditAccessibilityLabel(item)}`,
+  `removeAccessibilityLabel={getRemoveAccessibilityLabel(item)}`) — same resolution point and same
+  builder-function contract as before the extraction; `CardListRow` itself only ever sees the
+  already-resolved string, never the builder function.
+- **Item-bound press callbacks** — `handleEditPress`/`handleRemovePress` (`:59-60`):
+  `useCallback(() => onEditPress(item), [onEditPress, item])` / `useCallback(() => onRemovePress(item),
+  [onRemovePress, item])`. Deps arrays correct — both closed-over values (`onEditPress`/`onRemovePress`
+  from the organism's `openEditDialog`/`openRemoveDialog`, and `item`) are actually read inside the
+  callback, nothing extraneous, nothing missing. This is the exact same shape `CardListRow` had
+  pre-fix (Round 2's already-`RESOLVED` perf fix) — the wrapping simply moved from the molecule to
+  the adapter, one level up, with the molecule now receiving the already-bound zero-arg
+  `onEditPress`/`onRemovePress` handlers as its flat prop contract requires. `memo` is applied to
+  `CardListRowAdapter` (`:52`) and separately to `CardListRow` (`card-list-row.tsx`, unchanged from
+  Round 2) — two `memo` layers, each guarding a different prop boundary (adapter guards against
+  `CardListItem<TItem>`/builder-function reference churn from the organism's `renderItem`; the inner
+  `CardListRow` guards against its own flat-prop boundary) — not redundant, since each memo compares
+  a distinct prop shape. No perf regression versus the pre-fix single-`memo` structure; this is at
+  least as good (arguably marginally better isolation, since a change in one adapter-level prop that
+  doesn't affect the resolved flat props — impossible here since all flat props derive from the
+  adapter's own inputs, but structurally sound regardless).
+- **End-to-end regression check** — confirmed via `card-list-with-abm-dialog.test.tsx`'s unchanged
+  `@s5`–`@s9` tests (only the import lines changed, not the test bodies): pressing item-2's edit
+  icon opens the edit dialog scoped to item-2 only (`Edit form for item-2` renders, `Edit form for
+  item-1` does not), item-1's remove icon opens/confirms against item-1 only
+  (`onRemoveConfirm`/`onEditSubmit` `toHaveBeenCalledWith(items[0]/items[1])`) — the adapter's
+  item-bound closures demonstrably still route to the correct per-row item after the refactor, not
+  just structurally plausible.
+
+### (c) No new issue introduced by the fix itself — CONFIRMED CLEAN
+
+- **Duplication/double-wrapping** — checked `card-list-row.tsx` (post-fix): no `useCallback`, no
+  handler wrapping at all inside the molecule now — `onPress={onEditPress}`/`onPress={onRemovePress}`
+  pass the adapter's already-bound handlers straight through to `IconButton`. Exactly one wrapping
+  point exists (`CardListRowAdapter`), not two — no wasted allocation, no double-bind.
+- **Generic-preserving cast** — `CardListRowAdapter`'s `as <TItem>(props: CardListRowAdapterProps<TItem>)
+  => ReactNode` cast is the same accepted idiom reviewed and cleared in Round 2 (memo erases a
+  generic function component's type parameter; the cast is a compile-time-only reinstatement, not a
+  runtime behavior change) — same reasoning applies verbatim here since the mechanics are identical
+  (a `memo`-wrapped generic function component needing its genericity restored for its one call
+  site). No new unsoundness: the adapter body only ever touches `item.id`, `item.content`,
+  `item.disabled`, `item.showEditButton`, `item.showRemoveButton`, and passes `item` opaquely to
+  `onEditPress`/`onRemovePress`/`getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` — never
+  branches on the concrete `TItem`, so the cast reflects genuinely generic-safe runtime behavior.
+- **`card-list-row.test.tsx`/`.stories.tsx` coverage** — re-read both in full (see diff above): every
+  assertion from the pre-fix version has a direct flat-prop equivalent — icon visibility
+  (`showEditButton`/`showRemoveButton` true/false/both-omitted), disabled state (opacity 0.38 +
+  `accessibilityState.disabled` on both icons), accessible names (now asserted directly against
+  literal `editAccessibilityLabel`/`removeAccessibilityLabel` prop values instead of a builder
+  function's output — same underlying claim, simpler fixture), press-callback firing with
+  cross-checks that the other handler isn't called, row-layout flex assertions (unchanged, still
+  present at the tail of the file). The dropped assertion `toHaveBeenCalledWith(baseItem)` on
+  `onEditPress`/`onRemovePress` is correctly *not* a coverage loss — that item-bound semantics claim
+  now belongs to the adapter/organism layer (and is still exercised there, per (b) above); the
+  molecule's own contract is genuinely just "call the zero-arg prop that was handed to it," which
+  the new tests assert precisely. `.stories.tsx`'s generic-cast workaround (`ComponentType<CardListRowProps<StoryFlashcard>>`)
+  is gone entirely — `CardListRow` is no longer generic, so the story now types directly against
+  `typeof CardListRow`, a net simplification, not a degradation.
+- **Stale/orphaned imports** — `card-list-with-abm-dialog.test.tsx`'s testID-helper import is now a
+  single import block from `'./card-list-with-abm-dialog'` alongside `CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID`/
+  `CardListWithABMDialog` — no leftover import of the old molecule path found (grepped the file: zero
+  remaining references to `'../../molecules/card-list-row/card-list-row'`). No dead export left
+  behind in the molecule (`cardListItemCardTestId`/etc. no longer exported from
+  `card-list-row.tsx` at all — fully moved, not duplicated). Both barrels (`molecules/index.ts`,
+  `organisms/index.ts`) use `export *`/`export type *`, so no barrel edit was needed and none is
+  missing — confirmed both wildcard re-exports still resolve correctly post-move (CI green backs
+  this, and `grep` shows no explicit named-export list anywhere that would need updating).
+- **Security** — grepped `libs/components/src/molecules/card-list-row/` and
+  `libs/components/src/organisms/card-list-with-abm-dialog/` for `secret|apikey|api_key|token|
+  password|service_role|EXPO_PUBLIC` — no matches. Delta remains pure presentational UI (props/types/
+  tests/stories only) — no service/DAO/auth/network/storage/Supabase surface touched. **security:
+  N/A** confirmed, consistent with every prior round of this feature.
+
+### Round verdict: RESOLVED
+
+The round-1-of-this-mini-gate `[arch] major` finding (reverse molecule→organism dependency) is
+cleanly fixed: `card-list-row.types.ts` is now genuinely flat/portable with zero organism import,
+structurally matching `pdf-document-list-item.types.ts`'s precedent (not merely claiming to). The
+new `CardListRowAdapter` correctly reproduces 100% of prior testID/accessible-name/press-callback
+behavior with no duplication, no double-wrapping, and a sound generic-preserving cast. Test/story
+coverage for the molecule is equivalent, not degraded; the organism's own test suite still verifies
+item-bound press semantics end-to-end. Zero new findings at any severity introduced by this fix.
