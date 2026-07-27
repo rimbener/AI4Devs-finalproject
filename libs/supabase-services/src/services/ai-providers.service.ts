@@ -2,6 +2,23 @@ import type { AiProvider, AiProviderCatalogEntry, AiProviderCatalogModel } from 
 
 import { AiProvidersDao, type RawProviderRow } from '../dao/ai-providers.dao';
 
+/** The closed six-literal `AiProvider` union, as a runtime array — the single place this DAO→
+ * Service trust boundary checks a row's raw `id` string against the type before narrowing it. */
+const AI_PROVIDER_IDS: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
+
+/** Runtime guard narrowing a raw catalog row's `id` (arbitrary DB string) to `AiProvider` before
+ * it's ever cast — a row that fails this is dropped by `getCatalog()` rather than let through
+ * (Decision 11's "degrade gracefully on a bad catalog read" precedent). */
+const isValidProviderRow = (row: RawProviderRow): row is RawProviderRow & { id: AiProvider } =>
+  (AI_PROVIDER_IDS as readonly string[]).includes(row.id);
+
 const mapModel = (row: RawProviderRow['ai_provider_models'][number]): AiProviderCatalogModel => ({
   modelId: row.model_id,
   label: row.label,
@@ -10,8 +27,8 @@ const mapModel = (row: RawProviderRow['ai_provider_models'][number]): AiProvider
   sortOrder: row.sort_order,
 });
 
-const mapEntry = (row: RawProviderRow): AiProviderCatalogEntry => ({
-  id: row.id as AiProvider,
+const mapEntry = (row: RawProviderRow & { id: AiProvider }): AiProviderCatalogEntry => ({
+  id: row.id,
   name: row.name,
   guidanceUrl: row.guidance_url,
   enabled: row.enabled,
@@ -34,7 +51,10 @@ export abstract class AiProvidersService {
   static async getCatalog(): Promise<AiProviderCatalogEntry[]> {
     try {
       const rows = await AiProvidersDao.getCatalog();
-      return [...rows].sort((a, b) => a.sort_order - b.sort_order).map(mapEntry);
+      return [...rows]
+        .filter(isValidProviderRow)
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(mapEntry);
     } catch {
       return [];
     }

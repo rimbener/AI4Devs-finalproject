@@ -2,6 +2,7 @@ import { ApiKeyManager } from '@helsoft/components';
 import { useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider, ApiKeyErrorCode } from '@helsoft/types';
+import { useMemo } from 'react';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -34,20 +35,32 @@ export const ApiKeySettingsScreen = () => {
   } = useApiKey();
   const { t, locale } = useLocalization();
 
-  const providerIds = providers.map((provider) => provider.id);
+  const providerIds = useMemo(() => providers.map((provider) => provider.id), [providers]);
   // task-6/task-7, Decision 5/12 — the catalog's enabled subset, threaded to ApiKeyManager as
   // plain ids (mirrors providerIds above): drives the saved-list's "Disabled" indicator (task-6)
   // and the add-picker's unsavedProviders filter (task-7), never re-derived from `providers`
   // downstream.
-  const enabledProviderIds = enabledProviders.map((provider) => provider.id);
-  const providerNames = Object.fromEntries(
-    providers.map((provider) => [provider.id, provider.name]),
-  ) as Record<AiProvider, string>;
-  const guidanceUrls = Object.fromEntries(
-    providers
-      .filter((provider) => provider.guidanceUrl)
-      .map((provider) => [provider.id, provider.guidanceUrl as string]),
-  ) as Partial<Record<AiProvider, string>>;
+  const enabledProviderIds = useMemo(
+    () => enabledProviders.map((provider) => provider.id),
+    [enabledProviders],
+  );
+  const providerNames = useMemo(
+    () =>
+      Object.fromEntries(providers.map((provider) => [provider.id, provider.name])) as Record<
+        AiProvider,
+        string
+      >,
+    [providers],
+  );
+  const guidanceUrls = useMemo(
+    () =>
+      Object.fromEntries(
+        providers
+          .filter((provider) => provider.guidanceUrl)
+          .map((provider) => [provider.id, provider.guidanceUrl as string]),
+      ) as Partial<Record<AiProvider, string>>,
+    [providers],
+  );
 
   const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
     t('settings.apiKey.savedStatus', {

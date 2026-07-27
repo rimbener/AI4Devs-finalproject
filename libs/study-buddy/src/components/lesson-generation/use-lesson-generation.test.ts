@@ -220,8 +220,8 @@ describe('useLessonGenerationForm', () => {
     await waitFor(() => expect(result.current.selectedProvider).toBe('groq'));
 
     expect(result.current.modelOptions).toEqual([
-      { id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' },
-      { id: 'openai/gpt-oss-120b', label: 'GPT OSS 120B' },
+      { id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' },
+      { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B' },
       { id: 'qwen/qwen3.6-27b', label: 'Qwen 3.6 27B' },
     ]);
   });

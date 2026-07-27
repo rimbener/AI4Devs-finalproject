@@ -7,6 +7,22 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
 
+/** Capture every ApiKeyManager call's props so a perf test can assert referential stability
+ * of the screen's memoized derivations across re-renders. */
+const capturedManagerProps: {
+  calls: Array<import('@helsoft/components').ApiKeyManagerProps>;
+} = { calls: [] };
+jest.mock('@helsoft/components', () => {
+  const actual = jest.requireActual('@helsoft/components') as typeof import('@helsoft/components');
+  return {
+    ...actual,
+    ApiKeyManager: (props: import('@helsoft/components').ApiKeyManagerProps) => {
+      capturedManagerProps.calls.push(props);
+      return actual.ApiKeyManager(props);
+    },
+  };
+});
+
 import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
@@ -37,6 +53,7 @@ const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => (
 describe('ApiKeySettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    capturedManagerProps.calls = [];
     mockUseAiProviders.mockReturnValue(aiProvidersValue());
     mockUseApiKey.mockReturnValue(apiKeyValue());
   });
@@ -324,5 +341,25 @@ describe('ApiKeySettingsScreen', () => {
     }
 
     openURL.mockRestore();
+  });
+
+  // perf (review finding) — providerIds/enabledProviderIds/providerNames/guidanceUrls must stay
+  // referentially stable across re-renders when the catalog hooks return unchanged values, so
+  // ApiKeyManager doesn't re-render on every parent pass.
+  it('keeps the derived provider props referentially stable across re-renders with an unchanged catalog', async () => {
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    const { rerender } = await render(<ApiKeySettingsScreen />);
+    const [firstCall] = capturedManagerProps.calls;
+
+    await act(async () => {
+      rerender(<ApiKeySettingsScreen />);
+    });
+    const lastCall = capturedManagerProps.calls.at(-1);
+
+    expect(lastCall?.providers).toBe(firstCall?.providers);
+    expect(lastCall?.enabledProviders).toBe(firstCall?.enabledProviders);
+    expect(lastCall?.providerNames).toBe(firstCall?.providerNames);
+    expect(lastCall?.guidanceUrls).toBe(firstCall?.guidanceUrls);
   });
 });

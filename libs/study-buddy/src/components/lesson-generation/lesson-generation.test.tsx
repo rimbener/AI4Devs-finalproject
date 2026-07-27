@@ -180,7 +180,7 @@ describe('LessonGeneration', () => {
 
     expect(screen.getByText('generation.provider.heading')).toBeTruthy();
     expect(screen.getByText('generation.model.heading')).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT-OSS 20B', checked: true })).toBeTruthy();
   });
 
   // @s20 — valid stored preference preselects provider and model on reopen.
@@ -263,7 +263,7 @@ describe('LessonGeneration', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'GPT-OSS 20B', checked: true })).toBeTruthy();
     });
   });
 
@@ -938,7 +938,7 @@ describe('LessonGeneration', () => {
       capturedPanelValue.current?.onModelChange?.('openai/gpt-oss-120b');
     });
 
-    expect(screen.getByRole('radio', { name: 'GPT OSS 120B', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT-OSS 120B', checked: true })).toBeTruthy();
   });
 
   it('does not persist a preference on generate for the platform path', async () => {
@@ -962,7 +962,7 @@ describe('LessonGeneration', () => {
       showPickers: true,
       showMissingKeyGate: false,
       canGenerate: true,
-      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' }],
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
       selectedProvider: 'groq',
       selectedModel: undefined,
       setSelectedModel: jest.fn(),

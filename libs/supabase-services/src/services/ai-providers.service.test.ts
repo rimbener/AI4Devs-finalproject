@@ -106,6 +106,25 @@ describe('AiProvidersService', () => {
 
       await expect(AiProvidersService.getCatalog()).resolves.toEqual([]);
     });
+
+    // Trust-boundary guard (review finding) — a row whose id isn't one of the six closed
+    // AiProvider literals is dropped rather than let through with an unchecked cast (Decision 11
+    // precedent: degrade gracefully on a bad catalog read).
+    it('filters out a row whose id is not a member of the AiProvider union', async () => {
+      dao.getCatalog.mockResolvedValue([
+        ...rawRows,
+        {
+          id: 'not-a-real-provider',
+          name: 'Bogus',
+          guidance_url: null,
+          enabled: true,
+          sort_order: 3,
+          ai_provider_models: [],
+        },
+      ]);
+
+      await expect(AiProvidersService.getCatalog()).resolves.toEqual([mappedGroq, mappedOpenai]);
+    });
   });
 
   describe('getEnabledCatalog', () => {

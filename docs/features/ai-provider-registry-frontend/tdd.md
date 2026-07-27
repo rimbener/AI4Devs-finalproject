@@ -53,30 +53,14 @@ unknown-provider regression assertions only. New locale keys: `settings.apiKey.m
 | s23 | repo-wide grep (task-11); re-run in task-14 against the final diff |
 
 **Slice 3 summary:**
-- **task-11**: deleted `AI_PROVIDERS`/`AI_MODEL_REGISTRY` from `ai-provider.ts` (keeps only
-  `AiProvider`/`AiProviderCatalogEntry`/`AiProviderCatalogModel`); deleted `libs/types/src/
-  api-key-settings.ts` (`PROVIDER_NAME_KEYS`/`API_KEY_SETTINGS_GUIDANCE_URLS`) outright, barrel
-  export removed. `aiModel.*`/`settings.apiKey.provider.*` removed from all 4 locale bundles
-  (`migration-coverage.test.ts` needed no change — flattens `en.ts` dynamically). All consumers
-  (component/study-buddy tests+stories, supabase Deno comments) updated to derive ids from
-  `AI_PROVIDER_CATALOG_FIXTURE`/`providerNames`; dead `tMap` entries for the deleted key family
-  removed from 3 component test files. Repo-wide grep for all 4 constants + both key-prefixes:
-  zero matches outside `docs/`/`user-stories/` planning docs. `ai-provider.test.ts` trimmed to
-  surviving shape-lock tests (`@helsoft/types` 38, was 48 — delta is the deleted registry tests,
-  redundant with catalog-based coverage per Slice 1/2 map above).
-- **task-12**: two new `use-ai-providers.test.ts` cases (reorder, rename/guidanceUrl) via
-  `queryClient.invalidateQueries` on the same mounted hook (no remount) — proves no memoization
-  ahead of `useQuery`. No production change. `@helsoft/hooks` 160 (+2).
-- **task-13**: new `libs/study-buddy/src/components/ai-providers.integration.test.ts` — real
-  `useAiProviders`/`useApiKeyManager`/`useLessonGenerationForm`, only the Supabase client boundary
-  mocked (`client.from('ai_providers').select(...)`, session mocked per `api-key.integration.
-  test.ts`'s convention); `useApiKey`/`useProfile`/`GenerationPreferenceService` mocked as
-  incidental collaborators. Required barrel-exporting `useApiKeyManager` from `@helsoft/components`
-  (`organisms/index.ts`, was internal-only). Renamed/reordered/one-disabled fixture proves order/
-  identity/visibility end to end. `@helsoft/study-buddy` 311 (+1).
-- **task-14**: wrap-up sweep, no new behavior. Confirmed `AiProviderCatalogEntry`/Model,
-  `AiProvidersDao`/`Service`, `useAiProviders`/`AI_PROVIDERS_QUERY_KEY` all barrel-reachable
-  (already true). s19/s23 both re-hold on the final diff.
+- **task-11**: deleted `AI_PROVIDERS`/`AI_MODEL_REGISTRY`/`api-key-settings.ts` registry outright;
+  consumers derive ids from `AI_PROVIDER_CATALOG_FIXTURE`/`providerNames`. Zero grep hits outside
+  docs. `@helsoft/types` 38 (was 48, deleted registry tests).
+- **task-12**: 2 new `use-ai-providers.test.ts` cases (reorder, rename/guidanceUrl) via
+  `invalidateQueries`, same mounted hook. `@helsoft/hooks` 160 (+2).
+- **task-13**: new `ai-providers.integration.test.ts` — real hooks, only Supabase client boundary
+  mocked; barrel-exported `useApiKeyManager`. `@helsoft/study-buddy` 311 (+1).
+- **task-14**: wrap-up sweep, no new behavior; s19/s23 re-hold on final diff.
 
 **Slice 3 gate:** `@helsoft/types` 38, `@helsoft/hooks` 160 (+2), `@helsoft/supabase-services` 308,
 `@helsoft/components` 500, `@helsoft/study-buddy` 311 (+1), `@helsoft/localization` 245 — all
@@ -84,3 +68,28 @@ green. `pnpm turbo run check-types`/`lint` clean, full repo, all 14 packages. Re
 `AI_PROVIDERS`/`AI_MODEL_REGISTRY`/`PROVIDER_NAME_KEYS`/`API_KEY_SETTINGS_GUIDANCE_URLS`/
 `aiModel.`/`settings.apiKey.provider.`: zero matches outside `docs/`/`user-stories/` planning
 documents. Feature complete — all 14 tasks `done`.
+
+## Review round 1 fixes (reviews_lead findings)
+- **[major] duplicated catalog fixture**: `ai-provider-test-factories.ts` no longer hand-copies
+  the catalog; imports `AI_PROVIDER_CATALOG_FIXTURE` from `@helsoft/hooks`, rebuilds
+  `aiProvidersValue()` on top of it. Fixed 6 typo'd-label assertions (`GPT OSS` → `GPT-OSS`) in
+  `use-lesson-generation.test.ts`/`lesson-generation.test.tsx` that had accidentally pinned the
+  drifted (wrong) label. `@helsoft/study-buddy` 312 (net 0, one factory file shrank, no new tests
+  needed here).
+- **[minor] unmemoized derivations**: `api-key-settings-screen.tsx` wraps `providerIds`/
+  `enabledProviderIds`/`providerNames`/`guidanceUrls` in `useMemo`. New test (impl-first, UI):
+  `api-key-settings-screen.test.tsx` "keeps the derived provider props referentially stable across
+  re-renders" — captures `ApiKeyManager` props via a partial `@helsoft/components` mock, asserts
+  `toBe` identity across a forced re-render. Confirmed it fails pre-fix, passes post-fix.
+  `@helsoft/study-buddy` 312 (+1).
+- **[minor] unchecked DAO→Service cast**: `ai-providers.service.ts` adds `isValidProviderRow`
+  (row-level type-predicate narrowing `row.id: string` to `AiProvider`) before `mapEntry`; a row
+  failing it is filtered out of `getCatalog()` (Decision 11 degrade-gracefully precedent) — no
+  cross-layer import from `study-buddy`'s `isAiProvider` (layering: `study-buddy` depends on
+  `supabase-services`, not reverse). RED→GREEN: new test "filters out a row whose id is not a
+  member of the AiProvider union" in `ai-providers.service.test.ts`, confirmed failing before the
+  guard existed. `@helsoft/supabase-services` 309 (+1).
+
+**Round 1 gate:** `@helsoft/study-buddy` 39 suites/312 tests green; `@helsoft/supabase-services` 37
+suites/309 tests green; `pnpm turbo run lint`/`check-types` clean for both workspaces; `pnpm
+format` no-op (already clean).
