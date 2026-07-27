@@ -66,7 +66,13 @@ export const CardListWithABMDialog = <TItem,>({
   const { dialogState, openEditDialog, openRemoveDialog, closeDialog } =
     useCardListWithABMDialog<TItem>();
 
-  const keyExtractor = useCallback((item: CardListItem<TItem>) => item.id, []);
+  const keyExtractor = useCallback(
+    (item: CardListItem<TItem>) => item.id,
+    // Stryker disable next-line ArrayDeclaration: keyExtractor closes over nothing but its own
+    // `item` param — the (unused) dependency array can never observably change its behavior
+    // (mirrors pdf-document-list.tsx's identical keyExtractor equivalent).
+    [],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: CardListItem<TItem> }) => (
@@ -82,6 +88,13 @@ export const CardListWithABMDialog = <TItem,>({
   );
 
   const handleEditConfirm = () => {
+    // Stryker disable next-line OptionalChaining: dialogState is never null in any reachable
+    // call — this Dialog's own onConfirm (the Save button) only exists in the render tree
+    // while `open`, i.e. while `dialogState?.type === 'edit'` is already true (Modal renders no
+    // children while `visible={false}`) — so dropping `?.` can never observably differ. The
+    // ConditionalExpression `true` mutant on the same line is a separate, documented equivalent
+    // (see mutation.md) — NOT disabled here, since the `false` mutant on this same condition
+    // must stay tracked as Killed by the existing onEditSubmit-called-once assertion.
     if (dialogState?.type === 'edit') {
       onEditSubmit(dialogState.item);
     }
@@ -89,6 +102,7 @@ export const CardListWithABMDialog = <TItem,>({
   };
 
   const handleRemoveConfirm = () => {
+    // Stryker disable next-line OptionalChaining: same equivalence as handleEditConfirm above.
     if (dialogState?.type === 'remove') {
       onRemoveConfirm(dialogState.item);
     }

@@ -434,4 +434,128 @@ describe('CardListWithABMDialog', () => {
     expect(screen.getByText('Save')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
   });
+
+  // Mutation coverage: the list/card testIDs are exported constants/helpers that both the
+  // component and this file's other assertions import from the same module, so mutating the
+  // underlying literal to '' is invisible to a self-referential query. These two assert the
+  // literal, hardcoded testID strings instead.
+  it('renders the list under its documented literal testID', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    expect(screen.getByTestId('card-list-with-abm-dialog-list')).toBeTruthy();
+  });
+
+  it("renders a card's testID as the documented literal template", async () => {
+    await render(<CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />);
+
+    expect(screen.getByTestId('card-list-with-abm-dialog-card-item-1')).toBeTruthy();
+  });
+
+  // Mutation coverage (line 81 ArrayDeclaration): renderItem must be recomputed — and use the
+  // latest getEditAccessibilityLabel/getRemoveAccessibilityLabel closures — on a rerender that
+  // changes those props without changing items, not just stay memoized off a stale FlatList cell.
+  it('reflects new getEditAccessibilityLabel/getRemoveAccessibilityLabel on rerender, same item', async () => {
+    const { rerender } = await render(
+      <CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />,
+    );
+
+    expect(
+      within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button').props
+        .accessibilityLabel,
+    ).toBe('Edit First card');
+
+    await rerender(
+      <CardListWithABMDialog
+        {...makeProps({
+          items: [items[0]!],
+          getEditAccessibilityLabel: () => 'Updated edit label',
+          getRemoveAccessibilityLabel: () => 'Updated remove label',
+        })}
+      />,
+    );
+
+    expect(
+      within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button').props
+        .accessibilityLabel,
+    ).toBe('Updated edit label');
+    expect(
+      within(screen.getByTestId(cardListItemRemoveTestId('item-1'))).getByRole('button').props
+        .accessibilityLabel,
+    ).toBe('Updated remove label');
+  });
+
+  // Mutation coverage — static layout tokens in the StyleSheet: this component's styles are
+  // plain (non-variant) objects, so — unlike Unistyles variant styles elsewhere in this lib —
+  // they DO flatten fully (including color) onto RN elements under jest-expo (verified: probed
+  // the rendered tree directly). So each of these is a real behavioral assertion, not a brittle
+  // cosmetic snapshot.
+  it('lays out the root container with flex and s4 item spacing', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    const list = screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID);
+    expect(flattenStyle(list.parent!.props.style)).toEqual({ flex: 1, gap: 16 });
+  });
+
+  it('lays out the header as a row, centered, spaced apart, with s3 gap', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    const header = screen.getByText('My List').parent;
+    expect(flattenStyle(header!.props.style)).toEqual({
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+    });
+  });
+
+  it('shrinks the title so it never pushes the add button off-screen', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    expect(flattenStyle(screen.getByText('My List').props.style).flexShrink).toBe(1);
+  });
+
+  it('gives the list flex:1 to fill available height', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    const list = screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID);
+    expect(flattenStyle(list.props.style)).toEqual({ flex: 1 });
+  });
+
+  it('spaces list content by s3', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    const list = screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID);
+    expect(flattenStyle(list.props.contentContainerStyle)).toEqual({ gap: 12 });
+  });
+
+  it('colors the empty-state message', async () => {
+    await render(
+      <CardListWithABMDialog
+        {...makeProps({ items: [], emptyStateMessage: 'Nothing here yet' })}
+      />,
+    );
+
+    expect(flattenStyle(screen.getByText('Nothing here yet').props.style).color).toBeDefined();
+  });
+
+  it("lays out a row's content and actions as a centered horizontal row with spacing", async () => {
+    await render(<CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />);
+
+    const card = screen.getByTestId(cardListItemCardTestId('item-1'));
+    const row = card.children[0] as typeof card;
+    const content = row.children[0] as typeof card;
+    const actions = row.children[1] as typeof card;
+
+    expect(flattenStyle(row.props.style)).toEqual({
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    });
+    expect(flattenStyle(content.props.style)).toEqual({ flex: 1 });
+    expect(flattenStyle(actions.props.style)).toEqual({
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    });
+  });
 });

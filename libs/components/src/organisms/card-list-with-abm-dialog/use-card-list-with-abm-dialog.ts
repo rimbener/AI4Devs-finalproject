@@ -19,17 +19,31 @@ type CardListDialogState<TItem> = {
 export const useCardListWithABMDialog = <TItem>() => {
   const [dialogState, setDialogState] = useState<CardListDialogState<TItem>>(null);
 
-  const openEditDialog = useCallback((item: CardListItem<TItem>) => {
-    setDialogState({ type: 'edit', item });
-  }, []);
+  const openEditDialog = useCallback(
+    (item: CardListItem<TItem>) => {
+      setDialogState({ type: 'edit', item });
+    },
+    // Stryker disable next-line ArrayDeclaration: setDialogState is a React state setter,
+    // referentially stable for the component's lifetime — the dependency array's contents can
+    // never observably change identity or behavior of this callback.
+    [],
+  );
 
-  const openRemoveDialog = useCallback((item: CardListItem<TItem>) => {
-    setDialogState({ type: 'remove', item });
-  }, []);
+  const openRemoveDialog = useCallback(
+    (item: CardListItem<TItem>) => {
+      setDialogState({ type: 'remove', item });
+    },
+    // Stryker disable next-line ArrayDeclaration: same setState-identity guarantee as above.
+    [],
+  );
 
-  const closeDialog = useCallback(() => {
-    setDialogState(null);
-  }, []);
+  const closeDialog = useCallback(
+    () => {
+      setDialogState(null);
+    },
+    // Stryker disable next-line ArrayDeclaration: same setState-identity guarantee as above.
+    [],
+  );
 
   return { dialogState, openEditDialog, openRemoveDialog, closeDialog };
 };
