@@ -91,6 +91,20 @@ describe('useApiKey', () => {
     expect(result.current.status).toEqual(emptyStatus);
   });
 
+  // Bug fix (splash-screen-logomark mini-gate) — a disabled query's `isPending` never resolves
+  // to false in TanStack Query v5 (a known v5 gotcha), so a logged-out visitor must resolve
+  // `isLoading` via `deriveIsLoading`, exactly like `useProfile` already does, instead of trusting
+  // the raw (permanently-pending) query status. Without this, `useProfile().isLoading` never
+  // settles for a logged-out visitor and the app hangs on the splash screen forever.
+  it('resolves isLoading to false for a logged-out visitor instead of staying stuck pending', async () => {
+    mockUseSession.mockReturnValue(noSession);
+
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(service.getApiKeyStatus).not.toHaveBeenCalled();
+  });
+
   // Mutation-kill — the disabled query for an unauthenticated visitor registers under the exact
   // empty-string-scoped key, not some other placeholder.
   it("registers the disabled query under apiKeyStatusQueryKey('') when there is no session", () => {
