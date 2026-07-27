@@ -1,4 +1,5 @@
-import { useCallback } from 'react';
+import type { ReactNode } from 'react';
+import { memo, useCallback } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { Button } from '../../atoms/button/button';
@@ -94,6 +95,22 @@ export const CardListWithABMDialog = <TItem,>({
     closeDialog();
   };
 
+  // Shared isSubmitting-swap: while submitting, the open dialog can't be dismissed and hides
+  // its own cancel/submit row (`EMPTY_DIALOG_ACTIONS`); reused by both Dialog blocks below.
+  const dialogInteractionProps = isSubmitting
+    ? { onClose: undefined, actions: EMPTY_DIALOG_ACTIONS }
+    : { onClose: closeDialog, actions: undefined };
+
+  // Shared isSubmitting-swap for the dialog body: while submitting, show SubmittingIndicator
+  // instead of the caller-supplied content; reused by both Dialog blocks below.
+  const renderDialogBody = (
+    type: 'edit' | 'remove',
+    render: (item: CardListItem<TItem>) => ReactNode,
+  ): ReactNode => {
+    if (dialogState?.type !== type) return null;
+    return isSubmitting ? <SubmittingIndicator /> : render(dialogState.item);
+  };
+
   return (
     <View style={styles.root}>
       <View style={styles.header}>
@@ -120,37 +137,23 @@ export const CardListWithABMDialog = <TItem,>({
       )}
       <Dialog
         open={dialogState?.type === 'edit'}
-        onClose={isSubmitting ? undefined : closeDialog}
+        {...dialogInteractionProps}
         headline={editDialogTitle}
         confirmLabel={editSubmitLabel}
         cancelLabel={editCancelLabel}
         onConfirm={handleEditConfirm}
-        actions={isSubmitting ? EMPTY_DIALOG_ACTIONS : undefined}
       >
-        {dialogState?.type === 'edit' ? (
-          isSubmitting ? (
-            <SubmittingIndicator />
-          ) : (
-            renderEditForm(dialogState.item)
-          )
-        ) : null}
+        {renderDialogBody('edit', renderEditForm)}
       </Dialog>
       <Dialog
         open={dialogState?.type === 'remove'}
-        onClose={isSubmitting ? undefined : closeDialog}
+        {...dialogInteractionProps}
         headline={removeDialogTitle}
         confirmLabel={removeSubmitLabel}
         cancelLabel={removeCancelLabel}
         onConfirm={handleRemoveConfirm}
-        actions={isSubmitting ? EMPTY_DIALOG_ACTIONS : undefined}
       >
-        {dialogState?.type === 'remove' ? (
-          isSubmitting ? (
-            <SubmittingIndicator />
-          ) : (
-            renderRemoveConfirmation(dialogState.item)
-          )
-        ) : null}
+        {renderDialogBody('remove', renderRemoveConfirmation)}
       </Dialog>
     </View>
   );
@@ -163,47 +166,54 @@ export const CardListWithABMDialog = <TItem,>({
  * Each icon's accessible name is built per-action by the caller-supplied
  * `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` props (WCAG 4.1.2 — `IconButton`
  * always renders `accessibilityRole="button"`, so an accessible name must not be missing).
+ * Memoized — keeps per-cell handlers stable across parent `FlatList` re-renders
+ * (full-review minor [perf]; mirrors `pdf-document-list.tsx`'s `PdfDocumentListRow`).
  */
-const CardListRow = <TItem,>({
+const CardListRow = memo(function CardListRow<TItem>({
   item,
   onEditPress,
   onRemovePress,
   getEditAccessibilityLabel,
   getRemoveAccessibilityLabel,
-}: CardListRowProps<TItem>) => (
-  <Card
-    testID={cardListItemCardTestId(item.id)}
-    style={item.disabled ? styles.disabledCard : undefined}
-  >
-    <View style={styles.row}>
-      <View style={styles.content}>{item.content}</View>
-      <View style={styles.actions}>
-        {item.showEditButton ? (
-          <View testID={cardListItemEditTestId(item.id)}>
-            <IconButton
-              icon="edit"
-              size={layout.touchTarget}
-              disabled={item.disabled}
-              accessibilityLabel={getEditAccessibilityLabel(item)}
-              onPress={() => onEditPress(item)}
-            />
-          </View>
-        ) : null}
-        {item.showRemoveButton ? (
-          <View testID={cardListItemRemoveTestId(item.id)}>
-            <IconButton
-              icon="delete"
-              size={layout.touchTarget}
-              disabled={item.disabled}
-              accessibilityLabel={getRemoveAccessibilityLabel(item)}
-              onPress={() => onRemovePress(item)}
-            />
-          </View>
-        ) : null}
+}: CardListRowProps<TItem>) {
+  const handleEditPress = useCallback(() => onEditPress(item), [onEditPress, item]);
+  const handleRemovePress = useCallback(() => onRemovePress(item), [onRemovePress, item]);
+
+  return (
+    <Card
+      testID={cardListItemCardTestId(item.id)}
+      style={item.disabled ? styles.disabledCard : undefined}
+    >
+      <View style={styles.row}>
+        <View style={styles.content}>{item.content}</View>
+        <View style={styles.actions}>
+          {item.showEditButton ? (
+            <View testID={cardListItemEditTestId(item.id)}>
+              <IconButton
+                icon="edit"
+                size={layout.touchTarget}
+                disabled={item.disabled}
+                accessibilityLabel={getEditAccessibilityLabel(item)}
+                onPress={handleEditPress}
+              />
+            </View>
+          ) : null}
+          {item.showRemoveButton ? (
+            <View testID={cardListItemRemoveTestId(item.id)}>
+              <IconButton
+                icon="delete"
+                size={layout.touchTarget}
+                disabled={item.disabled}
+                accessibilityLabel={getRemoveAccessibilityLabel(item)}
+                onPress={handleRemovePress}
+              />
+            </View>
+          ) : null}
+        </View>
       </View>
-    </View>
-  </Card>
-);
+    </Card>
+  );
+}) as <TItem>(props: CardListRowProps<TItem>) => ReactNode;
 
 const styles = StyleSheet.create((theme) => ({
   root: {
