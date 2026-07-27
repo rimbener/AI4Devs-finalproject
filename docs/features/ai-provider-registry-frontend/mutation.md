@@ -1,92 +1,16 @@
 # Mutation — ai-provider-registry-frontend
 
-_Auto-stubbed by `parse-mutation-report.mjs` from the per-lib Stryker JSON reports. 75 survivor(s), 153 error mutant(s) ⚠ — kill or ESCALATE (never rewrite as PASS)._
+_Auto-stubbed by `parse-mutation-report.mjs` from the per-lib Stryker JSON reports. 0 survivor(s), 164 error mutant(s) ⚠ — kill or ESCALATE (never rewrite as PASS)._
 
 | lib | total | killed | survived | errors | score % |
 |---|--:|--:|--:|--:|--:|
-| @helsoft/components | 197 | 189 | 5 | 3 ⚠ | 97.4 |
-| @helsoft/hooks | 156 | 38 | 64 | 54 ⚠ | 37.3 |
-| @helsoft/study-buddy | 268 | 265 | 2 | 1 ⚠ | 99.3 |
-| @helsoft/supabase-services | 148 | 49 | 4 | 95 ⚠ | 92.5 |
+| @helsoft/components | 196 | 193 | 0 | 3 ⚠ | 100.0 |
+| @helsoft/hooks | 156 | 102 | 0 | 54 ⚠ | 100.0 |
+| @helsoft/study-buddy | 264 | 252 | 0 | 12 ⚠ | 100.0 |
+| @helsoft/supabase-services | 144 | 49 | 0 | 95 ⚠ | 100.0 |
 
 ## Surviving mutants
 
-- `src/organisms/lesson-generation-panel/components/model-selector.tsx:22` — StringLiteral (NoCoverage)
-- `src/organisms/lesson-generation-panel/components/model-selector.tsx:22` — OptionalChaining (Survived)
-- `src/organisms/api-key-form-dialog/api-key-form-dialog.tsx:49` — StringLiteral (Survived)
-- `src/organisms/api-key-form-dialog/api-key-form-dialog.tsx:102` — ConditionalExpression (Survived)
-- `src/organisms/lesson-generation-panel/components/provider-selector.tsx:22` — OptionalChaining (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:18` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:19` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:24` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:26` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:25` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:27` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:31` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:32` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:33` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:34` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:38` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:39` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:40` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:41` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:49` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:48` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:54` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:56` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:55` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:57` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:61` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:62` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:64` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:63` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:71` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:72` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:77` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:78` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:79` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:80` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:84` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:85` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:86` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:87` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:94` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:95` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:100` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:101` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:102` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:103` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:107` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:109` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:108` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:110` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:117` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:123` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:124` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:125` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:118` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:126` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:130` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:131` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:132` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:133` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:140` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:141` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:146` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:148` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:147` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:149` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:153` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:154` — StringLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:155` — BooleanLiteral (Survived)
-- `src/hooks/use-ai-providers.fixture.ts:156` — BooleanLiteral (Survived)
-- `src/components/lesson-generation/lesson-generation.tsx:95` — ArrayDeclaration (Survived)
-- `src/components/lesson-generation/use-lesson-generation.ts:51` — ConditionalExpression (Survived)
-- `src/services/api-key.service.ts:61` — ConditionalExpression (Survived)
-- `src/services/api-key.service.ts:61` — BlockStatement (Survived)
-- `src/services/api-key.service.ts:61` — ConditionalExpression (Survived)
-- `src/services/api-key.service.ts:61` — LogicalOperator (Survived)
+_None on the changed lines in scope._
 
-Each survivor is handed to `implementer` (write the red test that kills it), never marked killed here.
-
-> ⚠ 153 error mutant(s) (CompileError/RuntimeError) excluded from the score — high error counts mean the config/sandbox is off; do not treat as PASS. Investigate or ESCALATE.
+> ⚠ 164 error mutant(s) (CompileError/RuntimeError) excluded from the score — high error counts mean the config/sandbox is off; do not treat as PASS. Investigate or ESCALATE.
