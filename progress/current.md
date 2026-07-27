@@ -1,4 +1,4 @@
 # Current session
 
-**Active feature:** _(none)_
-**Notes:** tanstack-query-hooks-migration reached `pr_ready` on `feat/tanstack-query-hooks-migration` (worktree `.worktrees/tanstack-query-hooks-migration`, cut from `feature-entrega3-HernanLaura`). Human opens/merges the PR next.
+**Active feature:** card-list-with-abm-dialog
+**Notes:** started on `feat/card-list-with-abm-dialog` (worktree `.worktrees/card-list-with-abm-dialog`, cut from `feature-entrega3-HernanLaura`). Phase: pending → spec.
