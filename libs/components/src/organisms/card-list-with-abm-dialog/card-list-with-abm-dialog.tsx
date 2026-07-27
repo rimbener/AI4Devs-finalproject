@@ -63,19 +63,19 @@ export const CardListWithABMDialog = <TItem,>({
     [openEditDialog, openRemoveDialog],
   );
 
-  const handleEditConfirm = useCallback(() => {
+  const handleEditConfirm = () => {
     if (dialogState?.type === 'edit') {
       onEditSubmit(dialogState.item);
     }
     closeDialog();
-  }, [dialogState, onEditSubmit, closeDialog]);
+  };
 
-  const handleRemoveConfirm = useCallback(() => {
+  const handleRemoveConfirm = () => {
     if (dialogState?.type === 'remove') {
       onRemoveConfirm(dialogState.item);
     }
     closeDialog();
-  }, [dialogState, onRemoveConfirm, closeDialog]);
+  };
 
   return (
     <View style={styles.root}>
