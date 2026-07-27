@@ -2,7 +2,7 @@
 
 > **Rule of precedence:** if this file conflicts with any agent/command/rule file, **this file wins** — except the canonical project rules in `.agents/rules/` (`global.mdc`, `hooks-service-dao.mdc`, `state.mdc`, `state-sharing.mdc`, `atomic-design.mdc`, `component-split.mdc`, `e2e.mdc`, …) and `.agents/DESIGN.md` for UI/copy, which always take precedence on _how code is written_. The step-by-step protocol lives in `.agents/agents/orchestrator_lead.md` and is **not** duplicated here.
 
-Takes one user story from `user-stories/` to a validated, PR-ready feature through four phases, driven by `orchestrator_lead` with **one human gate up front** — the human approves `spec_partner`'s **plan** (it runs in plan mode: grills read-only, presents the plan, writes nothing until approved). Full rationale: `/ORCHESTRATOR_PLAN.md`.
+Takes one user story from `user-stories/` to a validated, PR-ready feature through four phases, driven by `orchestrator_lead` with **exactly one human approval** — `spec_partner` grills the human (asks questions), writes the spec + Gherkin contract, `spec_reviewer` vets them, and the human then approves the **spec + Gherkin once**. Full rationale: `/ORCHESTRATOR_PLAN.md`.
 
 ## Principles
 
@@ -19,13 +19,11 @@ Takes one user story from `user-stories/` to a validated, PR-ready feature throu
 
 ```
 pending
-  → spec_partner (PLAN MODE)  → grills read-only → presents a PLAN (spec overview +
-        task/slice breakdown + @s scenario outline); writes NOTHING yet
-  → ⏸ HUMAN GATE: approve the plan (single approval, up front)                          [approved]
-  → spec_partner (author)     → spec.md, tasks.md, task-N.md, gherkin-scenarios.md
-        (+ risks.md → gitignored tmp/<name>/, landed in docs/ at PR time)              [spec_drafted]
-  → spec_reviewer             → review-spec.md; vets the WRITTEN bundle
+  → spec_partner        → grills the human (asks questions) → writes spec.md, tasks.md,
+        task-N.md, gherkin-scenarios.md (+ risks.md → gitignored tmp/<name>/)           [spec_drafted]
+  → spec_reviewer       → review-spec.md; vets the bundle
         (1 round: reviews once, spec_partner fixes every finding, no re-review)         [spec_ready]
+  → ⏸ HUMAN GATE: approve the spec + Gherkin contract (the pipeline's ONE approval)     [approved]
   → implementer       → per vertical slice: build (TDD for .ts / impl-first for .tsx) → reviewer_slice (ONE agent,
         checks all .agents/rules/ + design + accessibility; 1 round, no re-review)
         → fix every finding → commit; no slice N+1 until findings fixed                 [in_progress]
@@ -46,8 +44,8 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 | Agent | Phase | Writes | Edits code? |
 |---|---|---|---|
 | `orchestrator_lead` | orchestrates all | `progress/*`, phase in `tasks.md` | no |
-| `spec_partner` | 1 — plan mode: grill (`grill-me`) → plan → (after approval) author spec + `gherkin-scenarios.md` | spec bundle + `gherkin-scenarios.md` | no |
-| `spec_reviewer` | 1 — spec review (post-approval, on the written bundle) | `review-spec.md` | no |
+| `spec_partner` | 1 — grill (`grill-me`) then write spec + `gherkin-scenarios.md` | spec bundle + `gherkin-scenarios.md` | no |
+| `spec_reviewer` | 1 — spec review (pre-gate, on the written bundle) | `review-spec.md` | no |
 | `implementer` | 2 — build (TDD for `.ts` / impl-first for `.tsx`) | `src/`, `tests/`, `tdd.md`, task statuses | **yes** |
 | `reviewer_slice` | 2 — per slice (all `.agents/rules/` + design + accessibility, one agent) | `review-slice.md` | no |
 | `reviews_lead` | 3 — full review round (CI once, invokes the sole reviewer) | `review.md` | no |
@@ -65,8 +63,8 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 
 ## Gates (all must pass to advance — full detail in `orchestrator_lead.md` §Protocol)
 
-1. **HUMAN GATE (up front)** — the human approves `spec_partner`'s **plan** (spec overview + task/slice breakdown + `@s` scenario outline). `spec_partner` writes nothing until this passes → `approved`.
-2. **spec_drafted → spec_ready** — after authoring, `spec_reviewer` reviews the written bundle **once (1 round)**; `spec_partner` fixes every finding; no re-review; an unresolvable finding → escalate.
+1. **spec_drafted → spec_ready** — `spec_partner` grills + writes the bundle, then `spec_reviewer` reviews it **once (1 round)**; `spec_partner` fixes every finding; no re-review; an unresolvable finding → escalate. (Automated — not a human approval.)
+2. **HUMAN GATE (the one approval)** — the human approves `spec.md` + `gherkin-scenarios.md` together → `approved`. This is the pipeline's only human sign-off.
 3. **per-slice** — lint + check-types + tests (+ e2e where relevant) green; slice `@s` covered; `tdd.md` ≤ 8 000 bytes; `reviewer_slice` reviews **once (1 round)**, every finding fixed (no minors accepted), no re-review; unresolvable → escalate.
 4. **full review** — every finding fixed, any severity (≤ 2 rounds); after round 2: open blocker/major → escalate; only minors → ship as documented, human-accepted risks.
 5. **mutation** — once after the full review; 100% killed on the changed lines vs the delivery branch (≤ 2 rounds, else **escalate** — never a fabricated PASS).

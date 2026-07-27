@@ -512,3 +512,11 @@ These prompts drove refinement, reconciliation and review across the documents r
 6. /commit
 
 7. re-read the final changes and update .md files
+
+---
+
+## Anexo — Prompts de la sesión: una sola aprobación humana (spec + Gherkin), sin aprobar el plan aparte
+
+> Prompts del usuario (verbatim, en orden) de la sesión que colapsó la Fase 1 a **una única aprobación humana**: `spec_partner` hace preguntas (grill), escribe la spec + el Gherkin, `spec_reviewer` los revisa (1 ronda, automático), y el humano aprueba **una sola vez** la spec + Gherkin — se eliminó el paso de aprobar un plan por adelantado. Se actualizó `spec_partner.md`, `orchestrator_lead.md`, `spec_reviewer.md`, el comando y `ORCHESTRATOR.md`/`ORCHESTRATOR_PLAN.md`.
+
+1. Now I need to approve the plan, and then approve the spec and the Gherkin and everything. I don't want that. I just want the plan mode to ask me questions, create the spec, create the Gherkin, and I will approve only one thing.

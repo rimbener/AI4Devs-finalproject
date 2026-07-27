@@ -1,6 +1,6 @@
 # Agentic Orchestrator Workflow — Implementation Plan
 
-> **Superseded in part (2026-07-11, token-efficiency revision):** reviewer rubrics now live **in each reviewer's agent file** (`.agents/rules/review-standards.md` was removed); **`spec_partner` runs in plan mode** — it grills read-only and presents a plan; the single human gate approves the **plan** up front, and only then does it author the bundle (which `spec_reviewer` vets); per-slice reviews run as a single combined `reviewer_slice` agent (rules + design + accessibility); **the full review has a single reviewer** — `reviewer_engineering` (code · architecture · performance · security) on Sonnet — with **design & accessibility handled per-slice by `reviewer_slice`** (not repeated in the full review); `reviews_lead` runs CI once per round and invokes that one reviewer; mutation runs **once, after the full review** (changed files vs the **delivery branch** `feature-entrega*`, never blind `main`) — the pre-review pass was removed, and the gate is **escalate-only** (never a fabricated PASS). Review artifacts are a **durable history** (kept, findings marked resolved — never emptied). Ops go through checked-in scripts (`bootstrap-worktree.sh`, `set-feature-phase.sh`, mutation helpers) — no hand-rolled `python3`/`sed`. Where this plan conflicts, `.agents/ORCHESTRATOR.md` wins.
+> **Superseded in part (2026-07-11, token-efficiency revision):** reviewer rubrics now live **in each reviewer's agent file** (`.agents/rules/review-standards.md` was removed); **`spec_partner` grills the human (asks questions) then writes the spec + Gherkin**; `spec_reviewer` vets them, and the human approves the **spec + Gherkin exactly once** (no separate plan-approval step); per-slice reviews run as a single combined `reviewer_slice` agent (rules + design + accessibility); **the full review has a single reviewer** — `reviewer_engineering` (code · architecture · performance · security) on Sonnet — with **design & accessibility handled per-slice by `reviewer_slice`** (not repeated in the full review); `reviews_lead` runs CI once per round and invokes that one reviewer; mutation runs **once, after the full review** (changed files vs the **delivery branch** `feature-entrega*`, never blind `main`) — the pre-review pass was removed, and the gate is **escalate-only** (never a fabricated PASS). Review artifacts are a **durable history** (kept, findings marked resolved — never emptied). Ops go through checked-in scripts (`bootstrap-worktree.sh`, `set-feature-phase.sh`, mutation helpers) — no hand-rolled `python3`/`sed`. Where this plan conflicts, `.agents/ORCHESTRATOR.md` wins.
 
 > **Project:** AI Study Buddy (AI4Devs final project) — Turborepo + pnpm monorepo, Expo/React Native universal app, `@helsoft/*` libs, Supabase backend, Storybook + Playwright, Jest + RN Testing Library.
 > **Goal:** A repeatable, gate-driven agentic orchestrator that takes a user story/ticket from the command line all the way to a merge-ready PR, following strict TDD, layered reviews, mutation testing, and a full Definition of Done.
@@ -20,13 +20,13 @@ This orchestrator blends two references:
 | Aspect | harness-sdd | mobile-facephi | **This orchestrator** |
 |---|---|---|---|
 | Entry | "implement next pending feature" | `/spec FEAT-XXX` | User-story `.md` file in `user-stories/pending/`, named on the command line (moved pending → in-progress → done as it runs) |
-| Spec + Contract | `spec_partner` debates → `project-spec.md`; separate `gherkin_author` | `/spec` → spec + risks + tasks + qa | **`spec_partner` runs in plan mode**: grills read-only → presents a **plan** → **single human gate approves the plan up front** → then authors spec.md + risks.md + tasks.md + `gherkin-scenarios.md` (Gherkin via the `gherkin-authoring` skill), which **`spec_reviewer` vets** |
+| Spec + Contract | `spec_partner` debates → `project-spec.md`; separate `gherkin_author` | `/spec` → spec + risks + tasks + qa | **`spec_partner` grills the human (asks questions) → writes** spec.md + risks.md + tasks.md + `gherkin-scenarios.md` (Gherkin via the `gherkin-authoring` skill); **`spec_reviewer` vets** them; then a **single human gate approves the spec + Gherkin** (no separate plan approval) |
 | Build | `implementer` strict TDD | Code Agent by vertical slice | **`implementer`** by vertical slice (1→2→3): **TDD for non-UI `.ts`**, **implementation-first for UI `.tsx`** (impl → stories → interaction e2e → unit tests), always integration tests |
 | Review | single `judge` | `/arch` + `/security` separately | **Two cadences:** per-slice light review (`reviewer_slice`, checks the slice against **all `.agents/rules/` + design + accessibility**) during the build, then a **single-reviewer full round** after all slices — `reviewer_engineering` (code · architecture · performance · security) — driven by **`reviews_lead`**, which runs CI once and turns the findings into one change request to the implementer (design & accessibility stay at the slice level) |
 | Mutation | custom `mutate.py` | — | **StrykerJS** with per-feature score thresholds |
 | DoD / PR | — | `/pr` PR Guardian (validates DoD **and** opens PR) | **`dod_validator`** — validates the full DoD only; PR creation is a manual human step |
 
-The result is a 4-phase pipeline (below) driven by an orchestrator that guards the gates, keeps all state on disk, and stops for the human at **one point up front** — approval of `spec_partner`'s **plan** (it runs in plan mode: grills read-only, presents the plan, writes nothing until approved) — after which it authors the spec + Gherkin contract and runs autonomously up to a validated, PR-ready state. Opening and merging the PR stays a manual human step.
+The result is a 4-phase pipeline (below) driven by an orchestrator that guards the gates, keeps all state on disk, and stops for the human at **exactly one point** — `spec_partner` grills the human (asks questions) and writes the spec + Gherkin, `spec_reviewer` vets them, and the human approves the **spec + Gherkin once** — after which it runs autonomously up to a validated, PR-ready state. Opening and merging the PR stays a manual human step.
 
 ---
 
@@ -84,8 +84,8 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 │   └── commit.md
 ├── agents/                       # NEW — role definitions (subagents)
 │   ├── orchestrator_lead.md      # orchestrator: guards phases + the gate, invokes others
-│   ├── spec_partner.md           # Phase 1 — PLAN MODE: grill → plan → (after approval) author spec + Gherkin contract
-│   ├── spec_reviewer.md          # Phase 1 — post-approval review of the written spec bundle
+│   ├── spec_partner.md           # Phase 1 — grill (ask questions) → write spec + Gherkin contract
+│   ├── spec_reviewer.md          # Phase 1 — pre-gate review of the written spec bundle
 │   ├── implementer.md          # Phase 2 (+ change re-work in Phase 3)
 │   ├── reviewer_slice.md         # Phase 2 — per-slice review vs. all .agents/rules/ + design + accessibility (one agent)
 │   ├── reviews_lead.md           # Phase 3 — CI once, invokes the sole full reviewer, consolidates, requests changes
@@ -114,7 +114,7 @@ docs/
         ├── task-2.md             #   each carries its own frontmatter status + slice + scenarios
         ├── …                     #   task-N.md
         ├── gherkin-scenarios.md        # spec_partner — the Gherkin contract (via gherkin-authoring skill)
-        ├── review-spec.md        # spec_reviewer — post-approval spec-bundle review (durable findings trail; never empty)
+        ├── review-spec.md        # spec_reviewer — pre-gate spec-bundle review (durable findings trail; never empty)
         ├── tdd.md                # implementer — TDD cycle log + @scenario → test map
         ├── review-engineering.md # reviewer_engineering — the sole full-review report
         ├── review.md             # reviews_lead — consolidated findings + change requests + round verdict
@@ -154,34 +154,31 @@ progress/                         # NEW — session-level state only (nothing fe
 **Feature pipeline phase** (frontmatter `status:` in `tasks.md`, guarded by `orchestrator_lead`):
 
 ```
-pending → [spec_partner PLAN MODE: grill read-only → present plan]
-        → [HUMAN GATE: approve the plan] → approved
-        → [spec_partner authors bundle] → spec_drafted
+pending → [spec_partner: grill (ask questions) → write the bundle] → spec_drafted
         → [spec_reviewer once on the written bundle → spec_partner fixes every finding, 1 round] → spec_ready
+        → [HUMAN GATE: approve spec + Gherkin — the ONE approval] → approved
         → in_progress → in_review → mutation → pr_ready
         → [human opens & merges PR] → done
 ```
 
-Only `orchestrator_lead` (and `implementer` on final `done`) writes the feature phase; the implementer flips individual `task-N.md` statuses as it builds. **One human gate**, up front: `spec_partner` runs in **plan mode** (grills read-only, presents a plan, writes nothing), the human approves the **plan** (`pending → approved`), and only then does `spec_partner` author the bundle (`spec_drafted`) which `spec_reviewer` vets (`spec_ready`). Everything after the gate runs autonomously up to `pr_ready`; `dod_validator` only validates the DoD — opening and merging the PR is a manual human step that moves the feature to `done`.
+Only `orchestrator_lead` (and `implementer` on final `done`) writes the feature phase; the implementer flips individual `task-N.md` statuses as it builds. **One human approval**: `spec_partner` grills the human (asks questions) and writes the bundle (`spec_drafted`), `spec_reviewer` vets it (`spec_ready`), and the human approves the **spec + Gherkin once** (`spec_ready → approved`) — no separate plan approval. Everything after the gate runs autonomously up to `pr_ready`; `dod_validator` only validates the DoD — opening and merging the PR is a manual human step that moves the feature to `done`.
 
 ---
 
 ## 4. Pipeline overview
 
-One feature at a time. State on disk. One human approval up front — the human signs off `spec_partner`'s **plan** (plan mode) before any artifact is written. Edge labels show the feature status written after each step.
+One feature at a time. State on disk. Exactly one human approval — after `spec_partner` grills and writes the spec + Gherkin and `spec_reviewer` vets them, the human approves the **spec + Gherkin once**. Edge labels show the feature status written after each step.
 
 ```mermaid
 flowchart TD
     CLI["/ticket-orchestrator &lt;story&gt;<br/>reads user-stories/pending/&lt;story&gt;.md"] --> LEAD{{"orchestrator_lead — orchestrator<br/>worktree feat/&lt;name&gt; · story pending→in-progress→done · guards the gate"}}
 
-    LEAD -->|pending| P1["① spec_partner — PLAN MODE<br/>grill-me (read-only) → present PLAN (spec overview · slices · @s outline); writes nothing"]
-    P1 -->|plan_ready| GATE{"⏸ HUMAN GATE<br/>approve the plan (up front)"}
-    GATE -->|"rejected → re-grill"| P1
-    GATE -->|"approved"| AUTHOR["① spec_partner (author)<br/>write spec.md · risks.md · tasks.md · task-N.md · gherkin-scenarios.md"]
-    AUTHOR -->|spec_drafted| SR["① spec_reviewer<br/>vet the WRITTEN bundle → review-spec.md"]
-    SR -->|"findings → fix (1 round, no re-review)"| AUTHOR
-
-    SR -->|"spec_ready"| P3G
+    LEAD -->|pending| P1["① spec_partner<br/>grill-me (ask questions) → write spec.md · risks.md · tasks.md · task-N.md · gherkin-scenarios.md"]
+    P1 -->|spec_drafted| SR["① spec_reviewer<br/>vet the bundle → review-spec.md"]
+    SR -->|"findings → fix (1 round, no re-review)"| P1
+    SR -->|spec_ready| GATE{"⏸ HUMAN GATE<br/>approve spec + Gherkin (the ONE approval)"}
+    GATE -->|"rejected → revise"| P1
+    GATE -->|"approved"| P3G
     subgraph P3G["② implementer — one slice at a time: TDD for .ts / impl-first for .tsx (build → rules+design review → next) (in_progress)"]
         direction LR
         S1["Slice 1<br/>Happy path + Loading"] --> S2["Slice 2<br/>Empty + Error + Retry"] --> S3["Slice 3<br/>Analytics + Flag + a11y + i18n"] --> INT["Integration tests"]
@@ -236,11 +233,11 @@ Each agent is a Claude Code subagent defined in `.agents/agents/<name>.md` with 
   - `gherkin-scenarios.md` — the Gherkin contract, distilled from the spec **in the same step** via the `gherkin-authoring` skill: one `@s`-tagged `Scenario` per behavior (happy path + error/empty/edge), every AC mapped to ≥ 1 scenario, each `task-N.md`'s `scenarios` referencing the `@s` tags. Ambiguity is resolved here — the point of maximum leverage — not in code.
 - **Gate → `spec_drafted`:** every AC is testable (G/W/T); 4 UI states defined (if UI); risks have mitigations; every AC maps to an `@s` scenario in `gherkin-scenarios.md`; tasks map to `libs/*` paths that respect the layering rules.
 
-**Phase 1 (review) — `spec_reviewer` (automated, post-approval — on the written bundle)**
+**Phase 1 (review) — `spec_reviewer` (automated, pre-gate — on the written bundle)**
 - **Tools:** `Read, Glob, Grep`. Reviews the **documents**, never writes them.
 - **Behavior:** independently vet the bundle (`spec.md`, `tasks.md`, `task-N.md`, `gherkin-scenarios.md` — **not `risks.md`, which lives in `tmp/<name>/` and is out of scope**) for correctness, completeness, testability, valid `libs/*` task paths, full story → AC → `@s` → task traceability, and that **`spec.md` is a terse overview that duplicates nothing** in the linked files (rubric inline in `spec_reviewer.md`). Write `review-spec.md`.
-- **Single round:** `spec_reviewer` reviews the written bundle **once**; `spec_partner` fixes **every** finding; then → `spec_ready` (no re-review pass). A finding `spec_partner` can't resolve → the lead **escalates** to the human. (This runs after the plan gate, so scope is already approved; a fix that would materially change the approved plan is re-surfaced to the human.)
-- **⏸ HUMAN GATE (single, up front — on the PLAN):** before any file is written, `orchestrator_lead` presents `spec_partner`'s **plan** (spec overview + task/slice breakdown + `@s` scenario outline) and **waits for one explicit approval**. The human can send edits back to `spec_partner` (re-grill/re-plan) or approve → `approved`. Only then does `spec_partner` author the bundle, and `spec_reviewer` vets the written artifacts (a fix that would materially change the approved plan is re-surfaced to the human). Approving the plan is the cheapest place to correct scope, intent, and contract — before anything is authored.
+- **Single round:** `spec_reviewer` reviews the written bundle **once**; `spec_partner` fixes **every** finding; then → `spec_ready` (no re-review pass). A finding `spec_partner` can't resolve → the lead **escalates** to the human. This is automated — not a human approval.
+- **⏸ HUMAN GATE (single — the pipeline's only human approval):** `orchestrator_lead` presents **`spec.md` and `gherkin-scenarios.md` together** and **waits for one explicit approval** of the spec + contract. The human can send edits back to `spec_partner` (revise + re-run the automated review) or approve → `approved`. There is **no separate plan-approval step** — the grilling questions are the alignment, and the written spec + Gherkin are the one thing the human signs. It's the cheapest place to correct scope, intent, and contract before building.
 
 ### Phase 2 — `implementer` (Build — TDD for non-UI `.ts`, implementation-first for UI `.tsx`)
 - **Tools:** `Read, Write, Edit, Glob, Grep, Bash`.
@@ -328,7 +325,7 @@ export default {
 
 ## 6. Orchestrator — `orchestrator_lead`
 - **Tools:** `Read, Write, Glob, Grep, Bash, Task` (it invokes subagents; it does **not** implement or edit feature code).
-- **Responsibilities:** create the feature's **git worktree** on `feat/<name>` (`.worktrees/<name>`) and run everything inside it (never on the main checkout); own the feature folders under `docs/features/` (task statuses + feature phase in `tasks.md`) and `progress/current.md`; enforce one feature at a time; run phases in order; **stop at the single human gate** (approve `spec_partner`'s plan, up front — before any artifact is written) and loop edits back to `spec_partner` until the plan is approved; delegate the whole review phase to `reviews_lead` (which runs CI once, invokes the sole full reviewer `reviewer_engineering`, consolidates, and loops changes with the implementer); route surviving mutants back to `implementer`; append to `progress/history.md`. It never lets a phase advance until its gate passes.
+- **Responsibilities:** create the feature's **git worktree** on `feat/<name>` (`.worktrees/<name>`) and run everything inside it (never on the main checkout); own the feature folders under `docs/features/` (task statuses + feature phase in `tasks.md`) and `progress/current.md`; enforce one feature at a time; run phases in order; **stop at the single human gate** (approve the written spec + Gherkin — the pipeline's one human approval) and loop edits back to `spec_partner` until approved; delegate the whole review phase to `reviews_lead` (which runs CI once, invokes the sole full reviewer `reviewer_engineering`, consolidates, and loops changes with the implementer); route surviving mutants back to `implementer`; append to `progress/history.md`. It never lets a phase advance until its gate passes.
 - **Entry:** the `/ticket-orchestrator <story>` command (`.agents/commands/ticket-orchestrator.md`) sets the role, resolves `$ARGUMENTS` to `user-stories/<story>.md`, and reads it as the ticket.
 
 **Anti-"telephone" rule:** subagents persist artifacts to disk and return a single reference line (e.g. `green -> docs/features/<name>/tdd.md`, `CHANGES_REQUESTED -> docs/features/<name>/review.md`). Content lives on disk, surviving restarts and blown context windows.
