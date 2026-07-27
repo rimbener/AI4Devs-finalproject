@@ -1,4 +1,4 @@
 # Current session
 
 **Active feature:** _(none)_
-**Notes:** ai-provider-registry-frontend reached `pr_ready` on `feat/ai-provider-registry-backend` (shared worktree `.worktrees/ai-provider-registry-backend` — this frontend feature was built on top of the already-`pr_ready` ai-provider-registry-backend feature living on the same branch, since it depends on that backend's not-yet-merged schema/edge-function contract). Human opens/merges the PR next (it will include both features' commits, since they share one branch).
+**Notes:** ai-provider-registry-backend + ai-provider-registry-frontend merged into `feature-entrega3-HernanLaura` via PR #13 (`c06ecabea`); worktree `.worktrees/ai-provider-registry-backend` and branch `feat/ai-provider-registry-backend` removed (local + remote). Post-merge fix folded in on that branch before merge: `useApiKey().isLoading` now uses `deriveIsLoading` (a disabled-query `isPending` v5 gotcha left the app on a blank white page for logged-out visitors).
