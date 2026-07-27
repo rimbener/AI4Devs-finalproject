@@ -79,3 +79,131 @@ Re-read the complete file top to bottom. `EMPTY_DIALOG_ACTIONS` semantics unchan
 ### Round 2 verdict: RESOLVED
 
 Both round-1 minor findings are cleanly fixed; the fix's own mechanics (the generic-preserving `memo` cast, `dialogInteractionProps`/`renderDialogBody` extraction) introduce no new blocker/major/minor finding. No other production file changed in `174d6b455` (doc-only elsewhere, confirmed via `git show --stat`).
+
+## Mini-gate bug-fix delta review — empty-dialog flash on close
+
+**Scope:** delta-only review of the post-`pr_ready` mini-gate reopen, exactly commit
+`8aa12b28e129a706c47642fee770b264489fe3ac` ("fix(components): stop empty-dialog flash on
+CardListWithABMDialog close") on top of the already-`APPROVED`/97.2%-mutation-accepted HEAD. Not a
+full feature re-review — Round 1/Round 2 findings above are not re-litigated (both already
+`RESOLVED`). Reviewed the full current source of both production files in context (not just the
+diff), `gherkin-scenarios.md`'s `@s19`/`@s20`, and `spec.md`'s "Post-`pr_ready` bug fix (mini-gate)"
+Open decision.
+
+**CI:** green @ `2b50eb877` — `pnpm lint`/`check-types` repo-wide clean; `pnpm --filter
+@helsoft/components test` 70 suites/529 tests green (explicit re-run, includes both delta test
+files); `@helsoft/activities` re-run in isolation (`--runInBand`) also green — the one full-parallel
+`slide-view.test.tsx` timeout is a confirmed pre-existing unrelated flake in an unrelated lib, out
+of scope for this delta. Feature e2e re-run explicitly: 5/5 passed, no new e2e for @s19/@s20 (typed
+decision in `tdd.md`: animation-timing isn't reliably Playwright-assertable without flakiness,
+covered at hook/component-prop level instead — reasonable given `Dialog`'s own `Modal` is
+instant-hide, not animated, under the RN Jest/JSDOM test environment, so no e2e tool available here
+could actually observe a mid-fade frame either).
+
+### Verdict: APPROVED
+
+No blocker or major findings. Zero new findings at any severity for this delta.
+
+### TDD reasoning (reasoned, not re-run — per protocol, no `pnpm test` execution by this reviewer)
+
+Read the pre-fix hook (`git show 8aa12b28e^:.../use-card-list-with-abm-dialog.ts`): `closeDialog`
+was `setDialogState(null)` only, no `isOpen` field existed. Against the new tests in this commit:
+`use-card-list-with-abm-dialog.test.ts`'s `closeDialog flips isOpen to false but keeps the last
+dialogState (edit/remove)` reads `result.current?.isOpen` (undefined on the pre-fix hook — the
+field didn't exist, so `toBe(false)` would fail) and `result.current?.dialogState` (would be `null`
+on pre-fix code, failing `toEqual({type:'edit', item})`). `card-list-with-abm-dialog.test.tsx`'s
+two new tests assert `closedProps.open === false` and `bodyText(closedProps.children) ===
+'Edit form for item-1'`/`'Remove item-2?'` — on pre-fix code `renderDialogBody` returns `null` once
+`dialogState` is nulled (since `dialogState?.type !== type` is `true` when `dialogState` is `null`),
+so `bodyText(null)` → `''`, failing the `toBe(...)` assertion. All four new/changed assertions
+demonstrably fail against the pre-fix code and pass against the fix — genuine Red→Green, not a
+vacuous regression test. `use-card-list-with-abm-dialog.ts` is the one non-UI `.ts` file touched
+(test-first expected per `tdd.mdc`) — production code added (`isOpen` state + its two `setIsOpen`
+call sites) is exactly what the new/changed hook-test assertions demand, nothing further; no scope
+inflation. `card-list-with-abm-dialog.tsx` is UI `.tsx` (implementation-first) — no test-first
+evidence required there, and it already has its `.test.tsx`/`.stories.tsx`/`.e2e.js` from the prior
+slices (no new component created this delta, so no new co-location artifacts required).
+
+### `jest.mock('../dialog/dialog', ...)` spy — soundness check
+
+`libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.test.tsx:12-18`:
+`Dialog: jest.fn(actual.Dialog)` fully delegates to the real `Dialog` implementation (verified by
+reading `dialog.tsx` in full — `jest.fn(impl)` calls through to `impl` on every invocation, unlike
+`jest.fn()` with no arg, which would stub it to `undefined`-returning). Confirmed this doesn't
+change behavior for any of the ~20 pre-existing tests in this file: every other assertion in the
+file queries by role/text/testID against the rendered output (e.g. `screen.getByText('Edit card')`,
+`within(...).getByRole('button')`), which is unaffected by the spy — the spy only adds an
+observation point (`DialogMock.mock.calls`), it doesn't alter `Dialog`'s rendered tree, props
+handling, or the `Modal`'s `visible`/`onRequestClose` wiring. `DialogMock.mockClear()` in
+`beforeEach` (`:103-109`) is correctly scoped: `mockClear()` resets only `mock.calls`/
+`mock.instances`/`mock.results`, not the mock's implementation (that's `mockReset()`/
+`mockRestore()`), so the delegation to the real `Dialog` persists across every test while each
+test's own call history starts empty — exactly the intent documented in the adjacent comment
+(avoids the previous run's accumulated call history, which per the comment was the actual cause of
+a worker heap blowup, not anything under test). No leakage found.
+
+### `bodyText()` shallow-string-comparison workaround
+
+`card-list-with-abm-dialog.test.tsx:47-50`. The assertion's real target is whether
+`renderDialogBody` still supplies the last-known `renderEditForm(item)`/
+`renderRemoveConfirmation(item)` `<Text>` element (vs. `null`) after `closeDialog` runs — `bodyText`
+reads `element.props.children`, which for this file's `renderEditForm`/`renderRemoveConfirmation`
+fixtures (`(item) => <Text>{`Edit form for ${item.id}`}</Text>`) is exactly the plain string
+content. This is a faithful proxy for "did `dialogState.item` survive the close," not a weakened
+assertion: a regression (dialogState nulled) collapses `children` to `null` → `bodyText` returns
+`''`, which still fails the `toBe('Edit form for item-1')` assertion (verified in the TDD-reasoning
+section above). The documented reason for avoiding `toEqual` on the raw React element (dev-only
+class-component instance getters recursing pathologically under Jest's equality algorithm) is a
+known, real Jest/RTL interaction with React elements holding host-component refs/instances, and
+using string-content comparison instead doesn't mask a broader assertion gap here since the two
+new tests' only substantive claims are exactly `open` (checked directly, not through `bodyText`)
+and body content (what `bodyText` checks) — no other props of `closedProps` needed comparing.
+
+### Lenses checked, no findings
+
+- **Code quality/TDD** — `@s19`/`@s20` each map to ≥2 concrete tests (hook-level +
+  component-prop-level), per `tdd.md`'s `@s → test` table, cross-checked directly in both test
+  files (see TDD reasoning above). No `console.log`/debug leftovers, no bare TODOs (`grep` clean
+  against the diff). Functional React only; `Props` unaffected (no new public type — `isOpen` is
+  an added field on the hook's already-untyped-as-explicit-interface return object, consistent with
+  the existing pattern where the return shape is inferred, not a named `.types.ts` export).
+  Kebab-case filenames unchanged. i18n: no new user-facing strings introduced by this fix (the
+  fix touches only boolean gating logic, not chrome text).
+- **Architecture/layering** — `Component → Hook` respected; no service/DAO touched. Two
+  `useState` fields (`dialogState`, `isOpen`) in `use-card-list-with-abm-dialog.ts:29-30`: below
+  `state.mdc`'s ≥3-related-fields → `useReducer` threshold (2, matching spec.md's stated
+  rationale) — verified the reachable-state-space claim by tracing every call site:
+  `openEditDialog`/`openRemoveDialog` (`:32-50`) always set both fields together in the same
+  callback (batched into one render), `closeDialog` (`:52-58`) only ever flips `isOpen`, so
+  `isOpen === true && dialogState === null` is unreachable — the "only one dialog open at a
+  time"/"no invalid combined state" invariant the original single-discriminated-union comment
+  claims (`:4-9`) still holds even though the state is now split across two `useState` calls.
+  Gating `Dialog`'s `open` prop as `isOpen && dialogState?.type === 'edit'|'remove'` inline in
+  `card-list-with-abm-dialog.tsx:153,163` (rather than as a derived `isEditOpen`/`isRemoveOpen`
+  getter returned from the hook) continues the exact pre-existing, already-`APPROVED`-in-Round-1
+  pattern (`open={dialogState?.type === 'edit'}` was already computed inline in the `.tsx`, not in
+  the hook, before this fix) — not a new `component-split.mdc` violation, just the same established
+  style extended by one `&&` clause. No atom-ban violation: `dialog.tsx`/`dialog.types.ts` have
+  zero diff in this commit (confirmed via `git show 8aa12b28e --stat`) — the fix is entirely local
+  to the consuming hook/component, exactly as spec.md's rationale claims.
+- **Performance** — one added `useState` call is a fixed, negligible per-render cost. No new
+  render cycle on open: `openEditDialog`/`openRemoveDialog`'s two `setState` calls
+  (`setDialogState`+`setIsOpen`) are called synchronously in the same event-handler tick and are
+  batched by React's automatic batching into one render, same as the single `setDialogState` call
+  pre-fix — no doubling of render count. `closeDialog` still does exactly one `setState` call, same
+  as before. Stale-reference note (explicitly asked to evaluate): `dialogState.item` (and its
+  caller-owned `data: TItem` payload) is now retained in memory for the interval between
+  `closeDialog` and the next `openEditDialog`/`openRemoveDialog` call, whereas pre-fix it was
+  nulled immediately — bounded to exactly one item reference at a time (never accumulates a list),
+  released as soon as the next dialog opens (replaced, not appended) or the component unmounts;
+  this is the fix's explicit, spec.md-documented intent (@s19/@s20 require the last content to keep
+  rendering through the close transition) and not a leak — no finding.
+- **Security** — **N/A.** Confirmed via `git show 8aa12b28e --stat`: only two production files
+  touched (`use-card-list-with-abm-dialog.ts`, `card-list-with-abm-dialog.tsx`), both pure
+  UI-local-state hook/component code — no service/DAO/auth/network/storage/Supabase surface, no
+  secrets/env reads, no logging, no new user input parsing. `grep` for `console.`/network/storage
+  APIs across the diff: none found. OWASP Top 10/MASVS: no applicable surface in this delta.
+
+### Notes for the fix
+
+None — this delta is clean at all four lenses. No follow-up requested.

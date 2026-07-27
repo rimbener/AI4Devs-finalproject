@@ -166,5 +166,90 @@ the fix itself (generic-preserving `memo` cast verified sound; `dialogInteractio
 
 ---
 
-*Full findings trail retained above — nothing deleted, both round-1 findings marked `resolved`
-with their round-2 verification notes.*
+## Post-pr_ready mini-gate review — empty-dialog flash on close
+
+**Context.** The feature had already reached `pr_ready` (Round 2 above, APPROVED, plus a
+human-accepted 97.2% mutation score — see `mutation.md`). After `pr_ready`, the human reported a
+bug: closing the edit/remove dialog briefly showed an empty dialog body while the shared `Dialog`
+organism's `Modal` faded out. This was fixed as a scoped mini-gate reopen (not a full feature
+re-review): root cause and intended fix shape are recorded in `spec.md`'s last "Open decisions"
+entry ("Post-`pr_ready` bug fix (mini-gate)"); the new contract is `gherkin-scenarios.md`'s
+`@s19`/`@s20`.
+
+**Commit reviewed (delta only):** `8aa12b28e129a706c47642fee770b264489fe3ac` —
+`fix(components): stop empty-dialog flash on CardListWithABMDialog close`, on top of the
+`pr_ready` HEAD reviewed in Round 2. Touches only:
+- `libs/components/src/organisms/card-list-with-abm-dialog/use-card-list-with-abm-dialog.ts`
+  (production) — added a second `isOpen` boolean state, decoupled from the existing `dialogState`
+  discriminated union; `closeDialog` now only flips `isOpen` false instead of nulling
+  `dialogState`.
+- `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx`
+  (production) — both `Dialog`'s `open` prop gated on `isOpen && dialogState?.type ===
+  'edit'|'remove'` instead of just `dialogState?.type === ...`.
+- `use-card-list-with-abm-dialog.test.ts` / `card-list-with-abm-dialog.test.tsx` (tests) — new
+  `@s19`/`@s20` coverage, including a fully-delegating `jest.mock('../dialog/dialog', ...)` spy
+  (`jest.fn(actual.Dialog)`) to inspect `Dialog`'s exact `open`/`children` props at the close tick.
+- `docs/features/card-list-with-abm-dialog/tdd.md` (doc-only).
+
+Not a re-review of the whole feature — Round 1/Round 2 findings above are not re-litigated (both
+already `resolved`).
+
+**CI (run once by `reviews_lead`, not the reviewer):**
+- `pnpm lint` — green, repo-wide (turbo, 14 packages).
+- `pnpm check-types` — green, repo-wide (turbo, 14 packages).
+- `pnpm --filter @helsoft/components test` — explicitly re-run: 70 suites / 529 tests green,
+  including both delta test files.
+- `pnpm test` (repo-wide, `--output-logs=errors-only`) — one failure surfaced:
+  `@helsoft/activities`'s `slide-view.test.tsx` ("renders a bounded 50/50 split row for a portrait
+  image") timed out at 5000ms under full parallel `turbo run test`. Confirmed **pre-existing,
+  unrelated flake**: re-ran `@helsoft/activities` serialized (`pnpm exec jest --runInBand`) — all
+  32 suites/401 tests green, the same test completing in 1198ms; re-ran in isolation — also green.
+  `@helsoft/activities` has zero overlap with this feature's delta (`@helsoft/components`, an
+  unrelated organism/lib) — scoped out per protocol as pre-existing infra debt, not absorbed as a
+  feature fix. Documented here, not silently dropped.
+- Feature e2e — `card-list-with-abm-dialog.e2e.js` re-run explicitly (`--reporter=list`): 5/5
+  passed. No new e2e added for `@s19`/`@s20` — documented, reasonable decision in `tdd.md`:
+  animation-timing isn't reliably Playwright-assertable without flakiness (and `Dialog`'s `Modal`
+  is instant-hide, not animated, under the RN Jest/JSDOM test environment anyway), covered instead
+  at the hook/component-prop level.
+- **CI green @ `2b50eb877`** (current worktree HEAD).
+
+**Reviewer invoked:** `reviewer_engineering`, scoped to the mini-gate delta only (commit
+`8aa12b28e` in full, plus the full current source of both production files for context). Full
+findings recorded in `review-engineering.md` under "## Mini-gate bug-fix delta review — empty-dialog
+flash on close".
+
+### Verdict: APPROVED
+
+**Zero findings, at any severity, across all four lenses:**
+- **Code quality/TDD** — `@s19`/`@s20` map to concrete, demonstrably Red→Green tests at both the
+  hook level (`isOpen`/`dialogState` assertions) and component-prop level (`bodyText`/`open` on
+  the `Dialog` spy); reasoned against the pre-fix hook and confirmed to fail without the fix. The
+  `jest.mock('../dialog/dialog', ...)` spy fully delegates (`jest.fn(actual.Dialog)`, doesn't
+  alter behavior for any of the file's ~20 pre-existing tests); `DialogMock.mockClear()` correctly
+  scoped (call-history only, delegation persists). The `bodyText()` shallow-string workaround is a
+  faithful proxy for "did the last content survive," not a masked assertion gap. No console/TODO
+  leftovers.
+- **Architecture/layering** — two `useState` fields (`dialogState`, `isOpen`), below `state.mdc`'s
+  ≥3-threshold; traced every call site — `isOpen === true && dialogState === null` is unreachable,
+  so the "only one dialog open" invariant still holds. Inline `isOpen && dialogState?.type === X`
+  gating in the `.tsx` continues the exact pre-existing, already-`APPROVED` Round-1 pattern, not a
+  new `component-split.mdc` violation. Zero diff to `dialog.tsx`/`dialog.types.ts` — atom-ban
+  respected, fix is entirely local to the consuming hook/component per spec.md's stated rationale.
+- **Runtime/delivery performance** — one added `useState`, negligible. `openEditDialog`/
+  `openRemoveDialog`'s two `setState` calls batch into one render (no doubling vs. pre-fix).
+  Stale-reference retention of `dialogState.item` between close and next open is bounded to one
+  item at a time, released on the next open or unmount — the fix's explicit, spec.md-documented
+  intent (@s19/@s20), not a leak.
+- **Security** — **N/A**, confirmed: only the hook and component are touched, no service/DAO/auth/
+  network/storage/Supabase surface, no secrets/env reads, no logging (`grep` clean).
+
+No change request issued — nothing for `implementer` to fix this round.
+
+---
+
+*Full findings trail retained above — nothing deleted. Round 1's two minor findings and Round 2's
+verification remain marked `resolved`; the post-`pr_ready` mini-gate delta review above is a clean
+`APPROVED` round with zero findings of any severity. `review-engineering.md` carries the full
+lens-by-lens detail for every round, including this mini-gate delta, under its own matching
+section headers.*
