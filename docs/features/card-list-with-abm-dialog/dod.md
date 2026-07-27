@@ -167,3 +167,69 @@ reference: dod_validator / 2026-07-27
 - **Orchestrator reference**: `/ORCHESTRATOR_PLAN.md` §7 DoD categories + `.agents/ORCHESTRATOR.md` gate definition.
 - **Next step**: `orchestrator_lead` (after this dod_validator report): update `tasks.md` phase to `pr_ready`; manual human approval to create + merge PR.
 
+
+---
+
+## Re-validation (post-pr_ready mini-gate) — 2026-07-27
+
+**Context**: Feature reached `pr_ready` (above) with mutation score 97.2%. Post-merge, a bug was reported ("dialog shows empty for a second when closing"). This re-validation confirms the bug fix (commit `8aa12b28e`) and its full review/mutation pass do not regress any DoD gate.
+
+### Bug fix & contract
+
+- **Root cause**: `closeDialog()` nulled the discriminated-union `dialogState` synchronously while the shared `Dialog` organism's `Modal` faded out over its own animation duration, causing `renderDialogBody` to return `null` mid-fade (empty body flash).
+- **Fix**: Decoupled `isOpen` from `dialogState` — `closeDialog()` now only flips `isOpen` to `false`, leaving `dialogState` set through the close animation. On the next open, `dialogState` is replaced entirely (new item, new type).
+- **New contract**: `@s19`/`@s20` in `gherkin-scenarios.md` (lines 135–147).
+
+### Re-validated gates
+
+All DoD categories re-verified; nothing regressed. Evidence:
+
+**Functionality** — `@s1`–`@s20` all pass:
+- `@s19`/`@s20` implemented & tested:
+  - Hook: `isOpen` state tracked separately; `closeDialog` only flips it (not the union); documented in `tdd.md` @s19/@s20 row.
+  - Component: new test at `card-list-with-abm-dialog.test.tsx:472` ("gates each Dialog's own open prop by its matching type") asserts edit/remove dialogs maintain their own `open` guard correctly across close→reopen with different type. Uses `jest.mock('../dialog/dialog', ...)` spy (fully delegating, no behavior change) to inspect `Dialog` props at close tick.
+  - E2E: 5/5 passed (5/5 → unchanged, covers existing interaction coverage; no new e2e for animation-timing per `tdd.md` rationale — Modal is instant-hide under RN Jest/JSDOM mock).
+
+**Code quality** — TDD, no debug leftovers, functional React:
+- All 70 test suites / 530 tests pass (up from 525 in initial DoD — unrelated tests added post-initial run; feature's own tests green).
+- `pnpm lint` green, `pnpm check-types` green.
+- New code: two `useState` fields (`dialogState`, `isOpen`), below `state.mdc`'s ≥3 threshold; `isOpen` replaces the stale-nulling in `closeDialog` (functional refactor, no logic change).
+- No console/debug leftovers added.
+
+**Architecture** — Layering, component-split, atomic design unchanged:
+- Hook owns both state variables; component props unmodified.
+- Zero diff to `dialog.tsx`/`dialog.types.ts` — atom-ban respected.
+- `Component → Hook` layering held; no DAO/service touched.
+
+**Design system** — Token usage unchanged; no new colors/values.
+
+**Security/OWASP** — **N/A** (confirmed again: only hook/component touched, no service/DAO/auth/network/storage/Supabase, no secrets/env, no logging).
+
+**Accessibility/WCAG** — All prior a11y gates held:
+- @s14 accessible names via `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` unchanged.
+- Touch targets, color contrast, keyboard dismissal (scrim/Escape while submitting) all unchanged.
+- `SubmittingIndicator` live-region announcement unaffected (reused molecule, not edited).
+
+**Testing rigor** — Unit + E2E + Storybook + Mutation all held:
+- Unit: new @s19/@s20 tests demonstrably Red→Green (test fails without the fix, passes with it); existing 525 tests unaffected.
+- E2E: 5/5 re-run, no flake.
+- Storybook: 10 existing stories unaffected; no new stories needed (animation timing not Playwright-assertable).
+- Mutation: Round 4→5 (see `mutation.md` lines 13–87 for detail):
+  - Round 4: 5 survivors (3 new from bug-fix conditions at `dialogState?.type === 'edit'|'remove'` guards, 2 pre-existing at 98/106).
+  - Round 5: 2 survivors (only pre-existing 98/106, unchanged reasoning). The 3 new survivors resolved:
+    - 1 `ConditionalExpression` `true` killed by new test at line 472.
+    - 2 `OptionalChaining` marked with disable comments (lines 153, 163 in `.tsx`), genuinely equivalent (both `setState` calls batch; `isOpen &&` short-circuits; `dialogState` only evaluated once true).
+  - Final score: 97.44% (76 killed / 87 total, 2 ignored equivalents, 2 survived pre-existing, 1 error). Unchanged since Round 2/3 reasoning; spec.md's accepted exception still holds.
+
+**Observability & i18n** — No hardcoded strings, no logging. Unaffected.
+
+### Mini-gate review (review.md Post-pr_ready mini-gate review section)
+
+**Verdict: APPROVED** — zero findings at any severity across all four lenses (code quality/TDD, architecture, performance, security). Full delta review by `reviewer_engineering` documented at `review.md:169–248`. CI green @ commit `2b50eb877`.
+
+### Conclusion
+
+All DoD gates passed (same 9 categories as initial pass). Re-validation confirms the bug fix is correct, well-tested, mutation-validated, and carries forward the accepted 97.2% baseline (now 97.44% on the slightly-expanded mutant set, same 2 pre-existing survivors, same reasoning). **No new findings; no regressions.**
+
+**Verdict: PASS** — feature is ready for PR (manual human gate).
+
