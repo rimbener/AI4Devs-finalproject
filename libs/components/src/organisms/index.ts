@@ -8,6 +8,8 @@ export * from './api-key-manager/api-key-manager';
 export type * from './api-key-manager/api-key-manager.types';
 export * from './api-key-required-notice/api-key-required-notice';
 export type * from './api-key-required-notice/api-key-required-notice.types';
+export * from './card-list-with-abm-dialog/card-list-with-abm-dialog';
+export type * from './card-list-with-abm-dialog/card-list-with-abm-dialog.types';
 export * from './desktop-bar/desktop-bar';
 export type * from './desktop-bar/desktop-bar.types';
 export * from './dialog/dialog';
