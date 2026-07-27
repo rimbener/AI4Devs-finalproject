@@ -73,3 +73,42 @@ Durable trail across slices/rounds. Never emptied; append new entries per slice.
 ### Notes for the fix
 
 - Finding 1: remove `useCallback` from `handleEditConfirm`/`handleRemoveConfirm` in `card-list-with-abm-dialog.tsx:66-79`; plain arrow functions bound at render, matching `pdf-document-list.tsx`'s `Dialog.onConfirm` precedent.
+
+## Slice 3 (task-3) — isSubmitting swap, per-card a11y labels, full Storybook coverage
+
+**Commit range reviewed:** `78be6c83b..878478cea` (branch `feat/card-list-with-abm-dialog`, single commit `878478cea`)
+**Scope:** `libs/components/src/organisms/card-list-with-abm-dialog/{card-list-with-abm-dialog.tsx,.types.ts,.stories.tsx,.test.tsx}`, `libs/components/tests/e2e/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.e2e.js`, `docs/features/card-list-with-abm-dialog/{task-3.md,tdd.md}`. Covers `@s11, @s12, @s13, @s14, @s18` — the last slice of this feature.
+
+**Round:** 1 (only round)
+
+### Verdict: APPROVED
+
+### Findings
+
+None. No blocking findings this round.
+
+### Regression check vs. slices 1+2's `resolved` findings
+
+- Slice 1 finding 1 (interim `accessibilityLabel={item.accessibleLabel}` on edit/remove `IconButton`s) is **cleanly superseded, not left as dead/duplicate wiring**: both call sites (`card-list-with-abm-dialog.tsx:187,198`) now read `accessibilityLabel={getEditAccessibilityLabel(item)}` / `getRemoveAccessibilityLabel(item)`; `item.accessibleLabel` itself is no longer read directly anywhere in `.tsx` (`grep` for `accessibleLabel` in the component/hook turns up only the `.types.ts` doc-comment describing the field's contract and the story/test fixtures' own use of it inside their own builder-function *bodies*, which is caller-owned, not a competing prop). No leftover `task-2`/`task-3`/"interim" deferral comments remain anywhere in the component, hook, or types file (`grep` clean).
+- Slice 1 finding 2 (`accessibilityRole="header"` on the title) — unchanged, still present, still asserted by its own test.
+- Slice 2 finding 1 (drop unnecessary `useCallback` on `handleEditConfirm`/`handleRemoveConfirm`) — both remain plain arrow functions this slice; not regressed.
+
+### Rules/lenses checked, no findings
+
+- `global.mdc` — functional component, `Props` type, no Redux, kebab-case paths; comments added this slice explain *why* (`EMPTY_DIALOG_ACTIONS`'s rationale, the `.test.tsx` `jest.mock` rationale), not restating the obvious *what*.
+- `hooks-service-dao.mdc` / `tanstack-query.mdc` — N/A, no data layer touched; `isSubmitting` is a caller-owned prop (the caller's mutation state), not re-derived locally.
+- `state.mdc` / `state-sharing.mdc` — no new local state introduced (`isSubmitting` is a prop); `use-card-list-with-abm-dialog.ts` untouched this slice.
+- `atomic-design.mdc` — reuses the existing `SubmittingIndicator` molecule as-is (no atom/molecule/organism edited — atom-ban respected: no diff under `atoms/`, `molecules/submitting-indicator/`, or `organisms/dialog/`); `.stories.tsx` rounds out to the full 10-state matrix required by `@s18` (Populated, EmptyWithMessage, EmptyWithoutMessage, DisabledCard, EditOnlyCard, RemoveOnlyCard, EditDialogOpen, RemoveDialogOpen, EditDialogSubmitting, RemoveDialogSubmitting — verified by reading `card-list-with-abm-dialog.stories.tsx` in full) plus the pre-existing `Interactive` demo.
+- `component-split.mdc` — no new local state/pure logic this slice; `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` are caller-supplied builder props (not authored in this component), correctly kept out of a `.helpers.ts` per `tdd.md`'s documented rationale — nothing to extract.
+- `types.mdc` — `.types.ts` gains only the two builder-prop signatures and `isSubmitting: boolean`, each with a doc-comment; no runtime logic; not exported from the implementation file.
+- `i18n.mdc` — no hardcoded user-facing strings added; accessible-name phrasing stays 100% caller-owned via the builder props (verified: no literal `'Edit '`/`'Remove '` string inside the library component itself — those literals live only in `.stories.tsx`/`.test.tsx` fixtures, which are test/demo data, not library copy).
+- `e2e.mdc` — the two new e2e tests (`scrim tap and Escape do nothing while the edit/remove dialog is submitting`) are interaction-only: each drives a real scrim click + `Escape` keypress and asserts the dialog stayed open/unchanged and no Save/Cancel or Remove/Keep-it buttons rendered — not a render-only presence check.
+- `tdd.mdc` — UI `.tsx` built implementation-first, in the order `tdd.md` documents (types → tsx → stories → e2e → unit tests); every owned `@s` (`s11`–`s14`, `s18`) maps to a concrete test in `card-list-with-abm-dialog.test.tsx`/`.e2e.js`/`.stories.tsx` per `tdd.md`'s updated `@s → test` table; no hardcoded colors/dimensions (no new styles added this slice — `EMPTY_DIALOG_ACTIONS` is a JSX constant, not a style/dimension).
+- `pre-slice-checklist.mdc` — no new public symbols needing a barrel export (prop/type additions to an already-exported component); loading UI (`SubmittingIndicator`) is an announced status (`accessibilityLiveRegion="polite"`), not a silent spinner — reused as-is; atom-ban respected; real `Modal` used throughout (no `jest.mock('react-native')`); i18n key reaching the a11y-adjacent live-region text (`general.saving`) is asserted via `screen.getByText('general.saving')` in three separate tests (`@s11`–`@s13`), which would kill a `t("")` mutant; `pnpm --filter @helsoft/components test`/`lint`/`check-types` used throughout per `tdd.md`'s slice gate (515 tests, 5 e2e), not `yarn test-ci`.
+- **`EMPTY_DIALOG_ACTIONS` pattern sanity-check (explicitly requested)** — clean, not a hack. `Dialog`'s `actions` prop falls back to its default Cancel/Confirm row via `actions ?? (<default buttons>)` (`dialog.tsx:43`), and nullish-coalescing triggers that fallback for **both** `null` and `undefined` — so passing `null` while submitting would not have worked; a genuinely truthy-but-childless node is required, and `<></>` is the idiomatic way to express "no actions" in React. It's a module-level constant (referentially stable across renders, no re-allocation), the intent is explained inline (`why`, not `what`, per `global.mdc`), and it correctly preserves `Dialog`'s own default-buttons behavior in the non-submitting case (unlike the lib's other `Dialog`+`SubmittingIndicator` consumer, `api-key-form-dialog.tsx`, which always supplies a custom `actions` `View` because it never wants `Dialog`'s generic default buttons — a different but equally valid choice given that component's different chrome needs, not evidence this slice's choice is wrong). No atom/organism (`Dialog`) was touched to accommodate this — the override happens entirely from the caller side, respecting atom-ban.
+- **[a11y] (WCAG 2.2 AA)** — Dismissal blocking: `onClose={isSubmitting ? undefined : closeDialog}` on both `Dialog`s correctly blocks scrim-tap (`Pressable onPress={onClose}`) and `Modal`'s `onRequestClose` (Escape/hardware-back) while submitting; verified end-to-end via the new e2e tests, not just inferred from wiring. Buttons hidden: `actions={isSubmitting ? EMPTY_DIALOG_ACTIONS : undefined}` removes the only remaining dismiss/confirm affordance while submitting (asserted by both `.test.tsx` and `.e2e.js` — `getByRole('button', {name:'Save'/'Cancel'/'Remove'/'Keep it'})` all assert `toHaveCount(0)`/`queryByText(...)).toBeNull()`). Live-region announcement: `SubmittingIndicator`'s `accessibilityLiveRegion="polite"` text is reused unmodified — its own a11y contract (asserted in `submitting-indicator.test.tsx`, out of this slice's diff) is unaffected by this integration. Distinct accessible names: `@s14`'s unit test explicitly asserts `editButton1 !== editButton2` and `removeButton1 !== removeButton2` (not just that a label exists), satisfying WCAG 4.1.2 across sibling rows, not just per-row.
+- **[design]** — no new colors/spacing/radii/typography introduced (no style block touched this slice); `SubmittingIndicator`'s own tokens (`theme.spacing.s4`, `theme.typography.bodyMedium`, `theme.colors.onSurfaceVariant`) are pre-existing and reused unmodified; `Dialog`'s surface/elevation/shape are untouched.
+
+### Notes for the fix
+
+None — approved with no findings.

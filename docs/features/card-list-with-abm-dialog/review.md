@@ -40,7 +40,7 @@ below — both must be fixed before this round can close.
 
 ### Findings
 
-1. **[perf] minor — `resolved`** — Fixed: `CardListRow` now wrapped in `memo` (generic-preserving cast,
+1. **[perf] minor — `resolved` (round 2)** — Fixed: `CardListRow` now wrapped in `memo` (generic-preserving cast,
    `as <TItem>(props: CardListRowProps<TItem>) => ReactNode`), and its `onEditPress`/`onRemovePress`
    call-throughs wrapped in `useCallback(() => onEditPress(item), [onEditPress, item])` /
    `useCallback(() => onRemovePress(item), [onRemovePress, item])`, mirroring
@@ -48,6 +48,16 @@ below — both must be fixed before this round can close.
    check-types test` green (70 suites/515 tests) and the feature's Playwright e2e re-run 5/5
    passed; no test changes needed (non-functional fix, existing `.test.tsx`/`.e2e.js` assertions
    still pass unmodified).
+
+   **Round 2 verification (`reviewer_engineering`, delta review of commit `174d6b455`):** confirmed
+   resolved. The `memo` + generic-preserving cast is a sound, standard TS workaround (compile-time
+   only; the component body never branches on the concrete `TItem`, so the cast reflects genuinely
+   generic-safe runtime behavior); does not defeat displayName/devtools (name resolved from the
+   named function expression). The perf benefit is genuine, not cosmetic, in the component's most
+   frequent re-render path: `renderItem` and `openEditDialog`/`openRemoveDialog` are all stably
+   `useCallback`'d (deps `[]`), so per-row `item` references stay stable across `dialogState`/
+   `isSubmitting` toggles — matching exactly the scenario the `pdf-document-list.tsx` precedent was
+   memoized for. No new finding introduced by the fix.
 
    Original finding — `CardListRow` (`libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx:167-206`)
    is not wrapped in `memo`, unlike the closest precedent row in this lib, `PdfDocumentListRow`
@@ -68,7 +78,7 @@ below — both must be fixed before this round can close.
      call-throughs in `useCallback(() => onEditPress(item), [onEditPress, item])` (mirroring
      `pdf-document-list.tsx:164-187`).
 
-2. **[code] minor — `resolved`** — Fixed: extracted the shared `isSubmitting`-swap shape into two
+2. **[code] minor — `resolved` (round 2)** — Fixed: extracted the shared `isSubmitting`-swap shape into two
    local helpers in `card-list-with-abm-dialog.tsx` — `dialogInteractionProps` (the
    `onClose`/`actions` swap, spread into both `Dialog`s) and `renderDialogBody(type, render)` (the
    body ternary, called by both `Dialog`s with `'edit'`/`renderEditForm` and
@@ -76,14 +86,21 @@ below — both must be fixed before this round can close.
    duplicated shape. `pnpm --filter @helsoft/components lint check-types test` green and the
    feature's e2e re-run 5/5 passed; no test changes needed (non-functional fix).
 
+   **Round 2 verification (`reviewer_engineering`, delta review of commit `174d6b455`):** confirmed
+   resolved. Verified by case analysis that `renderDialogBody`'s `dialogState?.type !== type`
+   early-return is the exact logical negation of the original `=== type ? ... : null` ternary for
+   all three cases (null state, matching type, other-dialog's type) — behavior-preserving.
+   `dialogInteractionProps`'s per-render object literal is a trivial allocation, no regression.
+   The `{...dialogInteractionProps}` spread is fully compatible with `DialogProps`'s optional
+   `onClose`/`actions` shape. No new finding introduced by the fix.
+
    Original finding — Duplicated `isSubmitting`-swap wiring across the two `Dialog`
    instances (`card-list-with-abm-dialog.tsx:121-154`). Both blocks repeat the identical shape:
    `onClose={isSubmitting ? undefined : closeDialog}`, `actions={isSubmitting ? EMPTY_DIALOG_ACTIONS : undefined}`,
-   and a body ternary (`isSubmitting ? <SubmittingIndicator /> : render*(dialogState.item)`)
-   gated on `dialogState?.type === 'edit'|'remove'`. Not a DRY blocker at this size (two call
-   sites, each dialog genuinely has distinct data/labels), but the ~15 lines of repeated
-   conditional structure could be extracted into a small local helper to remove the duplication
-   outright.
+   and a body ternary (`isSubmitting ? <SubmittingIndicator /> : render*(dialogState.item)`) gated
+   on `dialogState?.type === 'edit'|'remove'`. Not a DRY blocker at this size (two call sites, each
+   dialog genuinely has distinct data/labels), but the ~15 lines of repeated conditional structure
+   could be extracted into a small local helper to remove the duplication outright.
    - **Fix:** extract the shared `isSubmitting`-swap shape into a small local helper (e.g. a
      `renderDialogBody(type, renderContent)` closure) reused by both `Dialog` blocks.
 
@@ -115,4 +132,39 @@ is finding 1 above), security (N/A, reasoning above).
 
 ---
 
-*Round 2, if needed, will be appended below — this section is never overwritten.*
+## Round 2
+
+**Commit range reviewed (delta only):** `61087aa22..174d6b455` — `implementer`'s single fix commit
+(`fix(components): memoize CardListRow and extract dialog-swap helper`) on top of the round-1
+reviewed HEAD, addressing both round-1 minor findings above. Confirmed via `git show --stat
+174d6b455`: only `card-list-with-abm-dialog.tsx` changed production code; `review-engineering.md`
+and `review.md` are doc-only additions.
+
+**CI (run once by `reviews_lead`, not the reviewer):**
+- `pnpm lint` — green, repo-wide (turbo, 14 packages).
+- `pnpm check-types` — green, repo-wide (turbo, 14 packages).
+- `pnpm test` — green, repo-wide (turbo, 12 packages with tests); `@helsoft/components` explicitly
+  re-run (not cache-trusted): 70 suites / 515 tests passed, including
+  `card-list-with-abm-dialog.test.tsx` and `use-card-list-with-abm-dialog.test.ts`.
+- Feature e2e — `card-list-with-abm-dialog.e2e.js` run explicitly with `--reporter=list`: 5/5
+  passed, single run, no flake observed.
+- **CI green @ `174d6b455`.**
+
+**Reviewer invoked:** `reviewer_engineering`, scoped to the fix delta only (`git diff 61087aa22
+174d6b455 -- .../card-list-with-abm-dialog.tsx` plus the full commit), per round-2 protocol — not a
+full re-review, only confirming the two round-1 findings are resolved and the fix mechanics
+themselves introduce nothing new. Verdict: **RESOLVED**. Full delta analysis recorded in
+`review-engineering.md` under "## Round 2 — fix-delta verification"; summary folded into each
+finding's `resolved` note above.
+
+### Verdict: APPROVED
+
+Both round-1 minor findings confirmed resolved; no new blocker/major/minor finding introduced by
+the fix itself (generic-preserving `memo` cast verified sound; `dialogInteractionProps`/
+`renderDialogBody` extraction verified behavior-preserving). Zero findings open. CI green @
+`174d6b455`. `review_round` incremented to 2 in `tasks.md`.
+
+---
+
+*Full findings trail retained above — nothing deleted, both round-1 findings marked `resolved`
+with their round-2 verification notes.*
