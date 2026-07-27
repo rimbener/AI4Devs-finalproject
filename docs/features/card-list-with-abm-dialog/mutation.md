@@ -1,9 +1,12 @@
 # Mutation — card-list-with-abm-dialog
 
-**Verdict: 97.2%, not 100%.** 2 survivors remain, both re-confirmed **genuinely equivalent** after a
-real, empirically-tested restructuring attempt in round 2 (below). Escalating per the ≤2-round
-cap — round 2 could not raise the score without either (a) hiding a real, already-killed mutant
-behind a blanket disable comment, or (b) making the score *worse* (verified by actually trying it).
+**Verdict: 97.2%, not 100%. ACCEPTED — mutation 2-round cap, 2026-07-27.** 2 survivors remain, both
+re-confirmed **genuinely equivalent** after a real, empirically-tested restructuring attempt in
+round 2 (below). Escalated per the ≤2-round cap — round 2 could not raise the score without either
+(a) hiding a real, already-killed mutant behind a blanket disable comment, or (b) making the score
+*worse* (verified by actually trying it). Escalated to the human, who reviewed this evidence and
+explicitly accepted 97.2% as final rather than authorizing a `Dialog` mount-strategy change to
+chase the last 2 points (recorded in `spec.md`'s Open decisions and `dod.md`).
 
 ## Round 1 → Round 2 → Round 3 (this pass)
 
