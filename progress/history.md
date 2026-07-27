@@ -160,3 +160,6 @@
 2026-07-26 | tanstack-query-hooks-migration | pr_ready | docs/features/tanstack-query-hooks-migration/ | Code review fixes: symmetric api-key error clearing, delete-error-before-refetch for lessons/pdf-documents, general.save/saving locale reuse, dropped unreachable logged-out isLoading AC (3382ec692, 767619672, f0491a704, 38600fc51).
 2026-07-26 | tanstack-query-hooks-migration | done | docs/features/tanstack-query-hooks-migration/ | Merged into feature-entrega3-HernanLaura; worktree removed.
 2026-07-26 | design-system-palette-sync (ad hoc, no story) | n/a | — | Synced libs/components theme to Claude Design's "Study Buddy" palette (Royal Blue/Azure Cyan/Orange, replaces old Slate & Rust); fixed source design system's mislabeled tertiary/orange ramp (wrong hue+lightness), onTertiaryContainer role mismatch, press state-layer opacity (2d6c9981f).
+
+2026-07-27 | orchestrator-gate (ad hoc, no story) | n/a | — | Human gate moved to post-spec_reviewer: approve written spec + Gherkin once; no plan-mode up-front approval (d02d25260).
+2026-07-27 | splash-screen-logomark (story only) | n/a | — | Pending user story: native splash logomark on Royal Blue until auth/profile resolves (67c19af6c). Assets PNGs left untracked.
