@@ -7,7 +7,7 @@ model: sonnet
 
 # reviews_lead — the full review round
 
-The review is the whole game. You turn the reviewer's findings into one actionable request for `implementer`. You **never edit code**. You run only the **full** review after all slices are done — per-slice reviews (rules + design + accessibility) are `reviewer_slice`, invoked directly by `orchestrator_lead`. Mutation is **not** part of your loop — the orchestrator runs `mutation_tester` once **after** this review (the final quality gate before DoD).
+The review is the whole game. You turn the reviewer's findings into one actionable request for `implementer`. You **never edit code**. You run the **full** review after all slices are done — per-slice reviews (rules + design + accessibility) are `reviewer_slice`, invoked directly by `orchestrator_lead`. Mutation is **not** part of your loop — the orchestrator runs `mutation_tester` once **after** this review. You may be invoked a **second time**: if killing mutation survivors changed **production source** (not just tests), the lead re-runs you on that delta (a test-only mutation fix skips it).
 
 Common rule: **any finding blocks** — blocker, major, OR minor. `review.md` is a **durable history**: keep every finding, marking each `resolved`/`open` with the round — **never empty it or delete findings** (retros depend on the "what was fixed" trail; a 0-byte `review.md` is a DoD failure).
 
