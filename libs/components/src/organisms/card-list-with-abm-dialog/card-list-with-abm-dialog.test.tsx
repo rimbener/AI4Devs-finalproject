@@ -21,13 +21,14 @@ import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { Text } from 'react-native';
+import {
+  cardListItemEditTestId,
+  cardListItemRemoveTestId,
+} from '../../molecules/card-list-row/card-list-row';
 import { Dialog } from '../dialog/dialog';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
   CardListWithABMDialog,
-  cardListItemCardTestId,
-  cardListItemEditTestId,
-  cardListItemRemoveTestId,
 } from './card-list-with-abm-dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
 
@@ -162,77 +163,9 @@ describe('CardListWithABMDialog', () => {
     expect(list.props.keyExtractor(items[1])).toBe('item-2');
   });
 
-  // @s2 — disabled item renders at reduced opacity with both icons disabled.
-  it('renders a disabled item at theme.disabledOpacity with disabled edit/remove icons', async () => {
-    await render(
-      <CardListWithABMDialog {...makeProps({ items: [{ ...items[0]!, disabled: true }] })} />,
-    );
-
-    const card = screen.getByTestId(cardListItemCardTestId('item-1'));
-    expect(flattenStyle(card.props.style).opacity).toBe(0.38);
-
-    const editButton = within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole(
-      'button',
-    );
-    const removeButton = within(screen.getByTestId(cardListItemRemoveTestId('item-1'))).getByRole(
-      'button',
-    );
-    expect(editButton.props.accessibilityState?.disabled).toBe(true);
-    expect(removeButton.props.accessibilityState?.disabled).toBe(true);
-  });
-
-  it('does not reduce opacity or disable icons for a non-disabled item', async () => {
-    await render(<CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />);
-
-    const card = screen.getByTestId(cardListItemCardTestId('item-1'));
-    expect(flattenStyle(card.props.style).opacity).toBeUndefined();
-
-    const editButton = within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole(
-      'button',
-    );
-    expect(editButton.props.accessibilityState?.disabled).toBe(false);
-  });
-
-  // @s3 — showEditButton: false hides only the edit icon.
-  it('hides only the edit icon when showEditButton is false', async () => {
-    await render(
-      <CardListWithABMDialog
-        {...makeProps({
-          items: [{ ...items[0]!, showEditButton: false, showRemoveButton: true }],
-        })}
-      />,
-    );
-
-    expect(screen.queryByTestId(cardListItemEditTestId('item-1'))).toBeNull();
-    expect(screen.getByTestId(cardListItemRemoveTestId('item-1'))).toBeTruthy();
-  });
-
-  // @s4 — showRemoveButton: false hides only the remove icon.
-  it('hides only the remove icon when showRemoveButton is false', async () => {
-    await render(
-      <CardListWithABMDialog
-        {...makeProps({
-          items: [{ ...items[0]!, showEditButton: true, showRemoveButton: false }],
-        })}
-      />,
-    );
-
-    expect(screen.getByTestId(cardListItemEditTestId('item-1'))).toBeTruthy();
-    expect(screen.queryByTestId(cardListItemRemoveTestId('item-1'))).toBeNull();
-  });
-
-  it('renders neither edit nor remove icon when both flags are omitted', async () => {
-    await render(
-      <CardListWithABMDialog
-        {...makeProps({
-          items: [{ ...items[0]!, showEditButton: undefined, showRemoveButton: undefined }],
-        })}
-      />,
-    );
-
-    expect(screen.queryByTestId(cardListItemEditTestId('item-1'))).toBeNull();
-    expect(screen.queryByTestId(cardListItemRemoveTestId('item-1'))).toBeNull();
-  });
+  // @s2/@s3/@s4 — per-row disabled styling/icon-disabled-state and show*Button icon visibility
+  // are CardListRow's own concern — covered in card-list-row.test.tsx against the real
+  // (non-mocked) molecule. Here the organism only needs to prove it renders that real row.
 
   // @s15 — empty list with emptyStateMessage.
   it('renders the title, add button, and emptyStateMessage when items is empty and message is set', async () => {
@@ -562,25 +495,21 @@ describe('CardListWithABMDialog', () => {
     expect(screen.getByText('Cancel')).toBeTruthy();
   });
 
-  // Mutation coverage: the list/card testIDs are exported constants/helpers that both the
-  // component and this file's other assertions import from the same module, so mutating the
-  // underlying literal to '' is invisible to a self-referential query. These two assert the
-  // literal, hardcoded testID strings instead.
+  // Mutation coverage: CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID is an exported constant that both
+  // the component and this file's other assertions import from the same module, so mutating the
+  // underlying literal to '' is invisible to a self-referential query. Asserts the literal,
+  // hardcoded testID string instead. (The card testID's own literal is covered in
+  // card-list-row.test.tsx, where that constant is now owned.)
   it('renders the list under its documented literal testID', async () => {
     await render(<CardListWithABMDialog {...makeProps()} />);
 
     expect(screen.getByTestId('card-list-with-abm-dialog-list')).toBeTruthy();
   });
 
-  it("renders a card's testID as the documented literal template", async () => {
-    await render(<CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />);
-
-    expect(screen.getByTestId('card-list-with-abm-dialog-card-item-1')).toBeTruthy();
-  });
-
-  // Mutation coverage (line 81 ArrayDeclaration): renderItem must be recomputed — and use the
-  // latest getEditAccessibilityLabel/getRemoveAccessibilityLabel closures — on a rerender that
-  // changes those props without changing items, not just stay memoized off a stale FlatList cell.
+  // Mutation coverage (renderItem's dependency-array ArrayDeclaration): renderItem must be
+  // recomputed — and use the latest getEditAccessibilityLabel/getRemoveAccessibilityLabel
+  // closures — on a rerender that changes those props without changing items, not just stay
+  // memoized off a stale FlatList cell.
   it('reflects new getEditAccessibilityLabel/getRemoveAccessibilityLabel on rerender, same item', async () => {
     const { rerender } = await render(
       <CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />,
@@ -665,24 +594,6 @@ describe('CardListWithABMDialog', () => {
     expect(flattenStyle(screen.getByText('Nothing here yet').props.style).color).toBeDefined();
   });
 
-  it("lays out a row's content and actions as a centered horizontal row with spacing", async () => {
-    await render(<CardListWithABMDialog {...makeProps({ items: [items[0]!] })} />);
-
-    const card = screen.getByTestId(cardListItemCardTestId('item-1'));
-    const row = card.children[0] as typeof card;
-    const content = row.children[0] as typeof card;
-    const actions = row.children[1] as typeof card;
-
-    expect(flattenStyle(row.props.style)).toEqual({
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    });
-    expect(flattenStyle(content.props.style)).toEqual({ flex: 1 });
-    expect(flattenStyle(actions.props.style)).toEqual({
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-    });
-  });
+  // Row-internal layout (content/actions flex row) is CardListRow's own concern — covered in
+  // card-list-row.test.tsx.
 });
