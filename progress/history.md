@@ -165,3 +165,4 @@
 2026-07-27 | splash-screen-logomark (story only) | n/a | — | Pending user story: native splash logomark on Royal Blue until auth/profile resolves (67c19af6c). Assets PNGs left untracked.
 2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | New generic CardListWithABMDialog organism; mutation 97.2% human-accepted (2 equivalent mutants).
 2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Mini-gate bug fix: decoupled isOpen from dialogState, stops empty-dialog flash on close (@s19/@s20, 8aa12b28e).
+2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Mini-gate closed: full review APPROVED, mutation re-run 97.44% (same 2 equivalents), DoD re-PASS.
