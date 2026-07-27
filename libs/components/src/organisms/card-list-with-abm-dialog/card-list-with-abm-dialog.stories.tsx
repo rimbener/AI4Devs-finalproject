@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { Text } from 'react-native';
+import { userEvent } from 'storybook/test';
 
 import { CardListWithABMDialog } from './card-list-with-abm-dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
@@ -54,6 +55,9 @@ const meta = {
     removeSubmitLabel: 'Remove',
     removeCancelLabel: 'Keep it',
     onRemoveConfirm: () => {},
+    getEditAccessibilityLabel: (item) => `Edit ${item.accessibleLabel}`,
+    getRemoveAccessibilityLabel: (item) => `Remove ${item.accessibleLabel}`,
+    isSubmitting: false,
   },
 } satisfies Meta<typeof CardListWithABMDialogStory>;
 
@@ -94,6 +98,36 @@ export const RemoveOnlyCard: Story = {
   },
 };
 
+/** @s18 — edit dialog open: tap the edit icon to open it, showing renderEditForm(item). */
+export const EditDialogOpen: Story = {
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByLabelText('Edit Mitochondria flashcard'));
+  },
+};
+
+/** @s18 — remove dialog open: tap the remove icon to open the remove-confirmation dialog. */
+export const RemoveDialogOpen: Story = {
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByLabelText('Remove Photosynthesis flashcard'));
+  },
+};
+
+/** @s18 — isSubmitting true while the edit dialog is open: body swaps to SubmittingIndicator. */
+export const EditDialogSubmitting: Story = {
+  args: { isSubmitting: true },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByLabelText('Edit Mitochondria flashcard'));
+  },
+};
+
+/** @s18 — isSubmitting true while the remove dialog is open: body swaps to SubmittingIndicator. */
+export const RemoveDialogSubmitting: Story = {
+  args: { isSubmitting: true },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByLabelText('Remove Photosynthesis flashcard'));
+  },
+};
+
 /** Demonstrates onAddPress firing — the story renders the resulting tap count. */
 const InteractiveAddDemo = () => {
   const [tapCount, setTapCount] = useState(0);
@@ -116,6 +150,9 @@ const InteractiveAddDemo = () => {
         removeSubmitLabel="Remove"
         removeCancelLabel="Keep it"
         onRemoveConfirm={() => {}}
+        getEditAccessibilityLabel={(item) => `Edit ${item.accessibleLabel}`}
+        getRemoveAccessibilityLabel={(item) => `Remove ${item.accessibleLabel}`}
+        isSubmitting={false}
       />
       <Text>{`Added ${tapCount} times`}</Text>
     </>

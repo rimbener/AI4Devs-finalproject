@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import { Button } from '../../atoms/button/button';
 import { Card } from '../../atoms/card/card';
 import { IconButton } from '../../atoms/icon-button/icon-button';
+import { SubmittingIndicator } from '../../molecules/submitting-indicator/submitting-indicator';
 import { layout } from '../../theme/spacing';
 import { Dialog } from '../dialog/dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
@@ -12,17 +13,24 @@ import { useCardListWithABMDialog } from './use-card-list-with-abm-dialog';
 /** testID for the virtualized content list. */
 export const CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID = 'card-list-with-abm-dialog-list';
 
+// Truthy-but-empty: overrides Dialog's `actions ?? (<default buttons>)` fallback
+// (`undefined`/`null` would fall through to it) to hide the cancel/submit row while
+// isSubmitting is true.
+const EMPTY_DIALOG_ACTIONS = <></>;
+
 /** testID for a row's `Card` wrapper (its opacity carries the disabled visual, @s2). */
 export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;
-/** testID prefix for a row's edit icon (per-action accessible name arrives in task-2/3). */
+/** testID prefix for a row's edit icon. */
 export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog-edit-${id}`;
-/** testID prefix for a row's remove icon (per-action accessible name arrives in task-2/3). */
+/** testID prefix for a row's remove icon. */
 export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
 
 type CardListRowProps<TItem> = {
   item: CardListItem<TItem>;
   onEditPress: (item: CardListItem<TItem>) => void;
   onRemovePress: (item: CardListItem<TItem>) => void;
+  getEditAccessibilityLabel: (item: CardListItem<TItem>) => string;
+  getRemoveAccessibilityLabel: (item: CardListItem<TItem>) => string;
 };
 
 /**
@@ -30,9 +38,9 @@ type CardListRowProps<TItem> = {
  * edit/remove icon affordances, each opening the shared `Dialog` organism (edit-form /
  * remove-confirmation). Open-dialog state lives in `use-card-list-with-abm-dialog.ts` as a
  * single discriminated union (spec.md's Open decisions) — only one dialog can be open at a
- * time by construction. The per-action `getEdit/RemoveAccessibilityLabel` builder props and
- * `isSubmitting` land in task-3 — see spec.md; each icon keeps an interim
- * `item.accessibleLabel` name meanwhile.
+ * time by construction. While `isSubmitting` is true, the open dialog's body swaps entirely to
+ * `SubmittingIndicator`, its cancel/submit buttons are hidden (`actions={<></>}`), and it can't
+ * be dismissed via scrim/Escape (`onClose={undefined}`).
  */
 export const CardListWithABMDialog = <TItem,>({
   title,
@@ -50,6 +58,9 @@ export const CardListWithABMDialog = <TItem,>({
   removeSubmitLabel,
   removeCancelLabel,
   onRemoveConfirm,
+  getEditAccessibilityLabel,
+  getRemoveAccessibilityLabel,
+  isSubmitting,
 }: CardListWithABMDialogProps<TItem>) => {
   const { dialogState, openEditDialog, openRemoveDialog, closeDialog } =
     useCardListWithABMDialog<TItem>();
@@ -58,9 +69,15 @@ export const CardListWithABMDialog = <TItem,>({
 
   const renderItem = useCallback(
     ({ item }: { item: CardListItem<TItem> }) => (
-      <CardListRow item={item} onEditPress={openEditDialog} onRemovePress={openRemoveDialog} />
+      <CardListRow
+        item={item}
+        onEditPress={openEditDialog}
+        onRemovePress={openRemoveDialog}
+        getEditAccessibilityLabel={getEditAccessibilityLabel}
+        getRemoveAccessibilityLabel={getRemoveAccessibilityLabel}
+      />
     ),
-    [openEditDialog, openRemoveDialog],
+    [openEditDialog, openRemoveDialog, getEditAccessibilityLabel, getRemoveAccessibilityLabel],
   );
 
   const handleEditConfirm = () => {
@@ -103,23 +120,37 @@ export const CardListWithABMDialog = <TItem,>({
       )}
       <Dialog
         open={dialogState?.type === 'edit'}
-        onClose={closeDialog}
+        onClose={isSubmitting ? undefined : closeDialog}
         headline={editDialogTitle}
         confirmLabel={editSubmitLabel}
         cancelLabel={editCancelLabel}
         onConfirm={handleEditConfirm}
+        actions={isSubmitting ? EMPTY_DIALOG_ACTIONS : undefined}
       >
-        {dialogState?.type === 'edit' ? renderEditForm(dialogState.item) : null}
+        {dialogState?.type === 'edit' ? (
+          isSubmitting ? (
+            <SubmittingIndicator />
+          ) : (
+            renderEditForm(dialogState.item)
+          )
+        ) : null}
       </Dialog>
       <Dialog
         open={dialogState?.type === 'remove'}
-        onClose={closeDialog}
+        onClose={isSubmitting ? undefined : closeDialog}
         headline={removeDialogTitle}
         confirmLabel={removeSubmitLabel}
         cancelLabel={removeCancelLabel}
         onConfirm={handleRemoveConfirm}
+        actions={isSubmitting ? EMPTY_DIALOG_ACTIONS : undefined}
       >
-        {dialogState?.type === 'remove' ? renderRemoveConfirmation(dialogState.item) : null}
+        {dialogState?.type === 'remove' ? (
+          isSubmitting ? (
+            <SubmittingIndicator />
+          ) : (
+            renderRemoveConfirmation(dialogState.item)
+          )
+        ) : null}
       </Dialog>
     </View>
   );
@@ -129,12 +160,17 @@ export const CardListWithABMDialog = <TItem,>({
  * One row: `Card` wrapping the caller's content plus optional edit/remove icons.
  * Icons are wrapped in a local testID `View` rather than the shared `IconButton` atom
  * gaining a `testID` prop (atom-ban).
- * `item.accessibleLabel` is used as an interim accessible name for both icons this slice
- * (WCAG 4.1.2 — `IconButton` always renders `accessibilityRole="button"`, so an accessible
- * name must not be missing); task-3's `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`
- * builder props supersede this with a per-action label, not a second competing prop.
+ * Each icon's accessible name is built per-action by the caller-supplied
+ * `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` props (WCAG 4.1.2 — `IconButton`
+ * always renders `accessibilityRole="button"`, so an accessible name must not be missing).
  */
-const CardListRow = <TItem,>({ item, onEditPress, onRemovePress }: CardListRowProps<TItem>) => (
+const CardListRow = <TItem,>({
+  item,
+  onEditPress,
+  onRemovePress,
+  getEditAccessibilityLabel,
+  getRemoveAccessibilityLabel,
+}: CardListRowProps<TItem>) => (
   <Card
     testID={cardListItemCardTestId(item.id)}
     style={item.disabled ? styles.disabledCard : undefined}
@@ -148,7 +184,7 @@ const CardListRow = <TItem,>({ item, onEditPress, onRemovePress }: CardListRowPr
               icon="edit"
               size={layout.touchTarget}
               disabled={item.disabled}
-              accessibilityLabel={item.accessibleLabel}
+              accessibilityLabel={getEditAccessibilityLabel(item)}
               onPress={() => onEditPress(item)}
             />
           </View>
@@ -159,7 +195,7 @@ const CardListRow = <TItem,>({ item, onEditPress, onRemovePress }: CardListRowPr
               icon="delete"
               size={layout.touchTarget}
               disabled={item.disabled}
-              accessibilityLabel={item.accessibleLabel}
+              accessibilityLabel={getRemoveAccessibilityLabel(item)}
               onPress={() => onRemovePress(item)}
             />
           </View>

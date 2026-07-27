@@ -2,9 +2,9 @@ import type { ReactNode } from 'react';
 
 /**
  * One row of `CardListWithABMDialog`. Generic over the caller's domain object (`TItem`) so
- * edit/remove callbacks (wired in task-2/3) receive it directly with no id lookup.
- * `accessibleLabel` is consumed by the (task-2/3) `getEdit/RemoveAccessibilityLabel` builder
- * props — it is part of the stable contract now even though this slice doesn't read it yet.
+ * edit/remove callbacks receive it directly with no id lookup.
+ * `accessibleLabel` is consumed by the `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`
+ * builder props — it is part of the stable contract, not rendered directly.
  */
 export type CardListItem<TItem> = {
   id: string;
@@ -17,8 +17,8 @@ export type CardListItem<TItem> = {
 };
 
 /**
- * Props for this + prior slices — chrome (title/list/add) plus edit/remove dialog wiring.
- * task-3 adds the accessibility-label builder props/`isSubmitting` (per spec.md's full surface).
+ * Full prop surface (spec.md) — chrome (title/list/add), edit/remove dialog wiring, per-action
+ * accessible-name builders, and the `isSubmitting` in-flight state.
  */
 export type CardListWithABMDialogProps<TItem> = {
   title: string;
@@ -43,4 +43,16 @@ export type CardListWithABMDialogProps<TItem> = {
   removeCancelLabel: string;
   /** Called when the remove dialog's submit button is pressed; the dialog then closes. */
   onRemoveConfirm: (item: CardListItem<TItem>) => void;
+
+  /** Builds the edit icon's accessible name for a given item (caller owns phrasing/i18n). */
+  getEditAccessibilityLabel: (item: CardListItem<TItem>) => string;
+  /** Builds the remove icon's accessible name for a given item (caller owns phrasing/i18n). */
+  getRemoveAccessibilityLabel: (item: CardListItem<TItem>) => string;
+
+  /**
+   * Whether the open dialog (edit or remove) is mid-submit. While true, that dialog's body is
+   * replaced entirely by `SubmittingIndicator`, its cancel/submit buttons are hidden, and it
+   * cannot be dismissed via scrim/Escape (spec.md's Open decisions).
+   */
+  isSubmitting: boolean;
 };

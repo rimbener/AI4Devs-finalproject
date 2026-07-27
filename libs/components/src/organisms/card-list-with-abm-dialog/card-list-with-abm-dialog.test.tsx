@@ -1,3 +1,10 @@
+// SubmittingIndicator (rendered while isSubmitting) calls useLocalization — mock it as the
+// rest of this lib's dialog tests do (e.g. api-key-form-dialog.test.tsx).
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: jest.fn(),
+}));
+
+import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
@@ -52,10 +59,19 @@ const makeProps = (
   removeSubmitLabel: 'Remove',
   removeCancelLabel: 'Keep it',
   onRemoveConfirm: jest.fn(),
+  getEditAccessibilityLabel: (item) => `Edit ${item.accessibleLabel}`,
+  getRemoveAccessibilityLabel: (item) => `Remove ${item.accessibleLabel}`,
+  isSubmitting: false,
   ...overrides,
 });
 
+const mockUseLocalization = useLocalization as jest.Mock;
+
 describe('CardListWithABMDialog', () => {
+  beforeEach(() => {
+    mockUseLocalization.mockReturnValue({ t: (key: string) => key });
+  });
+
   // @s1 — populated list renders title, add button, and each item's content.
   it('renders the title, an Add button, and one Card per item', async () => {
     await render(<CardListWithABMDialog {...makeProps()} />);
@@ -74,19 +90,31 @@ describe('CardListWithABMDialog', () => {
     expect(screen.getByRole('header', { name: 'My List' })).toBeTruthy();
   });
 
-  // [a11y] edit/remove IconButtons must always expose an accessible name (WCAG 4.1.2) — this
-  // slice uses item.accessibleLabel as the interim name; task-3 supersedes it per-action.
-  it('gives each edit/remove icon an accessible name from item.accessibleLabel', async () => {
+  // @s14 — per-card icon buttons have card-specific accessible names built by the caller's
+  // getEditAccessibilityLabel/getRemoveAccessibilityLabel props (WCAG 4.1.2: name must exist).
+  it('builds each edit/remove icon accessible name from get*AccessibilityLabel(item), distinct per card', async () => {
     await render(<CardListWithABMDialog {...makeProps()} />);
 
-    const editButton = within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole(
+    const editButton1 = within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole(
       'button',
     );
-    const removeButton = within(screen.getByTestId(cardListItemRemoveTestId('item-1'))).getByRole(
+    const removeButton1 = within(screen.getByTestId(cardListItemRemoveTestId('item-1'))).getByRole(
       'button',
     );
-    expect(editButton.props.accessibilityLabel).toBe('First card');
-    expect(removeButton.props.accessibilityLabel).toBe('First card');
+    const editButton2 = within(screen.getByTestId(cardListItemEditTestId('item-2'))).getByRole(
+      'button',
+    );
+    const removeButton2 = within(screen.getByTestId(cardListItemRemoveTestId('item-2'))).getByRole(
+      'button',
+    );
+
+    expect(editButton1.props.accessibilityLabel).toBe('Edit First card');
+    expect(removeButton1.props.accessibilityLabel).toBe('Remove First card');
+    expect(editButton2.props.accessibilityLabel).toBe('Edit Second card');
+    expect(removeButton2.props.accessibilityLabel).toBe('Remove Second card');
+
+    expect(editButton1.props.accessibilityLabel).not.toBe(editButton2.props.accessibilityLabel);
+    expect(removeButton1.props.accessibilityLabel).not.toBe(removeButton2.props.accessibilityLabel);
   });
 
   it('extracts each item id as the FlatList key', async () => {
@@ -343,5 +371,67 @@ describe('CardListWithABMDialog', () => {
 
     expect(screen.queryByText('Edit card')).toBeNull();
     expect(screen.getByText('Remove card')).toBeTruthy();
+  });
+
+  // @s11 — isSubmitting swaps the open edit dialog to a submitting state.
+  it('replaces the edit dialog body with SubmittingIndicator and hides its buttons while isSubmitting', async () => {
+    const { rerender } = await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
+      );
+    });
+    expect(screen.getByText('Edit form for item-1')).toBeTruthy();
+
+    await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: true })} />);
+
+    expect(screen.getByText('Edit card')).toBeTruthy(); // headline still shown
+    expect(screen.queryByText('Edit form for item-1')).toBeNull();
+    expect(screen.getByText('general.saving')).toBeTruthy();
+    expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.queryByText('Cancel')).toBeNull();
+  });
+
+  // @s12 — isSubmitting swaps the open remove dialog to a submitting state.
+  it('replaces the remove dialog body with SubmittingIndicator and hides its buttons while isSubmitting', async () => {
+    const { rerender } = await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemRemoveTestId('item-2'))).getByRole('button'),
+      );
+    });
+    expect(screen.getByText('Remove item-2?')).toBeTruthy();
+
+    await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: true })} />);
+
+    expect(screen.getByText('Remove card')).toBeTruthy(); // headline still shown
+    expect(screen.queryByText('Remove item-2?')).toBeNull();
+    expect(screen.getByText('general.saving')).toBeTruthy();
+    expect(screen.queryByText('Remove')).toBeNull();
+    expect(screen.queryByText('Keep it')).toBeNull();
+  });
+
+  // @s13 — isSubmitting returning to false restores the normal content and buttons.
+  it('restores the normal dialog content and buttons once isSubmitting returns to false', async () => {
+    const { rerender } = await render(
+      <CardListWithABMDialog {...makeProps({ isSubmitting: true })} />,
+    );
+
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
+      );
+    });
+    expect(screen.getByText('general.saving')).toBeTruthy();
+    expect(screen.queryByText('Edit form for item-1')).toBeNull();
+
+    await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: false })} />);
+
+    expect(screen.queryByText('general.saving')).toBeNull();
+    expect(screen.getByText('Edit form for item-1')).toBeTruthy();
+    expect(screen.getByText('Save')).toBeTruthy();
+    expect(screen.getByText('Cancel')).toBeTruthy();
   });
 });
