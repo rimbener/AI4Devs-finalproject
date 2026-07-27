@@ -163,3 +163,4 @@
 
 2026-07-27 | orchestrator-gate (ad hoc, no story) | n/a | — | Human gate moved to post-spec_reviewer: approve written spec + Gherkin once; no plan-mode up-front approval (d02d25260).
 2026-07-27 | splash-screen-logomark (story only) | n/a | — | Pending user story: native splash logomark on Royal Blue until auth/profile resolves (67c19af6c). Assets PNGs left untracked.
+2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | New generic CardListWithABMDialog organism; mutation 97.2% human-accepted (2 equivalent mutants).
