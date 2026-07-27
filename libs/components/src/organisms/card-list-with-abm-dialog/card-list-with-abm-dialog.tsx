@@ -150,6 +150,14 @@ export const CardListWithABMDialog = <TItem,>({
         />
       )}
       <Dialog
+        // Stryker disable next-line OptionalChaining: dialogState is never null while isOpen is
+        // true — openEditDialog/openRemoveDialog always set both together in the same handler
+        // (React batches them into one render), and closeDialog only ever flips isOpen back to
+        // false, never clearing dialogState. The `isOpen &&` short-circuit means `dialogState.type`
+        // is only evaluated once isOpen is true, i.e. once dialogState is already set — so `?.`
+        // vs `.` can never observably differ. Re-verified (mutation.md, Round 4) with a test that
+        // exercises exactly this pairing across an edit→close→remove sequence: at every step the
+        // other dialog's own `open` prop (and its type discriminant) is asserted directly.
         open={isOpen && dialogState?.type === 'edit'}
         {...dialogInteractionProps}
         headline={editDialogTitle}
@@ -160,6 +168,7 @@ export const CardListWithABMDialog = <TItem,>({
         {renderDialogBody('edit', renderEditForm)}
       </Dialog>
       <Dialog
+        // Stryker disable next-line OptionalChaining: same equivalence as the edit Dialog above.
         open={isOpen && dialogState?.type === 'remove'}
         {...dialogInteractionProps}
         headline={removeDialogTitle}

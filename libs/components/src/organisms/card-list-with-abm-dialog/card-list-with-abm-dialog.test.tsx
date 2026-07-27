@@ -460,6 +460,46 @@ describe('CardListWithABMDialog', () => {
     expect(screen.getByText('Remove card')).toBeTruthy();
   });
 
+  // Mutation coverage (line 153/163 — the `isOpen && dialogState?.type === <type>` Dialog `open`
+  // guards): opens edit, closes it (per the bug fix, `dialogState` keeps its stale `{type:
+  // 'edit', ...}` while only `isOpen` flips false), then opens remove for a DIFFERENT item —
+  // asserting each Dialog's own `open` prop at every step, not just the rendered text. The
+  // mid-sequence assertion (edit open, remove's own `open` still false) is what a
+  // `dialogState?.type === 'remove'` → `true` mutant on line 163 would flip to `true` — since
+  // `isOpen` is already `true` at that point, only the real `type` check keeps remove closed
+  // while edit is open. The final assertions confirm the stale edit `dialogState` never leaks
+  // into either guard once remove replaces it.
+  it("gates each Dialog's own open prop by its matching type, never the other stale dialogState", async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    // Open edit (item-1) — only edit's own `open` guard should be true.
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
+      );
+    });
+    expect(lastCallFor('Edit card').open).toBe(true);
+    expect(lastCallFor('Remove card').open).toBe(false);
+
+    // Close edit — isOpen flips false; dialogState still holds the stale edit item (bug fix).
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel'));
+    });
+    expect(lastCallFor('Edit card').open).toBe(false);
+    expect(lastCallFor('Remove card').open).toBe(false);
+
+    // Open remove for a DIFFERENT item (item-2) — dialogState is replaced entirely: remove's
+    // own guard is true with the new item, edit's stays false, never a mix of both.
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemRemoveTestId('item-2'))).getByRole('button'),
+      );
+    });
+    expect(lastCallFor('Remove card').open).toBe(true);
+    expect(bodyText(lastCallFor('Remove card').children)).toBe('Remove item-2?');
+    expect(lastCallFor('Edit card').open).toBe(false);
+  });
+
   // @s11 — isSubmitting swaps the open edit dialog to a submitting state.
   it('replaces the edit dialog body with SubmittingIndicator and hides its buttons while isSubmitting', async () => {
     const { rerender } = await render(<CardListWithABMDialog {...makeProps()} />);
