@@ -1,7 +1,6 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
 import { useLocalization } from '@helsoft/localization';
-import type { AiProvider } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { LessonGenerationPanel } from './lesson-generation-panel';
 import { LessonGenerationPanelProvider } from './lesson-generation-panel.context';
@@ -39,10 +38,13 @@ describe('LessonGenerationPanel', () => {
       canGenerate: true,
       onGenerate: jest.fn(),
       showPickers: true,
-      savedProviders: ['groq', 'openai'] as AiProvider[],
+      savedProviders: [
+        { id: 'groq', name: 'Groq' },
+        { id: 'openai', name: 'OpenAI' },
+      ],
       modelOptions: [
-        { id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' },
-        { id: 'openai/gpt-oss-120b', labelKey: 'aiModel.groq.gptOss120b' },
+        { id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' },
+        { id: 'openai/gpt-oss-120b', label: 'GPT OSS 120B' },
       ],
       selectedProvider: 'groq',
       selectedModel: 'openai/gpt-oss-20b',
@@ -56,9 +58,7 @@ describe('LessonGenerationPanel', () => {
 
       expect(screen.getByText('generation.provider.heading')).toBeTruthy();
       expect(screen.getByText('generation.model.heading')).toBeTruthy();
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     // @s19 — pickers hidden when showPickers is false (platform path).
@@ -74,7 +74,7 @@ describe('LessonGenerationPanel', () => {
       const onProviderChange = jest.fn();
       await renderPanel({ ...pickerProps, onProviderChange });
 
-      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
 
       expect(onProviderChange).toHaveBeenCalledWith('openai');
     });
@@ -83,7 +83,7 @@ describe('LessonGenerationPanel', () => {
       const onModelChange = jest.fn();
       await renderPanel({ ...pickerProps, onModelChange });
 
-      fireEvent.press(screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'GPT OSS 120B' }));
 
       expect(onModelChange).toHaveBeenCalledWith('openai/gpt-oss-120b');
     });
@@ -428,14 +428,12 @@ describe('LessonGenerationPanel', () => {
       canGenerate: true,
       onGenerate: jest.fn(),
       showPickers: true,
-      savedProviders: ['groq'],
-      modelOptions: [{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }],
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' }],
       selectedProvider: 'groq',
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
   });
 
   it('defaults the provider picker to the first saved provider when selectedProvider is unset', async () => {
@@ -446,13 +444,14 @@ describe('LessonGenerationPanel', () => {
       canGenerate: true,
       onGenerate: jest.fn(),
       showPickers: true,
-      savedProviders: ['groq', 'openai'],
-      modelOptions: [{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }],
+      savedProviders: [
+        { id: 'groq', name: 'Groq' },
+        { id: 'openai', name: 'OpenAI' },
+      ],
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' }],
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
   });
 
   it('does not render stray default savedProviders when showPickers is omitted', async () => {
@@ -464,7 +463,7 @@ describe('LessonGenerationPanel', () => {
       onGenerate: jest.fn(),
     });
 
-    expect(screen.queryByRole('radio', { name: 'settings.apiKey.provider.groq' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Groq' })).toBeNull();
   });
 
   it('requests composition heading via the generation.composition.heading i18n key', async () => {

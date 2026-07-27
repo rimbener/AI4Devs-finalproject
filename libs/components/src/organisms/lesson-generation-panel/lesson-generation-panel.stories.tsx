@@ -77,10 +77,13 @@ export const FreeByokWithPickers: Story = {
     state: 'empty',
     canGenerate: true,
     showPickers: true,
-    savedProviders: ['groq', 'openai'],
+    savedProviders: [
+      { id: 'groq', name: 'Groq' },
+      { id: 'openai', name: 'OpenAI' },
+    ],
     modelOptions: [
-      { id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' },
-      { id: 'openai/gpt-oss-120b', labelKey: 'aiModel.groq.gptOss120b' },
+      { id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' },
+      { id: 'openai/gpt-oss-120b', label: 'GPT OSS 120B' },
     ],
     selectedProvider: 'groq',
     selectedModel: 'openai/gpt-oss-20b',

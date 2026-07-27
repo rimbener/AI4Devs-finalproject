@@ -27,12 +27,7 @@ const tMap: Record<string, string> = {
   'settings.apiKey.manager.addNew': 'Add new provider',
   'settings.apiKey.manager.selectProvider': 'Select provider',
   'settings.apiKey.manager.emptyMessage': 'No API keys saved',
-  'settings.apiKey.provider.groq': 'Groq',
-  'settings.apiKey.provider.openai': 'OpenAI',
-  'settings.apiKey.provider.anthropic': 'Anthropic',
-  'settings.apiKey.provider.google': 'Google',
-  'settings.apiKey.provider.xai': 'xAI',
-  'settings.apiKey.provider.deepseek': 'DeepSeek',
+  'settings.apiKey.manager.disabled': 'Disabled',
 };
 
 type TOptions = Record<string, unknown>;
@@ -43,14 +38,14 @@ const t = (key: string, opts?: TOptions) => {
   return tMap[key] ?? key;
 };
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
+const providers: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
 
 const providerNames: Record<AiProvider, string> = {
   groq: 'Groq',
@@ -73,11 +68,13 @@ const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:
 
 const defaultProps: ApiKeyManagerProps = {
   savedKeys: [],
+  providers,
+  enabledProviders: providers,
   onSave: jest.fn(),
   onRemove: jest.fn(),
   guidanceUrls,
   getSavedStatusLabel,
-  providerNameKeys,
+  providerNames,
 };
 
 describe('ApiKeyManager', () => {
@@ -92,6 +89,20 @@ describe('ApiKeyManager', () => {
     expect(screen.getByText('No API keys saved')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add new provider' })).toBeTruthy();
     expect(screen.queryByRole('radiogroup')).toBeNull();
+  });
+
+  // Mutation: emptied `container` StyleSheet object (`{ gap: theme.spacing.s4 }`). Mirrors the
+  // flattenStyle pattern used elsewhere in this lib for killing layout-object mutants.
+  it('applies a gap on the root container stacking the empty state', async () => {
+    const flattenStyle = (style: unknown): Record<string, unknown> =>
+      Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+
+    await render(<ApiKeyManager {...defaultProps} />);
+
+    const containerFlat = flattenStyle(
+      screen.getByText('No API keys saved').parent?.parent?.props?.style,
+    );
+    expect(containerFlat.gap).toBeTruthy();
   });
 
   // @s3 — a saved key renders as a masked row.
@@ -216,6 +227,12 @@ describe('ApiKeyManager', () => {
     expect(onSave).toHaveBeenCalledWith('groq', 'sk-test-key');
   });
 
+  // `const handleSave = () => { if (formProvider) { onSave(formProvider, apiKey); } };` — the
+  // Save button is already UI-disabled without a formProvider (a normal `fireEvent.press` can
+  // never reach `handleSave` with a falsy `formProvider`, since a disabled `Pressable` swallows
+  // the press). Both branches of this guard are exercised directly, bypassing that UI disabled
+  // state, in `api-key-manager.handle-save.test.tsx`.
+
   // @s2 — isSubmitting shows progress and hides Save (no empty-form flash).
   it('disables Save and shows a progress label while isSubmitting', async () => {
     const view = await render(<ApiKeyManager {...defaultProps} />);
@@ -323,6 +340,35 @@ describe('ApiKeyManager', () => {
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
   });
 
+  // task-7, @s8 — a disabled, unsaved provider is excluded from the add modal too, same as an
+  // already-saved one.
+  it('excludes a disabled, unsaved provider from the add modal radio group (@s8)', async () => {
+    await render(
+      <ApiKeyManager {...defaultProps} enabledProviders={providers.filter((p) => p !== 'xai')} />,
+    );
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add new provider' }));
+    });
+
+    expect(screen.queryByRole('radio', { name: 'xAI' })).toBeNull();
+    expect(screen.getByRole('radio', { name: 'Groq' })).toBeTruthy();
+  });
+
+  // task-6, @s5/@s6/@s22 — a saved, now-disabled provider stays in the list, badged.
+  it('shows the Disabled indicator on a saved provider absent from enabledProviders', async () => {
+    await render(
+      <ApiKeyManager
+        {...defaultProps}
+        savedKeys={[groqKey]}
+        enabledProviders={providers.filter((p) => p !== 'groq')}
+      />,
+    );
+
+    expect(screen.getByText('Disabled')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove Groq' })).toBeTruthy();
+  });
+
   it('shows the guidance link after selecting a provider with a configured guidanceUrl', async () => {
     await render(<ApiKeyManager {...defaultProps} />);
 
@@ -352,7 +398,8 @@ describe('ApiKeyManager', () => {
     expect(t).toHaveBeenCalledWith('settings.apiKey.manager.addNew');
     expect(t).toHaveBeenCalledWith('settings.apiKey.replace');
     expect(t).toHaveBeenCalledWith('settings.apiKey.remove');
-    expect(t).toHaveBeenCalledWith('settings.apiKey.provider.groq');
+    // Provider display names are plain catalog strings now (Decision 3, task-3) — no i18n key
+    // lookup for them at all, so there is nothing further to assert here about `t`'s calls.
   });
 
   it('clears the key field when selecting a provider in the add modal', async () => {

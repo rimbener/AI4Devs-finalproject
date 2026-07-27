@@ -7,10 +7,23 @@
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
+import { loadProviderCatalog } from '../_shared/provider-catalog.ts';
 import { handleRemoveApiKey, type RemoveApiKeyResult } from './handle-remove.ts';
 import { handleSaveApiKey, type ApiKeyStatus, type SaveApiKeyResult } from './handle-save.ts';
 import { logEvent } from './logger.ts';
-import { isAiProvider, type AiProvider } from './provider.ts';
+import { guardRemoveProvider, guardSaveProvider, type AiProvider } from './provider.ts';
+
+// Cast used ONLY at the two `loadProviderCatalog(adminClient, ...)` call sites below (Full
+// review round 1, Minor finding): the real `SupabaseClient`'s `.maybeSingle()` returns a
+// thenable query builder rather than a plain `Promise`, which `loadProviderCatalog`'s minimal
+// structural `CatalogQueryClient` type (task-3/D5) otherwise rejects. Scoped narrowly so
+// `adminClient`'s every other use in this file (`.from('user_ai_keys').select(...)`, both
+// `.rpc(...)` calls) keeps real `SupabaseClient` type checking -- unlike
+// generate-lesson/index.ts's file-wide `AnySupabaseClient` (that file's `deno check` can't even
+// evaluate it today due to unrelated npm:zod resolution issues; this file's `deno check` is
+// green, so widening the whole file would give up a check that actually passes).
+// deno-lint-ignore no-explicit-any
+type AnySupabaseClient = any;
 
 type SaveRequestBody = {
   action: 'save';
@@ -25,7 +38,15 @@ type RemoveRequestBody = {
 
 type RequestBody = SaveRequestBody | RemoveRequestBody;
 
-type DispatchResult = { status: number; body: SaveApiKeyResult | RemoveApiKeyResult };
+// The catalog-backed guard's own wire-level failure shape (ai-provider-registry-backend, D11) --
+// a distinct, Edge-local `{ code }` union, not `@helsoft/types`' `ApiKeyErrorCode` (D11 keeps that
+// widening + copy + client mapping in the paired frontend story's scope).
+type ProviderGuardErrorResult = { code: 'network_error' | 'provider_disabled' };
+
+type DispatchResult = {
+  status: number;
+  body: SaveApiKeyResult | RemoveApiKeyResult | ProviderGuardErrorResult;
+};
 
 type UserAiKeyRow = { provider: string; updated_at: string };
 
@@ -84,9 +105,13 @@ const authenticateCaller = async (
 
 /**
  * Routes a parsed, already-authenticated request body to the save or remove handler. Returns
- * `null` for a malformed/unrecognized body (Full review round 1, Minor 11: `body.provider`
- * must be a member of the closed AiProvider allow-list, not just truthy -- no check constraint
- * exists on `user_ai_keys.provider`) so the caller can respond 400.
+ * `null` for a malformed/unrecognized body (`action`/`provider`/`apiKey` shape) so the caller can
+ * respond 400 -- unchanged from today (Full review round 1, Minor 11).
+ *
+ * The catalog entry for `body.provider` is loaded exactly once here, via the existing
+ * service-role `adminClient` (task-9, D6) -- no hardcoded allow-list remains. A throwing read
+ * propagates out of this function uncaught, straight into the top-level try/catch below, which
+ * fails closed as 502 network_error (task-10, D6) -- asserted, not a new branch.
  */
 const dispatch = async (
   body: Partial<RequestBody>,
@@ -94,8 +119,14 @@ const dispatch = async (
   userId: string,
 ): Promise<DispatchResult | null> => {
   if (body.action === 'remove') {
-    if (!isAiProvider(body.provider)) {
+    if (typeof body.provider !== 'string') {
       return null;
+    }
+    // Remove never consults `enabled` (D10) -- only whether the provider is known at all.
+    const entry = await loadProviderCatalog(adminClient as AnySupabaseClient, body.provider);
+    const guard = guardRemoveProvider(entry);
+    if (!guard.ok) {
+      return { status: 400, body: { code: guard.code } };
     }
     const result = await handleRemoveApiKey(
       { userId, provider: body.provider },
@@ -114,8 +145,16 @@ const dispatch = async (
     return { status: errorStatus(result), body: result };
   }
 
-  if (body.action !== 'save' || !isAiProvider(body.provider) || typeof body.apiKey !== 'string') {
+  if (body.action !== 'save' || typeof body.provider !== 'string' || typeof body.apiKey !== 'string') {
     return null;
+  }
+
+  // Save is refused for a disabled provider (D10/D12), checked once the entry is loaded here,
+  // before any Vault write/RPC call.
+  const entry = await loadProviderCatalog(adminClient as AnySupabaseClient, body.provider);
+  const guard = guardSaveProvider(entry);
+  if (!guard.ok) {
+    return { status: 400, body: { code: guard.code } };
   }
 
   const result = await handleSaveApiKey(

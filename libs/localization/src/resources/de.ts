@@ -168,38 +168,13 @@ export const de: TranslationResource = {
         documentNotReady: 'Dieses Dokument ist noch nicht bereit. Lade dein PDF erneut hoch.',
         unauthenticated: 'Bitte melde dich an, um eine Lektion zu generieren.',
         persistFailed: 'Deine Lektion konnte nicht gespeichert werden. Versuche es erneut.',
+        providerDisabled:
+          'Dieser Anbieter ist derzeit deaktiviert. Wähle einen anderen und versuche es erneut.',
         action: {
           retry: 'Erneut versuchen',
           settings: 'Zu den Einstellungen',
           signIn: 'Anmelden',
         },
-      },
-    },
-    aiModel: {
-      groq: {
-        gptOss20b: 'GPT-OSS 20B',
-        gptOss120b: 'GPT-OSS 120B',
-        qwen36_27b: 'Qwen 3.6 27B',
-      },
-      openai: {
-        gpt56Luna: 'GPT-5.6 Luna',
-        gpt56Terra: 'GPT-5.6 Terra',
-      },
-      anthropic: {
-        claudeHaiku45: 'Claude Haiku 4.5',
-        claudeSonnet5: 'Claude Sonnet 5',
-      },
-      google: {
-        gemini36Flash: 'Gemini 3.6 Flash',
-        gemini25Flash: 'Gemini 2.5 Flash',
-      },
-      xai: {
-        grok43: 'Grok 4.3',
-        grok45: 'Grok 4.5',
-      },
-      deepseek: {
-        v4Flash: 'DeepSeek V4 Flash',
-        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -273,14 +248,6 @@ export const de: TranslationResource = {
         replace: 'Ersetzen',
         remove: 'Entfernen',
         savedStatus: '{{provider}}-Schlüssel gespeichert · Aktualisiert {{date}}',
-        provider: {
-          groq: 'Groq',
-          openai: 'OpenAI',
-          anthropic: 'Anthropic',
-          google: 'Google',
-          xai: 'xAI',
-          deepseek: 'DeepSeek',
-        },
         guidanceTemplate: 'Noch keinen Schlüssel? Bei {{provider}} erhalten',
         guidance: 'Noch keinen Schlüssel? Bei Groq erhalten',
         removeConfirmHeadline: 'API-Schlüssel entfernen?',
@@ -293,9 +260,12 @@ export const de: TranslationResource = {
           addNew: 'Neuen Anbieter hinzufügen',
           selectProvider: 'Anbieter auswählen',
           emptyMessage: 'Keine API-Schlüssel gespeichert',
+          disabled: 'Deaktiviert',
         },
         error: {
           empty: 'Gib deinen API-Schlüssel ein.',
+          providerDisabled:
+            'Dieser Anbieter ist derzeit deaktiviert und kann keinen neuen Schlüssel annehmen.',
         },
       },
     },

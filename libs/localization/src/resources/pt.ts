@@ -164,38 +164,13 @@ export const pt: TranslationResource = {
         documentNotReady: 'Este documento ainda não está pronto. Reenvie seu PDF.',
         unauthenticated: 'Entre na sua conta para gerar uma lição.',
         persistFailed: 'Não foi possível salvar sua lição. Tente novamente.',
+        providerDisabled:
+          'Esse provedor está desativado no momento. Escolha outro e tente novamente.',
         action: {
           retry: 'Tentar novamente',
           settings: 'Ir para Configurações',
           signIn: 'Entrar',
         },
-      },
-    },
-    aiModel: {
-      groq: {
-        gptOss20b: 'GPT-OSS 20B',
-        gptOss120b: 'GPT-OSS 120B',
-        qwen36_27b: 'Qwen 3.6 27B',
-      },
-      openai: {
-        gpt56Luna: 'GPT-5.6 Luna',
-        gpt56Terra: 'GPT-5.6 Terra',
-      },
-      anthropic: {
-        claudeHaiku45: 'Claude Haiku 4.5',
-        claudeSonnet5: 'Claude Sonnet 5',
-      },
-      google: {
-        gemini36Flash: 'Gemini 3.6 Flash',
-        gemini25Flash: 'Gemini 2.5 Flash',
-      },
-      xai: {
-        grok43: 'Grok 4.3',
-        grok45: 'Grok 4.5',
-      },
-      deepseek: {
-        v4Flash: 'DeepSeek V4 Flash',
-        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -269,14 +244,6 @@ export const pt: TranslationResource = {
         replace: 'Substituir',
         remove: 'Remover',
         savedStatus: 'Chave da {{provider}} salva · Atualizada em {{date}}',
-        provider: {
-          groq: 'Groq',
-          openai: 'OpenAI',
-          anthropic: 'Anthropic',
-          google: 'Google',
-          xai: 'xAI',
-          deepseek: 'DeepSeek',
-        },
         guidanceTemplate: 'Não tem uma chave? Obtenha uma na {{provider}}',
         guidance: 'Não tem uma chave? Obtenha uma na Groq',
         removeConfirmHeadline: 'Remover chave de API?',
@@ -288,9 +255,12 @@ export const pt: TranslationResource = {
           addNew: 'Adicionar novo provedor',
           selectProvider: 'Selecionar provedor',
           emptyMessage: 'Nenhuma chave de API salva',
+          disabled: 'Desativado',
         },
         error: {
           empty: 'Informe sua chave de API.',
+          providerDisabled:
+            'Este provedor está desativado no momento e não pode receber uma nova chave.',
         },
       },
     },

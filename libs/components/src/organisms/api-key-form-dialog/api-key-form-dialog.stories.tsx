@@ -1,18 +1,22 @@
-import { AI_PROVIDERS, type AiProvider } from '@helsoft/types';
+import type { AiProvider } from '@helsoft/types';
 import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { useState } from 'react';
 
 import { ApiKeyFormDialog } from './api-key-form-dialog';
 import type { ApiKeyFormDialogProps } from './api-key-form-dialog.types';
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
+const providerNames: Record<AiProvider, string> = {
+  groq: 'Groq',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google',
+  xai: 'xAI',
+  deepseek: 'DeepSeek',
 };
+
+// Canonical catalog order, mirrored from `providerNames` above — replaces the deleted hardcoded
+// provider-id constant (task-11).
+const ALL_PROVIDERS = Object.keys(providerNames) as AiProvider[];
 
 const guidanceUrls: Partial<Record<AiProvider, string>> = {
   groq: 'https://console.groq.com/keys',
@@ -50,7 +54,7 @@ const meta = {
     onClose: () => {},
     formMode: 'add',
     formProvider: null,
-    unsavedProviders: AI_PROVIDERS,
+    unsavedProviders: ALL_PROVIDERS,
     apiKey: '',
     onApiKeyChange: () => {},
     onSelectProvider: () => {},
@@ -58,7 +62,7 @@ const meta = {
     isSaveDisabled: true,
     onSave: () => {},
     guidanceUrls,
-    providerNameKeys,
+    providerNames,
   },
   render: (args) => <InteractiveAdd {...args} />,
 } satisfies Meta<typeof ApiKeyFormDialog>;

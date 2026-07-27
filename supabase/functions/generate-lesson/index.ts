@@ -21,6 +21,8 @@ import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { z } from 'npm:zod@4';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
+import { loadProviderCatalog } from '../_shared/provider-catalog.ts';
+import type { ProviderEntry } from '../_shared/provider-catalog.types.ts';
 import { assembleGeneratedLesson } from './_shared/lesson-generation.assembly.ts';
 import { GenerationTimeoutError, mapGenerationError } from './_shared/lesson-generation.errors.ts';
 import {
@@ -137,10 +139,11 @@ type SlideAnchorSummary = { index: number; title: string; content: string };
  * decision for an image, which `applyVisionPlacements` already degrades to text-only (@s12). */
 const runVisionPlacement = async (
   ctx: GenerationContext,
+  entry: ProviderEntry | null,
   images: { imageId: string; bytes: Uint8Array }[],
   slides: SlideAnchorSummary[],
 ): Promise<VisionPlacementDecision[]> => {
-  const visionModelId = resolveVisionModelForPlacement(ctx.provider, ctx.model);
+  const visionModelId = resolveVisionModelForPlacement(entry, ctx.model);
   if (!visionModelId) return [];
 
   const visionModel = createProviderModel(ctx.provider, ctx.apiKey)(visionModelId);
@@ -220,11 +223,23 @@ Deno.serve(async (req) => {
     return errorResponse(req, 'document_not_ready', 422);
   }
 
+  // Loaded once per request (D9 -- never re-read, never cached across invocations) and threaded
+  // into model validation (task-4), the BYOK/platform `enabled` gate (task-7), and vision-model
+  // resolution (task-5) below. route.ts calls this same callback for whichever provider id its
+  // active branch needs -- the named provider on the BYOK route, hardcoded groq on the platform
+  // route -- so `providerEntry` is already populated by the time handleLessonGenerationRoute
+  // resolves, on either route.
+  let providerEntry: ProviderEntry | null = null;
+
   let resolvedKey: Awaited<ReturnType<typeof handleLessonGenerationRoute>>;
   try {
     resolvedKey = await handleLessonGenerationRoute({
       userId: user.id,
       requestBody: body,
+      loadProviderEntry: async (providerId) => {
+        providerEntry = await loadProviderCatalog(adminClient, providerId);
+        return providerEntry;
+      },
       readPlanFlags: async (userId) => {
         const { data: profileRow, error: profileError } = await adminClient
           .from('profiles')
@@ -278,7 +293,7 @@ Deno.serve(async (req) => {
     } catch {
       // best-effort; still return the typed generation error
     }
-    return errorResponse(req, 
+    return errorResponse(req,
       resolvedKey.errorCode,
       resolvedKey.errorCode === 'platform_key_unavailable'
         ? 503
@@ -286,11 +301,17 @@ Deno.serve(async (req) => {
           ? 429
           : resolvedKey.errorCode === 'generation_failed'
             ? 500
-            : resolvedKey.errorCode === 'invalid_model'
+            // invalid_model (@s18/@s19) and provider_disabled (@s17, D13) share 422 -- the BYOK
+            // route's own disabled-provider status, matching invalid_model's existing status.
+            : resolvedKey.errorCode === 'invalid_model' || resolvedKey.errorCode === 'provider_disabled'
               ? 422
               : 422,
     );
   }
+  // No fallback load here: route.ts's platform branch already called loadProviderEntry('groq')
+  // for its own @s20 gate above, so `providerEntry` already holds groq's entry for vision
+  // resolution below on a successful platform route -- re-reading it would violate D9.
+
   const images = (resolvedKey.imageMetadata ?? []) as DocumentImageRow[];
 
   const promptImages: PromptImageManifestEntry[] = images.map((image) => ({
@@ -357,7 +378,7 @@ Deno.serve(async (req) => {
             content: slide.content ?? '',
           }));
           visionDecisions = await callProviderWithResolvedKey(resolvedKey, () =>
-            runVisionPlacement(generationCtx, downloaded, slideSummaries),
+            runVisionPlacement(generationCtx, providerEntry, downloaded, slideSummaries),
           );
         }
       } catch {
