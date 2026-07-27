@@ -25,6 +25,7 @@ import { Dialog } from '../dialog/dialog';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
   CardListWithABMDialog,
+  cardListItemCardTestId,
   cardListItemEditTestId,
   cardListItemRemoveTestId,
 } from './card-list-with-abm-dialog';
@@ -106,6 +107,16 @@ describe('CardListWithABMDialog', () => {
     // full props (nested element trees) accumulated across every test in this file is what
     // blows the worker's heap, not anything under test.
     DialogMock.mockClear();
+  });
+
+  // Locks the testID-builder export contract: other tests/e2e query rows by these exact
+  // strings (via getByTestId), so the resolved format itself must be asserted directly —
+  // not just exercised indirectly through a passing getByTestId lookup (kills the
+  // StringLiteral-to-'' and ArrowFunction-to-undefined mutation survivors on this export).
+  it('builds the row/edit/remove testID strings in the documented format', () => {
+    expect(cardListItemCardTestId('item-1')).toBe('card-list-with-abm-dialog-card-item-1');
+    expect(cardListItemEditTestId('item-1')).toBe('card-list-with-abm-dialog-edit-item-1');
+    expect(cardListItemRemoveTestId('item-1')).toBe('card-list-with-abm-dialog-remove-item-1');
   });
 
   // @s1 — populated list renders title, add button, and each item's content.
