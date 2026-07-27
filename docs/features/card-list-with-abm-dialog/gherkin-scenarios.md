@@ -131,3 +131,17 @@ Feature: CardListWithABMDialog
     Given the CardListWithABMDialog Storybook file
     When its stories are enumerated
     Then stories exist for: populated list, empty list without emptyStateMessage, empty list with emptyStateMessage, a disabled card, an edit-only card, a remove-only card, edit dialog open, remove dialog open, isSubmitting true for the edit dialog, and isSubmitting true for the remove dialog
+
+  @s19
+  Scenario: Closing the edit dialog does not flash empty content
+    Given the edit dialog is open showing renderEditForm(item) content
+    When the user closes it via Cancel, scrim tap, or Escape
+    Then the dialog's last content continues to render for the duration of its close transition
+    And no empty dialog body is shown while it is closing
+
+  @s20
+  Scenario: Closing the remove dialog does not flash empty content
+    Given the remove dialog is open showing renderRemoveConfirmation(item) content
+    When the user closes it via Cancel, scrim tap, or Escape
+    Then the dialog's last content continues to render for the duration of its close transition
+    And no empty dialog body is shown while it is closing
