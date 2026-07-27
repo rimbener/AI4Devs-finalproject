@@ -158,6 +158,34 @@ describe('useApiKeyManager', () => {
     expect(result.current?.confirmingRemove).toBeNull();
   });
 
+  // `if (provider === null) { dispatch({ type: 'confirm-remove/close' }); return; }` — closing
+  // dispatches a dedicated action that leaves `dialogIsSubmitting` untouched. Falling through to
+  // `confirm-remove/open` with a `null` provider instead (what an inverted/removed guard would
+  // do) also happens to clear `confirmingRemove` to `null`, but it additionally resets
+  // `dialogIsSubmitting` to `false` — the distinguishing, observable side effect asserted here.
+  it('closing the remove confirmation does not disturb an in-flight dialogIsSubmitting flag', async () => {
+    const { result, rerender } = await renderHook(
+      ({ isSubmitting }: { isSubmitting: boolean }) =>
+        useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers, isSubmitting }),
+      { initialProps: { isSubmitting: false } },
+    );
+
+    await act(async () => {
+      result.current?.setConfirmingRemove('groq');
+    });
+    expect(result.current?.dialogIsSubmitting).toBe(false);
+
+    await rerender({ isSubmitting: true });
+    expect(result.current?.dialogIsSubmitting).toBe(true);
+
+    await act(async () => {
+      result.current?.setConfirmingRemove(null);
+    });
+
+    expect(result.current?.confirmingRemove).toBeNull();
+    expect(result.current?.dialogIsSubmitting).toBe(true);
+  });
+
   it('recomputes unsaved providers when savedKeys changes', async () => {
     const openaiKey: SavedProviderKey = {
       provider: 'openai',

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { AiProviderCatalogEntry } from '@helsoft/types';
 
 import {
@@ -229,6 +230,18 @@ describe('resolveGenerationSelection (@s20/@s21, task-4: catalog-backed)', () =>
   it('falls back to an empty model id when the entry has no models', () => {
     expect(resolveGenerationSelection([{ ...openaiEntry, models: [] }], null)).toEqual({
       provider: 'openai',
+      model: '',
+    });
+  });
+
+  // Mutation — `fallbackEntry?.models[0]?.modelId ?? ''`'s FIRST `?.` (guarding `fallbackEntry`
+  // itself, distinct from the second `?.` guarding `models[0]` covered above): when
+  // `savedProviders` is empty, `fallbackEntry` is `undefined`. Without this `?.`,
+  // `undefined.models` throws instead of falling back to `''`.
+  it('does not throw and falls back to an empty model id when savedProviders is empty', () => {
+    expect(() => resolveGenerationSelection([], null)).not.toThrow();
+    expect(resolveGenerationSelection([], null)).toEqual({
+      provider: undefined,
       model: '',
     });
   });

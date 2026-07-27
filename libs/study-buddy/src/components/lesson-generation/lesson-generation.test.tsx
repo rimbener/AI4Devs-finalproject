@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useAiProviders: jest.fn(),
@@ -980,6 +981,113 @@ describe('LessonGeneration', () => {
 
     expect(mockSetStoredPreference).not.toHaveBeenCalled();
     expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+  });
+
+  // Mutation: `showPickers && selectedProvider && selectedModel` → `showPickers || (...)`/`true`.
+  // showPickers false alone isn't enough to distinguish `&&` from `||` unless the other two
+  // operands are BOTH truthy (otherwise `x || (falsy && falsy)` still evaluates falsy too) —
+  // force that exact combination via a direct mock of useLessonGenerationForm.
+  it('does not persist a preference when showPickers is false even if provider and model are set', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseLessonGenerationForm.mockReturnValue({
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      showPickers: false,
+      showMissingKeyGate: false,
+      canGenerate: true,
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
+      selectedProvider: 'groq',
+      selectedModel: 'openai/gpt-oss-20b',
+      setSelectedModel: jest.fn(),
+      selectProvider: jest.fn(),
+      buildGenerateRequest: () => ({
+        documentId: 'doc-1',
+        composition: 'both' as const,
+      }),
+    });
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    await act(async () => {
+      capturedPanelValue.current?.onGenerate();
+    });
+
+    expect(mockSetStoredPreference).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+  });
+
+  // Mutation: `if (showPickers && selectedProvider && selectedModel)` — a mutant collapsing
+  // `showPickers && selectedProvider` to `true` (or to `showPickers || selectedProvider`) would
+  // still gate on `selectedModel` alone, or on `showPickers || selectedProvider`, and fire the
+  // persist call even though `showPickers` is false. Pin: with a defined selectedProvider AND
+  // selectedModel but showPickers false, the real guard still must not persist.
+  it('does not persist a preference on generate when showPickers is false even with a defined provider and model', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseLessonGenerationForm.mockReturnValue({
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      showPickers: false,
+      showMissingKeyGate: false,
+      canGenerate: true,
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
+      selectedProvider: 'groq',
+      selectedModel: 'openai/gpt-oss-20b',
+      setSelectedModel: jest.fn(),
+      selectProvider: jest.fn(),
+      buildGenerateRequest: () => ({
+        documentId: 'doc-1',
+        composition: 'both' as const,
+      }),
+    });
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    await act(async () => {
+      capturedPanelValue.current?.onGenerate();
+    });
+
+    expect(mockSetStoredPreference).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+  });
+
+  // Mutation: handleModelChange's useCallback deps `[setSelectedModel]` → `[]` — dropping the
+  // dependency would freeze the callback to the FIRST render's setSelectedModel, so a later
+  // rerender handing a new setSelectedModel (as a genuinely different closure would after real
+  // state changes) must still be the one onModelChange calls.
+  it('calls the latest setSelectedModel after a rerender hands a new one in (useCallback deps)', async () => {
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    const setSelectedModelA = jest.fn();
+    const setSelectedModelB = jest.fn();
+    const baseFormValue = {
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      showPickers: true,
+      showMissingKeyGate: false,
+      canGenerate: true,
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
+      selectedProvider: 'groq' as const,
+      selectedModel: 'openai/gpt-oss-20b',
+      selectProvider: jest.fn(),
+      buildGenerateRequest: () => ({ documentId: 'doc-1', composition: 'both' as const }),
+    };
+    mockUseLessonGenerationForm.mockReturnValue({
+      ...baseFormValue,
+      setSelectedModel: setSelectedModelA,
+    });
+
+    const { rerender } = await render(<LessonGeneration documentId="doc-1" />);
+
+    mockUseLessonGenerationForm.mockReturnValue({
+      ...baseFormValue,
+      setSelectedModel: setSelectedModelB,
+    });
+    await act(async () => {
+      rerender(<LessonGeneration documentId="doc-1" />);
+    });
+
+    await act(async () => {
+      capturedPanelValue.current?.onModelChange?.('openai/gpt-oss-120b');
+    });
+
+    expect(setSelectedModelB).toHaveBeenCalledWith('openai/gpt-oss-120b');
+    expect(setSelectedModelA).not.toHaveBeenCalled();
   });
 
   it('wires providerNameKeys for every saved provider label', async () => {

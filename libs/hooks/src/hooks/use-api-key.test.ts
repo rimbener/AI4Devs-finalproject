@@ -291,6 +291,64 @@ describe('useApiKey', () => {
     expect(result.current.error).toBeNull();
   });
 
+  // Mutation-kill (saveMutation onSuccess guard, line 49) — with no session, sessionUserId is
+  // falsy: a successful save must NOT write the cache under the empty-user key and must NOT
+  // reset the sibling removeMutation (which would otherwise clear its error).
+  it('does not update the cache or reset the sibling mutation when saveApiKey succeeds without a session', async () => {
+    mockUseSession.mockReturnValue(noSession);
+    service.removeApiKey.mockRejectedValue(
+      Object.assign(new Error('offline'), { code: 'network_error' }),
+    );
+    service.saveApiKey.mockResolvedValue(keysStatus(['groq']));
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper(queryClient) });
+
+    // Seed removeMutation with an error so we can prove saveMutation's onSuccess does not reset it.
+    act(() => {
+      result.current.removeApiKey('groq');
+    });
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
+
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test');
+    });
+
+    await waitFor(() => expect(service.saveApiKey).toHaveBeenCalledWith('groq', 'sk-test'));
+    await waitFor(() => expect(result.current.isSubmitting).toBe(false));
+
+    expect(result.current.error).toBe('network_error');
+    expect(queryClient.getQueryData(apiKeyStatusQueryKey(''))).toBeUndefined();
+  });
+
+  // Mutation-kill (removeMutation onSuccess guard, line 62) — with no session, sessionUserId is
+  // falsy: a successful remove must NOT write the cache under the empty-user key and must NOT
+  // reset the sibling saveMutation (which would otherwise clear its error).
+  it('does not update the cache or reset the sibling mutation when removeApiKey succeeds without a session', async () => {
+    mockUseSession.mockReturnValue(noSession);
+    service.saveApiKey.mockRejectedValue(
+      Object.assign(new Error('bad key'), { code: 'validation_error' }),
+    );
+    service.removeApiKey.mockResolvedValue(emptyStatus);
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper(queryClient) });
+
+    // Seed saveMutation with an error so we can prove removeMutation's onSuccess does not reset it.
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-bad');
+    });
+    await waitFor(() => expect(result.current.error).toBe('validation_error'));
+
+    act(() => {
+      result.current.removeApiKey('groq');
+    });
+
+    await waitFor(() => expect(service.removeApiKey).toHaveBeenCalledWith('groq'));
+    await waitFor(() => expect(result.current.isSubmitting).toBe(false));
+
+    expect(result.current.error).toBe('validation_error');
+    expect(queryClient.getQueryData(apiKeyStatusQueryKey(''))).toBeUndefined();
+  });
+
   // @s48 (example: saves a key) — isSubmitting is true while saveApiKey is in flight, false
   // once it settles.
   it('sets isSubmitting true during saveApiKey and false once it resolves', async () => {

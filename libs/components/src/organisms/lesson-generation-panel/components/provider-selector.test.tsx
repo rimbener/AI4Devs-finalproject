@@ -51,10 +51,14 @@ describe('ProviderSelector', () => {
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
   });
 
+  // `value={selectedProvider ?? savedProviders[0]?.id}` — proves the fallback resolves to
+  // savedProviders[0].id specifically: exactly one radio checked, and it's the first option.
   it('defaults selection to the first saved provider when selectedProvider is unset', async () => {
     await renderSelector(baseValue({ selectedProvider: undefined }));
 
     expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'OpenAI', checked: false })).toBeTruthy();
+    expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(1);
   });
 
   it('calls onProviderChange when another provider is chosen', async () => {
@@ -70,5 +74,14 @@ describe('ProviderSelector', () => {
     await renderSelector(baseValue({ savedProviders: [] }));
 
     expect(screen.queryByText('generation.provider.heading')).toBeNull();
+  });
+
+  // Proves the `savedProviders = []` destructure default actually matters: without it,
+  // `.length` on `undefined` would throw instead of rendering nothing.
+  it('renders nothing (without throwing) when savedProviders is undefined', async () => {
+    await renderSelector(baseValue({ savedProviders: undefined }));
+
+    expect(screen.queryByText('generation.provider.heading')).toBeNull();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 });

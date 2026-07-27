@@ -91,6 +91,20 @@ describe('ApiKeyManager', () => {
     expect(screen.queryByRole('radiogroup')).toBeNull();
   });
 
+  // Mutation: emptied `container` StyleSheet object (`{ gap: theme.spacing.s4 }`). Mirrors the
+  // flattenStyle pattern used elsewhere in this lib for killing layout-object mutants.
+  it('applies a gap on the root container stacking the empty state', async () => {
+    const flattenStyle = (style: unknown): Record<string, unknown> =>
+      Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+
+    await render(<ApiKeyManager {...defaultProps} />);
+
+    const containerFlat = flattenStyle(
+      screen.getByText('No API keys saved').parent?.parent?.props?.style,
+    );
+    expect(containerFlat.gap).toBeTruthy();
+  });
+
   // @s3 — a saved key renders as a masked row.
   it('renders a masked row for a saved provider key', async () => {
     const expectedLabel = getSavedStatusLabel('groq', groqKey.updatedAt);
@@ -212,6 +226,12 @@ describe('ApiKeyManager', () => {
 
     expect(onSave).toHaveBeenCalledWith('groq', 'sk-test-key');
   });
+
+  // `const handleSave = () => { if (formProvider) { onSave(formProvider, apiKey); } };` — the
+  // Save button is already UI-disabled without a formProvider (a normal `fireEvent.press` can
+  // never reach `handleSave` with a falsy `formProvider`, since a disabled `Pressable` swallows
+  // the press). Both branches of this guard are exercised directly, bypassing that UI disabled
+  // state, in `api-key-manager.handle-save.test.tsx`.
 
   // @s2 — isSubmitting shows progress and hides Save (no empty-form flash).
   it('disables Save and shows a progress label while isSubmitting', async () => {

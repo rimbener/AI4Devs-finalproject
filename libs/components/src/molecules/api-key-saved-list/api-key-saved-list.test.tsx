@@ -107,6 +107,23 @@ describe('ApiKeySavedList', () => {
     expect(screen.getByRole('button', { name: 'Replace OpenAI' })).toBeTruthy();
   });
 
+  // `if (!key) return null` — a provider can pass the `savedProviders` filter yet have no
+  // matching `savedKeys` entry (stale/inconsistent caller state); that row must not render, while
+  // a sibling provider that DOES have a matching key still renders normally.
+  it('skips a provider present in savedProviders but missing its savedKeys entry', async () => {
+    await render(
+      <ApiKeySavedList
+        {...defaultProps}
+        savedKeys={[groqKey]}
+        savedProviders={new Set<AiProvider>(['groq', 'openai'])}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Replace Groq' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Replace OpenAI' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove OpenAI' })).toBeNull();
+  });
+
   it('calls onReplace with the provider when Replace is pressed', async () => {
     const onReplace = jest.fn();
     await render(<ApiKeySavedList {...defaultProps} onReplace={onReplace} />);
@@ -179,5 +196,35 @@ describe('ApiKeySavedList', () => {
     );
 
     expect(screen.getAllByText('Disabled')).toHaveLength(1);
+  });
+
+  // Mutation: emptied row/statusRow/actionsRow/savedStatusLabel StyleSheet objects and their
+  // flexDirection/alignItems/flexWrap literals. Mirrors the flattenStyle pattern used elsewhere
+  // in this lib (e.g. pdf-document-list.test.tsx) for killing layout-object/literal mutants.
+  it('lays out the status row and actions row as wrapping horizontal flex groups', async () => {
+    const flattenStyle = (style: unknown): Record<string, unknown> =>
+      Object.assign({}, ...[style].flat(Infinity).filter(Boolean));
+
+    await render(<ApiKeySavedList {...defaultProps} />);
+
+    const statusLabel = screen.getByText(`groq · ${groqKey.updatedAt}`);
+    const statusRowFlat = flattenStyle(statusLabel.parent?.props?.style);
+    expect(statusRowFlat.flexDirection).toBe('row');
+    expect(statusRowFlat.alignItems).toBe('center');
+    expect(statusRowFlat.flexWrap).toBe('wrap');
+    expect(statusRowFlat.gap).toBeTruthy();
+
+    const rowFlat = flattenStyle(statusLabel.parent?.parent?.props?.style);
+    expect(rowFlat.gap).toBeTruthy();
+
+    const replaceButton = screen.getByRole('button', { name: 'Replace Groq' });
+    const actionsRowFlat = flattenStyle(replaceButton.parent?.props?.style);
+    expect(actionsRowFlat.flexDirection).toBe('row');
+    expect(actionsRowFlat.alignItems).toBe('center');
+    expect(actionsRowFlat.flexWrap).toBe('wrap');
+    expect(actionsRowFlat.gap).toBeTruthy();
+
+    const statusLabelFlat = flattenStyle(statusLabel.props.style);
+    expect(statusLabelFlat.color).toBeTruthy();
   });
 });

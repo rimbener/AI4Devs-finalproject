@@ -7,7 +7,11 @@ jest.mock('../dao/api-key.dao', () => ({
 }));
 
 import type { AiProvider } from '@helsoft/types';
-import { FunctionsHttpError } from '@supabase/supabase-js';
+import {
+  FunctionsFetchError,
+  FunctionsHttpError,
+  FunctionsRelayError,
+} from '@supabase/supabase-js';
 
 import { ApiKeyDao } from '../dao/api-key.dao';
 import { ApiKeyService } from './api-key.service';
@@ -75,16 +79,42 @@ describe('ApiKeyService', () => {
 
       await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
         code: 'provider_disabled',
+        message: 'Provider disabled',
       });
     });
 
     // task-8 — an unrecognized/malformed wire body still falls back to network_error, never a
-    // raw shape leaking through.
+    // raw shape leaking through. Different body than the provider_disabled case above, and a
+    // different resulting code/message, proving readFunctionErrorCode's resolution actually
+    // drives the output rather than a hardcoded value.
     it('falls back to network_error for an unrecognized wire code', async () => {
       dao.saveApiKey.mockRejectedValue(edgeFunctionError({ code: 'not_a_real_code' }));
 
       await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
         code: 'network_error',
+        message: 'Network error',
+      });
+    });
+
+    // line 61 area — a raw network-transport failure (never reaching the Edge Function's HTTP
+    // response) normalizes distinctly through the FunctionsFetchError/FunctionsRelayError branch,
+    // not by falling through the final catch-all on the next line (NoCoverage survivor).
+    it('normalizes a FunctionsFetchError rejection to a typed network_error', async () => {
+      dao.saveApiKey.mockRejectedValue(new FunctionsFetchError({ requestId: 'req-1' }));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+        message: 'Network error',
+      });
+    });
+
+    // line 61 area — same for the relay-cannot-reach-function case.
+    it('normalizes a FunctionsRelayError rejection to a typed network_error', async () => {
+      dao.saveApiKey.mockRejectedValue(new FunctionsRelayError({ region: 'us-east-1' }));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+        message: 'Network error',
       });
     });
 
@@ -95,6 +125,43 @@ describe('ApiKeyService', () => {
 
       await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
         code: 'network_error',
+      });
+    });
+
+    // errorCodeFromBody's guard — a parsed body of `null` fails the `typeof body !== 'object'`
+    // check (typeof null === 'object') but is caught by the `body === null` half of the `||`,
+    // proving that half isn't dropped and isn't wrongly ANDed with the other.
+    it('falls back to network_error when the parsed error body is null', async () => {
+      dao.saveApiKey.mockRejectedValue(edgeFunctionError(null));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+        message: 'Network error',
+      });
+    });
+
+    // errorCodeFromBody's guard — a parsed body that is a non-null non-object primitive fails
+    // via the `typeof body !== 'object'` half of the `||` (and never reaches `.code`), proving
+    // that half isn't dropped and isn't wrongly ANDed with the `body === null` half.
+    it('falls back to network_error when the parsed error body is a non-object primitive', async () => {
+      dao.saveApiKey.mockRejectedValue(edgeFunctionError('unexpected-string-body'));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+        message: 'Network error',
+      });
+    });
+
+    // errorCodeFromBody's guard — `undefined` is distinct from `null`: it only fails the
+    // `typeof body !== 'object'` half (the `body === null` half is false for `undefined`). If
+    // that left half were ever short-circuited away, `undefined.code` would throw a raw
+    // TypeError instead of resolving to network_error, so this proves the left half still runs.
+    it('falls back to network_error when the parsed error body is undefined', async () => {
+      dao.saveApiKey.mockRejectedValue(edgeFunctionError(undefined));
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+        message: 'Network error',
       });
     });
 

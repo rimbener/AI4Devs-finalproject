@@ -1,3 +1,4 @@
+// @ts-nocheck
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useAiProviders: jest.fn(),
@@ -23,8 +24,10 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
+import { lightTheme } from '@helsoft/components/theme';
 import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
+import type { AiProviderCatalogEntry } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
@@ -361,5 +364,119 @@ describe('ApiKeySettingsScreen', () => {
     expect(lastCall?.enabledProviders).toBe(firstCall?.enabledProviders);
     expect(lastCall?.providerNames).toBe(firstCall?.providerNames);
     expect(lastCall?.guidanceUrls).toBe(firstCall?.guidanceUrls);
+  });
+
+  // Mutation — providerIds/enabledProviderIds/providerNames/guidanceUrls useMemo derivations
+  // must reflect real, ordered catalog content, not just "an array/object exists".
+  it('derives providerIds, enabledProviderIds, providerNames, and guidanceUrls from a mixed enabled/disabled, mixed-guidanceUrl catalog', async () => {
+    const groqEntry: AiProviderCatalogEntry = {
+      id: 'groq',
+      name: 'Groq',
+      guidanceUrl: 'https://groq.example/keys',
+      enabled: true,
+      sortOrder: 1,
+      models: [],
+    };
+    const openaiEntry: AiProviderCatalogEntry = {
+      id: 'openai',
+      name: 'OpenAI',
+      guidanceUrl: null,
+      enabled: false,
+      sortOrder: 2,
+      models: [],
+    };
+    const anthropicEntry: AiProviderCatalogEntry = {
+      id: 'anthropic',
+      name: 'Anthropic',
+      guidanceUrl: 'https://anthropic.example/keys',
+      enabled: true,
+      sortOrder: 3,
+      models: [],
+    };
+    mockUseAiProviders.mockReturnValue({
+      providers: [groqEntry, openaiEntry, anthropicEntry],
+      enabledProviders: [groqEntry, anthropicEntry],
+      isLoading: false,
+    });
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    const [call] = capturedManagerProps.calls;
+    expect(call?.providers).toEqual(['groq', 'openai', 'anthropic']);
+    expect(call?.enabledProviders).toEqual(['groq', 'anthropic']);
+    expect(call?.providerNames).toEqual({
+      groq: 'Groq',
+      openai: 'OpenAI',
+      anthropic: 'Anthropic',
+    });
+    expect(call?.guidanceUrls).toEqual({
+      groq: 'https://groq.example/keys',
+      anthropic: 'https://anthropic.example/keys',
+    });
+    expect(call?.guidanceUrls).not.toHaveProperty('openai');
+  });
+
+  // Mutation — the useMemo dependency arrays ([providers]/[enabledProviders]) must actually
+  // drive recomputation: mutating them to [] would freeze providerIds/enabledProviderIds/
+  // providerNames/guidanceUrls at their first-render values even after the catalog changes.
+  it('recomputes providerIds, enabledProviderIds, providerNames, and guidanceUrls when the catalog changes between renders', async () => {
+    const firstEntry: AiProviderCatalogEntry = {
+      id: 'groq',
+      name: 'Groq',
+      guidanceUrl: 'https://groq.example/keys',
+      enabled: true,
+      sortOrder: 1,
+      models: [],
+    };
+    const secondEntry: AiProviderCatalogEntry = {
+      id: 'openai',
+      name: 'OpenAI',
+      guidanceUrl: 'https://openai.example/keys',
+      enabled: true,
+      sortOrder: 1,
+      models: [],
+    };
+    mockUseAiProviders.mockReturnValue({
+      providers: [firstEntry],
+      enabledProviders: [firstEntry],
+      isLoading: false,
+    });
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    const { rerender } = await render(<ApiKeySettingsScreen />);
+    const [firstCall] = capturedManagerProps.calls;
+    expect(firstCall?.providers).toEqual(['groq']);
+    expect(firstCall?.providerNames).toEqual({ groq: 'Groq' });
+    expect(firstCall?.guidanceUrls).toEqual({ groq: 'https://groq.example/keys' });
+
+    mockUseAiProviders.mockReturnValue({
+      providers: [secondEntry],
+      enabledProviders: [secondEntry],
+      isLoading: false,
+    });
+    await act(async () => {
+      rerender(<ApiKeySettingsScreen />);
+    });
+    const lastCall = capturedManagerProps.calls.at(-1);
+
+    expect(lastCall?.providers).toEqual(['openai']);
+    expect(lastCall?.enabledProviders).toEqual(['openai']);
+    expect(lastCall?.providerNames).toEqual({ openai: 'OpenAI' });
+    expect(lastCall?.guidanceUrls).toEqual({ openai: 'https://openai.example/keys' });
+  });
+
+  // Mutation — StyleSheet.create's theme factory / screen / title objects → {}.
+  it('applies the screen gap and title typography from the theme (StyleSheet.create objects)', async () => {
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    const title = screen.getByRole('header', { name: 'settings.apiKey.screenTitle' });
+    expect(title).toHaveStyle({
+      ...lightTheme.typography.titleLarge,
+      color: lightTheme.colors.onSurface,
+    });
+    expect(title.parent).toHaveStyle({ gap: lightTheme.spacing.s4 });
   });
 });

@@ -52,6 +52,15 @@ describe('ModelSelector', () => {
     expect(screen.queryByText('generation.model.heading')).toBeNull();
   });
 
+  // Proves the `modelOptions = []` destructure default actually matters: without it,
+  // `.length` on `undefined` would throw instead of rendering nothing.
+  it('renders nothing (without throwing) when modelOptions is undefined', async () => {
+    await renderSelector(baseValue({ modelOptions: undefined }));
+
+    expect(screen.queryByText('generation.model.heading')).toBeNull();
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+  });
+
   it('renders models and marks the selected one', async () => {
     await renderSelector(baseValue());
 
@@ -59,10 +68,15 @@ describe('ModelSelector', () => {
     expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
   });
 
+  // `value={selectedModel ?? modelOptions[0]?.id ?? ''}` — proves the fallback resolves to
+  // modelOptions[0].id specifically: exactly one radio checked, and it's the first option, never
+  // undefined/empty (which would leave every radio unchecked).
   it('defaults to the first model when selectedModel is unset', async () => {
     await renderSelector(baseValue({ selectedModel: undefined }));
 
     expect(screen.getByRole('radio', { name: 'GPT OSS 20B', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT OSS 120B', checked: false })).toBeTruthy();
+    expect(screen.queryAllByRole('radio', { checked: true })).toHaveLength(1);
   });
 
   it('calls onModelChange when another model is chosen', async () => {
