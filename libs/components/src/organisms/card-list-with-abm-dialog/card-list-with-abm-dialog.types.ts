@@ -17,9 +17,8 @@ export type CardListItem<TItem> = {
 };
 
 /**
- * Props for this slice only — chrome (title/list/add) with no dialog wiring yet.
- * task-2/3 add `renderEditForm`/`onEditSubmit`/`renderRemoveConfirmation`/`onRemoveConfirm`/
- * the accessibility-label builders/`isSubmitting` to this same type (per spec.md's full surface).
+ * Props for this + prior slices — chrome (title/list/add) plus edit/remove dialog wiring.
+ * task-3 adds the accessibility-label builder props/`isSubmitting` (per spec.md's full surface).
  */
 export type CardListWithABMDialogProps<TItem> = {
   title: string;
@@ -28,4 +27,20 @@ export type CardListWithABMDialogProps<TItem> = {
   onAddPress: () => void;
   /** Rendered in place of the list when `items` is empty; omitted renders nothing there. */
   emptyStateMessage?: string;
+
+  /** Body of the edit dialog for a given item. */
+  renderEditForm: (item: CardListItem<TItem>) => ReactNode;
+  editDialogTitle: string;
+  editSubmitLabel: string;
+  editCancelLabel: string;
+  /** Called when the edit dialog's submit button is pressed; the dialog then closes. */
+  onEditSubmit: (item: CardListItem<TItem>) => void;
+
+  /** Body of the remove-confirmation dialog for a given item. */
+  renderRemoveConfirmation: (item: CardListItem<TItem>) => ReactNode;
+  removeDialogTitle: string;
+  removeSubmitLabel: string;
+  removeCancelLabel: string;
+  /** Called when the remove dialog's submit button is pressed; the dialog then closes. */
+  onRemoveConfirm: (item: CardListItem<TItem>) => void;
 };

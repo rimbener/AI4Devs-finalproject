@@ -42,6 +42,18 @@ const meta = {
     items,
     addButtonLabel: 'Add flashcard',
     onAddPress: () => {},
+    renderEditForm: (item) => <Text>{`Edit form for ${item.data.front}`}</Text>,
+    editDialogTitle: 'Edit flashcard',
+    editSubmitLabel: 'Save',
+    editCancelLabel: 'Cancel',
+    onEditSubmit: () => {},
+    renderRemoveConfirmation: (item) => (
+      <Text>{`Remove "${item.data.front}"? This cannot be undone.`}</Text>
+    ),
+    removeDialogTitle: 'Remove flashcard',
+    removeSubmitLabel: 'Remove',
+    removeCancelLabel: 'Keep it',
+    onRemoveConfirm: () => {},
   },
 } satisfies Meta<typeof CardListWithABMDialogStory>;
 
@@ -92,6 +104,18 @@ const InteractiveAddDemo = () => {
         items={items}
         addButtonLabel="Add flashcard"
         onAddPress={() => setTapCount((count) => count + 1)}
+        renderEditForm={(item) => <Text>{`Edit form for ${item.data.front}`}</Text>}
+        editDialogTitle="Edit flashcard"
+        editSubmitLabel="Save"
+        editCancelLabel="Cancel"
+        onEditSubmit={() => {}}
+        renderRemoveConfirmation={(item) => (
+          <Text>{`Remove "${item.data.front}"? This cannot be undone.`}</Text>
+        )}
+        removeDialogTitle="Remove flashcard"
+        removeSubmitLabel="Remove"
+        removeCancelLabel="Keep it"
+        onRemoveConfirm={() => {}}
       />
       <Text>{`Added ${tapCount} times`}</Text>
     </>

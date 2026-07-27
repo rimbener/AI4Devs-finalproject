@@ -5,7 +5,9 @@ import { Button } from '../../atoms/button/button';
 import { Card } from '../../atoms/card/card';
 import { IconButton } from '../../atoms/icon-button/icon-button';
 import { layout } from '../../theme/spacing';
+import { Dialog } from '../dialog/dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
+import { useCardListWithABMDialog } from './use-card-list-with-abm-dialog';
 
 /** testID for the virtualized content list. */
 export const CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID = 'card-list-with-abm-dialog-list';
@@ -19,13 +21,18 @@ export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dial
 
 type CardListRowProps<TItem> = {
   item: CardListItem<TItem>;
+  onEditPress: (item: CardListItem<TItem>) => void;
+  onRemovePress: (item: CardListItem<TItem>) => void;
 };
 
 /**
  * CardListWithABMDialog — titled `Card` list with an add button and, per item, optional
- * edit/remove icon affordances (this slice renders chrome + rows only; edit/remove dialog
- * wiring and the per-action `getEdit/RemoveAccessibilityLabel` builder props land in
- * task-2/3 — see spec.md; each icon has an interim `item.accessibleLabel` name meanwhile).
+ * edit/remove icon affordances, each opening the shared `Dialog` organism (edit-form /
+ * remove-confirmation). Open-dialog state lives in `use-card-list-with-abm-dialog.ts` as a
+ * single discriminated union (spec.md's Open decisions) — only one dialog can be open at a
+ * time by construction. The per-action `getEdit/RemoveAccessibilityLabel` builder props and
+ * `isSubmitting` land in task-3 — see spec.md; each icon keeps an interim
+ * `item.accessibleLabel` name meanwhile.
  */
 export const CardListWithABMDialog = <TItem,>({
   title,
@@ -33,13 +40,42 @@ export const CardListWithABMDialog = <TItem,>({
   addButtonLabel,
   onAddPress,
   emptyStateMessage,
+  renderEditForm,
+  editDialogTitle,
+  editSubmitLabel,
+  editCancelLabel,
+  onEditSubmit,
+  renderRemoveConfirmation,
+  removeDialogTitle,
+  removeSubmitLabel,
+  removeCancelLabel,
+  onRemoveConfirm,
 }: CardListWithABMDialogProps<TItem>) => {
+  const { dialogState, openEditDialog, openRemoveDialog, closeDialog } =
+    useCardListWithABMDialog<TItem>();
+
   const keyExtractor = useCallback((item: CardListItem<TItem>) => item.id, []);
 
   const renderItem = useCallback(
-    ({ item }: { item: CardListItem<TItem> }) => <CardListRow item={item} />,
-    [],
+    ({ item }: { item: CardListItem<TItem> }) => (
+      <CardListRow item={item} onEditPress={openEditDialog} onRemovePress={openRemoveDialog} />
+    ),
+    [openEditDialog, openRemoveDialog],
   );
+
+  const handleEditConfirm = useCallback(() => {
+    if (dialogState?.type === 'edit') {
+      onEditSubmit(dialogState.item);
+    }
+    closeDialog();
+  }, [dialogState, onEditSubmit, closeDialog]);
+
+  const handleRemoveConfirm = useCallback(() => {
+    if (dialogState?.type === 'remove') {
+      onRemoveConfirm(dialogState.item);
+    }
+    closeDialog();
+  }, [dialogState, onRemoveConfirm, closeDialog]);
 
   return (
     <View style={styles.root}>
@@ -65,6 +101,26 @@ export const CardListWithABMDialog = <TItem,>({
           contentContainerStyle={styles.listContent}
         />
       )}
+      <Dialog
+        open={dialogState?.type === 'edit'}
+        onClose={closeDialog}
+        headline={editDialogTitle}
+        confirmLabel={editSubmitLabel}
+        cancelLabel={editCancelLabel}
+        onConfirm={handleEditConfirm}
+      >
+        {dialogState?.type === 'edit' ? renderEditForm(dialogState.item) : null}
+      </Dialog>
+      <Dialog
+        open={dialogState?.type === 'remove'}
+        onClose={closeDialog}
+        headline={removeDialogTitle}
+        confirmLabel={removeSubmitLabel}
+        cancelLabel={removeCancelLabel}
+        onConfirm={handleRemoveConfirm}
+      >
+        {dialogState?.type === 'remove' ? renderRemoveConfirmation(dialogState.item) : null}
+      </Dialog>
     </View>
   );
 };
@@ -75,10 +131,10 @@ export const CardListWithABMDialog = <TItem,>({
  * gaining a `testID` prop (atom-ban).
  * `item.accessibleLabel` is used as an interim accessible name for both icons this slice
  * (WCAG 4.1.2 — `IconButton` always renders `accessibilityRole="button"`, so an accessible
- * name must not be missing); task-2/3's `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`
+ * name must not be missing); task-3's `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`
  * builder props supersede this with a per-action label, not a second competing prop.
  */
-const CardListRow = <TItem,>({ item }: CardListRowProps<TItem>) => (
+const CardListRow = <TItem,>({ item, onEditPress, onRemovePress }: CardListRowProps<TItem>) => (
   <Card
     testID={cardListItemCardTestId(item.id)}
     style={item.disabled ? styles.disabledCard : undefined}
@@ -93,6 +149,7 @@ const CardListRow = <TItem,>({ item }: CardListRowProps<TItem>) => (
               size={layout.touchTarget}
               disabled={item.disabled}
               accessibilityLabel={item.accessibleLabel}
+              onPress={() => onEditPress(item)}
             />
           </View>
         ) : null}
@@ -103,6 +160,7 @@ const CardListRow = <TItem,>({ item }: CardListRowProps<TItem>) => (
               size={layout.touchTarget}
               disabled={item.disabled}
               accessibilityLabel={item.accessibleLabel}
+              onPress={() => onRemovePress(item)}
             />
           </View>
         ) : null}
