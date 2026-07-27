@@ -1,5 +1,7 @@
 jest.mock('../supabase/supabase-client', () => ({ getSupabase: jest.fn() }));
 
+import type { AiProvider } from '@helsoft/types';
+
 import { getSupabase } from '../supabase/supabase-client';
 import { ApiKeyDao } from './api-key.dao';
 
@@ -40,6 +42,18 @@ describe('ApiKeyDao', () => {
     invoke.mockResolvedValue({ data: null, error });
 
     await expect(ApiKeyDao.saveApiKey({ provider: 'groq', apiKey: 'sk-test' })).rejects.toBe(error);
+  });
+
+  // task-10, @s17 — the DAO never branches on provider identity: an unknown provider id's invoke
+  // rejection is thrown raw and unclassified, exactly like any other provider's (the service
+  // layer, not the DAO, is what maps this to a typed ApiKeyErrorCode — task-8).
+  it('re-throws the raw invoke error unchanged for an unknown provider id (save, @s17)', async () => {
+    const error = { message: 'edge function error' };
+    invoke.mockResolvedValue({ data: null, error });
+
+    await expect(
+      ApiKeyDao.saveApiKey({ provider: 'not-a-real-provider' as AiProvider, apiKey: 'sk-test' }),
+    ).rejects.toBe(error);
   });
 
   // @s1/@s7 — getApiKeyStatus returns all provider rows as a keys array
@@ -121,6 +135,15 @@ describe('ApiKeyDao', () => {
     invoke.mockResolvedValue({ data: null, error });
 
     await expect(ApiKeyDao.removeApiKey('groq')).rejects.toBe(error);
+  });
+
+  // task-10, @s18 — same regression as save, for remove: unaffected by task-8 (remove was never
+  // gated by `enabled` to begin with, backend D10).
+  it('re-throws the raw invoke error unchanged for an unknown provider id (remove, @s18)', async () => {
+    const error = { message: 'edge function error' };
+    invoke.mockResolvedValue({ data: null, error });
+
+    await expect(ApiKeyDao.removeApiKey('not-a-real-provider' as AiProvider)).rejects.toBe(error);
   });
 
   it('saveApiKey rejects invoke payloads that fail the ApiKeyStatus type guard', async () => {

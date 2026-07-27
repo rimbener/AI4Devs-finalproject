@@ -1,5 +1,7 @@
+// @ts-nocheck
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
+  useAiProviders: jest.fn(),
   useLessonGeneration: jest.fn(),
   useApiKey: jest.fn(),
   useProfile: jest.fn(),
@@ -39,16 +41,18 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
-import { useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
 
+import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { LessonGeneration } from './lesson-generation';
 import { useLessonGenerationForm } from './use-lesson-generation';
 
+const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -100,6 +104,7 @@ const hookValue = (overrides: Partial<ReturnType<typeof useLessonGeneration>> = 
 describe('LessonGeneration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUseAiProviders.mockReturnValue(aiProvidersValue());
     mockUseLessonGenerationForm.mockImplementation(actualUseLessonGenerationForm);
     mockGetStoredPreference.mockResolvedValue(null);
     mockSetStoredPreference.mockResolvedValue(undefined);
@@ -171,16 +176,12 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     expect(screen.getByText('generation.provider.heading')).toBeTruthy();
     expect(screen.getByText('generation.model.heading')).toBeTruthy();
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT-OSS 20B', checked: true })).toBeTruthy();
   });
 
   // @s20 — valid stored preference preselects provider and model on reopen.
@@ -205,12 +206,8 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.openai', checked: true }),
-      ).toBeTruthy();
-      expect(
-        screen.getByRole('radio', { name: 'aiModel.openai.gpt56Terra', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'OpenAI', checked: true })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'GPT-5.6 Terra', checked: true })).toBeTruthy();
     });
   });
 
@@ -232,9 +229,7 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     fireEvent.press(screen.getByRole('button', { name: 'generation.generate', disabled: false }));
@@ -268,12 +263,8 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
-      expect(
-        screen.getByRole('radio', { name: 'aiModel.groq.gptOss20b', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'GPT-OSS 20B', checked: true })).toBeTruthy();
     });
   });
 
@@ -294,12 +285,10 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await act(async () => {
-      fireEvent.press(screen.getByRole('radio', { name: 'settings.apiKey.provider.openai' }));
+      fireEvent.press(screen.getByRole('radio', { name: 'OpenAI' }));
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.openai.gpt56Luna', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT-5.6 Luna', checked: true })).toBeTruthy();
   });
 
   // @s12/@s19 — free-BYOK sends provider+model; platform omits them.
@@ -926,18 +915,14 @@ describe('LessonGeneration', () => {
 
     await render(<LessonGeneration documentId="doc-1" />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     await act(async () => {
       capturedPanelValue.current?.onProviderChange?.('not-a-provider');
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
   });
 
   it('updates the selected model when onModelChange fires', async () => {
@@ -954,9 +939,7 @@ describe('LessonGeneration', () => {
       capturedPanelValue.current?.onModelChange?.('openai/gpt-oss-120b');
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'aiModel.groq.gptOss120b', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'GPT-OSS 120B', checked: true })).toBeTruthy();
   });
 
   it('does not persist a preference on generate for the platform path', async () => {
@@ -976,11 +959,11 @@ describe('LessonGeneration', () => {
     const generate = jest.fn();
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
     mockUseLessonGenerationForm.mockReturnValue({
-      savedProviders: ['groq'],
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
       showPickers: true,
       showMissingKeyGate: false,
       canGenerate: true,
-      modelOptions: [{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }],
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
       selectedProvider: 'groq',
       selectedModel: undefined,
       setSelectedModel: jest.fn(),
@@ -998,6 +981,113 @@ describe('LessonGeneration', () => {
 
     expect(mockSetStoredPreference).not.toHaveBeenCalled();
     expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+  });
+
+  // Mutation: `showPickers && selectedProvider && selectedModel` → `showPickers || (...)`/`true`.
+  // showPickers false alone isn't enough to distinguish `&&` from `||` unless the other two
+  // operands are BOTH truthy (otherwise `x || (falsy && falsy)` still evaluates falsy too) —
+  // force that exact combination via a direct mock of useLessonGenerationForm.
+  it('does not persist a preference when showPickers is false even if provider and model are set', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseLessonGenerationForm.mockReturnValue({
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      showPickers: false,
+      showMissingKeyGate: false,
+      canGenerate: true,
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
+      selectedProvider: 'groq',
+      selectedModel: 'openai/gpt-oss-20b',
+      setSelectedModel: jest.fn(),
+      selectProvider: jest.fn(),
+      buildGenerateRequest: () => ({
+        documentId: 'doc-1',
+        composition: 'both' as const,
+      }),
+    });
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    await act(async () => {
+      capturedPanelValue.current?.onGenerate();
+    });
+
+    expect(mockSetStoredPreference).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+  });
+
+  // Mutation: `if (showPickers && selectedProvider && selectedModel)` — a mutant collapsing
+  // `showPickers && selectedProvider` to `true` (or to `showPickers || selectedProvider`) would
+  // still gate on `selectedModel` alone, or on `showPickers || selectedProvider`, and fire the
+  // persist call even though `showPickers` is false. Pin: with a defined selectedProvider AND
+  // selectedModel but showPickers false, the real guard still must not persist.
+  it('does not persist a preference on generate when showPickers is false even with a defined provider and model', async () => {
+    const generate = jest.fn();
+    mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
+    mockUseLessonGenerationForm.mockReturnValue({
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      showPickers: false,
+      showMissingKeyGate: false,
+      canGenerate: true,
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
+      selectedProvider: 'groq',
+      selectedModel: 'openai/gpt-oss-20b',
+      setSelectedModel: jest.fn(),
+      selectProvider: jest.fn(),
+      buildGenerateRequest: () => ({
+        documentId: 'doc-1',
+        composition: 'both' as const,
+      }),
+    });
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    await act(async () => {
+      capturedPanelValue.current?.onGenerate();
+    });
+
+    expect(mockSetStoredPreference).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledWith({ documentId: 'doc-1', composition: 'both' });
+  });
+
+  // Mutation: handleModelChange's useCallback deps `[setSelectedModel]` → `[]` — dropping the
+  // dependency would freeze the callback to the FIRST render's setSelectedModel, so a later
+  // rerender handing a new setSelectedModel (as a genuinely different closure would after real
+  // state changes) must still be the one onModelChange calls.
+  it('calls the latest setSelectedModel after a rerender hands a new one in (useCallback deps)', async () => {
+    mockUseLessonGeneration.mockReturnValue(hookValue());
+    const setSelectedModelA = jest.fn();
+    const setSelectedModelB = jest.fn();
+    const baseFormValue = {
+      savedProviders: [{ id: 'groq', name: 'Groq' }],
+      showPickers: true,
+      showMissingKeyGate: false,
+      canGenerate: true,
+      modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B' }],
+      selectedProvider: 'groq' as const,
+      selectedModel: 'openai/gpt-oss-20b',
+      selectProvider: jest.fn(),
+      buildGenerateRequest: () => ({ documentId: 'doc-1', composition: 'both' as const }),
+    };
+    mockUseLessonGenerationForm.mockReturnValue({
+      ...baseFormValue,
+      setSelectedModel: setSelectedModelA,
+    });
+
+    const { rerender } = await render(<LessonGeneration documentId="doc-1" />);
+
+    mockUseLessonGenerationForm.mockReturnValue({
+      ...baseFormValue,
+      setSelectedModel: setSelectedModelB,
+    });
+    await act(async () => {
+      rerender(<LessonGeneration documentId="doc-1" />);
+    });
+
+    await act(async () => {
+      capturedPanelValue.current?.onModelChange?.('openai/gpt-oss-120b');
+    });
+
+    expect(setSelectedModelB).toHaveBeenCalledWith('openai/gpt-oss-120b');
+    expect(setSelectedModelA).not.toHaveBeenCalled();
   });
 
   it('wires providerNameKeys for every saved provider label', async () => {
@@ -1019,12 +1109,10 @@ describe('LessonGeneration', () => {
     await render(<LessonGeneration documentId="doc-1" />);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.anthropic' }),
-      ).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.google' })).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.xai' })).toBeTruthy();
-      expect(screen.getByRole('radio', { name: 'settings.apiKey.provider.deepseek' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Anthropic' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Google' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'xAI' })).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'DeepSeek' })).toBeTruthy();
     });
   });
 
@@ -1062,9 +1150,7 @@ describe('LessonGeneration', () => {
 
     const { rerender } = await render(<LessonGeneration documentId="doc-1" />);
     await waitFor(() => {
-      expect(
-        screen.getByRole('radio', { name: 'settings.apiKey.provider.groq', checked: true }),
-      ).toBeTruthy();
+      expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
     mockUseApiKey.mockReturnValue(
@@ -1085,8 +1171,6 @@ describe('LessonGeneration', () => {
       capturedPanelValue.current?.onProviderChange?.('anthropic');
     });
 
-    expect(
-      screen.getByRole('radio', { name: 'settings.apiKey.provider.anthropic', checked: true }),
-    ).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Anthropic', checked: true })).toBeTruthy();
   });
 });

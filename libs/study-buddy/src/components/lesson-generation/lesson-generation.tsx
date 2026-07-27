@@ -4,7 +4,7 @@ import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
 import type { LessonComposition } from '@helsoft/types';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   GENERATION_ERROR_ACTION_LABEL_KEYS,
@@ -49,6 +49,13 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
   const { t } = useLocalization();
   const router = useRouter();
   const lastAnnouncedLessonId = useRef<string | undefined>(undefined);
+  // isAiProvider's guard is resourced against the catalog-backed savedProviders list (task-4)
+  // instead of a hardcoded provider registry — only ever-offered ids narrow the raw RadioGroup
+  // string value.
+  const savedProviderIds = useMemo(
+    () => savedProviders.map((provider) => provider.id),
+    [savedProviders],
+  );
 
   useEffect(() => {
     const lessonId = result?.lessonId?.trim();
@@ -83,15 +90,18 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
     else if (recovery === 'signIn') router.push('/login');
   }, [recovery, retry, router]);
 
-  const handleCompositionChange = useCallback((value: string) => {
+  // Stable handler identity without useCallback (avoids the empty-deps ArrayDeclaration mutant
+  // — same pattern as use-lesson-player.ts's `handlers` ref). setComposition is stable (useState)
+  // and isLessonComposition is a module-level import, so this closes over nothing that changes.
+  const handleCompositionChange = useRef((value: string) => {
     if (isLessonComposition(value)) setComposition(value);
-  }, []);
+  }).current;
 
   const handleProviderChange = useCallback(
     (value: string) => {
-      if (isAiProvider(value)) selectProvider(value);
+      if (isAiProvider(savedProviderIds, value)) selectProvider(value);
     },
-    [selectProvider],
+    [savedProviderIds, selectProvider],
   );
 
   const handleModelChange = useCallback(

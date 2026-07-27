@@ -5,7 +5,9 @@
 
 export type LessonComposition = 'instructional-only' | 'activity-only' | 'both';
 
-export type AiProvider = 'groq' | 'openai' | 'anthropic' | 'google' | 'xai' | 'deepseek';
+// Widened to a plain string (ai-provider-registry-backend, D6) — provider identity now comes
+// from the ai_providers catalog table, not a hardcoded union.
+export type AiProvider = string;
 
 export type GenerateLessonRequest = {
   documentId: string;
@@ -94,10 +96,14 @@ export type GeneratedLesson = {
 
 export type GenerationProgressStep = 'reading' | 'generating' | 'attaching';
 
+// 'provider_disabled' added for the BYOK route's @s17 (ai-provider-registry-backend, D13) --
+// this Edge-side mirror only; libs/types/src/lesson-generation.ts's union, its test, locale
+// copy and client mapping are the paired frontend story's scope, not widened here.
 export type GenerationErrorCode =
   | 'missing_key'
   | 'invalid_key'
   | 'invalid_model'
+  | 'provider_disabled'
   | 'platform_key_unavailable'
   | 'rate_limited'
   | 'timeout'

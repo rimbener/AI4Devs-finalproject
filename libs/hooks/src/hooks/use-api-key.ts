@@ -11,6 +11,7 @@ const EMPTY_STATUS: ApiKeyStatus = { keys: [] };
 const API_KEY_ERROR_CODES: ReadonlySet<ApiKeyErrorCode> = new Set([
   'network_error',
   'validation_error',
+  'provider_disabled',
 ]);
 
 const isApiKeyErrorShape = (cause: unknown): cause is ApiKeyError =>
@@ -33,7 +34,7 @@ const toErrorCode = (cause: unknown | null): ApiKeyErrorCode | null =>
  */
 export const useApiKey = (): UseApiKeyResult => {
   const queryClient = useQueryClient();
-  const { sessionUserId, enabled } = useSessionGate();
+  const { sessionUserId, enabled, deriveIsLoading } = useSessionGate();
 
   const { data, isPending } = useQuery({
     queryKey: apiKeyStatusQueryKey(sessionUserId),
@@ -70,7 +71,7 @@ export const useApiKey = (): UseApiKeyResult => {
 
   return {
     status,
-    isLoading: isPending,
+    isLoading: deriveIsLoading(isPending),
     isSubmitting: saveMutation.isPending || removeMutation.isPending,
     error: toErrorCode(saveMutation.error) || toErrorCode(removeMutation.error),
     hasKey,

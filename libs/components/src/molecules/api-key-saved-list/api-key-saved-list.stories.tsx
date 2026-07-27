@@ -3,14 +3,14 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { ApiKeySavedList } from './api-key-saved-list';
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
+const providers: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
 
 const providerNames: Record<AiProvider, string> = {
   groq: 'Groq',
@@ -32,9 +32,11 @@ const meta = {
   component: ApiKeySavedList,
   args: {
     savedKeys: [groqKey],
+    providers,
     savedProviders: new Set<AiProvider>(['groq']),
+    enabledProviders: providers,
     getSavedStatusLabel,
-    providerNameKeys,
+    providerNames,
     isSubmitting: false,
     onReplace: () => {},
     onRemove: () => {},
@@ -59,5 +61,12 @@ export const Multiple: Story = {
 export const Submitting: Story = {
   args: {
     isSubmitting: true,
+  },
+};
+
+/** A saved provider later disabled in the catalog — stays visible, badged (@s5/@s6/@s22). */
+export const DisabledProvider: Story = {
+  args: {
+    enabledProviders: providers.filter((p) => p !== 'groq'),
   },
 };

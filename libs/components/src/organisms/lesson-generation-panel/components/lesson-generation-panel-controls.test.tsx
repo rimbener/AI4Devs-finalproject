@@ -1,7 +1,6 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
 import { useLocalization } from '@helsoft/localization';
-import type { AiProvider } from '@helsoft/types';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
 import { LessonGenerationPanelProvider } from '../lesson-generation-panel.context';
@@ -53,8 +52,11 @@ describe('LessonGenerationPanelControls', () => {
     await renderControls(
       baseValue({
         showPickers: true,
-        savedProviders: ['groq', 'openai'] as AiProvider[],
-        modelOptions: [{ id: 'openai/gpt-oss-20b', labelKey: 'aiModel.groq.gptOss20b' }],
+        savedProviders: [
+          { id: 'groq', name: 'Groq' },
+          { id: 'openai', name: 'OpenAI' },
+        ],
+        modelOptions: [{ id: 'openai/gpt-oss-20b', label: 'GPT OSS 20B' }],
         selectedProvider: 'groq',
         selectedModel: 'openai/gpt-oss-20b',
       }),
