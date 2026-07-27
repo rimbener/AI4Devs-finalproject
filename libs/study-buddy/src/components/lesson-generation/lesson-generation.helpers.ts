@@ -8,15 +8,16 @@ import type {
 } from '@helsoft/types';
 
 /** Narrow runtime guard for provider RadioGroup values, resourced against the catalog-backed
- * saved-provider list (Decision 1/4) instead of the hardcoded `AI_PROVIDERS` registry — that
- * constant is deleted outright by task-11, so this guard must not depend on it. */
+ * saved-provider list (Decision 1/4) instead of a hardcoded provider registry — task-11 deletes
+ * that registry outright, so this guard must not depend on it. */
 export const isAiProvider = (
   providers: readonly AiProvider[],
   value: string,
 ): value is AiProvider => (providers as readonly string[]).includes(value);
 
 /** Whether `modelId` is still listed under `entry`'s catalog models (Decision 6) — replaces the
- * `AI_MODEL_REGISTRY[provider]` lookup with the selected provider's own catalog entry. */
+ * old hardcoded per-provider model-registry lookup with the selected provider's own catalog
+ * entry. */
 export const isCuratedModel = (entry: AiProviderCatalogEntry, modelId: string): boolean =>
   entry.models.some((model) => model.modelId === modelId);
 

@@ -17,7 +17,7 @@ export type GenerateLessonRequest = {
   composition: LessonComposition;
   /** Free-BYOK only — omitted on the platform path (@s19). */
   provider?: AiProvider;
-  /** Curated model id from `AI_MODEL_REGISTRY`; free-BYOK only (@s12). */
+  /** Curated model id from the live provider catalog; free-BYOK only (@s12). */
   model?: string;
 };
 

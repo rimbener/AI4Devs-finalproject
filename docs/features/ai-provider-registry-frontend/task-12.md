@@ -3,7 +3,7 @@ id: task-12
 title: Prove a catalog reorder/rename propagates to every consumer with no code change
 slice: 3
 scenarios: [s20]
-status: todo
+status: done
 paths:
   - libs/hooks/src/hooks/use-ai-providers.test.ts
 ---

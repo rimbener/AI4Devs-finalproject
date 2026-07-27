@@ -18,7 +18,7 @@ type UseLessonGenerationArgs = {
  *
  * Provider/model identity, order, and curated list all come from `useAiProviders()`'s live
  * catalog (task-4, Decisions 1/4/6) — `savedProviders` still means "has a saved key" (unchanged
- * filter), just ordered/sourced by the catalog instead of the hardcoded `AI_PROVIDERS` registry.
+ * filter), just ordered/sourced by the catalog instead of a hardcoded provider registry.
  *
  * task-7, @s9 (Decision 5) — `savedProviderEntries` is derived from `enabledProviders`, not the
  * full `providers` list: a disabled provider is excluded from the generate-flow picker even when

@@ -3,7 +3,7 @@ id: task-14
 title: Final barrel/export sweep and full-workspace regression pass
 slice: 3
 scenarios: []
-status: todo
+status: done
 paths:
   - libs/types/src/index.ts
   - libs/hooks/src/hooks/index.ts

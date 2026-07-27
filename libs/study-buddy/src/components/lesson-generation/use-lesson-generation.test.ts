@@ -14,7 +14,6 @@ jest.mock('@helsoft/hooks', () => ({
 
 import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
-import { AI_MODEL_REGISTRY, AI_PROVIDERS } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
@@ -24,6 +23,9 @@ const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
+// @s19 regression: the fixture-pinned catalog ids, in canonical order — replaces the deleted
+// hardcoded provider-id constant this test used to diff against (task-11).
+const CATALOG_PROVIDER_IDS = AI_PROVIDER_CATALOG_FIXTURE.map((entry) => entry.id);
 
 describe('useLessonGenerationForm', () => {
   beforeEach(() => {
@@ -40,9 +42,9 @@ describe('useLessonGenerationForm', () => {
   });
 
   // @s19 — today's six seeded providers (backend gherkin-scenarios.md @s5) regress zero:
-  // fixture-driven savedProviders/modelOptions match today's hardcoded AI_PROVIDERS/
-  // AI_MODEL_REGISTRY order and content exactly, provider by provider.
-  it('matches AI_PROVIDERS/AI_MODEL_REGISTRY order and content for every provider (@s19)', async () => {
+  // fixture-driven savedProviders/modelOptions match today's pre-migration hardcoded
+  // provider/model order and content exactly, provider by provider.
+  it('matches the seeded catalog fixture order and content for every provider (@s19)', async () => {
     mockUseAiProviders.mockReturnValue({
       providers: AI_PROVIDER_CATALOG_FIXTURE,
       enabledProviders: AI_PROVIDER_CATALOG_FIXTURE,
@@ -50,7 +52,7 @@ describe('useLessonGenerationForm', () => {
     });
     mockUseApiKey.mockReturnValue({
       status: {
-        keys: AI_PROVIDERS.map((provider) => ({ provider, updatedAt: '2026-01-01' })),
+        keys: CATALOG_PROVIDER_IDS.map((provider) => ({ provider, updatedAt: '2026-01-01' })),
       },
       hasKey: true,
     });
@@ -64,7 +66,9 @@ describe('useLessonGenerationForm', () => {
     expect(result.current.savedProviders).toEqual(
       AI_PROVIDER_CATALOG_FIXTURE.map((entry) => ({ id: entry.id, name: entry.name })),
     );
-    expect(result.current.savedProviders.map((provider) => provider.id)).toEqual(AI_PROVIDERS);
+    expect(result.current.savedProviders.map((provider) => provider.id)).toEqual(
+      CATALOG_PROVIDER_IDS,
+    );
 
     for (const provider of AI_PROVIDER_CATALOG_FIXTURE) {
       await act(async () => {
@@ -73,9 +77,6 @@ describe('useLessonGenerationForm', () => {
 
       expect(result.current.modelOptions).toEqual(
         provider.models.map((model) => ({ id: model.modelId, label: model.label })),
-      );
-      expect(result.current.modelOptions.map((model) => model.id)).toEqual(
-        AI_MODEL_REGISTRY[provider.id].models.map((model) => model.id),
       );
     }
   });

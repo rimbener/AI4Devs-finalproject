@@ -9,7 +9,6 @@ jest.mock('@helsoft/localization', () => ({
 
 import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
-import { API_KEY_SETTINGS_GUIDANCE_URLS } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
@@ -278,7 +277,7 @@ describe('ApiKeySettingsScreen', () => {
 
   // @s19 — today's six seeded providers (backend gherkin-scenarios.md @s5) regress zero: the
   // fixture-driven add-picker shows the same six names/guidance links, in the same order, as
-  // today's hardcoded PROVIDER_NAME_KEYS/API_KEY_SETTINGS_GUIDANCE_URLS values.
+  // today's pre-migration hardcoded provider-name/guidance-url values (both deleted by task-11).
   it('shows the six catalog providers with unchanged names and guidance links (@s19)', async () => {
     mockUseAiProviders.mockReturnValue({
       providers: AI_PROVIDER_CATALOG_FIXTURE,
@@ -310,7 +309,6 @@ describe('ApiKeySettingsScreen', () => {
 
     for (const entry of AI_PROVIDER_CATALOG_FIXTURE) {
       expect(screen.getByRole('radio', { name: entry.name })).toBeTruthy();
-      expect(entry.guidanceUrl).toBe(API_KEY_SETTINGS_GUIDANCE_URLS[entry.id]);
 
       await act(async () => {
         fireEvent.press(screen.getByRole('radio', { name: entry.name }));

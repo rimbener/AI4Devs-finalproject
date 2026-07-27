@@ -3,7 +3,7 @@ jest.mock('@helsoft/localization', () => ({
 }));
 
 import { useLocalization } from '@helsoft/localization';
-import { AI_PROVIDERS, type AiProvider } from '@helsoft/types';
+import type { AiProvider } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
@@ -20,12 +20,6 @@ const tMap: Record<string, string> = {
   'settings.apiKey.removeConfirmCancelAction': 'Cancel',
   'settings.apiKey.manager.addNew': 'Add new provider',
   'settings.apiKey.manager.selectProvider': 'Select provider',
-  'settings.apiKey.provider.groq': 'Groq',
-  'settings.apiKey.provider.openai': 'OpenAI',
-  'settings.apiKey.provider.anthropic': 'Anthropic',
-  'settings.apiKey.provider.google': 'Google',
-  'settings.apiKey.provider.xai': 'xAI',
-  'settings.apiKey.provider.deepseek': 'DeepSeek',
 };
 
 type TOptions = Record<string, unknown>;
@@ -45,6 +39,10 @@ const providerNames: Record<AiProvider, string> = {
   deepseek: 'DeepSeek',
 };
 
+// Canonical catalog order, mirrored from `providerNames` above — replaces the deleted hardcoded
+// provider-id constant (task-11).
+const ALL_PROVIDERS = Object.keys(providerNames) as AiProvider[];
+
 const guidanceUrls: Partial<Record<AiProvider, string>> = {
   groq: 'https://console.groq.com/keys',
 };
@@ -54,7 +52,7 @@ const defaultProps: ApiKeyFormDialogProps = {
   onClose: jest.fn(),
   formMode: 'add',
   formProvider: null,
-  unsavedProviders: AI_PROVIDERS,
+  unsavedProviders: ALL_PROVIDERS,
   apiKey: '',
   onApiKeyChange: jest.fn(),
   onSelectProvider: jest.fn(),

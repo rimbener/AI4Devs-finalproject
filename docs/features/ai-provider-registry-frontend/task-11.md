@@ -3,7 +3,7 @@ id: task-11
 title: Delete the dead hardcoded provider/model constants and their locale keys
 slice: 3
 scenarios: [s23]
-status: todo
+status: done
 paths:
   - libs/types/src/ai-provider.ts
   - libs/types/src/ai-provider.test.ts

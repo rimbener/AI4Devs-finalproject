@@ -4,8 +4,8 @@ import type { AiProviderCatalogEntry } from '@helsoft/types';
  * The exact seeded AI-provider catalog — six providers, thirteen models, in canonical
  * `sortOrder` — pinned verbatim from the backend feature's contract
  * (`docs/features/ai-provider-registry-backend/gherkin-scenarios.md` `@s5`), which itself pins
- * today's pre-migration `AI_PROVIDERS`/`AI_MODEL_REGISTRY` values (`@helsoft/types`'s
- * `ai-provider.ts`) exactly.
+ * today's pre-migration hardcoded provider/model values (`@helsoft/types`'s `ai-provider.ts`,
+ * deleted outright by task-11) exactly.
  *
  * This is the single source every migrated consumer's `@s19` "no regression" test diffs
  * against (ai-provider-registry-frontend task-5, spec.md Decision 13) — a second,

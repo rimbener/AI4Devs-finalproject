@@ -1,4 +1,4 @@
-import { AI_PROVIDERS, type AiProvider } from '@helsoft/types';
+import type { AiProvider } from '@helsoft/types';
 import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { useState } from 'react';
 
@@ -13,6 +13,10 @@ const providerNames: Record<AiProvider, string> = {
   xai: 'xAI',
   deepseek: 'DeepSeek',
 };
+
+// Canonical catalog order, mirrored from `providerNames` above — replaces the deleted hardcoded
+// provider-id constant (task-11).
+const ALL_PROVIDERS = Object.keys(providerNames) as AiProvider[];
 
 const guidanceUrls: Partial<Record<AiProvider, string>> = {
   groq: 'https://console.groq.com/keys',
@@ -50,7 +54,7 @@ const meta = {
     onClose: () => {},
     formMode: 'add',
     formProvider: null,
-    unsavedProviders: AI_PROVIDERS,
+    unsavedProviders: ALL_PROVIDERS,
     apiKey: '',
     onApiKeyChange: () => {},
     onSelectProvider: () => {},

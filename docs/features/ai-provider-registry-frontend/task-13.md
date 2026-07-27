@@ -3,7 +3,7 @@ id: task-13
 title: One cross-layer integration test — catalog rows drive every consumer end to end
 slice: 3
 scenarios: [s21]
-status: todo
+status: done
 paths:
   - libs/study-buddy/src/components/ai-providers.integration.test.ts
 ---

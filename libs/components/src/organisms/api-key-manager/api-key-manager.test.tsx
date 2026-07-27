@@ -28,12 +28,6 @@ const tMap: Record<string, string> = {
   'settings.apiKey.manager.selectProvider': 'Select provider',
   'settings.apiKey.manager.emptyMessage': 'No API keys saved',
   'settings.apiKey.manager.disabled': 'Disabled',
-  'settings.apiKey.provider.groq': 'Groq',
-  'settings.apiKey.provider.openai': 'OpenAI',
-  'settings.apiKey.provider.anthropic': 'Anthropic',
-  'settings.apiKey.provider.google': 'Google',
-  'settings.apiKey.provider.xai': 'xAI',
-  'settings.apiKey.provider.deepseek': 'DeepSeek',
 };
 
 type TOptions = Record<string, unknown>;
@@ -384,8 +378,8 @@ describe('ApiKeyManager', () => {
     expect(t).toHaveBeenCalledWith('settings.apiKey.manager.addNew');
     expect(t).toHaveBeenCalledWith('settings.apiKey.replace');
     expect(t).toHaveBeenCalledWith('settings.apiKey.remove');
-    // Provider display names are plain catalog strings now (Decision 3) — no i18n key lookup.
-    expect(t).not.toHaveBeenCalledWith('settings.apiKey.provider.groq');
+    // Provider display names are plain catalog strings now (Decision 3, task-3) — no i18n key
+    // lookup for them at all, so there is nothing further to assert here about `t`'s calls.
   });
 
   it('clears the key field when selecting a provider in the add modal', async () => {

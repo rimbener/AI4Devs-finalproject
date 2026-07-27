@@ -131,4 +131,55 @@ describe('useAiProviders', () => {
     ).toBe(13);
     expect(result.current.enabledProviders).toEqual(AI_PROVIDER_CATALOG_FIXTURE);
   });
+
+  // @s20 — a catalog reorder propagates through the same mounted hook instance with no remount
+  // and no new QueryClient: only an explicit refetch (staleTime: Infinity means it never happens
+  // on its own), mirroring the backend story's @s28 intent at the client layer. A future
+  // module-level cache added ahead of useQuery (e.g. memoizing the mapped array) would make this
+  // assertion fail, since the second `getCatalog` resolution would never reach `result.current`.
+  it('reflects a reordered catalog after an explicit refetch, with no remount (@s20)', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    service.getCatalog.mockResolvedValueOnce([groq, openai]);
+
+    const { result } = renderHook(() => useAiProviders(), { wrapper: createWrapper(queryClient) });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.providers.map((provider) => provider.id)).toEqual(['groq', 'openai']);
+
+    const reordered = [
+      { ...openai, sortOrder: 1 },
+      { ...groq, sortOrder: 2 },
+    ];
+    service.getCatalog.mockResolvedValueOnce(reordered);
+
+    await queryClient.invalidateQueries({ queryKey: AI_PROVIDERS_QUERY_KEY });
+
+    await waitFor(() =>
+      expect(result.current.providers.map((provider) => provider.id)).toEqual(['openai', 'groq']),
+    );
+  });
+
+  // @s20 — a provider rename/guidanceUrl edit propagates the same way: same mounted hook, same
+  // QueryClient, only an explicit refetch surfaces the change.
+  it('reflects a provider rename and guidanceUrl edit after an explicit refetch, with no remount (@s20)', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    service.getCatalog.mockResolvedValueOnce([groq]);
+
+    const { result } = renderHook(() => useAiProviders(), { wrapper: createWrapper(queryClient) });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.providers[0]).toMatchObject({ name: 'Groq', guidanceUrl: null });
+
+    const renamed = [{ ...groq, name: 'Groq Cloud', guidanceUrl: 'https://console.groq.com/keys' }];
+    service.getCatalog.mockResolvedValueOnce(renamed);
+
+    await queryClient.invalidateQueries({ queryKey: AI_PROVIDERS_QUERY_KEY });
+
+    await waitFor(() =>
+      expect(result.current.providers[0]).toMatchObject({
+        name: 'Groq Cloud',
+        guidanceUrl: 'https://console.groq.com/keys',
+      }),
+    );
+  });
 });

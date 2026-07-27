@@ -50,8 +50,8 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
   const router = useRouter();
   const lastAnnouncedLessonId = useRef<string | undefined>(undefined);
   // isAiProvider's guard is resourced against the catalog-backed savedProviders list (task-4)
-  // instead of the hardcoded AI_PROVIDERS registry — only ever-offered ids narrow the raw
-  // RadioGroup string value.
+  // instead of a hardcoded provider registry — only ever-offered ids narrow the raw RadioGroup
+  // string value.
   const savedProviderIds = useMemo(
     () => savedProviders.map((provider) => provider.id),
     [savedProviders],

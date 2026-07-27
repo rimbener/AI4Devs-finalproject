@@ -14,12 +14,6 @@ const mockUseLocalization = useLocalization as jest.Mock;
 const tMap: Record<string, string> = {
   'settings.apiKey.replace': 'Replace',
   'settings.apiKey.remove': 'Remove',
-  'settings.apiKey.provider.groq': 'Groq',
-  'settings.apiKey.provider.openai': 'OpenAI',
-  'settings.apiKey.provider.anthropic': 'Anthropic',
-  'settings.apiKey.provider.google': 'Google',
-  'settings.apiKey.provider.xai': 'xAI',
-  'settings.apiKey.provider.deepseek': 'DeepSeek',
   'settings.apiKey.manager.disabled': 'Disabled',
 };
 

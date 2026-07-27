@@ -174,33 +174,6 @@ export const es: TranslationResource = {
         },
       },
     },
-    aiModel: {
-      groq: {
-        gptOss20b: 'GPT-OSS 20B',
-        gptOss120b: 'GPT-OSS 120B',
-        qwen36_27b: 'Qwen 3.6 27B',
-      },
-      openai: {
-        gpt56Luna: 'GPT-5.6 Luna',
-        gpt56Terra: 'GPT-5.6 Terra',
-      },
-      anthropic: {
-        claudeHaiku45: 'Claude Haiku 4.5',
-        claudeSonnet5: 'Claude Sonnet 5',
-      },
-      google: {
-        gemini36Flash: 'Gemini 3.6 Flash',
-        gemini25Flash: 'Gemini 2.5 Flash',
-      },
-      xai: {
-        grok43: 'Grok 4.3',
-        grok45: 'Grok 4.5',
-      },
-      deepseek: {
-        v4Flash: 'DeepSeek V4 Flash',
-        v4Pro: 'DeepSeek V4 Pro',
-      },
-    },
     lesson: {
       title: 'Lección {{id}}',
       start: 'Empezar a estudiar',
@@ -272,14 +245,6 @@ export const es: TranslationResource = {
         replace: 'Reemplazar',
         remove: 'Eliminar',
         savedStatus: 'Clave de {{provider}} guardada · Actualizada {{date}}',
-        provider: {
-          groq: 'Groq',
-          openai: 'OpenAI',
-          anthropic: 'Anthropic',
-          google: 'Google',
-          xai: 'xAI',
-          deepseek: 'DeepSeek',
-        },
         guidanceTemplate: '¿No tienes una clave? Consíguela en {{provider}}',
         guidance: '¿No tienes una clave? Consíguela en Groq',
         removeConfirmHeadline: '¿Eliminar clave de API?',

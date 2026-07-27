@@ -5,7 +5,7 @@ import type { AiProviderCatalogEntry } from '@helsoft/types';
  * Ai-provider catalog fixture pinned to today's exact seeded values (spec.md Decision 13's
  * no-deploy regression proof) — reused across `ApiKeySettingsScreen` and `LessonGeneration`
  * tests so every consumer agrees on "what the live catalog looks like today", mirroring
- * `AI_PROVIDERS`/`AI_MODEL_REGISTRY`'s pre-migration values exactly.
+ * today's pre-migration hardcoded provider/model values exactly (both deleted by task-11).
  */
 export const AI_PROVIDER_CATALOG_FIXTURE: AiProviderCatalogEntry[] = [
   {

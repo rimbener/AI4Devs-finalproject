@@ -2,8 +2,8 @@
  * Provider validity for manage-api-key now comes from the shared catalog (ai_providers table),
  * never a hardcoded allow-list (ai-provider-registry-backend, task-9, D6). `AiProvider` is
  * intentionally a plain string -- any id known to the catalog is valid; the old six-value
- * `AI_PROVIDERS`/`isAiProvider` allow-list is gone outright, matching generate-lesson's own D6
- * widening.
+ * hardcoded allow-list and its guard function are gone outright, matching generate-lesson's own
+ * D6 widening.
  */
 import type { ProviderEntry } from '../_shared/provider-catalog.types.ts';
 
