@@ -46,11 +46,47 @@ describe('CardListWithABMDialog', () => {
       />,
     );
 
-    expect(screen.getByText('My List')).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'My List' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Add item' })).toBeTruthy();
     expect(screen.getByText('First card content')).toBeTruthy();
     expect(screen.getByText('Second card content')).toBeTruthy();
     expect(screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID)).toBeTruthy();
+  });
+
+  // [a11y] title is exposed as a navigable heading (WCAG reading/heading-navigation order).
+  it('exposes the title with accessibilityRole="header"', async () => {
+    await render(
+      <CardListWithABMDialog
+        title="My List"
+        items={items}
+        addButtonLabel="Add item"
+        onAddPress={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('header', { name: 'My List' })).toBeTruthy();
+  });
+
+  // [a11y] edit/remove IconButtons must always expose an accessible name (WCAG 4.1.2) — this
+  // slice uses item.accessibleLabel as the interim name; task-2/3 supersede it per-action.
+  it('gives each edit/remove icon an accessible name from item.accessibleLabel', async () => {
+    await render(
+      <CardListWithABMDialog
+        title="My List"
+        items={items}
+        addButtonLabel="Add item"
+        onAddPress={jest.fn()}
+      />,
+    );
+
+    const editButton = within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole(
+      'button',
+    );
+    const removeButton = within(screen.getByTestId(cardListItemRemoveTestId('item-1'))).getByRole(
+      'button',
+    );
+    expect(editButton.props.accessibilityLabel).toBe('First card');
+    expect(removeButton.props.accessibilityLabel).toBe('First card');
   });
 
   it('extracts each item id as the FlatList key', async () => {

@@ -12,9 +12,9 @@ export const CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID = 'card-list-with-abm-dialog
 
 /** testID for a row's `Card` wrapper (its opacity carries the disabled visual, @s2). */
 export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;
-/** testID prefix for a row's edit icon (accessible name arrives in task-2/3). */
+/** testID prefix for a row's edit icon (per-action accessible name arrives in task-2/3). */
 export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog-edit-${id}`;
-/** testID prefix for a row's remove icon (accessible name arrives in task-2/3). */
+/** testID prefix for a row's remove icon (per-action accessible name arrives in task-2/3). */
 export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
 
 type CardListRowProps<TItem> = {
@@ -24,7 +24,8 @@ type CardListRowProps<TItem> = {
 /**
  * CardListWithABMDialog — titled `Card` list with an add button and, per item, optional
  * edit/remove icon affordances (this slice renders chrome + rows only; edit/remove dialog
- * wiring and per-item accessible names land in task-2/3 — see spec.md).
+ * wiring and the per-action `getEdit/RemoveAccessibilityLabel` builder props land in
+ * task-2/3 — see spec.md; each icon has an interim `item.accessibleLabel` name meanwhile).
  */
 export const CardListWithABMDialog = <TItem,>({
   title,
@@ -43,7 +44,9 @@ export const CardListWithABMDialog = <TItem,>({
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>{title}</Text>
+        <Text accessibilityRole="header" style={styles.title}>
+          {title}
+        </Text>
         <Button icon="add" onPress={onAddPress} accessibilityLabel={addButtonLabel}>
           {addButtonLabel}
         </Button>
@@ -69,7 +72,11 @@ export const CardListWithABMDialog = <TItem,>({
 /**
  * One row: `Card` wrapping the caller's content plus optional edit/remove icons.
  * Icons are wrapped in a local testID `View` rather than the shared `IconButton` atom
- * gaining a `testID` prop (atom-ban) — their accessible names arrive in task-2/3.
+ * gaining a `testID` prop (atom-ban).
+ * `item.accessibleLabel` is used as an interim accessible name for both icons this slice
+ * (WCAG 4.1.2 — `IconButton` always renders `accessibilityRole="button"`, so an accessible
+ * name must not be missing); task-2/3's `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`
+ * builder props supersede this with a per-action label, not a second competing prop.
  */
 const CardListRow = <TItem,>({ item }: CardListRowProps<TItem>) => (
   <Card
@@ -81,12 +88,22 @@ const CardListRow = <TItem,>({ item }: CardListRowProps<TItem>) => (
       <View style={styles.actions}>
         {item.showEditButton ? (
           <View testID={cardListItemEditTestId(item.id)}>
-            <IconButton icon="edit" size={layout.touchTarget} disabled={item.disabled} />
+            <IconButton
+              icon="edit"
+              size={layout.touchTarget}
+              disabled={item.disabled}
+              accessibilityLabel={item.accessibleLabel}
+            />
           </View>
         ) : null}
         {item.showRemoveButton ? (
           <View testID={cardListItemRemoveTestId(item.id)}>
-            <IconButton icon="delete" size={layout.touchTarget} disabled={item.disabled} />
+            <IconButton
+              icon="delete"
+              size={layout.touchTarget}
+              disabled={item.disabled}
+              accessibilityLabel={item.accessibleLabel}
+            />
           </View>
         ) : null}
       </View>
