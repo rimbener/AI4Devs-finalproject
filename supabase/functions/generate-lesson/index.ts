@@ -301,11 +301,9 @@ Deno.serve(async (req) => {
           ? 429
           : resolvedKey.errorCode === 'generation_failed'
             ? 500
-            // invalid_model (@s18/@s19) and provider_disabled (@s17, D13) share 422 -- the BYOK
-            // route's own disabled-provider status, matching invalid_model's existing status.
-            : resolvedKey.errorCode === 'invalid_model' || resolvedKey.errorCode === 'provider_disabled'
-              ? 422
-              : 422,
+            // invalid_model (@s18/@s19), provider_disabled (@s17, D13), and missing_key all share
+            // 422 -- the BYOK route's own disabled-provider/invalid-model/no-key status.
+            : 422,
     );
   }
   // No fallback load here: route.ts's platform branch already called loadProviderEntry('groq')
