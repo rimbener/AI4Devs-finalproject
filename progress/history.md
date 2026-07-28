@@ -167,3 +167,4 @@
 2026-07-27 | splash-screen-logomark (story only) | n/a | — | Pending user story: native splash logomark on Royal Blue until auth/profile resolves (67c19af6c). Assets PNGs left untracked.
 2026-07-27 | orchestrator-mutation-rereview (ad hoc, no story) | n/a | — | Mutation fix that changes production source re-triggers bounded full review; test-only kill skips it (01ce5eb56).
 2026-07-27 | splash-screen-logomark (assets) | n/a | — | Tracked logo-full.png + logomark.png under apps/app-study-buddy/assets (e8a9133a2).
+2026-07-28 | review-fixes + agent-skills (ad hoc) | n/a | — | Keep manual provider pick across keys refresh; parallelize manage-api-key; image-lightbox helpers tests; add-storybook-story + add-unit-test skills.
