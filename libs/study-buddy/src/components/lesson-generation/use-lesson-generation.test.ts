@@ -852,4 +852,46 @@ describe('useLessonGenerationForm', () => {
     expect(result.current.selectedProvider).toBe('openai');
     expect(result.current.selectedModel).toBeUndefined();
   });
+
+  // Code review finding: a manual `selectProvider` choice must survive `savedProviderEntries`
+  // getting a new reference (e.g. a key added for a different provider while this screen stays
+  // mounted) — the seeding effect must not silently reset it back to the resolved default.
+  it('keeps a manual provider selection when savedProviderEntries changes reference afterwards', async () => {
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01' },
+          { provider: 'openai', updatedAt: '2026-01-02' },
+        ],
+      },
+      hasKey: true,
+    });
+
+    const { result, rerender } = await renderHook(
+      ({ documentId }: { documentId?: string }) =>
+        useLessonGenerationForm({ documentId, composition: 'both' }),
+      { initialProps: { documentId: 'doc-1' } },
+    );
+
+    await waitFor(() => expect(result.current.selectedProvider).toBe('groq'));
+
+    await act(async () => {
+      result.current.selectProvider('openai');
+    });
+    expect(result.current.selectedProvider).toBe('openai');
+
+    mockUseApiKey.mockReturnValue({
+      status: {
+        keys: [
+          { provider: 'groq', updatedAt: '2026-01-01' },
+          { provider: 'openai', updatedAt: '2026-01-03' },
+          { provider: 'anthropic', updatedAt: '2026-01-03' },
+        ],
+      },
+      hasKey: true,
+    });
+    await rerender({ documentId: 'doc-1' });
+
+    expect(result.current.selectedProvider).toBe('openai');
+  });
 });

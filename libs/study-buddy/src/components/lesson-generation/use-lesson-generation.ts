@@ -1,7 +1,7 @@
 import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
 import type { AiProvider, GenerateLessonRequest, LessonComposition } from '@helsoft/types';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { resolveGenerationSelection } from './lesson-generation.helpers';
 
@@ -30,6 +30,11 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
   const { profile } = useProfile();
   const [selectedProvider, setSelectedProvider] = useState<AiProvider | undefined>();
   const [selectedModel, setSelectedModel] = useState<string | undefined>();
+  // Once the learner picks a provider themselves (`selectProvider`), that choice is authoritative
+  // until this hook unmounts — the seeding effect below must never overwrite it just because
+  // `savedProviderEntries` gets a new reference (e.g. a key added/removed elsewhere while this
+  // screen stays mounted).
+  const hasManualSelectionRef = useRef(false);
 
   const savedProviderEntries = useMemo(() => {
     const saved = new Set(status.keys.map((entry) => entry.provider));
@@ -53,6 +58,7 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
     // empty, showPickers is already false and `!showPickers` alone already returns early — the
     // dropped disjunct could never be the deciding term in any reachable render.
     if (!showPickers) return;
+    if (hasManualSelectionRef.current) return;
 
     let cancelled = false;
 
@@ -86,6 +92,7 @@ export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGe
   };
 
   const selectProvider = (provider: AiProvider) => {
+    hasManualSelectionRef.current = true;
     setSelectedProvider(provider);
     const entry = savedProviderEntries.find((candidate) => candidate.id === provider);
     setSelectedModel(entry?.models[0]?.modelId);
