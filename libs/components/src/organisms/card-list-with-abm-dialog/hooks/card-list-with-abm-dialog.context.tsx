@@ -1,26 +1,12 @@
-import type { ReactNode } from 'react';
+import { createContext, type ReactNode, useContext } from 'react';
 
-/**
- * One row of `CardListWithABMDialog`. Generic over the caller's domain object (`TItem`) so
- * edit/remove callbacks receive it directly with no id lookup.
- * `accessibleLabel` is consumed by the `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`
- * builder props — it is part of the stable contract, not rendered directly.
- */
-export type CardListItem<TItem> = {
-  id: string;
-  content: ReactNode;
-  accessibleLabel: string;
-  disabled?: boolean;
-  showEditButton?: boolean;
-  showRemoveButton?: boolean;
-  data: TItem;
-};
+import type { CardListItem } from '../card-list-with-abm-dialog.types';
 
 /**
  * Full prop surface (spec.md) — chrome (title/list/add), edit/remove dialog wiring, per-action
  * accessible-name builders, and the `isSubmitting` in-flight state.
  */
-export type CardListWithABMDialogProps<TItem> = {
+export type CardListWithABMDialogValue<TItem> = {
   title: string;
   items: CardListItem<TItem>[];
   addButtonLabel: string;
@@ -57,21 +43,32 @@ export type CardListWithABMDialogProps<TItem> = {
   isSubmitting: boolean;
 };
 
-/** testID for the virtualized content list. */
-export const CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID = 'card-list-with-abm-dialog-list';
-/** testID for a row's `Card` wrapper (its opacity carries the disabled visual, @s2). */
-export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;
-/** testID prefix for a row's edit icon. */
-export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog-edit-${id}`;
-/** testID prefix for a row's remove icon. */
-export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
+// createContext can't be generic — store as unknown; Provider/hook reintroduce TItem via cast.
+const CardListWithABMDialogContext = createContext<CardListWithABMDialogValue<unknown> | null>(
+  null,
+);
 
-/**
- * Single discriminated-union state (spec.md's Open decisions / `state.mdc`) — one state
- * variable, not `useReducer` (not ≥3 independently-changing fields). Rules out an invalid
- * "both dialogs open" state by construction.
- */
-export type CardListDialogState<TItem> = {
-  type: 'edit' | 'remove';
-  item: CardListItem<TItem>;
-} | null;
+type CardListWithABMDialogProviderProps<TItem> = {
+  value: CardListWithABMDialogValue<TItem>;
+  children: ReactNode;
+};
+
+export const CardListWithABMDialogProvider = <TItem,>({
+  value,
+  children,
+}: CardListWithABMDialogProviderProps<TItem>) => (
+  <CardListWithABMDialogContext.Provider value={value as CardListWithABMDialogValue<unknown>}>
+    {children}
+  </CardListWithABMDialogContext.Provider>
+);
+
+export const useCardListWithABMDialogContext = <TItem,>(): CardListWithABMDialogValue<TItem> => {
+  const value = useContext(CardListWithABMDialogContext);
+  if (!value) {
+    throw new Error(
+      'useCardListWithABMDialogContext must be used within CardListWithABMDialogProvider',
+    );
+  }
+
+  return value as CardListWithABMDialogValue<TItem>;
+};

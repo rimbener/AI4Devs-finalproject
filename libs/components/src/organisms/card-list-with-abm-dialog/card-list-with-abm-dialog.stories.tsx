@@ -38,6 +38,7 @@ const CardListWithABMDialogStory = CardListWithABMDialog as ComponentType<
 const meta = {
   title: 'Organisms/CardListWithABMDialog',
   component: CardListWithABMDialogStory,
+  tags: ['CardListWithABMDialog'],
   args: {
     title: 'Flashcards',
     items,
@@ -131,6 +132,16 @@ export const RemoveDialogSubmitting: Story = {
 /** Demonstrates onAddPress firing — the story renders the resulting tap count. */
 const InteractiveAddDemo = () => {
   const [tapCount, setTapCount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleOnEditSubmit = () => {
+    console.log('handleAddPress');
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+    }, 2000);
+  };
+
   return (
     <>
       <CardListWithABMDialogStory
@@ -142,17 +153,17 @@ const InteractiveAddDemo = () => {
         editDialogTitle="Edit flashcard"
         editSubmitLabel="Save"
         editCancelLabel="Cancel"
-        onEditSubmit={() => {}}
+        onEditSubmit={handleOnEditSubmit}
         renderRemoveConfirmation={(item) => (
           <Text>{`Remove "${item.data.front}"? This cannot be undone.`}</Text>
         )}
         removeDialogTitle="Remove flashcard"
         removeSubmitLabel="Remove"
         removeCancelLabel="Keep it"
-        onRemoveConfirm={() => {}}
+        onRemoveConfirm={handleOnEditSubmit}
         getEditAccessibilityLabel={(item) => `Edit ${item.accessibleLabel}`}
         getRemoveAccessibilityLabel={(item) => `Remove ${item.accessibleLabel}`}
-        isSubmitting={false}
+        isSubmitting={isSubmitting}
       />
       <Text>{`Added ${tapCount} times`}</Text>
     </>

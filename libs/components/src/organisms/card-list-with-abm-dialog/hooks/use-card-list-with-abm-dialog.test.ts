@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react-native';
-import type { CardListItem } from './card-list-with-abm-dialog.types';
+import type { CardListItem } from '../card-list-with-abm-dialog.types';
 import { useCardListWithABMDialog } from './use-card-list-with-abm-dialog';
 
 type StoryItem = { note: string };

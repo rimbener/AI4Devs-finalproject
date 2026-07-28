@@ -22,14 +22,15 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react-n
 import type { ReactNode } from 'react';
 import { Text } from 'react-native';
 import { Dialog } from '../dialog/dialog';
+import { CardListWithABMDialog } from './card-list-with-abm-dialog';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
-  CardListWithABMDialog,
+  type CardListItem,
+  type CardListWithABMDialogProps,
   cardListItemCardTestId,
   cardListItemEditTestId,
   cardListItemRemoveTestId,
-} from './card-list-with-abm-dialog';
-import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
+} from './card-list-with-abm-dialog.types';
 
 type DialogMockProps = { open: boolean; headline?: string; children: ReactNode };
 const DialogMock = Dialog as unknown as jest.Mock<ReactNode, [DialogMockProps]>;
@@ -579,11 +580,11 @@ describe('CardListWithABMDialog', () => {
     expect(flattenStyle(screen.getByText('My List').props.style).flexShrink).toBe(1);
   });
 
-  it('gives the list flex:1 to fill available height', async () => {
+  it('gives the list flex:1 and an s1 padding gutter to fill available height', async () => {
     await render(<CardListWithABMDialog {...makeProps()} />);
 
     const list = screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID);
-    expect(flattenStyle(list.props.style)).toEqual({ flex: 1 });
+    expect(flattenStyle(list.props.style)).toEqual({ flex: 1, padding: 4 });
   });
 
   it('spaces list content by s3', async () => {

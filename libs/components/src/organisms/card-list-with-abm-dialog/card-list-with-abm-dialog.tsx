@@ -1,74 +1,15 @@
-import type { ReactNode } from 'react';
-import { memo, useCallback } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { Button } from '../../atoms/button/button';
-import { CardListRow } from '../../molecules/card-list-row/card-list-row';
-import { SubmittingIndicator } from '../../molecules/submitting-indicator/submitting-indicator';
-import { Dialog } from '../dialog/dialog';
-import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
-import { useCardListWithABMDialog } from './use-card-list-with-abm-dialog';
-
-/** testID for the virtualized content list. */
-export const CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID = 'card-list-with-abm-dialog-list';
-
-// Truthy-but-empty: overrides Dialog's `actions ?? (<default buttons>)` fallback
-// (`undefined`/`null` would fall through to it) to hide the cancel/submit row while
-// isSubmitting is true.
-const EMPTY_DIALOG_ACTIONS = <></>;
-
-/** testID for a row's `Card` wrapper (its opacity carries the disabled visual, @s2). */
-export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;
-/** testID prefix for a row's edit icon. */
-export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog-edit-${id}`;
-/** testID prefix for a row's remove icon. */
-export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
-
-type CardListRowAdapterProps<TItem> = {
-  item: CardListItem<TItem>;
-  onEditPress: (item: CardListItem<TItem>) => void;
-  onRemovePress: (item: CardListItem<TItem>) => void;
-  getEditAccessibilityLabel: (item: CardListItem<TItem>) => string;
-  getRemoveAccessibilityLabel: (item: CardListItem<TItem>) => string;
-};
-
-/**
- * CardListRowAdapter — thin, organism-owned mapping from this organism's generic
- * `CardListItem<TItem>` (plus its accessible-name-builder/press-handler props) down to the
- * portable `CardListRow` molecule's flat prop shape: resolved accessible-name strings,
- * item-bound press callbacks, and this organism's own testID literals
- * (`cardListItemCardTestId`/`cardListItemEditTestId`/`cardListItemRemoveTestId`). Mirrors
- * `pdf-document-list.tsx`'s `PdfDocumentListRow` adapter — the molecule itself never sees
- * `CardListItem<TItem>`. Memoized + `useCallback`'d call-throughs for the same reason as that
- * precedent (full-review minor [perf]): keeps per-cell handler identity stable across parent
- * `FlatList` re-renders.
- */
-const CardListRowAdapter = memo(function CardListRowAdapter<TItem>({
-  item,
-  onEditPress,
-  onRemovePress,
-  getEditAccessibilityLabel,
-  getRemoveAccessibilityLabel,
-}: CardListRowAdapterProps<TItem>) {
-  const handleEditPress = useCallback(() => onEditPress(item), [onEditPress, item]);
-  const handleRemovePress = useCallback(() => onRemovePress(item), [onRemovePress, item]);
-
-  return (
-    <CardListRow
-      content={item.content}
-      disabled={item.disabled}
-      showEditButton={item.showEditButton}
-      showRemoveButton={item.showRemoveButton}
-      onEditPress={handleEditPress}
-      onRemovePress={handleRemovePress}
-      editAccessibilityLabel={getEditAccessibilityLabel(item)}
-      removeAccessibilityLabel={getRemoveAccessibilityLabel(item)}
-      testID={cardListItemCardTestId(item.id)}
-      editTestID={cardListItemEditTestId(item.id)}
-      removeTestID={cardListItemRemoveTestId(item.id)}
-    />
-  );
-}) as <TItem>(props: CardListRowAdapterProps<TItem>) => ReactNode;
+import { CardListWithABMDialogHeader } from '../../atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header';
+import { CardListWithABMDialogEdit } from '../../molecules/card-list-with-abm-dialog-edit/card-list-with-abm-dialog-edit';
+import { CardListWithABMDialogRemove } from '../../molecules/card-list-with-abm-dialog-remove/card-list-with-abm-dialog-remove';
+import { CardListWithABMDialogList } from '../card-list-with-abm-dialog-list/card-list-with-abm-dialog-list';
+import type { CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
+import {
+  CardListWithABMDialogProvider,
+  useCardListWithABMDialogContext,
+} from './hooks/card-list-with-abm-dialog.context';
+import { useCardListWithABMDialog } from './hooks/use-card-list-with-abm-dialog';
 
 /**
  * CardListWithABMDialog — titled `Card` list with an add button and, per item, optional
@@ -79,166 +20,50 @@ const CardListRowAdapter = memo(function CardListRowAdapter<TItem>({
  * `SubmittingIndicator`, its cancel/submit buttons are hidden (`actions={<></>}`), and it can't
  * be dismissed via scrim/Escape (`onClose={undefined}`).
  */
-export const CardListWithABMDialog = <TItem,>({
-  title,
-  items,
-  addButtonLabel,
-  onAddPress,
-  emptyStateMessage,
-  renderEditForm,
-  editDialogTitle,
-  editSubmitLabel,
-  editCancelLabel,
-  onEditSubmit,
-  renderRemoveConfirmation,
-  removeDialogTitle,
-  removeSubmitLabel,
-  removeCancelLabel,
-  onRemoveConfirm,
-  getEditAccessibilityLabel,
-  getRemoveAccessibilityLabel,
-  isSubmitting,
-}: CardListWithABMDialogProps<TItem>) => {
+export function CardListWithABMDialog<TItem>(props: CardListWithABMDialogProps<TItem>) {
+  return (
+    <CardListWithABMDialogProvider value={props}>
+      <CardListWithABMDialogWithContext />
+    </CardListWithABMDialogProvider>
+  );
+}
+
+function CardListWithABMDialogWithContext<TItem>() {
+  const { items, emptyStateMessage } = useCardListWithABMDialogContext<TItem>();
   const { dialogState, isOpen, openEditDialog, openRemoveDialog, closeDialog } =
     useCardListWithABMDialog<TItem>();
 
-  const keyExtractor = useCallback(
-    (item: CardListItem<TItem>) => item.id,
-    // Stryker disable next-line ArrayDeclaration: keyExtractor closes over nothing but its own
-    // `item` param — the (unused) dependency array can never observably change its behavior
-    // (mirrors pdf-document-list.tsx's identical keyExtractor equivalent).
-    [],
-  );
-
-  const renderItem = useCallback(
-    ({ item }: { item: CardListItem<TItem> }) => (
-      <CardListRowAdapter
-        item={item}
-        onEditPress={openEditDialog}
-        onRemovePress={openRemoveDialog}
-        getEditAccessibilityLabel={getEditAccessibilityLabel}
-        getRemoveAccessibilityLabel={getRemoveAccessibilityLabel}
-      />
-    ),
-    [openEditDialog, openRemoveDialog, getEditAccessibilityLabel, getRemoveAccessibilityLabel],
-  );
-
-  const handleEditConfirm = () => {
-    // Stryker disable next-line OptionalChaining: dialogState is never null in any reachable
-    // call — this Dialog's own onConfirm (the Save button) only exists in the render tree
-    // while `open`, i.e. while `dialogState?.type === 'edit'` is already true (Modal renders no
-    // children while `visible={false}`) — so dropping `?.` can never observably differ. The
-    // ConditionalExpression `true` mutant on the same line is a separate, documented equivalent
-    // (see mutation.md) — NOT disabled here, since the `false` mutant on this same condition
-    // must stay tracked as Killed by the existing onEditSubmit-called-once assertion.
-    if (dialogState?.type === 'edit') {
-      onEditSubmit(dialogState.item);
-    }
-    closeDialog();
-  };
-
-  const handleRemoveConfirm = () => {
-    // Stryker disable next-line OptionalChaining: same equivalence as handleEditConfirm above.
-    if (dialogState?.type === 'remove') {
-      onRemoveConfirm(dialogState.item);
-    }
-    closeDialog();
-  };
-
-  // Shared isSubmitting-swap: while submitting, the open dialog can't be dismissed and hides
-  // its own cancel/submit row (`EMPTY_DIALOG_ACTIONS`); reused by both Dialog blocks below.
-  const dialogInteractionProps = isSubmitting
-    ? { onClose: undefined, actions: EMPTY_DIALOG_ACTIONS }
-    : { onClose: closeDialog, actions: undefined };
-
-  // Shared isSubmitting-swap for the dialog body: while submitting, show SubmittingIndicator
-  // instead of the caller-supplied content; reused by both Dialog blocks below.
-  const renderDialogBody = (
-    type: 'edit' | 'remove',
-    render: (item: CardListItem<TItem>) => ReactNode,
-  ): ReactNode => {
-    if (dialogState?.type !== type) return null;
-    return isSubmitting ? <SubmittingIndicator /> : render(dialogState.item);
-  };
-
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Text accessibilityRole="header" style={styles.title}>
-          {title}
-        </Text>
-        <Button icon="add" onPress={onAddPress} accessibilityLabel={addButtonLabel}>
-          {addButtonLabel}
-        </Button>
-      </View>
+      <CardListWithABMDialogHeader />
       {items.length === 0 ? (
         emptyStateMessage ? (
           <Text style={styles.emptyText}>{emptyStateMessage}</Text>
         ) : null
       ) : (
-        <FlatList
-          testID={CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID}
-          data={items}
-          keyExtractor={keyExtractor}
-          renderItem={renderItem}
-          style={styles.list}
-          contentContainerStyle={styles.listContent}
+        <CardListWithABMDialogList
+          openEditDialog={openEditDialog}
+          openRemoveDialog={openRemoveDialog}
         />
       )}
-      <Dialog
-        // Stryker disable next-line OptionalChaining: dialogState is never null while isOpen is
-        // true — openEditDialog/openRemoveDialog always set both together in the same handler
-        // (React batches them into one render), and closeDialog only ever flips isOpen back to
-        // false, never clearing dialogState. The `isOpen &&` short-circuit means `dialogState.type`
-        // is only evaluated once isOpen is true, i.e. once dialogState is already set — so `?.`
-        // vs `.` can never observably differ. Re-verified (mutation.md, Round 4) with a test that
-        // exercises exactly this pairing across an edit→close→remove sequence: at every step the
-        // other dialog's own `open` prop (and its type discriminant) is asserted directly.
+      <CardListWithABMDialogEdit
         open={isOpen && dialogState?.type === 'edit'}
-        {...dialogInteractionProps}
-        headline={editDialogTitle}
-        confirmLabel={editSubmitLabel}
-        cancelLabel={editCancelLabel}
-        onConfirm={handleEditConfirm}
-      >
-        {renderDialogBody('edit', renderEditForm)}
-      </Dialog>
-      <Dialog
-        // Stryker disable next-line OptionalChaining: same equivalence as the edit Dialog above.
+        dialogState={dialogState}
+        onClose={closeDialog}
+      />
+      <CardListWithABMDialogRemove
         open={isOpen && dialogState?.type === 'remove'}
-        {...dialogInteractionProps}
-        headline={removeDialogTitle}
-        confirmLabel={removeSubmitLabel}
-        cancelLabel={removeCancelLabel}
-        onConfirm={handleRemoveConfirm}
-      >
-        {renderDialogBody('remove', renderRemoveConfirmation)}
-      </Dialog>
+        dialogState={dialogState}
+        onClose={closeDialog}
+      />
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
     gap: theme.spacing.s4,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.s3,
-  },
-  title: {
-    ...theme.typography.titleLarge,
-    color: theme.colors.onSurface,
-    flexShrink: 1,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    gap: theme.spacing.s3,
   },
   emptyText: {
     ...theme.typography.bodyLarge,
