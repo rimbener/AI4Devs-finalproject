@@ -4,14 +4,14 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import { ApiKeyManager } from './api-key-manager';
 import type { ApiKeyManagerProps } from './api-key-manager.types';
 
-const providerNameKeys: Record<AiProvider, string> = {
-  groq: 'settings.apiKey.provider.groq',
-  openai: 'settings.apiKey.provider.openai',
-  anthropic: 'settings.apiKey.provider.anthropic',
-  google: 'settings.apiKey.provider.google',
-  xai: 'settings.apiKey.provider.xai',
-  deepseek: 'settings.apiKey.provider.deepseek',
-};
+const providers: readonly AiProvider[] = [
+  'groq',
+  'openai',
+  'anthropic',
+  'google',
+  'xai',
+  'deepseek',
+];
 
 const providerNames: Record<AiProvider, string> = {
   groq: 'Groq',
@@ -37,11 +37,13 @@ const getSavedStatusLabel = (provider: AiProvider, updatedAt: string) =>
 const groqKey: SavedProviderKey = { provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' };
 
 const sharedArgs: Omit<ApiKeyManagerProps, 'savedKeys'> = {
+  providers,
+  enabledProviders: providers,
   onSave: () => {},
   onRemove: () => {},
   guidanceUrls,
   getSavedStatusLabel,
-  providerNameKeys,
+  providerNames,
 };
 
 const meta = {
@@ -92,5 +94,14 @@ export const Error: Story = {
   args: {
     savedKeys: [groqKey],
     errorMessage: "Couldn't reach the server. Try again.",
+  },
+};
+
+/** A saved provider later disabled in the catalog — stays visible, badged, Remove still enabled
+ * (@s5/@s6/@s7/@s22). */
+export const DisabledProvider: Story = {
+  args: {
+    savedKeys: [groqKey],
+    enabledProviders: providers.filter((p) => p !== 'groq'),
   },
 };

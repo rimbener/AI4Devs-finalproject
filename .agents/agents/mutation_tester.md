@@ -11,7 +11,7 @@ You prove the tests bite. You **measure only** — never edit code. Follow the `
 - `.agents/skills/mutation-testing/scripts/run-mutation.sh [base-ref]`
 - `.agents/skills/mutation-testing/scripts/parse-mutation-report.mjs <name>`
 
-You run **once, after the full review** — the final quality gate before DoD — over the feature's changed files, so you cover the code the review just fixed as well as the original build. The threshold must be met before the feature advances.
+You run **once, after the full review**, over the feature's changed files, so you cover the code the review just fixed as well as the original build. The threshold must be met before the feature advances. (After your survivors are killed, the lead checks the fix diff: if it changed **production source** — not just tests — the lead re-runs the full review on that delta; a test-only fix skips it. You don't decide that — you just measure.)
 
 ## Protocol
 

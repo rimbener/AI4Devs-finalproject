@@ -31,8 +31,9 @@ pending
   → reviews_lead (full)            → CI once + reviewer_engineering (code · architecture ·
         performance · security), the sole full reviewer → review.md; fix every finding
         (≤ 2 rounds)                                                                     [in_review]
-  → mutation_tester                → mutation.md; changed files vs the delivery branch
-        (covers the review's fixes too); kill every survivor (≤ 2 rounds) or ESCALATE    [mutation]
+  → mutation_tester                → mutation.md; changed files vs the delivery branch;
+        kill every survivor (≤ 2 rounds) or ESCALATE. If the fix changed SOURCE (not
+        just tests) → re-run the full review on that delta; test-only fix → skip        [mutation]
   → dod_validator       → dod.md (validate only, no PR)                                 [pr_ready]
   → ⟵ human opens & merges the PR                                                       [done]
 ```
@@ -67,7 +68,7 @@ Only `orchestrator_lead` writes the feature phase (in `tasks.md` frontmatter); `
 2. **HUMAN GATE (the one approval)** — the human approves `spec.md` + `gherkin-scenarios.md` together → `approved`. This is the pipeline's only human sign-off.
 3. **per-slice** — lint + check-types + tests (+ e2e where relevant) green; slice `@s` covered; `tdd.md` ≤ 8 000 bytes; `reviewer_slice` reviews **once (1 round)**, every finding fixed (no minors accepted), no re-review; unresolvable → escalate.
 4. **full review** — every finding fixed, any severity (≤ 2 rounds); after round 2: open blocker/major → escalate; only minors → ship as documented, human-accepted risks.
-5. **mutation** — once after the full review; 100% killed on the changed lines vs the delivery branch (≤ 2 rounds, else **escalate** — never a fabricated PASS).
+5. **mutation** — once after the full review; 100% killed on the changed lines vs the delivery branch (≤ 2 rounds, else **escalate** — never a fabricated PASS). **If killing survivors changed production source** (not just tests), the full review re-runs on that delta (bounded); a test-only mutation fix skips it.
 6. **pr_ready** — `dod_validator` all-pass; human opens/merges the PR → `done`.
 
 ## Artifact map — `docs/features/<name>/`
@@ -91,7 +92,7 @@ Session state: `progress/current.md` (active pointer) + `progress/history.md` (a
 - **CI runs once per review round** (by `reviews_lead`); reviewers never re-run `pnpm lint`/`check-types`/`test` — they get the status and judge the **diff**, not the world.
 - **One full reviewer** — `reviewer_engineering` (code · architecture · performance · security) is the sole full-review agent; it self-marks performance and/or security `N/A` when the diff can't trigger them (recorded in `review-engineering.md`). **Design & accessibility are not in the full review** — `reviewer_slice` covers them per slice. (Folding all review lenses into one per-slice agent + one full agent removes fan-out context/token cost entirely.)
 - **Per-slice review is ONE agent** (`reviewer_slice`): all `.agents/rules/` + design + accessibility, not a lead + fan-out.
-- **Mutation runs once, after the full review** (changed files vs the delivery branch) — no separate pre-review pass; escalate-only.
+- **Mutation runs once, after the full review** (changed files vs the delivery branch) — no separate pre-review pass; escalate-only. **A mutation fix that changes production source re-triggers the full review** on that delta (bounded); a test-only fix doesn't — cheapest way to keep the review honest without re-reviewing test-only edits.
 - **Quiet runners everywhere** — `turbo --output-logs=errors-only`; scoped `pnpm --filter <ws> test -- <file> --silent` during TDD cycles; Stryker `--logLevel warn` (log to file, read the summary); Playwright `--reporter=list`.
 - **Artifact hygiene** — a fact lives in exactly one place, others link (ACs only in `gherkin-scenarios.md`; `tasks.md` a bare index; DoD cites rather than restates). Logs are summaries (`tdd.md` = `@s → test` map + one line per cycle, ≤ 8 000 bytes, enforced at each slice gate). One `review-<type>.md` per reviewer, updated each round to a **durable findings trail** (fixed items marked `resolved`, kept — **never emptied / 0-byte**, even on APPROVED), never `-r2`/`-r3` copies. State lines are one line. **`risks.md` never enters context** — written once to `tmp/<name>/`, landed in `docs/` only at PR time.
 

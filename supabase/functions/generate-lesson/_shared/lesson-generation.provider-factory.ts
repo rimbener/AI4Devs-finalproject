@@ -12,7 +12,14 @@ import { type AiProvider, PLATFORM_TEXT_MODEL_ID } from './models.ts';
 
 export type ProviderModelCall = (modelId: string) => unknown;
 
-const providerCreators: Record<AiProvider, (options: { apiKey: string }) => (modelId: string) => unknown> = {
+// AiProvider is now a plain string (ai-provider-registry-backend, D6), so `providerCreators[provider]`
+// below can be `undefined` for a catalog row with no wired factory here — an accepted risk (D7,
+// risks.md R4): it surfaces as an opaque `generation_failed` 502 rather than a guarded rejection.
+// All six seeded providers have a factory today; this only bites a future catalog-only addition.
+const providerCreators: Record<
+  AiProvider,
+  (options: { apiKey: string }) => (modelId: string) => unknown
+> = {
   groq: createGroq,
   openai: createOpenAI,
   anthropic: createAnthropic,

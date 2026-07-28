@@ -10,6 +10,7 @@ export * from '../../../hooks/src/hooks/use-interaction-state';
 
 import type {
   AiProvider,
+  AiProviderCatalogEntry,
   ApiKeyErrorCode,
   ApiKeyStatus,
   GeneratedLesson,
@@ -23,6 +24,7 @@ import type {
 } from '@helsoft/types';
 import { useCallback, useState } from 'react';
 
+import { AI_PROVIDER_CATALOG_FIXTURE } from '../../../hooks/src/hooks/use-ai-providers.fixture';
 import { useBreakpoint as useBreakpointReal } from '../../../hooks/src/hooks/use-breakpoint';
 
 export type AuthErrorCode = 'invalid_credentials' | 'network_error';
@@ -184,6 +186,37 @@ export const useLessonAttempt = () => {
   const retry = useCallback(() => {}, []);
 
   return { status, attempt: null, saveAttempt, retry };
+};
+
+// --- useAiProviders --------------------------------------------------------------
+
+// The pinned six-provider/thirteen-model catalog (ai-provider-registry-frontend task-5,
+// spec.md Decision 13) — same relative-import seam as useBreakpoint/useInteractionState above,
+// so every existing story keeps rendering the exact catalog values today's app would show.
+export type AiProvidersMockConfig = {
+  providers?: AiProviderCatalogEntry[];
+  isLoading?: boolean;
+};
+
+let pendingAiProvidersConfig: AiProvidersMockConfig = {};
+
+export const configureAiProvidersMock = (config: AiProvidersMockConfig) => {
+  pendingAiProvidersConfig = config;
+};
+
+export const useAiProviders = () => {
+  const [config] = useState(() => {
+    const next = pendingAiProvidersConfig;
+    pendingAiProvidersConfig = {};
+    return next;
+  });
+  const providers = config.providers ?? AI_PROVIDER_CATALOG_FIXTURE;
+
+  return {
+    providers,
+    enabledProviders: providers.filter((provider) => provider.enabled),
+    isLoading: config.isLoading ?? false,
+  };
 };
 
 // --- useApiKey -----------------------------------------------------------------

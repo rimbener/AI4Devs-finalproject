@@ -7,10 +7,24 @@
 import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2';
 
 import { corsHeaders, corsPreflightResponse } from '../_shared/cors.ts';
+import { loadProviderCatalog } from '../_shared/provider-catalog.ts';
+import type { ProviderEntry } from '../_shared/provider-catalog.types.ts';
 import { handleRemoveApiKey, type RemoveApiKeyResult } from './handle-remove.ts';
 import { handleSaveApiKey, type ApiKeyStatus, type SaveApiKeyResult } from './handle-save.ts';
 import { logEvent } from './logger.ts';
-import { isAiProvider, type AiProvider } from './provider.ts';
+import { guardRemoveProvider, guardSaveProvider, type AiProvider } from './provider.ts';
+
+// Cast used ONLY at the two `loadProviderCatalog(adminClient, ...)` call sites below (Full
+// review round 1, Minor finding): the real `SupabaseClient`'s `.maybeSingle()` returns a
+// thenable query builder rather than a plain `Promise`, which `loadProviderCatalog`'s minimal
+// structural `CatalogQueryClient` type (task-3/D5) otherwise rejects. Scoped narrowly so
+// `adminClient`'s every other use in this file (`.from('user_ai_keys').select(...)`, both
+// `.rpc(...)` calls) keeps real `SupabaseClient` type checking -- unlike
+// generate-lesson/index.ts's file-wide `AnySupabaseClient` (that file's `deno check` can't even
+// evaluate it today due to unrelated npm:zod resolution issues; this file's `deno check` is
+// green, so widening the whole file would give up a check that actually passes).
+// deno-lint-ignore no-explicit-any
+type AnySupabaseClient = any;
 
 type SaveRequestBody = {
   action: 'save';
@@ -25,7 +39,15 @@ type RemoveRequestBody = {
 
 type RequestBody = SaveRequestBody | RemoveRequestBody;
 
-type DispatchResult = { status: number; body: SaveApiKeyResult | RemoveApiKeyResult };
+// The catalog-backed guard's own wire-level failure shape (ai-provider-registry-backend, D11) --
+// a distinct, Edge-local `{ code }` union, not `@helsoft/types`' `ApiKeyErrorCode` (D11 keeps that
+// widening + copy + client mapping in the paired frontend story's scope).
+type ProviderGuardErrorResult = { code: 'network_error' | 'provider_disabled' };
+
+type DispatchResult = {
+  status: number;
+  body: SaveApiKeyResult | RemoveApiKeyResult | ProviderGuardErrorResult;
+};
 
 type UserAiKeyRow = { provider: string; updated_at: string };
 
@@ -41,6 +63,13 @@ const errorStatus = (result: SaveApiKeyResult | RemoveApiKeyResult): number => {
   }
   return 200;
 };
+
+// `network_error` means "catalog read failed / provider unknown" -- a backend-side condition,
+// so it gets the same 502 as every other `network_error` from `errorStatus` above regardless of
+// which guard produced it. `provider_disabled` means the request named a real, known provider
+// that's currently off, which is a client-correctable 400.
+const guardErrorStatus = (code: 'network_error' | 'provider_disabled'): number =>
+  code === 'network_error' ? 502 : 400;
 
 const listUserApiKeys = async (
   adminClient: SupabaseClient,
@@ -83,19 +112,37 @@ const authenticateCaller = async (
 };
 
 /**
- * Routes a parsed, already-authenticated request body to the save or remove handler. Returns
- * `null` for a malformed/unrecognized body (Full review round 1, Minor 11: `body.provider`
- * must be a member of the closed AiProvider allow-list, not just truthy -- no check constraint
- * exists on `user_ai_keys.provider`) so the caller can respond 400.
+ * Guards `body`'s shape well enough to call `loadProviderCatalog(body.provider)` and the save/
+ * remove handlers below -- unchanged 400 network_error for a malformed/unrecognized body
+ * (`action`/`provider`/`apiKey` shape, Full review round 1, Minor 11), just checked before the
+ * catalog read (and the caller's auth check) starts instead of after, so the two independent
+ * reads can run concurrently (see `Deno.serve` below).
+ */
+const isValidRequestBody = (body: Partial<RequestBody>): body is RequestBody => {
+  if (body.action === 'save') {
+    return typeof body.provider === 'string' && typeof body.apiKey === 'string';
+  }
+  return body.action === 'remove' && typeof body.provider === 'string';
+};
+
+/**
+ * Routes an already-validated, already-authenticated request body to the save or remove
+ * handler, given the provider catalog entry already loaded by the caller (task-9, D6 -- no
+ * hardcoded allow-list remains). A throwing catalog read propagates out of `Deno.serve`'s own
+ * `Promise.all` uncaught, straight into the top-level try/catch below, which fails closed as 502
+ * network_error (task-10, D6) -- asserted, not a new branch.
  */
 const dispatch = async (
-  body: Partial<RequestBody>,
+  body: RequestBody,
   adminClient: SupabaseClient,
   userId: string,
-): Promise<DispatchResult | null> => {
+  entry: ProviderEntry | null,
+): Promise<DispatchResult> => {
   if (body.action === 'remove') {
-    if (!isAiProvider(body.provider)) {
-      return null;
+    // Remove never consults `enabled` (D10) -- only whether the provider is known at all.
+    const guard = guardRemoveProvider(entry);
+    if (!guard.ok) {
+      return { status: guardErrorStatus(guard.code), body: { code: guard.code } };
     }
     const result = await handleRemoveApiKey(
       { userId, provider: body.provider },
@@ -114,8 +161,11 @@ const dispatch = async (
     return { status: errorStatus(result), body: result };
   }
 
-  if (body.action !== 'save' || !isAiProvider(body.provider) || typeof body.apiKey !== 'string') {
-    return null;
+  // Save is refused for a disabled provider (D10/D12), checked against the already-loaded entry
+  // before any Vault write/RPC call.
+  const guard = guardSaveProvider(entry);
+  if (!guard.ok) {
+    return { status: guardErrorStatus(guard.code), body: { code: guard.code } };
   }
 
   const result = await handleSaveApiKey(
@@ -149,19 +199,28 @@ Deno.serve(async (request: Request) => {
   let action: 'save' | 'remove' = 'save';
 
   try {
-    const caller = await authenticateCaller(request, supabaseUrl, anonKey);
+    const body = (await request.json()) as Partial<RequestBody>;
+    if (body.action === 'remove') action = 'remove';
+
+    if (!isValidRequestBody(body)) {
+      return jsonResponse(request, 400, { code: 'network_error' });
+    }
+
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // Authenticating the caller and loading the provider catalog are independent of each other
+    // (auth only needs the request's own JWT; the catalog read only needs `body.provider`) --
+    // run them concurrently instead of back-to-back so a save/remove call costs one fewer
+    // sequential round trip.
+    const [caller, entry] = await Promise.all([
+      authenticateCaller(request, supabaseUrl, anonKey),
+      loadProviderCatalog(adminClient as AnySupabaseClient, body.provider),
+    ]);
     if (!caller) {
       return jsonResponse(request, 401, { code: 'network_error' });
     }
 
-    const body = (await request.json()) as Partial<RequestBody>;
-    if (body.action === 'remove') action = 'remove';
-    const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-    const result = await dispatch(body, adminClient, caller.userId);
-    if (!result) {
-      return jsonResponse(request, 400, { code: 'network_error' });
-    }
+    const result = await dispatch(body, adminClient, caller.userId, entry);
     return jsonResponse(request, result.status, result.body);
   } catch {
     // Redacted per @s12 -- never log the request body or key, only a generic outcome.

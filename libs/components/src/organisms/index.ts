@@ -6,6 +6,7 @@ export * from './api-key-form-dialog/api-key-form-dialog';
 export type * from './api-key-form-dialog/api-key-form-dialog.types';
 export * from './api-key-manager/api-key-manager';
 export type * from './api-key-manager/api-key-manager.types';
+export * from './api-key-manager/use-api-key-manager';
 export * from './api-key-required-notice/api-key-required-notice';
 export type * from './api-key-required-notice/api-key-required-notice.types';
 export * from './card-list-with-abm-dialog/card-list-with-abm-dialog';

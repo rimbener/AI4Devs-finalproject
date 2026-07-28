@@ -183,38 +183,14 @@ export const en = {
         documentNotReady: "This document isn't ready yet. Please re-upload your PDF.",
         unauthenticated: 'Please sign in to generate a lesson.',
         persistFailed: 'Your lesson could not be saved. Try again.',
+        // ai-provider-registry-frontend task-9, @s12 — distinct from invalidModel: points the
+        // learner at picking a different saved provider, same family/wording pattern.
+        providerDisabled: 'That provider is currently disabled. Choose another and try again.',
         action: {
           retry: 'Try again',
           settings: 'Go to Settings',
           signIn: 'Sign in',
         },
-      },
-    },
-    aiModel: {
-      groq: {
-        gptOss20b: 'GPT-OSS 20B',
-        gptOss120b: 'GPT-OSS 120B',
-        qwen36_27b: 'Qwen 3.6 27B',
-      },
-      openai: {
-        gpt56Luna: 'GPT-5.6 Luna',
-        gpt56Terra: 'GPT-5.6 Terra',
-      },
-      anthropic: {
-        claudeHaiku45: 'Claude Haiku 4.5',
-        claudeSonnet5: 'Claude Sonnet 5',
-      },
-      google: {
-        gemini36Flash: 'Gemini 3.6 Flash',
-        gemini25Flash: 'Gemini 2.5 Flash',
-      },
-      xai: {
-        grok43: 'Grok 4.3',
-        grok45: 'Grok 4.5',
-      },
-      deepseek: {
-        v4Flash: 'DeepSeek V4 Flash',
-        v4Pro: 'DeepSeek V4 Pro',
       },
     },
     lesson: {
@@ -296,14 +272,6 @@ export const en = {
         replace: 'Replace',
         remove: 'Remove',
         savedStatus: '{{provider}} key saved · Updated {{date}}',
-        provider: {
-          groq: 'Groq',
-          openai: 'OpenAI',
-          anthropic: 'Anthropic',
-          google: 'Google',
-          xai: 'xAI',
-          deepseek: 'DeepSeek',
-        },
         // multi-provider-ai-keys — guidance template used by ApiKeyManager (per-provider).
         guidanceTemplate: "Don't have a key? Get one from {{provider}}",
         // ai-key-management task-11 (Slice 2) — added ahead of task-13 for the same
@@ -323,6 +291,9 @@ export const en = {
           addNew: 'Add new provider',
           selectProvider: 'Select provider',
           emptyMessage: 'No API keys saved',
+          // ai-provider-registry-frontend task-6, @s5/@s22 — a saved, now-disabled provider's
+          // own text label (not a color-only cue, WCAG 1.4.1).
+          disabled: 'Disabled',
         },
         error: {
           // ai-key-management task-13 (Slice 3) — spec.md Open decision 3: the defensive
@@ -332,6 +303,9 @@ export const en = {
           // ApiKeyForm's `error` prop, mirroring AuthErrorCode's own unreachable-but-defined
           // validation_error precedent.
           empty: 'Enter your API key.',
+          // ai-provider-registry-frontend task-8, @s16 — distinct from the generic network
+          // error banner.
+          providerDisabled: "This provider is currently disabled and can't accept a new key.",
         },
       },
     },

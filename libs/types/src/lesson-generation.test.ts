@@ -79,7 +79,7 @@ describe('GENERATION_PROGRESS_STEPS', () => {
 // spec.md's Error contract table — the closed set of codes LessonGenerationService normalizes
 // every failure to (mirrors PdfExtractionError).
 describe('GenerationError', () => {
-  it('carries one of the 11 closed GenerationErrorCode values', () => {
+  it('carries one of the 12 closed GenerationErrorCode values', () => {
     const codes: GenerationErrorCode[] = [
       'missing_key',
       'invalid_key',
@@ -92,11 +92,20 @@ describe('GenerationError', () => {
       'network_error',
       'unauthenticated',
       'persist_failed',
+      'provider_disabled',
     ];
     const error: GenerationError = { code: 'invalid_model' };
 
-    expect(codes).toHaveLength(11);
+    expect(codes).toHaveLength(12);
     expect(error).toEqual({ code: 'invalid_model' });
+  });
+
+  // task-9, @s12 — a disabled provider is refused distinctly from an unrecognized/uncurated one.
+  it('carries provider_disabled distinctly from invalid_model', () => {
+    const error: GenerationError = { code: 'provider_disabled' };
+
+    expect(error).toEqual({ code: 'provider_disabled' });
+    expect(error.code).not.toBe('invalid_model');
   });
 });
 

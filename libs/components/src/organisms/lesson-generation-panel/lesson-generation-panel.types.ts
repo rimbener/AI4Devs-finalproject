@@ -10,7 +10,8 @@ export type LessonGenerationPanelState = 'empty' | 'loading' | 'content' | 'erro
 
 export type LessonGenerationModelOption = {
   id: string;
-  labelKey: string;
+  /** Plain catalog display string (Decision 3's non-goal on localized names) — no i18n key. */
+  label: string;
 };
 
 /** Context value for `LessonGenerationPanel` — provided above the panel by wiring / stories. */
@@ -18,9 +19,10 @@ export type LessonGenerationPanelValue = {
   state: LessonGenerationPanelState;
   /** When true, provider + model pickers render above composition (free-BYOK only, @s10/@s19). */
   showPickers?: boolean;
-  /** Saved providers in fixed order — only these appear in the provider picker (@s10). */
-  savedProviders?: AiProvider[];
-  /** Curated models for the selected provider (@s10). */
+  /** Saved providers in catalog order (Decision 4) — only these appear in the provider picker
+   * (@s10). `name` is the catalog's plain display string, not an i18n key. */
+  savedProviders?: { id: AiProvider; name: string }[];
+  /** Catalog models for the selected provider, in catalog order (@s10). */
   modelOptions?: LessonGenerationModelOption[];
   selectedProvider?: AiProvider;
   selectedModel?: string;

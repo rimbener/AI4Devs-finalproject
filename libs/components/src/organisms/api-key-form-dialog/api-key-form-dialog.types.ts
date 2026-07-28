@@ -16,5 +16,6 @@ export type ApiKeyFormDialogProps = {
   isSaveDisabled: boolean;
   onSave: () => void;
   guidanceUrls: Partial<Record<AiProvider, string>>;
-  providerNameKeys: Record<AiProvider, string>;
+  /** Plain catalog display names — no i18n key indirection. */
+  providerNames: Record<AiProvider, string>;
 };

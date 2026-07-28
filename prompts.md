@@ -520,3 +520,11 @@ These prompts drove refinement, reconciliation and review across the documents r
 > Prompts del usuario (verbatim, en orden) de la sesión que colapsó la Fase 1 a **una única aprobación humana**: `spec_partner` hace preguntas (grill), escribe la spec + el Gherkin, `spec_reviewer` los revisa (1 ronda, automático), y el humano aprueba **una sola vez** la spec + Gherkin — se eliminó el paso de aprobar un plan por adelantado. Se actualizó `spec_partner.md`, `orchestrator_lead.md`, `spec_reviewer.md`, el comando y `ORCHESTRATOR.md`/`ORCHESTRATOR_PLAN.md`.
 
 1. Now I need to approve the plan, and then approve the spec and the Gherkin and everything. I don't want that. I just want the plan mode to ask me questions, create the spec, create the Gherkin, and I will approve only one thing.
+
+---
+
+## Anexo — Prompts de la sesión: re-review condicional tras arreglar mutantes
+
+> Prompts del usuario (verbatim, en orden) de la sesión que añadió el re-review condicional: cuando `mutation_tester` encuentra survivors y el `implementer` los mata, el lead revisa el diff del arreglo — si cambió código de producción (`.ts`/`.tsx` no-test bajo `libs/*/src`), se vuelve a correr la revisión completa sobre ese delta; si el arreglo fue solo en unit tests, no hace falta re-review. Se actualizó `orchestrator_lead.md`, `mutation_tester.md`, `reviews_lead.md`, `implementer.md`, el comando y `ORCHESTRATOR.md`/`ORCHESTRATOR_PLAN.md` (+ mermaid).
+
+1. I want another change: if the mutation_tester finds issues and the implementer fixed that issues. Check if there are code changes in that fix. If there are code changes, it should do a full review again. But if the changes are only on unit test, then the review is not needed.
