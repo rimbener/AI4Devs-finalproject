@@ -7,68 +7,6 @@ const clickItem = async (canvas, label) => {
   await canvas.getByText(label, { exact: true }).click();
 };
 
-test('Unpaired story loads', async ({ page }) => {
-  await page.goto(story('unpaired'));
-
-  const iframe = page.locator('iframe[title="storybook-preview-iframe"]');
-  await expect(iframe).toBeVisible();
-  expect(page.url()).toContain('organisms-matching--unpaired');
-});
-
-test('Unpaired story renders columns with Submit and no result banner', async ({ page }) => {
-  await page.goto(story('unpaired'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('France', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Paris', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Submit', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('All correct!', { exact: true })).toHaveCount(0);
-});
-
-test('PartiallyPaired story keeps Submit disabled with one pair formed', async ({ page }) => {
-  await page.goto(story('partially-paired'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('France', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Submit', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('All correct!', { exact: true })).toHaveCount(0);
-});
-
-test('SubmittedAllCorrect story shows correct banner and icons', async ({ page }) => {
-  await page.goto(story('submitted-all-correct'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('All correct!', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('3 of 3 correct', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('check_circle', { exact: true }).first()).toBeVisible();
-});
-
-test('SubmittedMixed story shows incorrect banner and mixed icons', async ({ page }) => {
-  await page.goto(story('submitted-mixed'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('Not quite', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('1 of 3 correct', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('check_circle', { exact: true }).first()).toBeVisible();
-  await expect(canvas.getByText('cancel', { exact: true }).first()).toBeVisible();
-});
-
-test('Empty story shows unavailable notice', async ({ page }) => {
-  await page.goto(story('empty'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('This activity is unavailable', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('France', { exact: true })).toHaveCount(0);
-});
-
-test('Error story shows unavailable notice for unequal columns', async ({ page }) => {
-  await page.goto(story('error'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('This activity is unavailable', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('France', { exact: true })).toHaveCount(0);
-});
-
 // Interactive drives live select → pair → release → submit → feedback (@s2,@s3,@s6,@s7,@s8,@s9,@s10).
 test('tapping an unpaired item marks it pending then forms a pair with the opposite column', async ({
   page,

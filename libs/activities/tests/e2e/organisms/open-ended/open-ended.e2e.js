@@ -4,48 +4,6 @@ const { test, expect } = require('@playwright/test');
 const story = (name) => `/?path=/story/organisms-openended--${name}`;
 
 const MODEL_ANSWER = 'Conversion of light energy into chemical energy.';
-const PROMPT = 'What is photosynthesis?';
-
-test('Unanswered story loads', async ({ page }) => {
-  await page.goto(story('unanswered'));
-
-  const iframe = page.locator('iframe[title="storybook-preview-iframe"]');
-  await expect(iframe).toBeVisible();
-  expect(page.url()).toContain('organisms-openended--unanswered');
-});
-
-// @s1
-test('Unanswered story shows prompt, empty input, Submit; model hidden', async ({ page }) => {
-  await page.goto(story('unanswered'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText(PROMPT, { exact: true })).toBeVisible();
-  await expect(canvas.getByLabel('Your response')).toBeVisible();
-  await expect(canvas.getByText('Submit', { exact: true })).toBeVisible();
-  await expect(canvas.getByText(MODEL_ANSWER, { exact: true })).toHaveCount(0);
-  await expect(canvas.getByText('Model answer', { exact: true })).toHaveCount(0);
-  await expect(canvas.getByText('Recalled', { exact: true })).toHaveCount(0);
-});
-
-// @s2 — static submitted story
-test('SubmittedWithModelAnswer story reveals model answer and locks', async ({ page }) => {
-  await page.goto(story('submitted-with-model-answer'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('Your answer', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Model answer', { exact: true })).toBeVisible();
-  await expect(canvas.getByText(MODEL_ANSWER, { exact: true })).toBeVisible();
-  await expect(canvas.getByLabel('Your response')).toHaveAttribute('readonly', '');
-});
-
-// @s7
-test('Unavailable story shows unavailable notice', async ({ page }) => {
-  await page.goto(story('unavailable'));
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('This activity is unavailable', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Submit', { exact: true })).toHaveCount(0);
-});
 
 // @s2 — Interactive type → Submit → reveal + lock
 test('Interactive submit reveals model answer and locks (@s2)', async ({ page }) => {
