@@ -168,3 +168,4 @@
 2026-07-27 | orchestrator-mutation-rereview (ad hoc, no story) | n/a | — | Mutation fix that changes production source re-triggers bounded full review; test-only kill skips it (01ce5eb56).
 2026-07-27 | splash-screen-logomark (assets) | n/a | — | Tracked logo-full.png + logomark.png under apps/app-study-buddy/assets (e8a9133a2).
 2026-07-28 | review-fixes + agent-skills (ad hoc) | n/a | — | Keep manual provider pick across keys refresh; parallelize manage-api-key; image-lightbox helpers tests; add-storybook-story + add-unit-test skills.
+2026-07-29 | e2e-interaction-only-cleanup (ad hoc, no story) | n/a | — | Removed render-only Playwright e2e per e2e.mdc: 46 files deleted, 20 trimmed to genuine interaction tests only (f9bef5009).
