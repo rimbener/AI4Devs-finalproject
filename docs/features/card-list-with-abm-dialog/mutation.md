@@ -1,5 +1,11 @@
 # Mutation — card-list-with-abm-dialog
 
+> ⚠ **STALE relative to current code.** All rounds below (including the accepted 97.2–97.5%
+> baseline) predate a substantial human-authored architecture rewrite (Context + `useReducer`,
+> new sub-component files) and a new Add-dialog feature — see `spec.md`'s "Issues found by this
+> doc pass" and `task-4.md`. Mutation has not been re-run against the current shape; do not treat
+> the accepted score below as covering the current tree.
+
 ## Round History
 
 | Round | Base | total | killed | ignored | survived | errors | score % | Status |

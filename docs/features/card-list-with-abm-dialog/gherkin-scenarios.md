@@ -145,3 +145,63 @@ Feature: CardListWithABMDialog
     When the user closes it via Cancel, scrim tap, or Escape
     Then the dialog's last content continues to render for the duration of its close transition
     And no empty dialog body is shown while it is closing
+
+  # @s21-@s25: added by the post-hoc doc pass reviewing the human's implementation changes
+  # (the add dialog, single shared Dialog, errorMessage, submitDisabled). These describe code
+  # that already exists and is already unit-tested — they have NOT been through spec_partner,
+  # spec_reviewer, the human gate, reviewer_slice/reviews_lead, or mutation_tester. See spec.md's
+  # "Issues found by this doc pass" for the full list of concerns, including @s26/@s27 below
+  # only being verified at the CardListWithABMDialogDialog molecule level, not end-to-end.
+
+  @s21
+  Scenario: Add icon opens the add dialog with that renderAddForm content
+    Given the add button is present
+    When the user taps it
+    Then an add dialog opens
+    And its body is the result of renderAddForm()
+    And its title/submit label/cancel label are the static addDialogTitle/addSubmitLabel/addCancelLabel props
+    And onAddPress is still called once (unchanged from @s17)
+
+  @s22
+  Scenario: Submitting the add dialog notifies the caller
+    Given the add dialog is open
+    When the user taps its submit button
+    Then onAddSubmit is called once
+    And the dialog swaps to its submitting state (mirrors @s11)
+
+  @s23
+  Scenario: Canceling the add dialog does not submit
+    Given the add dialog is open
+    When the user taps Cancel
+    Then the add dialog closes
+    And onAddSubmit is not called
+
+  @s24
+  Scenario: Closing the add dialog does not flash empty content
+    Given the add dialog is open showing renderAddForm() content
+    When the user closes it via Cancel
+    Then the dialog's last content continues to render for the duration of its close transition
+    And no empty dialog body is shown while it is closing (mirrors @s19/@s20)
+
+  @s25
+  Scenario: Only one of add/edit/remove is open at a time
+    Given one of the add, edit, or remove dialogs is open
+    When the user opens a different one of the three (e.g. taps an edit icon while the add dialog is open)
+    Then the previously-open dialog closes
+    And the newly-requested dialog opens with its own content
+    And this holds for every pair of the three dialog types, not just adjacent ones
+
+  @s26
+  Scenario: errorMessage forces the shared dialog open in an error state
+    Given errorMessage is set to a non-empty string
+    When CardListWithABMDialog renders
+    Then the shared dialog is open regardless of dialogType/dialogState
+    And its body is replaced by an ErrorBanner showing errorMessage
+    And its actions are replaced by a single localized "Close" button that calls onClose
+
+  @s27
+  Scenario: submitDisabled disables the dialog's submit button
+    Given a dialog is open (add, edit, or remove)
+    And submitDisabled is true
+    When the dialog renders
+    Then its submit/confirm button is disabled

@@ -21,3 +21,4 @@ Implementation-first (UI `.tsx`): add the edit-icon/remove-icon tap wiring. `use
 - Reuse the shared `Dialog` organism directly (`libs/components/src/organisms/dialog/dialog.tsx`) — do not model this on `api-key-form-dialog` (explicitly out of scope per spec.md).
 - `Dialog`'s `open` prop is `dialogState?.type === 'edit'` / `'remove'`; `children` is the `render*(dialogState.item)` result.
 - Only one dialog can be open at a time by construction (discriminated union) — no need to guard against both.
+- **Historical record — the dialog-state shape described above (2-field discriminated union in `use-card-list-with-abm-dialog.ts`) and the two-separate-`<Dialog>`-elements wiring were later replaced** by a 3-field `useReducer` (`dialogType`/`dialogItem`/`dialogState`) plus a single shared `CardListWithABMDialogDialog` molecule handling add/edit/remove/error/submitting as one instance. See `task-4.md` and `spec.md`'s Architecture section.

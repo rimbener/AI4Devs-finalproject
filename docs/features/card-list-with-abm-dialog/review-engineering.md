@@ -1,5 +1,9 @@
 # Full engineering review — card-list-with-abm-dialog
 
+> ⚠ **STALE relative to current code.** See the same notice in `review.md` — a substantial
+> architecture rewrite and new Add-dialog feature landed after everything below was written and
+> has not been reviewed. See `spec.md`'s "Issues found by this doc pass" and `task-4.md`.
+
 Durable trail (`reviews_lead` → `reviewer_engineering`). Never emptied; updated per round.
 Scope: sole reviewer of the full review — code quality/TDD, architecture/layering, performance,
 security only. Design + accessibility already fully covered per slice in `review-slice.md` and are

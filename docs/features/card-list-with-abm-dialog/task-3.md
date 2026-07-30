@@ -20,4 +20,4 @@ Implementation-first (UI `.tsx`): while `isSubmitting` is true, whichever dialog
 
 ## Notes
 - `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` are pure functions of `item` — safe to keep in the `.tsx` inline at the `IconButton` call site (no `.helpers.ts` needed, they're caller-supplied, not authored here).
-- This is the last slice — after it, `reviews_lead` (full review) → `mutation_tester` run against the whole feature diff vs the delivery branch.
+- This is the last slice of the original 3 — after it, `reviews_lead` (full review) → `mutation_tester` ran against the whole feature diff vs the delivery branch. **A 4th round of work landed later (`task-4.md`)**: `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` became optional on `CardListWithABMDialogValue<TItem>` — this slice's "no hardcoded accessible-name strings, always `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`" guarantee now depends on every caller actually supplying them, which is no longer enforced by the type. See `spec.md`'s "Issues found by this doc pass".

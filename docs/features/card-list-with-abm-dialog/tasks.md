@@ -10,3 +10,4 @@ Index only. **Each `task-N.md` owns its `slice`, `scenarios`, `status`, `paths`*
 - **Slice 1** (list render: title, add button, cards, disabled/show flags, empty state): [task-1](./task-1.md)
 - **Slice 2** (edit/remove dialogs: open, content, submit, cancel/scrim/escape): [task-2](./task-2.md)
 - **Slice 3** (isSubmitting behavior, per-card a11y labels, full Storybook coverage): [task-3](./task-3.md)
+- **Task 4** (post-hoc: human-authored architecture split + Add-dialog feature, documented after the fact — not yet re-reviewed/mutation-tested): [task-4](./task-4.md)

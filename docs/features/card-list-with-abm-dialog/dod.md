@@ -6,6 +6,13 @@ reference: dod_validator / 2026-07-27
 
 # Definition of Done — card-list-with-abm-dialog
 
+> ⚠ **STALE relative to current code.** The `verdict: PASS` in this file's frontmatter and below
+> reflects the tree as of its last validation round — it predates a substantial human-authored
+> architecture rewrite (Context + `useReducer`, atom/molecule/organism extraction) and a new
+> Add-dialog feature, neither of which has been re-reviewed, mutation-tested, or DoD-validated.
+> See `spec.md`'s "Issues found by this doc pass" and `task-4.md`. Treat this feature as **not**
+> currently `pr_ready` until a fresh DoD pass runs against the current tree.
+
 ## Verdict
 
 **PASS** — all DoD gates met. Feature is ready for PR → merge. See "Accepted minors" below.

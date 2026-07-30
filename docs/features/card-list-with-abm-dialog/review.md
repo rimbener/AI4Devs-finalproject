@@ -1,5 +1,11 @@
 # Full review — card-list-with-abm-dialog
 
+> ⚠ **STALE relative to current code.** Everything below predates a substantial human-authored
+> architecture rewrite (Context + `useReducer`, atom/molecule/organism extraction) and a new
+> Add-dialog feature (see `spec.md`'s "Issues found by this doc pass" and `task-4.md`). This delta
+> has not been reviewed by `reviewer_engineering`/`reviews_lead`. Do not read the APPROVED verdicts
+> below as covering the current tree.
+
 Durable trail (`reviews_lead`). Never emptied; every finding retained across rounds, marked
 `open`/`resolved`/`ACCEPTED`. Covers the **full** review (all 3 vertical slices combined), run
 after per-slice review (`review-spec.md` for the spec gate, `review-slice.md` for the 3 per-slice
