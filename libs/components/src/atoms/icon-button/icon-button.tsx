@@ -18,6 +18,7 @@ export type IconButtonProps = {
   onPress?: () => void;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 /**
@@ -33,6 +34,7 @@ export const IconButton = ({
   onPress,
   accessibilityLabel,
   style,
+  testID,
 }: IconButtonProps) => {
   const { theme } = useUnistyles();
   const { hover, press, handlers } = useInteractionState();
@@ -63,6 +65,7 @@ export const IconButton = ({
 
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}

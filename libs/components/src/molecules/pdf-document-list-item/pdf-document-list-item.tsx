@@ -1,3 +1,4 @@
+import { pdfDocumentListItemActionTestId } from '@helsoft/components/test-ids';
 import { useLocalization } from '@helsoft/localization';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
@@ -59,6 +60,7 @@ export const PdfDocumentListItem = ({
       <View style={styles.actions}>
         {showAction ? (
           <Button
+            testID={pdfDocumentListItemActionTestId(filename)}
             style={styles.actionButton}
             variant="tonal"
             size="small"

@@ -1,4 +1,5 @@
 export type LessonListItemProps = {
+  id: string;
   title: string;
   createdDateLabel: string;
   onOpen: () => void;

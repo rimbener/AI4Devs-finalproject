@@ -1,3 +1,7 @@
+import {
+  PDF_UPLOAD_PANEL_CHOOSE_FILE_TEST_ID,
+  PDF_UPLOAD_PANEL_CONTINUE_TEST_ID,
+} from '@helsoft/components/test-ids';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -34,7 +38,11 @@ export const PdfUploadPanel = ({
   return (
     <Card>
       <View style={styles.root}>
-        <Button disabled={isLoading} onPress={onChooseFile}>
+        <Button
+          testID={PDF_UPLOAD_PANEL_CHOOSE_FILE_TEST_ID}
+          disabled={isLoading}
+          onPress={onChooseFile}
+        >
           {t('upload.chooseFile')}
         </Button>
 
@@ -84,7 +92,11 @@ export const PdfUploadPanel = ({
               <Text style={styles.summaryLabel}>{t('upload.imageCountLabel')}</Text>
               <Text style={styles.summaryValue}>{imageCount}</Text>
             </View>
-            {onContinue ? <Button onPress={onContinue}>{t('upload.continue')}</Button> : null}
+            {onContinue ? (
+              <Button testID={PDF_UPLOAD_PANEL_CONTINUE_TEST_ID} onPress={onContinue}>
+                {t('upload.continue')}
+              </Button>
+            ) : null}
           </View>
         ) : null}
 

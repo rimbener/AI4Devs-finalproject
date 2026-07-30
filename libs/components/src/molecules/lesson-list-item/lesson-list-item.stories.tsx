@@ -6,6 +6,7 @@ const meta = {
   title: 'Molecules/LessonListItem',
   component: LessonListItem,
   args: {
+    id: 'lesson-1',
     title: 'Photosynthesis basics',
     createdDateLabel: 'Jul 13, 2026',
     openAccessibilityLabel: 'Open Photosynthesis basics',

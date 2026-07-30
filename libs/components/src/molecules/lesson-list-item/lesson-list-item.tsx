@@ -1,3 +1,4 @@
+import { lessonListItemTitleTestId } from '@helsoft/components/test-ids';
 import { Pressable, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -11,6 +12,7 @@ import type { LessonListItemProps } from './lesson-list-item.types';
  * Optional delete stays additive for task-6.
  */
 export const LessonListItem = ({
+  id,
   title,
   createdDateLabel,
   onOpen,
@@ -25,7 +27,9 @@ export const LessonListItem = ({
       onPress={onOpen}
       style={styles.open}
     >
-      <Text style={styles.title}>{title}</Text>
+      <Text testID={lessonListItemTitleTestId(id)} style={styles.title}>
+        {title}
+      </Text>
       <Text style={styles.date}>{createdDateLabel}</Text>
     </Pressable>
     {onDelete && deleteAccessibilityLabel ? (

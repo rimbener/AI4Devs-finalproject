@@ -1,3 +1,4 @@
+import { LESSON_GENERATION_GENERATE_TEST_ID } from '@helsoft/components/test-ids';
 import { useLocalization } from '@helsoft/localization';
 import { Button } from '../../../atoms/button/button';
 import { useLessonGenerationPanel } from '../lesson-generation-panel.context';
@@ -27,7 +28,11 @@ export const LessonGenerationPanelControls = () => {
 
       <CompositionSelector disabled={disabled} />
 
-      <Button disabled={disabled || !canGenerate} onPress={onGenerate}>
+      <Button
+        testID={LESSON_GENERATION_GENERATE_TEST_ID}
+        disabled={disabled || !canGenerate}
+        onPress={onGenerate}
+      >
         {t('generation.generate')}
       </Button>
     </>
