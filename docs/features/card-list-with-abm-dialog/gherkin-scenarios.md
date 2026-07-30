@@ -146,12 +146,12 @@ Feature: CardListWithABMDialog
     Then the dialog's last content continues to render for the duration of its close transition
     And no empty dialog body is shown while it is closing
 
-  # @s21-@s25: added by the post-hoc doc pass reviewing the human's implementation changes
+  # @s21-@s27: added by the post-hoc doc pass reviewing the human's implementation changes
   # (the add dialog, single shared Dialog, errorMessage, submitDisabled). These describe code
-  # that already exists and is already unit-tested — they have NOT been through spec_partner,
-  # spec_reviewer, the human gate, reviewer_slice/reviews_lead, or mutation_tester. See spec.md's
-  # "Issues found by this doc pass" for the full list of concerns, including @s26/@s27 below
-  # only being verified at the CardListWithABMDialogDialog molecule level, not end-to-end.
+  # that already exists and is already unit-tested (including @s26/@s27, now end-to-end from
+  # CardListWithABMDialog itself, not just the CardListWithABMDialogDialog molecule in
+  # isolation) — but none have been through spec_partner, spec_reviewer, the human gate,
+  # reviewer_slice/reviews_lead, or mutation_tester. See spec.md's "Outstanding" section.
 
   @s21
   Scenario: Add icon opens the add dialog with that renderAddForm content

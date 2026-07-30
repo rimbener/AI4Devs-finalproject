@@ -14,13 +14,20 @@ This task documents work the human authored directly in the working tree (not ru
 2. **Add-dialog feature**: `renderAddForm`/`addDialogTitle`/`addSubmitLabel`/`addCancelLabel`/`onAddSubmit` give the add button the same dialog-backed flow as edit/remove (previously a non-goal — `onAddPress` was a plain callback with no dialog). Plus `errorMessage` (forces the shared dialog open with an `ErrorBanner` body and a single Close action), `submitDisabled` (disables the dialog's confirm button), and `showAddButton` (toggles the header's add button).
 
 ## Done criteria
-- [x] Scenarios s21-s27 covered by concrete tests **at the unit level** (organism test for add-dialog open/submit/cancel/no-flash/mutual-exclusivity; molecule test for errorMessage/submitDisabled)
+- [x] Scenarios s21-s25 covered by concrete tests at the organism (`card-list-with-abm-dialog.test.tsx`) level (add-dialog open/submit/cancel/no-flash/mutual-exclusivity); s26/s27 covered **end-to-end** from `CardListWithABMDialog` itself (not just the `CardListWithABMDialogDialog` molecule in isolation)
 - [ ] `spec_reviewer`-equivalent check of this task's own scenarios/paths — **not run**
 - [ ] `reviewer_slice` (design/a11y/all `.agents/rules/`) — **not run**
 - [ ] `reviews_lead` full review (code/architecture/performance/security) — **not run against this delta**; `review.md`'s existing APPROVED rounds predate this work
 - [ ] `mutation_tester` re-run against the current shape — **not run**; `mutation.md`'s accepted 97.2–97.5% predates this work
-- [x] `pnpm --filter @helsoft/components lint check-types test` green as of this doc pass (verify before relying on this — not re-run by the doc pass itself)
+- [x] `pnpm --filter @helsoft/components lint check-types test` green (re-verified after the follow-up fixes below: 72 suites / 517 tests)
+- [x] `pnpm --filter @helsoft/study-buddy check-types` green (confirms `api-key-settings-screen-item.tsx`'s `CardListItem` mapper still satisfies the tightened types)
+
+## Follow-up fixes (landed after this task was first documented)
+- `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` (context types) and `CardListItem.accessibleLabel` re-tightened to **required** (were briefly optional) — WCAG 4.1.2 regression closed; `CardListRowAdapter` no longer needs `?.()`.
+- Dead `CardListItem.title?: string` field removed.
+- `card-list-with-abm-dialog.test.tsx`'s mistagged `@s17` comment (and its sibling add-dialog/mutual-exclusivity tests) retagged to the correct `@s21`–`@s25`.
+- `@s26`/`@s27` (errorMessage / submitDisabled) gained end-to-end tests on `CardListWithABMDialog` itself.
+- The Add-dialog feature and the i18n-fallback amendment (cancel/save/close labels) were **accepted as-is** and are now written up as proper Open Decisions in `spec.md`, not flagged concerns.
 
 ## Notes
-- See `spec.md`'s "Issues found by this doc pass" for the specific concerns this task's work raised (optional a11y-label getters, i18n-fallback reversal, `errorMessage`/`submitDisabled` untested end-to-end from the top-level component, a dead `CardListItem.title` field, a `@s17` traceability comment collision in the test file).
-- This task's `status: in_review` (not `done`) is deliberate — the code exists and is unit-tested, but has not cleared this feature's own quality gate (slice review → full review → mutation). Treat `tasks.md`'s `phase: pr_ready` as **stale** until this task is actually re-reviewed and mutation is re-run.
+- This task's `status: in_review` (not `done`) is deliberate — the code exists and is now more thoroughly unit-tested, but has not cleared this feature's own quality gate (slice review → full review → mutation). Treat `tasks.md`'s `phase: pr_ready` as **stale** until this task is actually re-reviewed and mutation is re-run — see `spec.md`'s "Outstanding" section.
