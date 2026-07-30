@@ -173,3 +173,4 @@
 2026-07-27 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | 2nd mini-gate: CardListRow promoted to molecule; fixed reverse molecule-organism import finding; mutation 97.50%, DoD re-PASS.
 2026-07-28 | review-fixes + agent-skills (ad hoc) | n/a | — | Keep manual provider pick across keys refresh; parallelize manage-api-key; image-lightbox helpers tests; add-storybook-story + add-unit-test skills.
 2026-07-28 | card-list-with-abm-dialog (ad hoc) | pr_ready | docs/features/card-list-with-abm-dialog/ | Split organism into header/edit/remove/list sub-components + context hook (cd17d1ee0); code-review findings human-accepted as intentional. Also added add-storybook-story skill (885942c2e).
+2026-07-30 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Migrate api-key settings onto CardListWithABMDialog; drop ApiKeyManager; fix-unit-tests skill (312d2ccf4).
