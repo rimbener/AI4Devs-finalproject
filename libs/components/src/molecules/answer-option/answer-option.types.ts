@@ -17,4 +17,5 @@ export type AnswerOptionProps = {
    * internal Material Symbols ligature name (e.g. "check_circle") leaks into the accessible name.
    */
   accessibilityLabel?: string;
+  testID?: string;
 };

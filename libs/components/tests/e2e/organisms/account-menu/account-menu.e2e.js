@@ -2,13 +2,6 @@ const { expect, test } = require('@playwright/test');
 
 const previewFrame = (page) => page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
-test('AccountMenu default story loads', async ({ page }) => {
-  await page.goto('/?path=/story/organisms-accountmenu--default');
-  const canvas = previewFrame(page);
-
-  await expect(canvas.locator('[aria-label="Open account menu"]')).toBeVisible();
-});
-
 test('AccountMenu opens with identity and actions', async ({ page }) => {
   await page.goto('/?path=/story/organisms-accountmenu--default');
   const canvas = previewFrame(page);

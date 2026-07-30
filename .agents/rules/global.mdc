@@ -61,7 +61,7 @@ This is a monorepo for react-native/node/next applications.
 - Always 1 exported component/hook/class/service/dao per file.
 - If a file has more than 150-200 lines, it's a code smell and maybe should be split into smaller files. This is a subjective judgment, so you should use your best judgment.
 - Always use functional React. Don't use Redux. Related local state (≥3 fields that change together) → `useReducer` per `.agents/rules/state.mdc`. Deep / large prop-drilling → React Context per `.agents/rules/state-sharing.mdc`.
-- Always create a type for React components Props. Types rules: `.agents/rules/types.mdc` (multi-file → `*.types.ts`; only exported types there; no runtime logic).
+- Always create a type for React components Props. Types rules: `.agents/rules/types.mdc` (multi-file → `*.types.ts`; only exported types there; no runtime logic; prefer type inference for return types).
 - **Comment the *why*, not the *what**.** Be brief and concise. Never comment the obvious.
 
 ### Components & Storybook

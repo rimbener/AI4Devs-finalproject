@@ -1,3 +1,4 @@
+import { RESULTS_BACK_HOME_TEST_ID, RESULTS_RETAKE_TEST_ID } from '@helsoft/components/test-ids';
 import { useLocalization } from '@helsoft/localization';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
@@ -75,10 +76,15 @@ export const ResultsSummary = ({
           </View>
         ) : null}
         <View style={styles.actions}>
-          <Button disabled={loading} onPress={onRetake}>
+          <Button testID={RESULTS_RETAKE_TEST_ID} disabled={loading} onPress={onRetake}>
             {t('results.retake')}
           </Button>
-          <Button variant="text" disabled={loading} onPress={onBackToLessons}>
+          <Button
+            testID={RESULTS_BACK_HOME_TEST_ID}
+            variant="text"
+            disabled={loading}
+            onPress={onBackToLessons}
+          >
             {t('results.backHome')}
           </Button>
         </View>

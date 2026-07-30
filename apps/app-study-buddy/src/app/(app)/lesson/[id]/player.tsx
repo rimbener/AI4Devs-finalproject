@@ -4,8 +4,6 @@ import { LessonPlayer, PlayerLoading } from '@helsoft/study-buddy';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback } from 'react';
 
-export { PLAYER_LOADING_TEST_ID } from '@helsoft/study-buddy';
-
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();

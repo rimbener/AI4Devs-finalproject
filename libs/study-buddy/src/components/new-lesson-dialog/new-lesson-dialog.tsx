@@ -1,5 +1,6 @@
 import { Button, Dialog, PdfUploadPanel } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
+import { NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID } from '@helsoft/study-buddy/test-ids';
 
 import { LessonGeneration } from '../lesson-generation/lesson-generation';
 import type { NewLessonDialogProps } from './new-lesson-dialog.types';
@@ -37,7 +38,9 @@ export const NewLessonDialog = ({
 
   return (
     <>
-      <Button onPress={handleUploadPress}>{t('upload.chooseFile')}</Button>
+      <Button testID={NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID} onPress={handleUploadPress}>
+        {t('upload.chooseFile')}
+      </Button>
 
       <Dialog
         open={open}
@@ -51,7 +54,11 @@ export const NewLessonDialog = ({
       >
         {step === 'upload' ? <PdfUploadPanel {...panelProps} /> : null}
         {step === 'generate' ? (
-          <LessonGeneration documentId={documentId} onGenerated={onGenerated} />
+          <LessonGeneration
+            documentId={documentId}
+            onGenerated={onGenerated}
+            onOpenInPlayer={close}
+          />
         ) : null}
       </Dialog>
     </>

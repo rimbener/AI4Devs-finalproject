@@ -1,3 +1,9 @@
+import {
+  FLASHCARD_ANSWER_TEST_ID,
+  FLASHCARD_MARK_NOT_RECALLED_TEST_ID,
+  FLASHCARD_MARK_RECALLED_TEST_ID,
+  FLASHCARD_REVEAL_TEST_ID,
+} from '@helsoft/activities/test-ids';
 import { Button, Card, Icon } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import { Pressable, Text, View } from 'react-native';
@@ -68,6 +74,7 @@ export const Flashcard = ({
 
     return (
       <Pressable
+        testID={recalled ? FLASHCARD_MARK_RECALLED_TEST_ID : FLASHCARD_MARK_NOT_RECALLED_TEST_ID}
         accessibilityRole="button"
         accessibilityLabel={label}
         accessibilityState={{ disabled: locked, selected: isChosen }}
@@ -84,12 +91,12 @@ export const Flashcard = ({
     <Card testID="flashcard-root" style={styles.root}>
       <Text style={styles.prompt}>{slide.content}</Text>
       {!isRevealed ? (
-        <Button fullWidth onPress={handleReveal}>
+        <Button testID={FLASHCARD_REVEAL_TEST_ID} fullWidth onPress={handleReveal}>
           {t('activity.flashcard.reveal')}
         </Button>
       ) : (
         <>
-          <View testID="flashcard-answer" style={styles.answer}>
+          <View testID={FLASHCARD_ANSWER_TEST_ID} style={styles.answer}>
             <Text style={styles.answerHeading}>{t('activity.flashcard.answerHeading')}</Text>
             <Text style={styles.answerBody}>{slide.back}</Text>
           </View>

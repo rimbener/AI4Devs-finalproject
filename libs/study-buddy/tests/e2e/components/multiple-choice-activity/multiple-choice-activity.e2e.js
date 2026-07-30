@@ -1,23 +1,5 @@
 const { test, expect } = require('@playwright/test');
 
-test('MultipleChoiceActivity Default story loads', async ({ page }) => {
-  await page.goto('/?path=/story/features-multiplechoiceactivity--default');
-  const iframe = page.locator('iframe[title="storybook-preview-iframe"]');
-  await expect(iframe).toBeVisible();
-});
-
-test('renders the question and every option, unanswered', async ({ page }) => {
-  await page.goto('/?path=/story/features-multiplechoiceactivity--default');
-  const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
-
-  await expect(canvas.getByText('What is the capital of France?', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Paris', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Berlin', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Madrid', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Correct', { exact: true })).toHaveCount(0);
-  await expect(canvas.getByText('Incorrect', { exact: true })).toHaveCount(0);
-});
-
 test('selecting the correct option grades correct and shows the explanation', async ({ page }) => {
   await page.goto('/?path=/story/features-multiplechoiceactivity--default');
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');

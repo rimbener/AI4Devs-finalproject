@@ -528,3 +528,17 @@ These prompts drove refinement, reconciliation and review across the documents r
 > Prompts del usuario (verbatim, en orden) de la sesión que añadió el re-review condicional: cuando `mutation_tester` encuentra survivors y el `implementer` los mata, el lead revisa el diff del arreglo — si cambió código de producción (`.ts`/`.tsx` no-test bajo `libs/*/src`), se vuelve a correr la revisión completa sobre ese delta; si el arreglo fue solo en unit tests, no hace falta re-review. Se actualizó `orchestrator_lead.md`, `mutation_tester.md`, `reviews_lead.md`, `implementer.md`, el comando y `ORCHESTRATOR.md`/`ORCHESTRATOR_PLAN.md` (+ mermaid).
 
 1. I want another change: if the mutation_tester finds issues and the implementer fixed that issues. Check if there are code changes in that fix. If there are code changes, it should do a full review again. But if the changes are only on unit test, then the review is not needed.
+
+---
+
+## Anexo — Prompts de la sesión: plan de E2E testing para app-study-buddy (web, Android, iOS)
+
+> Prompts del usuario (verbatim, en orden) de la sesión que investigó las opciones de E2E testing para React Native en 2026 y diseñó, en **plan mode**, un plan de dos fases para `apps/app-study-buddy`: Fase 1 (Playwright, web — instrumentación de `testID`, golden path completo, dependencia de Supabase local, documentación) y Fase 2 (Maestro, Android + iOS — reutilizando lo instrumentado en la Fase 1). Se decidió Playwright+Maestro (no Detox), selectores por `testID`, alcance local (sin CI) y golden path únicamente (sin sign-up). Los planes se guardaron en `docs/plans/e2e-testing-phase1-web.md` y `docs/plans/e2e-testing-phase2-mobile.md`.
+
+1. I want to implement e2e testing for app-study-buddy, the e2e should be done on web, android and ios. research the options for e2e testing in react-native at 2026
+
+2. *(respuestas a las preguntas de aclaración, vía selección de opciones)*: estrategia de herramientas → "Playwright (web) + Maestro (iOS/Android)"; alcance de CI → "Local only for now"; convención de selectores → "testID-based"; alcance de flujos → "Golden path only".
+
+3. ok, I want to split the plan in 2 phases: first the web full implementation and golden path, basically these points of the Order: 1,2,5,6. and a second independent phase for android & ios. so split the plan into 2 files
+
+4. move both files into @docs/plans

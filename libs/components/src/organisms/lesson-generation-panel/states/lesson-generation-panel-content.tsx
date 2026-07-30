@@ -1,3 +1,4 @@
+import { LESSON_GENERATION_OPEN_IN_PLAYER_TEST_ID } from '@helsoft/components/test-ids';
 import { useLocalization } from '@helsoft/localization';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
@@ -23,7 +24,9 @@ export const LessonGenerationPanelContent = () => {
             composition: t(COMPOSITION_LABEL_KEYS[composition]),
           })}
         </Text>
-        <Button onPress={onOpenInPlayer}>{t('generation.ready.openInPlayer')}</Button>
+        <Button testID={LESSON_GENERATION_OPEN_IN_PLAYER_TEST_ID} onPress={onOpenInPlayer}>
+          {t('generation.ready.openInPlayer')}
+        </Button>
       </View>
     </>
   );

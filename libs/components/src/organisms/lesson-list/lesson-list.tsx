@@ -1,3 +1,4 @@
+import { LESSON_LIST_TEST_ID } from '@helsoft/components/test-ids';
 import { useLocalization } from '@helsoft/localization';
 import { useCallback } from 'react';
 import { FlatList, Text, View } from 'react-native';
@@ -14,9 +15,6 @@ const LOADING_SPINNER_THICKNESS = 3;
 
 /** testID for the Loading-state affordance (@s13). */
 export const LESSON_LIST_LOADING_TEST_ID = 'lesson-list-loading-indicator';
-
-/** testID for the virtualized content list (full-review perf). */
-export const LESSON_LIST_TEST_ID = 'lesson-list';
 
 /**
  * LessonList — presentational organism for Home saved lessons (Loading / Content / Empty / Error).
@@ -40,6 +38,7 @@ export const LessonList = ({
   const renderItem = useCallback(
     ({ item }: { item: LessonListItemData }) => (
       <LessonListItem
+        id={item.id}
         title={item.title}
         createdDateLabel={item.createdDateLabel}
         openAccessibilityLabel={item.openAccessibilityLabel}

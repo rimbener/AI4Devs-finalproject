@@ -12,6 +12,7 @@ describe('LessonListItem', () => {
     const onOpen = jest.fn();
     await render(
       <LessonListItem
+        id="lesson-1"
         title="Photosynthesis"
         createdDateLabel="Jul 13, 2026"
         openAccessibilityLabel="Open Photosynthesis"
@@ -29,6 +30,7 @@ describe('LessonListItem', () => {
   it('does not render a delete control when deleteAccessibilityLabel is missing', async () => {
     await render(
       <LessonListItem
+        id="lesson-1"
         title="Photosynthesis"
         createdDateLabel="Jul 13, 2026"
         openAccessibilityLabel="Open Photosynthesis"
@@ -44,6 +46,7 @@ describe('LessonListItem', () => {
   it('does not render a delete control when onDelete is missing', async () => {
     await render(
       <LessonListItem
+        id="lesson-1"
         title="Photosynthesis"
         createdDateLabel="Jul 13, 2026"
         openAccessibilityLabel="Open Photosynthesis"
@@ -59,6 +62,7 @@ describe('LessonListItem', () => {
     const onDelete = jest.fn();
     await render(
       <LessonListItem
+        id="lesson-1"
         title="Photosynthesis"
         createdDateLabel="Jul 13, 2026"
         openAccessibilityLabel="Open Photosynthesis"
@@ -76,6 +80,7 @@ describe('LessonListItem', () => {
   it('sizes the delete control to the 48dp touch-target token', async () => {
     await render(
       <LessonListItem
+        id="lesson-1"
         title="Photosynthesis"
         createdDateLabel="Jul 13, 2026"
         openAccessibilityLabel="Open Photosynthesis"

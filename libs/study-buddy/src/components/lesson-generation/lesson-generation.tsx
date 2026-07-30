@@ -31,7 +31,11 @@ import { useLessonGenerationForm } from './use-lesson-generation';
  * generation reaches Content/ready with a persisted lessonId, so a sibling (`PdfDocuments`)
  * can refetch without owning the generation lifecycle.
  */
-export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationProps) => {
+export const LessonGeneration = ({
+  documentId,
+  onGenerated,
+  onOpenInPlayer,
+}: LessonGenerationProps) => {
   const [composition, setComposition] = useState<LessonComposition>('both');
   const { stage, currentStep, result, error, generate, retry } = useLessonGeneration();
   const {
@@ -79,8 +83,9 @@ export const LessonGeneration = ({ documentId, onGenerated }: LessonGenerationPr
   const handleOpenInPlayer = useCallback(() => {
     const lessonId = result?.lessonId?.trim();
     if (!lessonId) return;
+    onOpenInPlayer?.();
     router.push({ pathname: '/lesson/[id]/player', params: { id: lessonId } });
-  }, [result, router]);
+  }, [result, router, onOpenInPlayer]);
 
   const recovery = error ? GENERATION_ERROR_RECOVERY[error] : 'none';
 

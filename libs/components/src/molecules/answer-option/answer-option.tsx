@@ -16,6 +16,7 @@ export const AnswerOption = ({
   disabled = false,
   style,
   accessibilityLabel,
+  testID,
 }: AnswerOptionProps) => {
   const { theme } = useUnistyles();
 
@@ -29,6 +30,7 @@ export const AnswerOption = ({
 
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? `${marker} ${label}`}
       accessibilityState={{ disabled: locked, selected: state === 'selected' }}

@@ -22,6 +22,7 @@ export type ButtonProps = {
   /** Overrides the accessible name derived from children (e.g. filename-qualified actions). */
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 export const BUTTON_STATE_LAYER_TEST_ID = 'button-state-layer';
@@ -64,6 +65,7 @@ export const Button = ({
   onPress,
   accessibilityLabel,
   style,
+  testID,
 }: ButtonProps) => {
   const { theme } = useUnistyles();
   const { hover, press, focus, handlers } = useInteractionState();
@@ -110,6 +112,7 @@ export const Button = ({
 
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       disabled={disabled}

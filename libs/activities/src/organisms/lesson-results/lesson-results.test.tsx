@@ -17,7 +17,8 @@ import type { Lesson } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { AccessibilityInfo } from 'react-native';
 
-import { LessonResults, toScorableSlides } from './lesson-results';
+import { LessonResults } from './lesson-results';
+import { toScorableSlides } from './lesson-results.helpers';
 
 const mockUseLessonAttempt = useLessonAttempt as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;

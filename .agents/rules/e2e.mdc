@@ -39,3 +39,10 @@ test('selecting an answer marks it and enables Continue', async ({ page }) => {
 ## Why
 
 Mutation testing bites on **Jest** (services/hooks/DAOs + component logic via `<name>.test.tsx`), not on Playwright `.e2e.js`. So render-only e2e neither kill mutants nor add real coverage — they only add runtime and flakiness. Playwright earns its keep on the interaction paths a unit test can't drive end-to-end. See `.agents/skills/storybook-e2e-tests/SKILL.md` for the mechanics (`.e2e.js` location, story URL, iframe locators).
+
+## testID convention (app-level Playwright e2e)
+
+- A testID needed by an app-level e2e test lives in the **same lib as the component that owns it** — never in a separate/centralized test-ids package, never duplicated as a second literal in the test file.
+- Export it from `libs/{lib}/src/test-ids.js` (+ hand-written `src/test-ids.d.ts`), exposed via that lib's own `package.json` `exports` map at a `./test-ids` subpath (e.g. `@helsoft/components/test-ids`, mirrors the existing `@helsoft/components/theme` subpath pattern).
+- `test-ids.js` is plain CommonJS (`module.exports`), not this repo's usual ESM `export` — component source (TypeScript, self-referencing `import { X } from '@helsoft/{lib}/test-ids'`) and Playwright e2e tests (plain Node `require()`, no build step) both read the exact same value from it. Component-only testIDs (covered solely by same-file Jest/RTL tests) stay local, not in `test-ids.js`.
+- Full rationale + workflow: `.agents/rules/app-e2e.mdc` and the `app-e2e-tests` skill.

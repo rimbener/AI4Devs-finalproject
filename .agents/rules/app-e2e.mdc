@@ -1,0 +1,78 @@
+---
+description: when writing Playwright e2e (.e2e.js) for an app (apps/*/tests/e2e/**) against the live running app, not Storybook
+alwaysApply: false
+---
+
+# App-level E2E — testID-first, still interaction-only
+
+Playwright e2e under `apps/*/tests/e2e/` (via the `app-e2e-tests` skill) drive a real browser
+against the **live running app** (e.g. `expo start --web`), not a Storybook iframe preview. The
+same interaction-only philosophy as `.agents/rules/e2e.mdc` applies — every test drives a real
+interaction and asserts the resulting behavior/state change, never bare presence — but the
+mechanics differ because there's no Storybook story to target and no iframe to reach into.
+
+## The rule
+
+- **Locate by `testID`, not text.** `react-native-web` renders RN's `testID` prop as `data-testid`,
+  which Playwright's `getByTestId()` reads by default. A real app screen needs stable,
+  locale-independent selectors (unlike the Storybook convention, which locates by visible copy
+  inside an iframe) — text locators break the moment copy is edited or a locale changes.
+- **testID strings live in the same lib as the component, never duplicated.** Each lib exports its
+  e2e-visible testIDs at its own `@helsoft/{lib}/test-ids` subpath (e.g.
+  `@helsoft/logging-in-out/test-ids`) — component source and e2e tests both import the same named
+  constant/function from there; don't declare the same string as a local component constant *and*
+  a second literal/constant in the test file. There is no separate, centralized test-ids package.
+  See the `app-e2e-tests` skill's "testID convention" section for the add-a-new-one workflow.
+- **Each `src/test-ids.js` is plain CommonJS, not this repo's usual ESM `export`, and is
+  self-contained (no cross-lib import) by design.** `module.exports` is the one syntax a
+  bundler-interop TypeScript import (`test-ids.d.ts` supplies the types) and a bare Node
+  `require()` in a Playwright test can both consume without a transform/build step — that's also
+  why the rationale isn't factored into a single shared file: each `test-ids.js` must stay
+  independently `require()`-able with zero build step, so this note is duplicated per lib on
+  purpose rather than centralized.
+- **No `frameLocator`.** The app renders directly in the page, not inside an iframe — query with
+  `page.getByTestId(...)` / `page.locator(...)` directly.
+- **Still interaction-only** (`.agents/rules/e2e.mdc`'s rule applies verbatim): drive a real
+  interaction, assert the resulting state change. Never write an e2e that only asserts a screen
+  or element is present — that's Jest/RTL territory.
+- **A missing `testID` is a real gap, not a workaround signal.** If a golden-path interaction
+  needs a component that has no `testID` yet, add `testID?: string` to that component/call site
+  (additive-only prop, cannot break existing RTL tests), then add the string to that component's
+  own lib's `src/test-ids.js`/`.d.ts` and import it from `@helsoft/{lib}/test-ids` — rather than
+  falling back to a text/role locator or a locally-duplicated constant.
+- **File pickers need the real file-chooser event, not `setInputFiles` on a raw `<input>`.**
+  `expo-document-picker`'s web implementation opens the hidden input from within a genuine user
+  gesture, so Chromium treats it as an actual native file-chooser open (auto-cancelled almost
+  instantly in headless mode) — `page.locator('input[type="file"]').setInputFiles(...)` loses that
+  race essentially every time. Always do:
+  ```js
+  const [fileChooser] = await Promise.all([
+    page.waitForEvent('filechooser'),
+    triggerButton.click(),
+  ]);
+  await fileChooser.setFiles(path);
+  ```
+- **Mock paid/external calls at the network boundary — never spend real money or depend on real
+  third-party latency in this suite.** Anything that calls out to a paid or rate-limited external
+  provider (AI generation, etc.) gets intercepted with `page.route()` and fulfilled with a fixed
+  response, not driven for real. See `apps/app-study-buddy/tests/e2e/helpers/golden-path.js`'s
+  `mockLessonGeneration`: it intercepts the edge function call itself **and** whatever separate
+  read the app does afterward to fetch the persisted result (a mocked edge-function response alone
+  is not enough if the client re-fetches by id through a different endpoint — check the full
+  read-back chain, not just the write). A test needing the real external call for its own sake
+  (verifying the edge function/provider integration itself) belongs in a different, non-Playwright
+  suite, not here.
+
+## Prerequisites
+
+Anything hitting Supabase-backed screens needs the local stack running and reset for a clean
+slate: `npx supabase start` once per machine session, `npx supabase db reset` before each run (see
+`E2E_TESTS.md`'s "App-level E2E" section for the full rationale, including the filename-uniqueness
+determinism gotcha and which calls are mocked vs. real).
+
+## Extending for a new platform
+
+This rule and the `app-e2e-tests` skill are written to be **extended**, not replaced, when a new
+platform's e2e lands (e.g. Maestro for Android/iOS) — add a platform-specific section rather than
+forking a parallel rule/skill, since the testID convention and fixtures are meant to carry over
+unchanged.

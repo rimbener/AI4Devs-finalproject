@@ -7,6 +7,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./theme": "./src/theme/unistyles.ts",
+    "./test-ids": {
+      "types": "./src/test-ids.d.ts",
+      "default": "./src/test-ids.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
