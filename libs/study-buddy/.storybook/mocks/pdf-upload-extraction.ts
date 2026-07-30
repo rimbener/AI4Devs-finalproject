@@ -7,7 +7,6 @@
  * stories and the Vite-aliased `@helsoft/pdf-upload-extraction` used by PdfUpload still
  * share one pending config (Vite can otherwise treat those as separate module instances).
  */
-export { PDF_EXTRACTION_LIMITS } from '../../../pdf-upload-extraction/src/services/pdf-extraction.constants';
 
 import { useCallback, useState } from 'react';
 import type {

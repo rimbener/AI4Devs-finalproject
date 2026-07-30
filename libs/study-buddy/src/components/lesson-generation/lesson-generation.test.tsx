@@ -439,6 +439,7 @@ describe('LessonGeneration', () => {
   // @s17 — the Content state shows the ready summary and hands the deck to the player.
   it('shows the ready summary and navigates to the player when the CTA is pressed', async () => {
     const push = jest.fn();
+    const onOpenInPlayer = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(
       hookValue({
@@ -477,13 +478,14 @@ describe('LessonGeneration', () => {
       }),
     );
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await render(<LessonGeneration documentId="doc-1" onOpenInPlayer={onOpenInPlayer} />);
     fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
 
     expect(push).toHaveBeenCalledWith({
       pathname: '/lesson/[id]/player',
       params: { id: 'lesson-1' },
     });
+    expect(onOpenInPlayer).toHaveBeenCalledTimes(1);
   });
 
   // task-13, @s15 — the Error state: readable message + the per-code recovery affordance.
@@ -564,6 +566,7 @@ describe('LessonGeneration', () => {
   // @s2/@s3 — player CTA only navigates when a real persisted lessonId is present.
   it('does not open the player when the result has an empty lessonId', async () => {
     const push = jest.fn();
+    const onOpenInPlayer = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(
       hookValue({
@@ -577,10 +580,11 @@ describe('LessonGeneration', () => {
       }),
     );
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await render(<LessonGeneration documentId="doc-1" onOpenInPlayer={onOpenInPlayer} />);
     fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
 
     expect(push).not.toHaveBeenCalled();
+    expect(onOpenInPlayer).not.toHaveBeenCalled();
   });
 
   // Mutation: handleOpenInPlayer deps → [] — must see the latest result.lessonId after rerender.
@@ -625,6 +629,7 @@ describe('LessonGeneration', () => {
   // Mutation: drop `.trim()` — whitespace-only lessonId must not navigate.
   it('does not open the player when the result lessonId is only whitespace', async () => {
     const push = jest.fn();
+    const onOpenInPlayer = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(
       hookValue({
@@ -638,15 +643,17 @@ describe('LessonGeneration', () => {
       }),
     );
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await render(<LessonGeneration documentId="doc-1" onOpenInPlayer={onOpenInPlayer} />);
     fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
 
     expect(push).not.toHaveBeenCalled();
+    expect(onOpenInPlayer).not.toHaveBeenCalled();
   });
 
   // Mutation: drop `.trim()` — surrounding whitespace must be stripped before nav.
   it('trims lessonId before navigating to the player', async () => {
     const push = jest.fn();
+    const onOpenInPlayer = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(
       hookValue({
@@ -660,18 +667,20 @@ describe('LessonGeneration', () => {
       }),
     );
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await render(<LessonGeneration documentId="doc-1" onOpenInPlayer={onOpenInPlayer} />);
     fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
 
     expect(push).toHaveBeenCalledWith({
       pathname: '/lesson/[id]/player',
       params: { id: 'lesson-1' },
     });
+    expect(onOpenInPlayer).toHaveBeenCalledTimes(1);
   });
 
   // Mutation: `result?.lessonId.trim()` / `result.lessonId?.trim()` — missing result/id must not throw.
   it('does not throw when opening the player with a missing lessonId on the result', async () => {
     const push = jest.fn();
+    const onOpenInPlayer = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(
       hookValue({
@@ -685,16 +694,18 @@ describe('LessonGeneration', () => {
       }),
     );
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await render(<LessonGeneration documentId="doc-1" onOpenInPlayer={onOpenInPlayer} />);
     expect(() => {
       fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
     }).not.toThrow();
     expect(push).not.toHaveBeenCalled();
+    expect(onOpenInPlayer).not.toHaveBeenCalled();
   });
 
   // Mutation: `result.lessonId?.trim()` without optional on result — undefined result must not throw.
   it('does not throw when opening the player with an undefined result', async () => {
     const push = jest.fn();
+    const onOpenInPlayer = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(
       hookValue({
@@ -703,11 +714,37 @@ describe('LessonGeneration', () => {
       }),
     );
 
-    await render(<LessonGeneration documentId="doc-1" />);
+    await render(<LessonGeneration documentId="doc-1" onOpenInPlayer={onOpenInPlayer} />);
     expect(() => {
       fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
     }).not.toThrow();
     expect(push).not.toHaveBeenCalled();
+    expect(onOpenInPlayer).not.toHaveBeenCalled();
+  });
+
+  it('does not throw when onOpenInPlayer is omitted and the CTA is pressed', async () => {
+    const push = jest.fn();
+    mockUseRouter.mockReturnValue({ push });
+    mockUseLessonGeneration.mockReturnValue(
+      hookValue({
+        stage: 'content',
+        result: {
+          lessonId: 'lesson-1',
+          title: 'No callback',
+          composition: 'both',
+          slides: [],
+        },
+      }),
+    );
+
+    await render(<LessonGeneration documentId="doc-1" />);
+    expect(() => {
+      fireEvent.press(screen.getByRole('button', { name: 'generation.ready.openInPlayer' }));
+    }).not.toThrow();
+    expect(push).toHaveBeenCalledWith({
+      pathname: '/lesson/[id]/player',
+      params: { id: 'lesson-1' },
+    });
   });
 
   // pending-pdfs-generate task-10 — onGenerated fires once on success (@s9 wiring).

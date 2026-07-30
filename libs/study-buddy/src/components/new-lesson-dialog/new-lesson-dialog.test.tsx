@@ -1,12 +1,24 @@
 jest.mock('../pdf-upload/use-pdf-upload', () => ({
   usePdfUpload: jest.fn(),
 }));
+/** Capture the onOpenInPlayer prop so a test can invoke it directly (mirrors
+ * lesson-generation.test.tsx's capturedPanelValue pattern). */
+const capturedLessonGenerationProps: {
+  current?: { onOpenInPlayer?: () => void };
+} = {};
 jest.mock('../lesson-generation/lesson-generation', () => {
   const { Text } = require('react-native');
   return {
-    LessonGeneration: ({ documentId }: { documentId: string | null }) => (
-      <Text testID="lesson-generation-stub">{documentId}</Text>
-    ),
+    LessonGeneration: ({
+      documentId,
+      onOpenInPlayer,
+    }: {
+      documentId: string | null;
+      onOpenInPlayer?: () => void;
+    }) => {
+      capturedLessonGenerationProps.current = { onOpenInPlayer };
+      return <Text testID="lesson-generation-stub">{documentId}</Text>;
+    },
   };
 });
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
@@ -142,6 +154,20 @@ describe('NewLessonDialog', () => {
     await render(<NewLessonDialog />);
 
     fireEvent.press(screen.getByRole('button', { name: 'upload.dialogClose' }));
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  // Regression — LessonGeneration's "Open in player" CTA must dismiss this dialog too, otherwise
+  // it stays open on top of the pushed player screen.
+  it('passes the dialog close handler as onOpenInPlayer to LessonGeneration', async () => {
+    const close = jest.fn();
+    mockUseNewLessonDialog.mockReturnValue(
+      dialogValue({ open: true, step: 'generate', documentId: 'doc-1', close }),
+    );
+
+    await render(<NewLessonDialog />);
+    capturedLessonGenerationProps.current?.onOpenInPlayer?.();
+
     expect(close).toHaveBeenCalledTimes(1);
   });
 });
