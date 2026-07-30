@@ -3,6 +3,7 @@ name: create-user-story
 description: Manual skill to create user stories in the user-stories/pending/ directory following project format (As a / I want / so that, context, acceptance criteria, optional notes). Invoke explicitly with `/create-user-story` to generate a new story from a rough idea. When the work touches supabase/, splits the story into a paired backend + frontend file. New stories land in user-stories/pending/ (the orchestrator moves them → in-progress → done).
 compatibility: 
   - Bash
+disable-model-invocation: true
 ---
 
 ## Overview
