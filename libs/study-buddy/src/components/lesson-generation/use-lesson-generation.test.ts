@@ -1,5 +1,6 @@
 // @ts-nocheck
 jest.mock('@helsoft/services', () => ({
+  ...jest.requireActual('@helsoft/services'),
   GenerationPreferenceService: {
     getStoredPreference: jest.fn(),
     setStoredPreference: jest.fn(),

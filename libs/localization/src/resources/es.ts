@@ -6,6 +6,10 @@ export const es: TranslationResource = {
     general: {
       save: 'Guardar',
       saving: 'Guardando…',
+      cancel: 'Cancelar',
+      delete: 'Eliminar',
+      close: 'Cerrar',
+      disabled: 'Deshabilitado',
     },
     brand: {
       name: 'AI Study Buddy',
@@ -244,11 +248,12 @@ export const es: TranslationResource = {
         screenTitle: 'Configuración de claves de API',
         replace: 'Reemplazar',
         remove: 'Eliminar',
-        savedStatus: 'Clave de {{provider}} guardada · Actualizada {{date}}',
+        savedStatus: 'Clave de {{provider}} guardada. Actualizada el {{date}}',
         guidanceTemplate: '¿No tienes una clave? Consíguela en {{provider}}',
         guidance: '¿No tienes una clave? Consíguela en Groq',
         removeConfirmHeadline: '¿Eliminar clave de API?',
-        removeConfirmBody: 'Deberás agregar una nueva clave para volver a generar lecciones.',
+        removeConfirmBody:
+          'Estas seguro de querer eliminar esta clave? \nDeberás agregar una nueva clave para volver a generar lecciones.',
         removeConfirmAction: 'Confirmar eliminación',
         removeConfirmCancelAction: 'Cancelar',
         manager: {
@@ -256,7 +261,6 @@ export const es: TranslationResource = {
           addNew: 'Agregar nuevo proveedor',
           selectProvider: 'Seleccionar proveedor',
           emptyMessage: 'No hay claves de API guardadas',
-          disabled: 'Deshabilitado',
         },
         error: {
           empty: 'Ingresa tu clave de API.',

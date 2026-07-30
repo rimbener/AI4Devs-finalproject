@@ -3,5 +3,12 @@
   "compilerOptions": {
     "types": ["jest"]
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../study-buddy/src/components/api-key-settings-screen/api-key-manager.types.ts",
+    "../study-buddy/src/components/api-key-settings-screen/use-api-key-manager.reducer.test.ts",
+    "../study-buddy/src/components/api-key-settings-screen/use-api-key-manager.reducer.ts",
+    "../study-buddy/src/components/api-key-settings-screen/use-api-key-manager.test.ts",
+    "../study-buddy/src/components/api-key-settings-screen/use-api-key-manager.ts"
+  ]
 }

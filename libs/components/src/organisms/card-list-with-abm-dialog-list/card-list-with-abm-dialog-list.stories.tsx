@@ -2,11 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { Text } from 'react-native';
-import type {
-  CardListItem,
-  CardListWithABMDialogProps,
-} from '../card-list-with-abm-dialog/card-list-with-abm-dialog.types';
+import type { CardListItem } from '../card-list-with-abm-dialog/card-list-with-abm-dialog.types';
 import { CardListWithABMDialogProvider } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogList } from './card-list-with-abm-dialog-list';
 
 type StoryFlashcard = { front: string; back: string };
@@ -33,24 +31,31 @@ const photosynthesisCard: CardListItem<StoryFlashcard> = {
 // Provider's value type is the full chrome+dialog contract (mirrors the sibling
 // CardListWithABMDialog story's fixture) — the rest are stubbed no-ops this component never
 // touches.
-const baseContextValue: Omit<CardListWithABMDialogProps<StoryFlashcard>, 'items'> = {
+const baseContextValue: Omit<CardListWithABMDialogValue<StoryFlashcard>, 'items'> = {
   title: 'Flashcards',
   addButtonLabel: 'Add flashcard',
-  onAddPress: () => {},
-  renderEditForm: (item) => <Text>{`Edit form for ${item.data.front}`}</Text>,
+  renderAddForm: () => null,
+  addDialogTitle: 'Add flashcard',
+  addSubmitLabel: 'Add',
+  addCancelLabel: 'Cancel',
+  onAddSubmit: () => {},
+  renderEditForm: (item?: CardListItem<StoryFlashcard>) => (
+    <Text>{`Edit form for ${item?.data.front}`}</Text>
+  ),
   editDialogTitle: 'Edit flashcard',
   editSubmitLabel: 'Save',
   editCancelLabel: 'Cancel',
   onEditSubmit: () => {},
-  renderRemoveConfirmation: (item) => (
+  renderRemoveConfirmation: (item: CardListItem<StoryFlashcard>) => (
     <Text>{`Remove "${item.data.front}"? This cannot be undone.`}</Text>
   ),
   removeDialogTitle: 'Remove flashcard',
   removeSubmitLabel: 'Remove',
   removeCancelLabel: 'Keep it',
   onRemoveConfirm: () => {},
-  getEditAccessibilityLabel: (item) => `Edit ${item.accessibleLabel}`,
-  getRemoveAccessibilityLabel: (item) => `Remove ${item.accessibleLabel}`,
+  getEditAccessibilityLabel: (item: CardListItem<StoryFlashcard>) => `Edit ${item.accessibleLabel}`,
+  getRemoveAccessibilityLabel: (item: CardListItem<StoryFlashcard>) =>
+    `Remove ${item.accessibleLabel}`,
   isSubmitting: false,
 };
 

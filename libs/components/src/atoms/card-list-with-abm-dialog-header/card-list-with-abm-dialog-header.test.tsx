@@ -1,9 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import {
-  CardListWithABMDialogProvider,
-  type CardListWithABMDialogValue,
-} from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
+import { CardListWithABMDialogProvider } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogHeader } from './card-list-with-abm-dialog-header';
 
 type StoryItem = { note: string };
@@ -15,7 +13,11 @@ const makeContextValue = (
   title: 'My List',
   items: [],
   addButtonLabel: 'Add item',
-  onAddPress: jest.fn(),
+  renderAddForm: () => null,
+  addDialogTitle: 'ignored here',
+  addSubmitLabel: 'ignored here',
+  addCancelLabel: 'ignored here',
+  onAddSubmit: jest.fn(),
   renderEditForm: () => null,
   editDialogTitle: 'ignored here',
   editSubmitLabel: 'ignored here',
@@ -32,29 +34,33 @@ const makeContextValue = (
   ...overrides,
 });
 
-const renderHeader = (contextOverrides: Partial<CardListWithABMDialogValue<StoryItem>> = {}) =>
+const renderHeader = (
+  onAddPress: () => void = jest.fn(),
+  contextOverrides: Partial<CardListWithABMDialogValue<StoryItem>> = {},
+  showAddButton = true,
+) =>
   render(
     <CardListWithABMDialogProvider value={makeContextValue(contextOverrides)}>
-      <CardListWithABMDialogHeader />
+      <CardListWithABMDialogHeader showAddButton={showAddButton} onAddPress={onAddPress} />
     </CardListWithABMDialogProvider>,
   );
 
 describe('CardListWithABMDialogHeader', () => {
   it('exposes the title with accessibilityRole="header"', async () => {
-    await renderHeader({ title: 'Flashcards' });
+    await renderHeader(jest.fn(), { title: 'Flashcards' });
 
     expect(screen.getByRole('header', { name: 'Flashcards' })).toBeTruthy();
   });
 
   it('renders an Add button with the context-provided label as its accessible name', async () => {
-    await renderHeader({ addButtonLabel: 'Add flashcard' });
+    await renderHeader(jest.fn(), { addButtonLabel: 'Add flashcard' });
 
     expect(screen.getByRole('button', { name: 'Add flashcard' })).toBeTruthy();
   });
 
   it('calls onAddPress once when the add button is pressed', async () => {
     const onAddPress = jest.fn();
-    await renderHeader({ onAddPress });
+    await renderHeader(onAddPress);
 
     fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
 
@@ -64,7 +70,10 @@ describe('CardListWithABMDialogHeader', () => {
   // Mutation coverage: title/addButtonLabel come straight from context, not a hardcoded string —
   // changing context values without remounting must be reflected on rerender.
   it('reflects new title and addButtonLabel on rerender from the same provider tree', async () => {
-    const { rerender } = await renderHeader({ title: 'Old title', addButtonLabel: 'Old label' });
+    const { rerender } = await renderHeader(jest.fn(), {
+      title: 'Old title',
+      addButtonLabel: 'Old label',
+    });
 
     expect(screen.getByText('Old title')).toBeTruthy();
 
@@ -72,7 +81,7 @@ describe('CardListWithABMDialogHeader', () => {
       <CardListWithABMDialogProvider
         value={makeContextValue({ title: 'New title', addButtonLabel: 'New label' })}
       >
-        <CardListWithABMDialogHeader />
+        <CardListWithABMDialogHeader showAddButton onAddPress={jest.fn()} />
       </CardListWithABMDialogProvider>,
     );
 

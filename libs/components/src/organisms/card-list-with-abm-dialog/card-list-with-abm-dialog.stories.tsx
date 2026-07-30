@@ -3,9 +3,9 @@ import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { userEvent } from 'storybook/test';
-
 import { CardListWithABMDialog } from './card-list-with-abm-dialog';
 import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
+import type { CardListWithABMDialogValue } from './hooks/card-list-with-abm-dialog.context.types';
 
 type StoryFlashcard = { front: string; back: string };
 
@@ -32,7 +32,7 @@ const items: CardListItem<StoryFlashcard>[] = [mitochondriaCard, photosynthesisC
 // This is the lib's first generic component (spec.md) — Storybook's `Meta` needs a concrete
 // component type, so the story fixes `TItem` to a representative shape via a typed cast.
 const CardListWithABMDialogStory = CardListWithABMDialog as ComponentType<
-  CardListWithABMDialogProps<StoryFlashcard>
+  CardListWithABMDialogValue<StoryFlashcard> & CardListWithABMDialogProps
 >;
 
 const meta = {
@@ -42,9 +42,16 @@ const meta = {
   args: {
     title: 'Flashcards',
     items,
+    showAddButton: true,
     addButtonLabel: 'Add flashcard',
-    onAddPress: () => {},
-    renderEditForm: (item) => <Text>{`Edit form for ${item.data.front}`}</Text>,
+    renderAddForm: () => <Text>Add flashcard form</Text>,
+    addDialogTitle: 'Add flashcard',
+    addSubmitLabel: 'Add',
+    addCancelLabel: 'Cancel',
+    onAddSubmit: () => {},
+    renderEditForm: (item?: CardListItem<StoryFlashcard>) => (
+      <Text>{`Edit form for ${item?.data.front}`}</Text>
+    ),
     editDialogTitle: 'Edit flashcard',
     editSubmitLabel: 'Save',
     editCancelLabel: 'Cancel',
@@ -99,6 +106,18 @@ export const RemoveOnlyCard: Story = {
   },
 };
 
+/** @s18 — add dialog open: tap the add button to open it, showing renderAddForm(). */
+export const AddDialogOpen: Story = {
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Add flashcard' }));
+  },
+};
+
+/** @s18 — isSubmitting true while the add dialog is open: body swaps to SubmittingIndicator. */
+export const AddDialogSubmitting: Story = {
+  args: { isSubmitting: true },
+};
+
 /** @s18 — edit dialog open: tap the edit icon to open it, showing renderEditForm(item). */
 export const EditDialogOpen: Story = {
   play: async ({ canvas }) => {
@@ -116,26 +135,20 @@ export const RemoveDialogOpen: Story = {
 /** @s18 — isSubmitting true while the edit dialog is open: body swaps to SubmittingIndicator. */
 export const EditDialogSubmitting: Story = {
   args: { isSubmitting: true },
-  play: async ({ canvas }) => {
-    await userEvent.click(canvas.getByLabelText('Edit Mitochondria flashcard'));
-  },
 };
 
 /** @s18 — isSubmitting true while the remove dialog is open: body swaps to SubmittingIndicator. */
 export const RemoveDialogSubmitting: Story = {
   args: { isSubmitting: true },
-  play: async ({ canvas }) => {
-    await userEvent.click(canvas.getByLabelText('Remove Photosynthesis flashcard'));
-  },
 };
 
-/** Demonstrates onAddPress firing — the story renders the resulting tap count. */
+/** Demonstrates onAddSubmit/onEditSubmit/onRemoveConfirm firing — the story renders a tap count. */
 const InteractiveAddDemo = () => {
   const [tapCount, setTapCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleOnEditSubmit = () => {
-    console.log('handleAddPress');
+  const handleSubmit = () => {
+    setTapCount((count) => count + 1);
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -147,25 +160,32 @@ const InteractiveAddDemo = () => {
       <CardListWithABMDialogStory
         title="Flashcards"
         items={items}
+        showAddButton
         addButtonLabel="Add flashcard"
-        onAddPress={() => setTapCount((count) => count + 1)}
-        renderEditForm={(item) => <Text>{`Edit form for ${item.data.front}`}</Text>}
+        renderAddForm={() => <Text>Add flashcard form</Text>}
+        addDialogTitle="Add flashcard"
+        addSubmitLabel="Add"
+        addCancelLabel="Cancel"
+        onAddSubmit={handleSubmit}
+        renderEditForm={(item?: CardListItem<StoryFlashcard>) => (
+          <Text>{`Edit form for ${item?.data.front}`}</Text>
+        )}
         editDialogTitle="Edit flashcard"
         editSubmitLabel="Save"
         editCancelLabel="Cancel"
-        onEditSubmit={handleOnEditSubmit}
+        onEditSubmit={handleSubmit}
         renderRemoveConfirmation={(item) => (
           <Text>{`Remove "${item.data.front}"? This cannot be undone.`}</Text>
         )}
         removeDialogTitle="Remove flashcard"
         removeSubmitLabel="Remove"
         removeCancelLabel="Keep it"
-        onRemoveConfirm={handleOnEditSubmit}
+        onRemoveConfirm={handleSubmit}
         getEditAccessibilityLabel={(item) => `Edit ${item.accessibleLabel}`}
         getRemoveAccessibilityLabel={(item) => `Remove ${item.accessibleLabel}`}
         isSubmitting={isSubmitting}
       />
-      <Text>{`Added ${tapCount} times`}</Text>
+      <Text>{`Submitted ${tapCount} times`}</Text>
     </>
   );
 };

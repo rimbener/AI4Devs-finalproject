@@ -6,6 +6,10 @@ export const de: TranslationResource = {
     general: {
       save: 'Speichern',
       saving: 'Speichern…',
+      cancel: 'Abbrechen',
+      delete: 'Löschen',
+      close: 'Schließen',
+      disabled: 'Deaktiviert',
     },
     brand: {
       name: 'AI Study Buddy',
@@ -37,7 +41,8 @@ export const de: TranslationResource = {
       delete: {
         action: '{{title}} löschen',
         confirmHeadline: 'Diese Lektion löschen?',
-        confirmBody: 'Dadurch werden die Lektion und dein Fortschritt dauerhaft entfernt.',
+        confirmBody:
+          'Bist du sicher, dass du diese Lektion löschen möchtest? \nDadurch werden die Lektion und dein Fortschritt dauerhaft entfernt.',
         confirmAction: 'Löschen',
         cancelAction: 'Abbrechen',
         failed: 'Diese Lektion konnte nicht gelöscht werden.',
@@ -247,7 +252,7 @@ export const de: TranslationResource = {
         screenTitle: 'API-Schlüssel-Einstellungen',
         replace: 'Ersetzen',
         remove: 'Entfernen',
-        savedStatus: '{{provider}}-Schlüssel gespeichert · Aktualisiert {{date}}',
+        savedStatus: '{{provider}}-Schlüssel gespeichert. Aktualisiert am {{date}}.',
         guidanceTemplate: 'Noch keinen Schlüssel? Bei {{provider}} erhalten',
         guidance: 'Noch keinen Schlüssel? Bei Groq erhalten',
         removeConfirmHeadline: 'API-Schlüssel entfernen?',
@@ -260,7 +265,6 @@ export const de: TranslationResource = {
           addNew: 'Neuen Anbieter hinzufügen',
           selectProvider: 'Anbieter auswählen',
           emptyMessage: 'Keine API-Schlüssel gespeichert',
-          disabled: 'Deaktiviert',
         },
         error: {
           empty: 'Gib deinen API-Schlüssel ein.',

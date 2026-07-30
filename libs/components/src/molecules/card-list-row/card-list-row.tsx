@@ -18,6 +18,7 @@ import type { CardListRowProps } from './card-list-row.types';
  * list (full-review minor [perf]; mirrors `pdf-document-list.tsx`'s `PdfDocumentListRow`).
  */
 export const CardListRow = memo(function CardListRow({
+  style,
   content,
   disabled,
   showEditButton,
@@ -31,9 +32,9 @@ export const CardListRow = memo(function CardListRow({
   removeTestID,
 }: CardListRowProps) {
   return (
-    <Card testID={testID} style={disabled ? styles.disabledCard : undefined}>
+    <Card testID={testID} style={[disabled ? styles.disabledCard : undefined, style]}>
       <View style={styles.row}>
-        <View style={styles.content}>{content}</View>
+        {content ? <View style={styles.content}>{content}</View> : null}
         <View style={styles.actions}>
           {showEditButton ? (
             <View testID={editTestID}>

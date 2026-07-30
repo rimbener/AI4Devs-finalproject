@@ -1,4 +1,5 @@
 import { memo, type ReactNode, useCallback } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 import { CardListRow } from '../../../molecules/card-list-row/card-list-row';
 import {
   type CardListItem,
@@ -6,13 +7,13 @@ import {
   cardListItemEditTestId,
   cardListItemRemoveTestId,
 } from '../card-list-with-abm-dialog.types';
+import { useCardListWithABMDialogContext } from '../hooks/card-list-with-abm-dialog.context';
 
 type CardListRowAdapterProps<TItem> = {
   item: CardListItem<TItem>;
+  cardStyle?: StyleProp<ViewStyle>;
   onEditPress: (item: CardListItem<TItem>) => void;
   onRemovePress: (item: CardListItem<TItem>) => void;
-  getEditAccessibilityLabel: (item: CardListItem<TItem>) => string;
-  getRemoveAccessibilityLabel: (item: CardListItem<TItem>) => string;
 };
 /**
  * CardListRowAdapter — thin, organism-owned mapping from this organism's generic
@@ -27,16 +28,18 @@ type CardListRowAdapterProps<TItem> = {
  */
 export const CardListRowAdapter = memo(function CardListRowAdapter<TItem>({
   item,
+  cardStyle,
   onEditPress,
   onRemovePress,
-  getEditAccessibilityLabel,
-  getRemoveAccessibilityLabel,
 }: CardListRowAdapterProps<TItem>) {
+  const { getEditAccessibilityLabel, getRemoveAccessibilityLabel } =
+    useCardListWithABMDialogContext<TItem>();
   const handleEditPress = useCallback(() => onEditPress(item), [onEditPress, item]);
   const handleRemovePress = useCallback(() => onRemovePress(item), [onRemovePress, item]);
 
   return (
     <CardListRow
+      style={cardStyle}
       content={item.content}
       disabled={item.disabled}
       showEditButton={item.showEditButton}

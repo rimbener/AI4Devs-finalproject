@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-
+import type { StyleProp, ViewStyle } from 'react-native';
 /**
  * Props for a generic card-list row: a `Card` wrapping arbitrary `content` plus optional
  * edit/remove icon affordances. Fully flat/primitive — no organism import — so this molecule
@@ -9,14 +9,15 @@ import type { ReactNode } from 'react';
  * caller too, the same way `Card`'s own `testID` prop works.
  */
 export type CardListRowProps = {
-  content: ReactNode;
+  content?: ReactNode;
   disabled?: boolean;
   showEditButton?: boolean;
   showRemoveButton?: boolean;
+  style?: StyleProp<ViewStyle>;
   onEditPress: () => void;
   onRemovePress: () => void;
-  editAccessibilityLabel: string;
-  removeAccessibilityLabel: string;
+  editAccessibilityLabel?: string;
+  removeAccessibilityLabel?: string;
   /** testID for the row's `Card` wrapper. */
   testID?: string;
   /** testID for the edit icon's wrapper view. */

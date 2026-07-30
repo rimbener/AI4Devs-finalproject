@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { Text } from 'react-native';
-import type { CardListWithABMDialogProps } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types';
 import { CardListWithABMDialogProvider } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogHeader } from './card-list-with-abm-dialog-header';
 
 type StoryFlashcard = { front: string; back: string };
@@ -12,16 +12,22 @@ type StoryArgs = {
   title: string;
   addButtonLabel: string;
   onAddPress: () => void;
+  showAddButton: boolean;
 };
 
-// Header only reads title/addButtonLabel/onAddPress from context; the Provider's value type is
-// the full chrome+dialog contract (same stub shape as the sibling List/CardListWithABMDialog
-// stories) — the rest are no-ops this component never touches.
+// Header reads title/addButtonLabel from context and takes onAddPress as its own prop; the
+// Provider's value type is the full chrome+dialog contract (same stub shape as the sibling
+// List/CardListWithABMDialog stories) — the rest are no-ops this component never touches.
 const baseContextValue: Omit<
-  CardListWithABMDialogProps<StoryFlashcard>,
-  'title' | 'addButtonLabel' | 'onAddPress'
+  CardListWithABMDialogValue<StoryFlashcard>,
+  'title' | 'addButtonLabel'
 > = {
   items: [],
+  renderAddForm: () => null,
+  addDialogTitle: 'Add flashcard',
+  addSubmitLabel: 'Add',
+  addCancelLabel: 'Cancel',
+  onAddSubmit: () => {},
   renderEditForm: () => null,
   editDialogTitle: 'Edit flashcard',
   editSubmitLabel: 'Save',
@@ -39,21 +45,17 @@ const baseContextValue: Omit<
 
 const meta = {
   title: 'Atoms/CardListWithABMDialogHeader',
-  // Header takes no props of its own (pure context consumer) — the cast is only so Meta/args
-  // typing has something concrete to work with; the JSX call stays prop-less below.
   component: CardListWithABMDialogHeader as ComponentType<StoryArgs>,
-  render: ({ title, addButtonLabel, onAddPress }) => (
-    <CardListWithABMDialogProvider
-      value={{ ...baseContextValue, title, addButtonLabel, onAddPress }}
-    >
-      <CardListWithABMDialogHeader />
+  render: ({ title, addButtonLabel, showAddButton, onAddPress }) => (
+    <CardListWithABMDialogProvider value={{ ...baseContextValue, title, addButtonLabel }}>
+      <CardListWithABMDialogHeader showAddButton={showAddButton} onAddPress={onAddPress} />
     </CardListWithABMDialogProvider>
   ),
   tags: ['CardListWithABMDialog'],
   args: {
     title: 'Flashcards',
     addButtonLabel: 'Add flashcard',
-
+    showAddButton: true,
     onAddPress: () => {},
   },
 } satisfies Meta<StoryArgs>;
@@ -77,14 +79,9 @@ const InteractiveDemo = () => {
   return (
     <>
       <CardListWithABMDialogProvider
-        value={{
-          ...baseContextValue,
-          title: 'Flashcards',
-          addButtonLabel: 'Add flashcard',
-          onAddPress: () => setTapCount((count) => count + 1),
-        }}
+        value={{ ...baseContextValue, title: 'Flashcards', addButtonLabel: 'Add flashcard' }}
       >
-        <CardListWithABMDialogHeader />
+        <CardListWithABMDialogHeader onAddPress={() => setTapCount((count) => count + 1)} />
       </CardListWithABMDialogProvider>
       <Text>{`Added ${tapCount} times`}</Text>
     </>

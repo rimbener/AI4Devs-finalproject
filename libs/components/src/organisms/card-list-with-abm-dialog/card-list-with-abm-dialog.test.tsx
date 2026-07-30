@@ -31,6 +31,7 @@ import {
   cardListItemEditTestId,
   cardListItemRemoveTestId,
 } from './card-list-with-abm-dialog.types';
+import type { CardListWithABMDialogValue } from './hooks/card-list-with-abm-dialog.context.types';
 
 type DialogMockProps = { open: boolean; headline?: string; children: ReactNode };
 const DialogMock = Dialog as unknown as jest.Mock<ReactNode, [DialogMockProps]>;
@@ -76,24 +77,29 @@ const items: CardListItem<StoryItem>[] = [
 
 /** Full required prop surface with sensible test defaults; pass `overrides` per test. */
 const makeProps = (
-  overrides: Partial<CardListWithABMDialogProps<StoryItem>> = {},
-): CardListWithABMDialogProps<StoryItem> => ({
+  overrides: Partial<CardListWithABMDialogValue<StoryItem> & CardListWithABMDialogProps> = {},
+): CardListWithABMDialogValue<StoryItem> & CardListWithABMDialogProps => ({
   title: 'My List',
   items,
   addButtonLabel: 'Add item',
-  onAddPress: jest.fn(),
-  renderEditForm: (item) => <Text>{`Edit form for ${item.id}`}</Text>,
+  showAddButton: true,
+  renderAddForm: () => <Text>Add form</Text>,
+  addDialogTitle: 'Add card',
+  addSubmitLabel: 'Add',
+  addCancelLabel: 'Cancel',
+  onAddSubmit: jest.fn(),
+  renderEditForm: (item?: CardListItem<StoryItem>) => <Text>{`Edit form for ${item?.id}`}</Text>,
   editDialogTitle: 'Edit card',
   editSubmitLabel: 'Save',
   editCancelLabel: 'Cancel',
   onEditSubmit: jest.fn(),
-  renderRemoveConfirmation: (item) => <Text>{`Remove ${item.id}?`}</Text>,
+  renderRemoveConfirmation: (item: CardListItem<StoryItem>) => <Text>{`Remove ${item.id}?`}</Text>,
   removeDialogTitle: 'Remove card',
   removeSubmitLabel: 'Remove',
   removeCancelLabel: 'Keep it',
   onRemoveConfirm: jest.fn(),
-  getEditAccessibilityLabel: (item) => `Edit ${item.accessibleLabel}`,
-  getRemoveAccessibilityLabel: (item) => `Remove ${item.accessibleLabel}`,
+  getEditAccessibilityLabel: (item: CardListItem<StoryItem>) => `Edit ${item.accessibleLabel}`,
+  getRemoveAccessibilityLabel: (item: CardListItem<StoryItem>) => `Remove ${item.accessibleLabel}`,
   isSubmitting: false,
   ...overrides,
 });
@@ -110,10 +116,6 @@ describe('CardListWithABMDialog', () => {
     DialogMock.mockClear();
   });
 
-  // Locks the testID-builder export contract: other tests/e2e query rows by these exact
-  // strings (via getByTestId), so the resolved format itself must be asserted directly —
-  // not just exercised indirectly through a passing getByTestId lookup (kills the
-  // StringLiteral-to-'' and ArrowFunction-to-undefined mutation survivors on this export).
   it('builds the row/edit/remove testID strings in the documented format', () => {
     expect(cardListItemCardTestId('item-1')).toBe('card-list-with-abm-dialog-card-item-1');
     expect(cardListItemEditTestId('item-1')).toBe('card-list-with-abm-dialog-edit-item-1');
@@ -200,21 +202,108 @@ describe('CardListWithABMDialog', () => {
     expect(screen.queryByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID)).toBeNull();
   });
 
-  // @s17 — tapping the add button notifies the caller.
-  it('calls onAddPress once when the add button is pressed', async () => {
-    const onAddPress = jest.fn();
-    await render(<CardListWithABMDialog {...makeProps({ onAddPress })} />);
+  // @s21 — tapping the add button opens the add dialog with renderAddForm() and static chrome
+  // (onAddPress itself is still called once, unchanged — see @s17 in
+  // card-list-with-abm-dialog-header.test.tsx and card-list-with-abm-dialog.e2e.js).
+  it('opens the add dialog with renderAddForm() and the static add chrome when the add button is pressed', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
-    expect(onAddPress).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('Add card')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+
+    expect(screen.getByText('Add card')).toBeTruthy();
+    expect(screen.getByText('Add form')).toBeTruthy();
+    expect(screen.getByText('Add')).toBeTruthy();
+    expect(screen.getByText('Cancel')).toBeTruthy();
   });
 
-  it('calls onAddPress once from the empty state too', async () => {
-    const onAddPress = jest.fn();
-    await render(<CardListWithABMDialog {...makeProps({ items: [], onAddPress })} />);
+  it('opens the add dialog from the empty state too', async () => {
+    await render(<CardListWithABMDialog {...makeProps({ items: [] })} />);
 
-    fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
-    expect(onAddPress).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+
+    expect(screen.getByText('Add card')).toBeTruthy();
+  });
+
+  // @s22 — submitting the add dialog notifies the caller and swaps to the submitting state
+  // (mirrors @s11's edit-dialog counterpart: submit swaps to SubmittingIndicator rather than
+  // closing outright).
+  it('calls onAddSubmit once and swaps to the submitting state once its dialog is submitted', async () => {
+    const onAddSubmit = jest.fn();
+    await render(<CardListWithABMDialog {...makeProps({ onAddSubmit })} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add'));
+    });
+
+    expect(onAddSubmit).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('general.saving')).toBeTruthy();
+  });
+
+  // @s23 — canceling the add dialog does not submit (mirrors @s10's remove-dialog counterpart).
+  it('closes the add dialog without calling onAddSubmit when Cancel is pressed', async () => {
+    const onAddSubmit = jest.fn();
+    await render(<CardListWithABMDialog {...makeProps({ onAddSubmit })} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+    expect(screen.getByText('Add card')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel'));
+    });
+
+    expect(onAddSubmit).not.toHaveBeenCalled();
+    expect(screen.queryByText('Add card')).toBeNull();
+  });
+
+  // @s24 — closing the add dialog does not flash empty content (mirrors @s19/@s20).
+  it('keeps supplying the add dialog its last content in the same render Close flips open false', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+    const openProps = lastCallFor('Add card');
+    expect(openProps.open).toBe(true);
+    expect(bodyText(openProps.children)).toBe('Add form');
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('Cancel'));
+    });
+    const closedProps = lastCallFor('Add card');
+
+    expect(closedProps.open).toBe(false);
+    expect(bodyText(closedProps.children)).toBe('Add form');
+  });
+
+  // @s25 — only one of add/edit/remove is open at a time: opening edit while add is open closes
+  // the add dialog.
+  it('opening edit after add closes the add dialog (only one dialog open at a time)', async () => {
+    await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+    expect(screen.getByText('Add card')).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
+      );
+    });
+
+    expect(screen.queryByText('Add card')).toBeNull();
+    expect(screen.getByText('Edit card')).toBeTruthy();
   });
 
   // @s5 — edit icon opens the edit dialog with that item's content and static chrome.
@@ -255,8 +344,13 @@ describe('CardListWithABMDialog', () => {
     expect(screen.getByText('Keep it')).toBeTruthy();
   });
 
-  // @s7 — submitting the edit dialog notifies onEditSubmit with the item, then closes.
-  it('calls onEditSubmit with the item once its dialog is submitted, then closes it', async () => {
+  // @s7 — submitting the edit dialog notifies onEditSubmit once. The item itself is handed to
+  // the caller earlier via onEditPress(item) (see "opens the edit dialog with
+  // renderEditForm(item)..." below) — onEditSubmit's own signature takes no argument
+  // (card-list-with-abm-dialog.context.types.tsx), so there's nothing item-shaped to assert here.
+  // Per @s11/@s13, submit swaps the dialog to its submitting state rather than closing it
+  // outright — it only fully closes once the caller's own isSubmitting prop returns to false.
+  it('calls onEditSubmit once and swaps to the submitting state once its dialog is submitted', async () => {
     const onEditSubmit = jest.fn();
     await render(<CardListWithABMDialog {...makeProps({ onEditSubmit })} />);
 
@@ -270,12 +364,14 @@ describe('CardListWithABMDialog', () => {
     });
 
     expect(onEditSubmit).toHaveBeenCalledTimes(1);
-    expect(onEditSubmit).toHaveBeenCalledWith(items[1]);
-    expect(screen.queryByText('Edit card')).toBeNull();
+    expect(onEditSubmit).toHaveBeenCalledWith();
+    expect(screen.getByText('general.saving')).toBeTruthy();
   });
 
-  // @s8 — submitting the remove dialog notifies onRemoveConfirm with the item, then closes.
-  it('calls onRemoveConfirm with the item once its dialog is submitted, then closes it', async () => {
+  // @s8 — submitting the remove dialog notifies onRemoveConfirm once. Same no-argument
+  // signature as onEditSubmit above — the item was already handed to the caller via
+  // onRemovePress(item). Same submitting-state handoff as @s7 above.
+  it('calls onRemoveConfirm once and swaps to the submitting state once its dialog is submitted', async () => {
     const onRemoveConfirm = jest.fn();
     await render(<CardListWithABMDialog {...makeProps({ onRemoveConfirm })} />);
 
@@ -289,8 +385,8 @@ describe('CardListWithABMDialog', () => {
     });
 
     expect(onRemoveConfirm).toHaveBeenCalledTimes(1);
-    expect(onRemoveConfirm).toHaveBeenCalledWith(items[0]);
-    expect(screen.queryByText('Remove card')).toBeNull();
+    expect(onRemoveConfirm).toHaveBeenCalledWith();
+    expect(screen.getByText('general.saving')).toBeTruthy();
   });
 
   // @s9 — canceling the edit dialog closes it without submitting.
@@ -383,6 +479,9 @@ describe('CardListWithABMDialog', () => {
     expect(bodyText(closedProps.children)).toBe('Remove item-2?');
   });
 
+  // @s25 — same mutual-exclusivity guarantee for a different pair (edit → remove), per
+  // gherkin-scenarios.md's "holds for every pair of the three dialog types, not just adjacent
+  // ones".
   it('only one dialog is open at a time — opening remove after edit closes the edit dialog', async () => {
     await render(<CardListWithABMDialog {...makeProps()} />);
 
@@ -415,21 +514,24 @@ describe('CardListWithABMDialog', () => {
   it("gates each Dialog's own open prop by its matching type, never the other stale dialogState", async () => {
     await render(<CardListWithABMDialog {...makeProps()} />);
 
-    // Open edit (item-1) — only edit's own `open` guard should be true.
+    // Open edit (item-1) — only edit's own `open` guard should be true. There's a single
+    // shared Dialog instance (not one persistent Dialog per type), so "remove never leaks
+    // open" is asserted as "no remove-headlined render has happened at all yet" — a
+    // strictly stronger guarantee than a same-type Dialog sitting there with open: false.
     await act(async () => {
       fireEvent.press(
         within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
       );
     });
     expect(lastCallFor('Edit card').open).toBe(true);
-    expect(lastCallFor('Remove card').open).toBe(false);
+    expect(DialogMock.mock.calls.some(([props]) => props.headline === 'Remove card')).toBe(false);
 
     // Close edit — isOpen flips false; dialogState still holds the stale edit item (bug fix).
     await act(async () => {
       fireEvent.press(screen.getByText('Cancel'));
     });
     expect(lastCallFor('Edit card').open).toBe(false);
-    expect(lastCallFor('Remove card').open).toBe(false);
+    expect(DialogMock.mock.calls.some(([props]) => props.headline === 'Remove card')).toBe(false);
 
     // Open remove for a DIFFERENT item (item-2) — dialogState is replaced entirely: remove's
     // own guard is true with the new item, edit's stays false, never a mix of both.
@@ -483,26 +585,76 @@ describe('CardListWithABMDialog', () => {
     expect(screen.queryByText('Keep it')).toBeNull();
   });
 
+  // Mirrors @s11 — isSubmitting swaps the open add dialog to a submitting state.
+  it('replaces the add dialog body with SubmittingIndicator and hides its buttons while isSubmitting', async () => {
+    const { rerender } = await render(<CardListWithABMDialog {...makeProps()} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+    expect(screen.getByText('Add form')).toBeTruthy();
+
+    await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: true })} />);
+
+    expect(screen.getByText('Add card')).toBeTruthy(); // headline still shown
+    expect(screen.queryByText('Add form')).toBeNull();
+    expect(screen.getByText('general.saving')).toBeTruthy();
+    expect(screen.queryByText('Add')).toBeNull();
+    expect(screen.queryByText('Cancel')).toBeNull();
+  });
+
   // @s13 — isSubmitting returning to false restores the normal content and buttons.
-  it('restores the normal dialog content and buttons once isSubmitting returns to false', async () => {
+  it('closes the dialog once isSubmitting returns to false', async () => {
     const { rerender } = await render(
       <CardListWithABMDialog {...makeProps({ isSubmitting: true })} />,
     );
 
-    await act(async () => {
-      fireEvent.press(
-        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
-      );
-    });
     expect(screen.getByText('general.saving')).toBeTruthy();
     expect(screen.queryByText('Edit form for item-1')).toBeNull();
 
     await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: false })} />);
 
     expect(screen.queryByText('general.saving')).toBeNull();
-    expect(screen.getByText('Edit form for item-1')).toBeTruthy();
-    expect(screen.getByText('Save')).toBeTruthy();
-    expect(screen.getByText('Cancel')).toBeTruthy();
+    expect(screen.queryByText('Edit form for item-1')).toBeNull();
+    expect(screen.queryByText('Save')).toBeNull();
+    expect(screen.queryByText('Cancel')).toBeNull();
+  });
+
+  // @s26 — errorMessage forces the shared dialog open in an error state (ErrorBanner content),
+  // regardless of whether an add/edit/remove flow is otherwise active, with a single Close
+  // action that calls onClose. Proves errorMessage/submitDisabled (tested in isolation on the
+  // CardListWithABMDialogDialog molecule) actually reach the dialog from the top-level
+  // CardListWithABMDialog.
+  it('forces the shared dialog open with the ErrorBanner and a single Close action when errorMessage is set', async () => {
+    const onClose = jest.fn();
+    await render(
+      <CardListWithABMDialog {...makeProps({ errorMessage: 'Something went wrong', onClose })} />,
+    );
+
+    const [dialogProps] = DialogMock.mock.calls.at(-1)!;
+    expect(dialogProps.open).toBe(true);
+    expect(screen.getByText('Something went wrong')).toBeTruthy();
+    expect(screen.getByText('general.close')).toBeTruthy();
+    expect(screen.queryByText('Cancel')).toBeNull();
+
+    await act(async () => {
+      fireEvent.press(screen.getByText('general.close'));
+    });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  // @s27 — submitDisabled disables the open dialog's submit button (here, the add dialog).
+  it('disables the add dialog submit button when submitDisabled is true', async () => {
+    await render(<CardListWithABMDialog {...makeProps({ submitDisabled: true })} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+
+    expect(screen.getByRole('button', { name: 'Add' }).props.accessibilityState.disabled).toBe(
+      true,
+    );
   });
 
   // Mutation coverage: CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID is an exported constant that both

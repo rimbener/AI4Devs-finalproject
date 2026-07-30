@@ -1,11 +1,7 @@
 import { AiProvidersService } from '@helsoft/supabase-services';
 import type { AiProviderCatalogEntry } from '@helsoft/types';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
-
-import type { UseAiProvidersResult } from './use-ai-providers.types';
 import { useSessionGate } from './use-session-gate';
-
 /**
  * Query key for the AI-provider catalog (Decision 1). Not user-scoped — the catalog carries no
  * per-user dimension, only *whether* the query runs is gated by the session (`useSessionGate`).
@@ -21,7 +17,7 @@ const EMPTY_PROVIDERS: AiProviderCatalogEntry[] = [];
  * `getCatalog()` never rejects (Decision 11), so there is no `error` to expose here — a failed
  * catalog read surfaces as `providers: []`.
  */
-export const useAiProviders = (): UseAiProvidersResult => {
+export const useAiProviders = () => {
   const { enabled, deriveIsLoading } = useSessionGate();
 
   const { data, isPending } = useQuery({
@@ -32,7 +28,9 @@ export const useAiProviders = (): UseAiProvidersResult => {
   });
 
   const providers = data ?? EMPTY_PROVIDERS;
-  const enabledProviders = useMemo(() => providers.filter((p) => p.enabled), [providers]);
 
-  return { providers, enabledProviders, isLoading: deriveIsLoading(isPending) };
+  return {
+    providers,
+    isLoading: deriveIsLoading(isPending),
+  };
 };

@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { FlatList } from 'react-native';
+import { FlatList, type StyleProp, type ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
@@ -9,29 +9,33 @@ import { CardListRowAdapter } from '../card-list-with-abm-dialog/components/card
 import { useCardListWithABMDialogContext } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
 
 type CardListWithABMDialogListProps<TItem> = {
+  cardStyle?: StyleProp<ViewStyle>;
+  cardListStyle?: StyleProp<ViewStyle>;
+  cardListContentContainerStyle?: StyleProp<ViewStyle>;
   openEditDialog: (item: CardListItem<TItem>) => void;
   openRemoveDialog: (item: CardListItem<TItem>) => void;
 };
 
 export function CardListWithABMDialogList<TItem>({
+  cardStyle,
+  cardListStyle,
+  cardListContentContainerStyle,
   openEditDialog,
   openRemoveDialog,
 }: CardListWithABMDialogListProps<TItem>) {
-  const { items, getEditAccessibilityLabel, getRemoveAccessibilityLabel } =
-    useCardListWithABMDialogContext<TItem>();
+  const { items } = useCardListWithABMDialogContext<TItem>();
   const keyExtractor = useCallback((item: CardListItem<TItem>) => item.id, []);
 
   const renderItem = useCallback(
     ({ item }: { item: CardListItem<TItem> }) => (
       <CardListRowAdapter
         item={item}
+        cardStyle={cardStyle}
         onEditPress={openEditDialog}
         onRemovePress={openRemoveDialog}
-        getEditAccessibilityLabel={getEditAccessibilityLabel}
-        getRemoveAccessibilityLabel={getRemoveAccessibilityLabel}
       />
     ),
-    [openEditDialog, openRemoveDialog, getEditAccessibilityLabel, getRemoveAccessibilityLabel],
+    [openEditDialog, openRemoveDialog, cardStyle],
   );
 
   return (
@@ -40,8 +44,8 @@ export function CardListWithABMDialogList<TItem>({
       data={items}
       keyExtractor={keyExtractor}
       renderItem={renderItem}
-      style={styles.list}
-      contentContainerStyle={styles.listContent}
+      style={[styles.list, cardListStyle]}
+      contentContainerStyle={[styles.listContent, cardListContentContainerStyle]}
     />
   );
 }

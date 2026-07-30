@@ -1,5 +1,8 @@
 import { act, renderHook } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
 import type { CardListItem } from '../card-list-with-abm-dialog.types';
+import { CardListWithABMDialogProvider } from './card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from './card-list-with-abm-dialog.context.types';
 import { useCardListWithABMDialog } from './use-card-list-with-abm-dialog';
 
 type StoryItem = { note: string };
@@ -18,41 +21,125 @@ const otherItem: CardListItem<StoryItem> = {
   data: { note: 'second' },
 };
 
-describe('useCardListWithABMDialog', () => {
-  it('starts with no dialog open', async () => {
-    const { result } = await renderHook(() => useCardListWithABMDialog<StoryItem>());
+const contextValue: CardListWithABMDialogValue<StoryItem> = {
+  title: 'Cards',
+  items: [],
+  addButtonLabel: 'Add item',
+  renderAddForm: () => null,
+  addDialogTitle: 'Add card',
+  renderEditForm: () => null,
+  editDialogTitle: 'Edit card',
+  renderRemoveConfirmation: () => null,
+  getEditAccessibilityLabel: () => 'Edit',
+  getRemoveAccessibilityLabel: () => 'Remove',
+  isSubmitting: false,
+};
 
-    expect(result.current?.dialogState).toBeNull();
-    expect(result.current?.isOpen).toBe(false);
+const wrapper = ({ children }: { children: ReactNode }) =>
+  CardListWithABMDialogProvider<StoryItem>({ value: contextValue, children });
+
+describe('useCardListWithABMDialog', () => {
+  it('starts closed with no dialog type or item', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    expect(result.current?.dialogState).toBe('closed');
+    expect(result.current?.dialogType).toBeNull();
+    expect(result.current?.dialogItem).toBeNull();
   });
 
-  it('openEditDialog sets dialogState to the edit type for that item and opens it', async () => {
-    const { result } = await renderHook(() => useCardListWithABMDialog<StoryItem>());
+  it('openAddDialog sets dialogType to add and opens it', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      result.current?.openAddDialog();
+    });
+
+    expect(result.current?.dialogType).toBe('add');
+    expect(result.current?.dialogItem).toBeNull();
+    expect(result.current?.dialogState).toBe('open');
+  });
+
+  it('openEditDialog sets dialogType to edit for that item and opens it', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
 
     await act(async () => {
       result.current?.openEditDialog(item);
     });
 
-    expect(result.current?.dialogState).toEqual({ type: 'edit', item });
-    expect(result.current?.isOpen).toBe(true);
+    expect(result.current?.dialogType).toBe('edit');
+    expect(result.current?.dialogItem).toEqual(item);
+    expect(result.current?.dialogState).toBe('open');
   });
 
-  it('openRemoveDialog sets dialogState to the remove type for that item and opens it', async () => {
-    const { result } = await renderHook(() => useCardListWithABMDialog<StoryItem>());
+  it('openRemoveDialog sets dialogType to remove for that item and opens it', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
 
     await act(async () => {
       result.current?.openRemoveDialog(item);
     });
 
-    expect(result.current?.dialogState).toEqual({ type: 'remove', item });
-    expect(result.current?.isOpen).toBe(true);
+    expect(result.current?.dialogType).toBe('remove');
+    expect(result.current?.dialogItem).toEqual(item);
+    expect(result.current?.dialogState).toBe('open');
   });
 
-  // @s19 — closing the edit dialog flips isOpen false without clearing dialogState, so the
-  // last {type, item} stays available for the remainder of the shared Dialog's close
-  // transition (spec.md's post-pr_ready bug-fix decision).
-  it('closeDialog flips isOpen to false but keeps the last dialogState (edit)', async () => {
-    const { result } = await renderHook(() => useCardListWithABMDialog<StoryItem>());
+  // Same close-without-clear guarantee as @s19/@s20, for the add dialog.
+  it('closeDialog flips dialogState to closed but keeps the last dialogType/dialogItem (add)', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      result.current?.openAddDialog();
+    });
+    await act(async () => {
+      result.current?.closeDialog();
+    });
+
+    expect(result.current?.dialogState).toBe('closed');
+    expect(result.current?.dialogType).toBe('add');
+    expect(result.current?.dialogItem).toBeNull();
+  });
+
+  // @s19 — closing the edit dialog flips dialogState to closed without clearing dialogType/
+  // dialogItem, so the last {type, item} stays available for the remainder of the shared
+  // Dialog's close transition (spec.md's post-pr_ready bug-fix decision).
+  it('closeDialog flips dialogState to closed but keeps the last dialogType/dialogItem (edit)', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
 
     await act(async () => {
       result.current?.openEditDialog(item);
@@ -61,13 +148,20 @@ describe('useCardListWithABMDialog', () => {
       result.current?.closeDialog();
     });
 
-    expect(result.current?.isOpen).toBe(false);
-    expect(result.current?.dialogState).toEqual({ type: 'edit', item });
+    expect(result.current?.dialogState).toBe('closed');
+    expect(result.current?.dialogType).toBe('edit');
+    expect(result.current?.dialogItem).toEqual(item);
   });
 
   // @s20 — same guarantee for the remove dialog.
-  it('closeDialog flips isOpen to false but keeps the last dialogState (remove)', async () => {
-    const { result } = await renderHook(() => useCardListWithABMDialog<StoryItem>());
+  it('closeDialog flips dialogState to closed but keeps the last dialogType/dialogItem (remove)', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
 
     await act(async () => {
       result.current?.openRemoveDialog(item);
@@ -76,12 +170,19 @@ describe('useCardListWithABMDialog', () => {
       result.current?.closeDialog();
     });
 
-    expect(result.current?.isOpen).toBe(false);
-    expect(result.current?.dialogState).toEqual({ type: 'remove', item });
+    expect(result.current?.dialogState).toBe('closed');
+    expect(result.current?.dialogType).toBe('remove');
+    expect(result.current?.dialogItem).toEqual(item);
   });
 
-  it('opening a dialog after closing one replaces the stale dialogState', async () => {
-    const { result } = await renderHook(() => useCardListWithABMDialog<StoryItem>());
+  it('opening a dialog after closing one replaces the stale dialogType/dialogItem', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
 
     await act(async () => {
       result.current?.openEditDialog(item);
@@ -93,7 +194,8 @@ describe('useCardListWithABMDialog', () => {
       result.current?.openEditDialog(otherItem);
     });
 
-    expect(result.current?.isOpen).toBe(true);
-    expect(result.current?.dialogState).toEqual({ type: 'edit', item: otherItem });
+    expect(result.current?.dialogState).toBe('open');
+    expect(result.current?.dialogType).toBe('edit');
+    expect(result.current?.dialogItem).toEqual(otherItem);
   });
 });

@@ -3,5 +3,9 @@
   "compilerOptions": {
     "types": ["jest"]
   },
-  "include": ["src"]
+  "include": [
+    "src",
+    "../services/src/helpers/ai-providers.helpers.ts",
+    "../hooks/src/hooks/use-api-key.helpers.ts"
+  ]
 }

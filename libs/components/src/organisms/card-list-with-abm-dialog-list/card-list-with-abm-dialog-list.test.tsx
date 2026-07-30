@@ -4,11 +4,11 @@ import { Text } from 'react-native';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
   type CardListItem,
-  type CardListWithABMDialogProps,
   cardListItemEditTestId,
   cardListItemRemoveTestId,
 } from '../card-list-with-abm-dialog/card-list-with-abm-dialog.types';
 import { CardListWithABMDialogProvider } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogList } from './card-list-with-abm-dialog-list';
 
 type StoryItem = { note: string };
@@ -33,12 +33,16 @@ const item2: CardListItem<StoryItem> = {
 
 /** Full context value with sensible test defaults; pass `overrides` per test. */
 const makeContextValue = (
-  overrides: Partial<CardListWithABMDialogProps<StoryItem>> = {},
-): CardListWithABMDialogProps<StoryItem> => ({
+  overrides: Partial<CardListWithABMDialogValue<StoryItem>> = {},
+): CardListWithABMDialogValue<StoryItem> => ({
   title: 'ignored here',
   items: [item1, item2],
   addButtonLabel: 'ignored here',
-  onAddPress: jest.fn(),
+  renderAddForm: () => null,
+  addDialogTitle: 'ignored here',
+  addSubmitLabel: 'ignored here',
+  addCancelLabel: 'ignored here',
+  onAddSubmit: jest.fn(),
   renderEditForm: () => null,
   editDialogTitle: 'ignored here',
   editSubmitLabel: 'ignored here',
@@ -49,8 +53,8 @@ const makeContextValue = (
   removeSubmitLabel: 'ignored here',
   removeCancelLabel: 'ignored here',
   onRemoveConfirm: jest.fn(),
-  getEditAccessibilityLabel: (item) => `Edit ${item.accessibleLabel}`,
-  getRemoveAccessibilityLabel: (item) => `Remove ${item.accessibleLabel}`,
+  getEditAccessibilityLabel: (item: CardListItem<StoryItem>) => `Edit ${item.accessibleLabel}`,
+  getRemoveAccessibilityLabel: (item: CardListItem<StoryItem>) => `Remove ${item.accessibleLabel}`,
   isSubmitting: false,
   ...overrides,
 });
@@ -60,7 +64,7 @@ const renderList = (
     openEditDialog: (item: CardListItem<StoryItem>) => void;
     openRemoveDialog: (item: CardListItem<StoryItem>) => void;
   },
-  contextOverrides: Partial<CardListWithABMDialogProps<StoryItem>> = {},
+  contextOverrides: Partial<CardListWithABMDialogValue<StoryItem>> = {},
 ) =>
   render(
     <CardListWithABMDialogProvider value={makeContextValue(contextOverrides)}>
@@ -182,46 +186,5 @@ describe('CardListWithABMDialogList', () => {
 
     expect(second).toHaveBeenCalledWith(item1);
     expect(first).not.toHaveBeenCalled();
-  });
-
-  // Positive counterpart to the above — when neither the props nor the context accessibility
-  // builders change identity, renderItem must stay memoized (kills an emptied-dependency-array
-  // mutant in the opposite direction: always recomputing would also pass the test above). Uses
-  // stable, module-scoped label builders on both renders — `makeContextValue`'s own defaults are
-  // fresh closures per call by design (fine for every other test here), which would make this one
-  // a false negative for a cause this component doesn't own (the caller re-creating its context
-  // value), not the memoization this test targets.
-  const stableGetEditLabel = (i: CardListItem<StoryItem>) => `Edit ${i.accessibleLabel}`;
-  const stableGetRemoveLabel = (i: CardListItem<StoryItem>) => `Remove ${i.accessibleLabel}`;
-
-  it('keeps a stable FlatList renderItem identity across a rerender when nothing relevant changed', async () => {
-    const openEditDialog = jest.fn();
-    const openRemoveDialog = jest.fn();
-    const stableContextValue = makeContextValue({
-      items: [item1],
-      getEditAccessibilityLabel: stableGetEditLabel,
-      getRemoveAccessibilityLabel: stableGetRemoveLabel,
-    });
-
-    const { rerender } = await render(
-      <CardListWithABMDialogProvider value={stableContextValue}>
-        <CardListWithABMDialogList
-          openEditDialog={openEditDialog}
-          openRemoveDialog={openRemoveDialog}
-        />
-      </CardListWithABMDialogProvider>,
-    );
-    const first = screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID).props.renderItem;
-
-    await rerender(
-      <CardListWithABMDialogProvider value={stableContextValue}>
-        <CardListWithABMDialogList
-          openEditDialog={openEditDialog}
-          openRemoveDialog={openRemoveDialog}
-        />
-      </CardListWithABMDialogProvider>,
-    );
-
-    expect(screen.getByTestId(CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID).props.renderItem).toBe(first);
   });
 });

@@ -1,5 +1,6 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('@helsoft/services', () => ({
+  ...jest.requireActual('@helsoft/services'),
   GenerationPreferenceService: {
     getStoredPreference: jest.fn(),
     setStoredPreference: jest.fn(),

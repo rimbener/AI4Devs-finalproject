@@ -19,6 +19,7 @@ export const Dialog = ({
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   onConfirm,
+  confirmDisabled,
   actions,
   style,
 }: DialogProps) => {
@@ -45,7 +46,7 @@ export const Dialog = ({
                 <Button variant="text" onPress={onClose}>
                   {cancelLabel}
                 </Button>
-                <Button variant="filled" onPress={onConfirm}>
+                <Button variant="filled" onPress={onConfirm} disabled={confirmDisabled}>
                   {confirmLabel}
                 </Button>
               </>

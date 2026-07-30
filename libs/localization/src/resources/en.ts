@@ -11,6 +11,10 @@ export const en = {
     general: {
       save: 'Save',
       saving: 'Saving…',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      close: 'Close',
+      disabled: 'Disabled',
     },
     brand: {
       name: 'AI Study Buddy',
@@ -271,7 +275,7 @@ export const en = {
         screenTitle: 'API keys settings',
         replace: 'Replace',
         remove: 'Remove',
-        savedStatus: '{{provider}} key saved · Updated {{date}}',
+        savedStatus: '{{provider}} key saved. Updated on {{date}}',
         // multi-provider-ai-keys — guidance template used by ApiKeyManager (per-provider).
         guidanceTemplate: "Don't have a key? Get one from {{provider}}",
         // ai-key-management task-11 (Slice 2) — added ahead of task-13 for the same
@@ -281,7 +285,8 @@ export const en = {
         // full i18n slice (copy review + migration-coverage.test.ts extension).
         guidance: "Don't have a key? Get one from Groq",
         removeConfirmHeadline: 'Remove API key?',
-        removeConfirmBody: "You'll need to add a new key to generate lessons again.",
+        removeConfirmBody:
+          'Are you sure you want to remove this key? \nYou will need to add a new key to generate lessons again.',
         // Full-review Round 1, Minor 6 — distinct from `remove` (the trigger button) to avoid
         // a duplicate-accessible-name collision between the two controls.
         removeConfirmAction: 'Confirm removal',
@@ -291,9 +296,6 @@ export const en = {
           addNew: 'Add new provider',
           selectProvider: 'Select provider',
           emptyMessage: 'No API keys saved',
-          // ai-provider-registry-frontend task-6, @s5/@s22 — a saved, now-disabled provider's
-          // own text label (not a color-only cue, WCAG 1.4.1).
-          disabled: 'Disabled',
         },
         error: {
           // ai-key-management task-13 (Slice 3) — spec.md Open decision 3: the defensive

@@ -1,6 +1,6 @@
 const { test, expect } = require('@playwright/test');
 
-// Title 'Features/ApiKeySettings' → slug 'features-apikeysettings'.
+// Title 'Features/ApiKeySettingsButton' → slug 'features-apikeysettings'.
 const story = (name) => `/?path=/story/features-apikeysettings--${name}`;
 
 test('Entry story loads', async ({ page }) => {

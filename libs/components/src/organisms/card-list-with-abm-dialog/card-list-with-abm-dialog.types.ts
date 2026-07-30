@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 /**
  * One row of `CardListWithABMDialog`. Generic over the caller's domain object (`TItem`) so
@@ -8,7 +9,7 @@ import type { ReactNode } from 'react';
  */
 export type CardListItem<TItem> = {
   id: string;
-  content: ReactNode;
+  content?: ReactNode;
   accessibleLabel: string;
   disabled?: boolean;
   showEditButton?: boolean;
@@ -20,41 +21,15 @@ export type CardListItem<TItem> = {
  * Full prop surface (spec.md) — chrome (title/list/add), edit/remove dialog wiring, per-action
  * accessible-name builders, and the `isSubmitting` in-flight state.
  */
-export type CardListWithABMDialogProps<TItem> = {
-  title: string;
-  items: CardListItem<TItem>[];
-  addButtonLabel: string;
-  onAddPress: () => void;
-  /** Rendered in place of the list when `items` is empty; omitted renders nothing there. */
-  emptyStateMessage?: string;
-
-  /** Body of the edit dialog for a given item. */
-  renderEditForm: (item: CardListItem<TItem>) => ReactNode;
-  editDialogTitle: string;
-  editSubmitLabel: string;
-  editCancelLabel: string;
-  /** Called when the edit dialog's submit button is pressed; the dialog then closes. */
-  onEditSubmit: (item: CardListItem<TItem>) => void;
-
-  /** Body of the remove-confirmation dialog for a given item. */
-  renderRemoveConfirmation: (item: CardListItem<TItem>) => ReactNode;
-  removeDialogTitle: string;
-  removeSubmitLabel: string;
-  removeCancelLabel: string;
-  /** Called when the remove dialog's submit button is pressed; the dialog then closes. */
-  onRemoveConfirm: (item: CardListItem<TItem>) => void;
-
-  /** Builds the edit icon's accessible name for a given item (caller owns phrasing/i18n). */
-  getEditAccessibilityLabel: (item: CardListItem<TItem>) => string;
-  /** Builds the remove icon's accessible name for a given item (caller owns phrasing/i18n). */
-  getRemoveAccessibilityLabel: (item: CardListItem<TItem>) => string;
-
-  /**
-   * Whether the open dialog (edit or remove) is mid-submit. While true, that dialog's body is
-   * replaced entirely by `SubmittingIndicator`, its cancel/submit buttons are hidden, and it
-   * cannot be dismissed via scrim/Escape (spec.md's Open decisions).
-   */
-  isSubmitting: boolean;
+export type CardListWithABMDialogProps = {
+  onClose?: () => void;
+  errorMessage?: string;
+  submitDisabled?: boolean;
+  showAddButton?: boolean;
+  style?: StyleProp<ViewStyle>;
+  cardStyle?: StyleProp<ViewStyle>;
+  cardListStyle?: StyleProp<ViewStyle>;
+  cardListContentContainerStyle?: StyleProp<ViewStyle>;
 };
 
 /** testID for the virtualized content list. */
@@ -67,11 +42,22 @@ export const cardListItemEditTestId = (id: string) => `card-list-with-abm-dialog
 export const cardListItemRemoveTestId = (id: string) => `card-list-with-abm-dialog-remove-${id}`;
 
 /**
- * Single discriminated-union state (spec.md's Open decisions / `state.mdc`) — one state
- * variable, not `useReducer` (not ≥3 independently-changing fields). Rules out an invalid
- * "both dialogs open" state by construction.
+ * Discriminated-union dialog state (spec.md's Open decisions), managed together with
+ * `dialogType`/`dialogItem` via `useReducer` in `use-card-list-with-abm-dialog.reducer.ts` —
+ * three related fields changing together crosses `state.mdc`'s ≥3-field threshold. Rules out
+ * an invalid "both dialogs open" state by construction. `add` carries no item (nothing exists
+ * yet); `edit`/`remove` carry the item they act on.
  */
-export type CardListDialogState<TItem> = {
-  type: 'edit' | 'remove';
-  item: CardListItem<TItem>;
-} | null;
+export type CardListDialogState = 'open' | 'closed' | 'submitting';
+
+export type CardListDialogType = 'add' | 'edit' | 'remove';
+
+export type CardListDialogItem<TItem> = CardListItem<TItem> | null;
+
+export type CardListWithABMDialogStateProps<TItem> = {
+  open: boolean;
+  dialogState: CardListDialogState;
+  dialogType: CardListDialogType;
+  dialogItem: CardListItem<TItem>;
+  onClose?: () => void;
+};

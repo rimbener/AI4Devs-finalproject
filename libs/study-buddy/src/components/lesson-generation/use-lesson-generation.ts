@@ -1,5 +1,5 @@
 import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
-import { GenerationPreferenceService } from '@helsoft/services';
+import { GenerationPreferenceService, getEnabledProviders } from '@helsoft/services';
 import type { AiProvider, GenerateLessonRequest, LessonComposition } from '@helsoft/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -25,7 +25,8 @@ type UseLessonGenerationArgs = {
  * the learner holds a saved key for it (unlike the settings list, task-6, which keeps it visible).
  */
 export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGenerationArgs) => {
-  const { enabledProviders } = useAiProviders();
+  const { providers } = useAiProviders();
+  const enabledProviders = useMemo(() => getEnabledProviders(providers), [providers]);
   const { status, hasKey } = useApiKey();
   const { profile } = useProfile();
   const [selectedProvider, setSelectedProvider] = useState<AiProvider | undefined>();

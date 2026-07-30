@@ -61,22 +61,12 @@ describe('useAiProviders', () => {
     expect(result.current.providers).toEqual([groq, openai]);
   });
 
-  it('derives enabledProviders as exactly the enabled === true subset, in the same order', async () => {
-    service.getCatalog.mockResolvedValue([groq, openai]);
-
-    const { result } = renderHook(() => useAiProviders(), { wrapper: createWrapper() });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.enabledProviders).toEqual([groq]);
-  });
-
   it('defaults providers/enabledProviders to [] while data is undefined', () => {
     service.getCatalog.mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useAiProviders(), { wrapper: createWrapper() });
 
     expect(result.current.providers).toEqual([]);
-    expect(result.current.enabledProviders).toEqual([]);
   });
 
   // s11 (task-3) — isLoading is true before the query resolves.
@@ -129,7 +119,6 @@ describe('useAiProviders', () => {
     expect(
       result.current.providers.reduce((total, provider) => total + provider.models.length, 0),
     ).toBe(13);
-    expect(result.current.enabledProviders).toEqual(AI_PROVIDER_CATALOG_FIXTURE);
   });
 
   // @s20 — a catalog reorder propagates through the same mounted hook instance with no remount
