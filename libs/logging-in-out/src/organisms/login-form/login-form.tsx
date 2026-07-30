@@ -1,4 +1,9 @@
 import { Button, ProgressIndicator, TextField } from '@helsoft/components';
+import {
+  LOGIN_EMAIL_FIELD_TEST_ID,
+  LOGIN_PASSWORD_FIELD_TEST_ID,
+  LOGIN_SUBMIT_BUTTON_TEST_ID,
+} from '@helsoft/logging-in-out/test-ids';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -47,6 +52,7 @@ export const LoginForm = ({
         </View>
       ) : null}
       <TextField
+        testID={LOGIN_EMAIL_FIELD_TEST_ID}
         label={t('auth.email')}
         accessibilityLabel={t('auth.email')}
         value={email}
@@ -65,6 +71,7 @@ export const LoginForm = ({
         accessibilityHint={emailError}
       />
       <TextField
+        testID={LOGIN_PASSWORD_FIELD_TEST_ID}
         label={t('auth.password')}
         accessibilityLabel={t('auth.password')}
         value={password}
@@ -79,7 +86,7 @@ export const LoginForm = ({
         accessibilityHint={passwordError}
       />
       <View style={styles.submitRow}>
-        <Button disabled={!canSubmit} onPress={handleSubmit}>
+        <Button testID={LOGIN_SUBMIT_BUTTON_TEST_ID} disabled={!canSubmit} onPress={handleSubmit}>
           {t('auth.submit')}
         </Button>
         {isSubmitting ? (
