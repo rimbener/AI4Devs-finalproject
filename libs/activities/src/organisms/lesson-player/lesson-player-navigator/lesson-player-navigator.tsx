@@ -1,3 +1,7 @@
+import {
+  LESSON_PLAYER_NAV_BACK_TEST_ID,
+  LESSON_PLAYER_NAV_NEXT_TEST_ID,
+} from '@helsoft/activities/test-ids';
 import { IconButton, LessonProgressIndicator } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import { View } from 'react-native';
@@ -26,6 +30,7 @@ export const LessonPlayerNavigator = ({
     <View style={styles.header}>
       {canGoBack ? (
         <IconButton
+          testID={LESSON_PLAYER_NAV_BACK_TEST_ID}
           icon="arrow_back"
           variant="outlined"
           size={NAV_ICON_SIZE}
@@ -40,6 +45,7 @@ export const LessonPlayerNavigator = ({
       </View>
       {canGoNext ? (
         <IconButton
+          testID={LESSON_PLAYER_NAV_NEXT_TEST_ID}
           icon="arrow_forward"
           variant="filled"
           size={NAV_ICON_SIZE}

@@ -1,3 +1,7 @@
+import {
+  MULTIPLE_CHOICE_SUBMIT_TEST_ID,
+  multipleChoiceOptionTestId,
+} from '@helsoft/activities/test-ids';
 import { AnswerOption, Button, Card } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import { Text, View } from 'react-native';
@@ -61,6 +65,7 @@ export const MultipleChoice = ({
           return (
             <AnswerOption
               key={option.id}
+              testID={multipleChoiceOptionTestId(option.id)}
               marker={marker}
               label={option.label}
               state={state}
@@ -78,7 +83,12 @@ export const MultipleChoice = ({
         })}
       </View>
       {!locked ? (
-        <Button disabled={!canSubmit} fullWidth onPress={handleSubmit}>
+        <Button
+          testID={MULTIPLE_CHOICE_SUBMIT_TEST_ID}
+          disabled={!canSubmit}
+          fullWidth
+          onPress={handleSubmit}
+        >
           {t('activity.mcq.submit')}
         </Button>
       ) : null}

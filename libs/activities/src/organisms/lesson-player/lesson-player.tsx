@@ -1,3 +1,4 @@
+import { LESSON_PLAYER_TEST_ID } from '@helsoft/activities/test-ids';
 import { Button } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import * as React from 'react';
@@ -10,7 +11,6 @@ import type { LessonPlayerProps } from './lesson-player.types';
 import { LessonPlayerNavigator } from './lesson-player-navigator/lesson-player-navigator';
 import { useLessonPlayer } from './use-lesson-player';
 
-export const LESSON_PLAYER_TEST_ID = 'lesson-player';
 export const LESSON_PLAYER_EMPTY_TEST_ID = 'lesson-player-empty';
 export const LESSON_PLAYER_ERROR_TEST_ID = 'lesson-player-error';
 

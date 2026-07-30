@@ -88,12 +88,11 @@ import { useLocalization } from '@helsoft/localization';
 import type { Lesson } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import * as React from 'react';
-
+import { LESSON_PLAYER_TEST_ID } from '../../test-ids';
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import {
   LESSON_PLAYER_EMPTY_TEST_ID,
   LESSON_PLAYER_ERROR_TEST_ID,
-  LESSON_PLAYER_TEST_ID,
   LessonPlayer,
 } from './lesson-player';
 
