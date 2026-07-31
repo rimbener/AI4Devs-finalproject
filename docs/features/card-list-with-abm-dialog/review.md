@@ -1125,7 +1125,13 @@ findings (see "Lenses checked, no findings this round" below).
 
 ### Findings
 
-1. **[arch] minor — open** — `libs/components/src/organisms/dialog/dialog.tsx:30,35,44` — the new
+1. **[arch] minor — resolved** — fix note: added optional `testID` prop to `DialogProps`
+   (`dialog.types.ts`), defaulting to `'dialog'`; `dialog.tsx` now derives
+   `${testID}-scrim`/`-surface`/`-actions` from it, so behavior for all existing call sites is
+   unchanged while multi-instance consumers can opt into a custom prefix. Verified:
+   `@helsoft/components` full suite green (lint, check-types, 72/72 test suites · 547/547 tests),
+   and this feature's Playwright e2e (`card-list-with-abm-dialog.e2e.js` + `dialog.e2e.js`, 6/6)
+   green. Original finding below, kept for the record. — `libs/components/src/organisms/dialog/dialog.tsx:30,35,44` — the new
    `testID="dialog-scrim"` / `"dialog-surface"` / `"dialog-actions"` are hardcoded string literals
    on the **shared** `Dialog` organism (6 call sites: `sign-out.tsx`, `new-lesson-dialog.tsx`,
    `pdf-document-list.tsx`, `api-key-form.tsx`, `lesson-list.tsx`, plus this feature's own
