@@ -6,8 +6,6 @@ import { shouldShowExplanation, shouldShowLearnerAnswerBody } from './open-ended
 import type { OpenEndedProps } from './open-ended.types';
 import { useOpenEnded } from './use-open-ended';
 
-export type { OpenEndedProps } from './open-ended.types';
-
 /**
  * OpenEnded — presentational activity organism.
  * Owns draft/lock via use-open-ended; reports via `onSubmit` once. No grader.

@@ -13,8 +13,6 @@ import { buildFlashcardAnswer } from './flashcard.helpers';
 import type { FlashcardProps } from './flashcard.types';
 import { useFlashcard } from './use-flashcard';
 
-export type { FlashcardProps } from './flashcard.types';
-
 /**
  * Flashcard — activity organism. Owns reveal (one-way) + self-mark (one-time lock);
  * self-marked only — no grading, reports via `onAnswered` once on self-mark.

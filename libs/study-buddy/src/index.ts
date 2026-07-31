@@ -19,6 +19,7 @@ export type * from './components/lesson-generation/lesson-generation.types';
 export * from './components/lesson-player/lesson-player';
 export type * from './components/lesson-player/lesson-player.types';
 export * from './components/lesson-results/lesson-results';
+export type * from './components/lesson-results/lesson-results.types';
 export * from './components/matching-activity/matching-activity';
 export type * from './components/matching-activity/matching-activity.types';
 export * from './components/multiple-choice-activity/multiple-choice-activity';

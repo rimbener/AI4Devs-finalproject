@@ -7,8 +7,6 @@ import { gradeFillInTheBlank } from '../../grading/grade-fill-in-the-blank';
 import type { FillInTheBlankProps } from './fill-in-the-blank.types';
 import { useFillInTheBlank } from './use-fill-in-the-blank';
 
-export type { FillInTheBlankProps } from './fill-in-the-blank.types';
-
 /**
  * FillInTheBlank — activity organism. Owns value + grading; reports via `onAnswered` once.
  */

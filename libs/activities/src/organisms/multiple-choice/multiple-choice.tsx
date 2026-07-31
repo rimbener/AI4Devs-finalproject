@@ -12,8 +12,6 @@ import { optionAccessibilityLabel, optionMarkerAt } from './multiple-choice.help
 import type { MultipleChoiceProps } from './multiple-choice.types';
 import { useMultipleChoice } from './use-multiple-choice';
 
-export type { MultipleChoiceProps } from './multiple-choice.types';
-
 /**
  * MultipleChoice — activity organism. Owns selection + grading; reports via `onAnswered` once.
  */
