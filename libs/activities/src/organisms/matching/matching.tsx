@@ -120,6 +120,8 @@ export const Matching = ({
     return (
       <Pressable
         key={item.id}
+        // State suffix so Storybook e2e can assert pending/paired (RNW omits aria-selected/checked).
+        testID={`matching-item-${item.id}--${state ?? 'idle'}`}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
         accessibilityState={{
