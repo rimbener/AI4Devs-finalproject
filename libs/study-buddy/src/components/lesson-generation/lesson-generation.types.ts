@@ -11,3 +11,6 @@ export type LessonGenerationProps = {
    * modal stays open on top of the pushed player screen. Additive/optional — omit = no-op. */
   onOpenInPlayer?: () => void;
 };
+
+/** Recovery-affordance category per `GenerationErrorCode` (task-13 "Recovery per code"). */
+export type GenerationErrorRecovery = 'retry' | 'settings' | 'signIn' | 'none';

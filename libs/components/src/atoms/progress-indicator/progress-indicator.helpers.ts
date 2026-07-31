@@ -1,6 +1,9 @@
 import { Animated, Easing } from 'react-native';
 
-import type { ProgressIndicatorVariant } from './progress-indicator.types';
+import type {
+  IndeterminateTiming,
+  ProgressIndicatorVariant,
+} from './progress-indicator.types';
 
 /** Clamp a progress value to the 0–100 range used by the fill and arc. */
 export const clampProgressPercent = (value: number): number => Math.min(100, Math.max(0, value));
@@ -8,11 +11,6 @@ export const clampProgressPercent = (value: number): number => Math.min(100, Mat
 /** Degrees of filled arc for a determinate circular indicator. */
 export const circularProgressAngle = (value: number): number =>
   (clampProgressPercent(value) / 100) * 360;
-
-export type IndeterminateTiming = {
-  duration: number;
-  useNativeDriver: boolean;
-};
 
 /** Timing for the indeterminate spinner (pure — unit-tested; avoids Animated mutants). */
 export const indeterminateTiming = (

@@ -3,8 +3,8 @@ import { useSlideImageUrl } from '@helsoft/hooks';
 import { useEffect, useRef, useState } from 'react';
 import type { LayoutChangeEvent, View } from 'react-native';
 
-import { getContainedImageSize, type PaneSize } from './slide-image.helpers';
-import type { SlideImageProps } from './slide-image.types';
+import { getContainedImageSize } from './slide-image.helpers';
+import type { PaneSize, SlideImageProps } from './slide-image.types';
 
 type UseSlideImageArgs = Pick<SlideImageProps, 'image' | 'layout'>;
 

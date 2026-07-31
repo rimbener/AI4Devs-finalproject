@@ -1,7 +1,4 @@
-export type PaneSize = {
-  width: number;
-  height: number;
-};
+import type { PaneSize } from './slide-image.types';
 
 /** Fit image inside a pane while preserving aspect ratio (never upscale past pane). */
 export const getContainedImageSize = (aspectRatio: number, pane: PaneSize): PaneSize => {

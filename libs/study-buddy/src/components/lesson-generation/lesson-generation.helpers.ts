@@ -7,6 +7,8 @@ import type {
   LessonComposition,
 } from '@helsoft/types';
 
+import type { GenerationErrorRecovery } from './lesson-generation.types';
+
 /** Narrow runtime guard for provider RadioGroup values, resourced against the catalog-backed
  * saved-provider list (Decision 1/4) instead of a hardcoded provider registry — task-11 deletes
  * that registry outright, so this guard must not depend on it. */
@@ -82,11 +84,8 @@ export const GENERATION_ERROR_KEYS: Record<GenerationErrorCode, string> = {
   provider_disabled: 'generation.error.providerDisabled',
 };
 
-/** The recovery-affordance category per code (task-13.md's "Recovery per code" table): `'none'`
- * for `document_not_ready` — the actual re-upload control is the sibling `PdfUpload` panel,
- * already visible on the same screen, so `LessonGenerationPanel` shows guidance text only. */
-export type GenerationErrorRecovery = 'retry' | 'settings' | 'signIn' | 'none';
-
+/** Recovery category per code (task-13): `'none'` for `document_not_ready` — re-upload lives on
+ * the sibling `PdfUpload` panel, so `LessonGenerationPanel` shows guidance text only. */
 export const GENERATION_ERROR_RECOVERY: Record<GenerationErrorCode, GenerationErrorRecovery> = {
   missing_key: 'settings',
   invalid_key: 'settings',

@@ -3,8 +3,7 @@ import { useLocalization } from '@helsoft/localization';
 import { Image, View as NativeView } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
-import type { PaneSize } from './slide-image.helpers';
-import type { SlideImageProps } from './slide-image.types';
+import type { PaneSize, SlideImageProps } from './slide-image.types';
 import { useSlideImage } from './use-slide-image';
 
 /**

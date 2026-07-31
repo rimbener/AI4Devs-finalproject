@@ -15,3 +15,8 @@ export type ProgressIndicatorProps = {
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 };
+
+export type IndeterminateTiming = {
+  duration: number;
+  useNativeDriver: boolean;
+};
