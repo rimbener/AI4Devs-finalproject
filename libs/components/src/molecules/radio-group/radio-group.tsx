@@ -1,19 +1,7 @@
-import { Pressable, type StyleProp, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-export type RadioOption = { value: string; label: string };
-
-export type RadioGroupProps = {
-  options?: Array<RadioOption | string>;
-  value?: string;
-  onChange?: (value: string) => void;
-  disabled?: boolean;
-  direction?: 'column' | 'row';
-  style?: StyleProp<ViewStyle>;
-  /** Accessible name for the whole group (e.g. "Lesson content") — WCAG 1.3.1/4.1.2, mirrors
-   * `LanguageSelector`'s own `accessibilityLabel` prop. */
-  accessibilityLabel?: string;
-};
+import type { RadioGroupProps, RadioOption } from './radio-group.types';
 
 /**
  * RadioGroup — MD3 single-select. Renders a list of radio options.

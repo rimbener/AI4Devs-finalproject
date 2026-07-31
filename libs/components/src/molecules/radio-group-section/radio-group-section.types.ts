@@ -1,4 +1,4 @@
-import type { RadioOption } from '../radio-group/radio-group';
+import type { RadioOption } from '../radio-group/radio-group.types';
 
 export type RadioGroupSectionProps = {
   title: string;
