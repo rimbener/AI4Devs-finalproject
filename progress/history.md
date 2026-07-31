@@ -187,3 +187,4 @@
 2026-07-31 | settings/player polish (ad hoc) | n/a | — | ApiKeySettingsSection + i18n title/cannotCreate; lesson player maxWidth; dialog test.
 
 2026-07-31 | prompts.md | n/a | — | Unified prompt log style; filled course sections 1–7.
+2026-07-31 | golden-path e2e picker (ad hoc) | n/a | — | E2E clicks panel Choose PDF after dialog open (no auto chooser).
