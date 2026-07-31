@@ -1,12 +1,10 @@
 import { useCallback } from 'react';
 import { FlatList, type StyleProp, type ViewStyle } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import {
-  CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
-  type CardListItem,
-} from '../card-list-with-abm-dialog/card-list-with-abm-dialog.types';
-import { CardListRowAdapter } from '../card-list-with-abm-dialog/components/card-list-row-adapter';
-import { useCardListWithABMDialogContext } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
+import { CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID } from '../../card-list-with-abm-dialog.helpers';
+import type { CardListItem } from '../../card-list-with-abm-dialog.types';
+import { useCardListWithABMDialogContext } from '../../hooks/card-list-with-abm-dialog.context';
+import { CardListRowAdapter } from '../card-list-row-adapter';
 
 type CardListWithABMDialogListProps<TItem> = {
   cardStyle?: StyleProp<ViewStyle>;

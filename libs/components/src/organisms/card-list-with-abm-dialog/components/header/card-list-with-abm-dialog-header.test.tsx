@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import { CardListWithABMDialogProvider } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import type { CardListWithABMDialogValue } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
+import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogHeader } from './card-list-with-abm-dialog-header';
 
 type StoryItem = { note: string };

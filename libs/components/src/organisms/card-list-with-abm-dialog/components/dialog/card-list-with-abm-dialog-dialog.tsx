@@ -2,16 +2,16 @@ import { useLocalization } from '@helsoft/localization';
 import React from 'react';
 import { View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { Button } from '../../atoms';
-import { ErrorBanner } from '../../atoms/error-banner/error-banner';
+import { Button } from '../../../../atoms';
+import { ErrorBanner } from '../../../../atoms/error-banner/error-banner';
+import { SubmittingIndicator } from '../../../../molecules/submitting-indicator/submitting-indicator';
+import { Dialog } from '../../../dialog/dialog';
 import type {
   CardListDialogState,
   CardListDialogType,
   CardListItem,
-} from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types';
-import { useCardListWithABMDialogContext } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import { Dialog } from '../../organisms/dialog/dialog';
-import { SubmittingIndicator } from '../submitting-indicator/submitting-indicator';
+} from '../../card-list-with-abm-dialog.types';
+import { useCardListWithABMDialogContext } from '../../hooks/card-list-with-abm-dialog.context';
 
 type CardListWithABMDialogDialogProps<TItem> = {
   open: boolean;

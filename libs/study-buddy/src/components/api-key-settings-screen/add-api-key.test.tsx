@@ -187,4 +187,34 @@ describe('AddApiKey', () => {
     expect(openURL).toHaveBeenCalledWith('https://groq.example');
     openURL.mockRestore();
   });
+
+  // review.md's "Full review — Round 1 (post-CI-fix)", finding 8 (OWASP A08-adjacent) — a
+  // non-http(s) guidance url must never reach Linking.openURL.
+  it('does not open the guidance url when it uses a non-http(s) scheme', async () => {
+    mockUseLocalization.mockReturnValue(
+      localizationValue({
+        t: (key: string, options?: Record<string, unknown>) =>
+          options ? `${key}:${JSON.stringify(options)}` : key,
+      }),
+    );
+    const openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    await render(
+      <AddApiKey
+        {...baseProps}
+        formProvider="groq"
+        guidanceUrls={{ groq: 'javascript:alert(1)' }}
+      />,
+    );
+
+    await act(async () => {
+      fireEvent.press(
+        screen.getByRole('button', {
+          name: 'settings.apiKey.guidanceTemplate:{"provider":"Groq"}',
+        }),
+      );
+    });
+
+    expect(openURL).not.toHaveBeenCalled();
+    openURL.mockRestore();
+  });
 });

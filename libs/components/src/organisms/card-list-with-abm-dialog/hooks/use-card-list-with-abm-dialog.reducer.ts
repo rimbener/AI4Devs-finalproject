@@ -37,7 +37,9 @@ export function cardListWithABMDialogReducer<TItem>(
     case 'open-remove':
       return { dialogType: 'remove', dialogItem: action.item, dialogState: 'open' };
     case 'submit':
-      return { dialogType: null, dialogItem: null, dialogState: 'submitting' };
+      // Preserve the existing dialogType/dialogItem — mirrors `close` — so headline/body
+      // content survives the transition into 'submitting' (review.md Mini-gate 3, findings 1/2).
+      return { ...state, dialogState: 'submitting' };
     case 'close':
       return { ...state, dialogState: 'closed' };
     default:

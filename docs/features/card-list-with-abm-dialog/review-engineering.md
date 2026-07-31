@@ -495,3 +495,266 @@ new `CardListRowAdapter` correctly reproduces 100% of prior testID/accessible-na
 behavior with no duplication, no double-wrapping, and a sound generic-preserving cast. Test/story
 coverage for the molecule is equivalent, not degraded; the organism's own test suite still verifies
 item-bound press semantics end-to-end. Zero new findings at any severity introduced by this fix.
+
+---
+
+## Full review — post-rewrite (Context/useReducer split, Add-dialog, real ApiKeySettingsScreen consumer)
+
+**Commit/tree reviewed:** working tree at `feat/card-list-with-abm-dialog` HEAD (branch based cleanly
+off `feature-entrega3-HernanLaura`, no divergence), i.e. `git diff feature-entrega3-HernanLaura..HEAD`
+plus the uncommitted Mini-gate-3 CI-red fix-round delta (all present in the tree as reviewed).
+**CI:** green @ current worktree HEAD, taken as given per protocol (`pnpm lint`/`check-types` clean
+repo-wide; `pnpm test` re-run fresh per touched package, all green, `@helsoft/components` repeated
+5x/0 flakes; feature e2e re-run serialized, 5/5 passed) — not re-run by this reviewer.
+**First real review of:** the architecture split (header atom / list organism / dialog molecule /
+row-adapter / Context+`useReducer`), the Add-dialog feature, `errorMessage`/`submitDisabled`, and
+the real `ApiKeySettingsScreen` consumer wiring. Prior Round 1/Round 2/mini-gate sections above are
+**not** re-litigated.
+
+### Verdict: CHANGES_REQUESTED
+
+Two `[arch] major` findings on the new sub-component decomposition and a fragile, non-deterministic
+timing design in the Mini-gate-3 fix (finding (a) below) are enough to withhold approval this round.
+No blocker (no exposed secret, no exploitable injection). One item is explicitly **flagged for
+human sign-off, not accepted/rejected by this reviewer** — see "(c)" below.
+
+### Findings
+
+1. **[arch] major** — `libs/components/src/atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header.tsx:3,15`,
+   `libs/components/src/organisms/card-list-with-abm-dialog-list/card-list-with-abm-dialog-list.tsx:6-9,26`,
+   `libs/components/src/molecules/card-list-with-abm-dialog-dialog/card-list-with-abm-dialog-dialog.tsx:7-12,47-48`.
+   The three components extracted into this rewrite's shared `atoms/`, `molecules/`, `organisms/`
+   top-level folders are not actually decoupled: all three import
+   `useCardListWithABMDialogContext` directly from the composition-root organism's *private*
+   `organisms/card-list-with-abm-dialog/hooks/` folder, and the List organism additionally imports
+   `CardListItem`/`CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID` from that organism's `.types.ts` and the
+   organism's own private `components/card-list-row-adapter.tsx`. None of the three renders without
+   the full `CardListWithABMDialogProvider` tree mounted above it, and none is exported from its
+   layer's barrel (`atoms/index.ts`, `molecules/index.ts`, `organisms/index.ts` — contrast with
+   `error-banner` and `card-list-row`, the other two extractions from this same rewrite, both of
+   which *are* barrel-exported per `global.mdc`'s "each layer exports through its index.ts barrel").
+   This is the identical reverse-dependency anti-pattern already caught and fixed once in this same
+   feature (`tdd.md`'s "Mini-gate review fix — flatten CardListRowProps (drop organism-type
+   import)": "molecule imported `CardListItem<TItem>` from the organism it was extracted out of —
+   reverse dependency, didn't match `pdf-document-list-item`'s flat precedent") — the fix was
+   applied to `CardListRow` only, not to the header/list/dialog. Concretely: `atomic-design.mdc`
+   defines an atom as "no business logic... no awareness of where it sits on a page," but
+   `CardListWithABMDialogHeader` is generic over `<TItem>` and cannot render without one specific
+   organism's Context — it is not an atom by this repo's own definition, it's a private, organism-
+   specific sub-component that happens to live in the shared `atoms/` folder. Either genuinely
+   flatten these three (mirror the `CardListRowAdapter` fix: accept plain props, no Context import)
+   and barrel-export them, or move them into the organism's own private subfolder (e.g.
+   `organisms/card-list-with-abm-dialog/{atoms,molecules}/...`) so their placement stops implying
+   independent reusability that doesn't exist.
+
+2. **[arch] major** — `libs/components/tsconfig.json:6-12`. The new `include` array adds 5 explicit
+   file paths under `../study-buddy/src/components/api-key-settings-screen/...` to
+   `@helsoft/components`'s TypeScript project — backwards dependency direction (a shared UI lib has
+   no legitimate reason to type-check a feature app lib's files; no other lib in the repo does
+   this — checked every `libs/*/tsconfig.json`). Worse: all 5 paths
+   (`api-key-manager.types.ts`, `use-api-key-manager.reducer.ts`/`.test.ts`, `use-api-key-manager.ts`/
+   `.test.ts`) are now **stale/nonexistent** — the real files were moved into a `hooks/` subfolder
+   during this same rewrite (`libs/study-buddy/src/components/api-key-settings-screen/hooks/use-api-key-manager.ts`
+   etc.), and `tsc`'s `include` silently no-ops on a missing path rather than erroring, so this
+   passed `check-types` clean while type-checking nothing. Dead, misleading config — remove it (or,
+   if there was a real reason for it, fix the paths and explain the reason in a comment; as-is it
+   looks like leftover iteration cruft). `libs/study-buddy/tsconfig.json:6-9`'s equivalent addition
+   (`../services/src/helpers/ai-providers.helpers.ts`, `../hooks/src/hooks/use-api-key.helpers.ts`)
+   points at real, existing files, but neither is actually imported by relative path from anywhere
+   in `@helsoft/study-buddy` (grepped — zero hits beyond a code comment mentioning the filename) and
+   the same "no other lib does this" observation applies — **[code] minor** on that half, kept
+   separate from the `@helsoft/components` half above because it isn't also dead/backwards.
+
+3. **[arch]/[code] major, fragile design — see explicit answer to (a) below** —
+   `libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts:30,163-198`.
+   `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS = 50` wall-clock timer used to disambiguate a caller whose
+   `isSubmitting` will genuinely flip true shortly after submit from one that never touches it.
+   Not a blocker (analysis below concludes it happens to be safe today), but flagged major because
+   the safety is an accident of two libraries' current internal implementation details, not a
+   structural guarantee, and nothing in the test suite exercises the real race window (see (a)).
+
+4. **[arch] major — see explicit answer to (b) below** —
+   `libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts:97,131-135,153-155`.
+   `prevDialogRef`/the `default:` branch of the `dialog` `useMemo`/the effect that populates
+   `prevDialogRef.current` are dead code after the Mini-gate-3 reducer change (`submit` no longer
+   nulls `dialogType`). Confirmed by reading `use-card-list-with-abm-dialog.reducer.ts:32-47` in
+   full: no action other than the initial `cardListWithABMDialogInitialState` ever produces
+   `dialogType: null` — `open-add`/`open-edit`/`open-remove` set a real type, `submit`/`close`/
+   `default` all spread `...state` (preserving whatever `dialogType` already was). The `switch`'s
+   `default` branch (keyed on `state.dialogType`) is therefore only reachable while `dialogType` is
+   still `null`, i.e. only before the very first `open-*` dispatch of the component's lifetime — and
+   at that exact point `prevDialogRef.current` can only ever be `null` too (nothing populates it
+   before the effect's first run, which happens after the first render, by which time `dialogType`
+   is already non-null if any dialog was ever opened, and `EMPTY_DIALOG_RESPONSE` otherwise if not).
+   `useCardListWithABMDialog.test.ts:42-54` ("starts closed with no dialog type or item") confirms
+   this: no test anywhere drives `dialogType` back to `null` after it's first set, because no code
+   path can. Simplify: `default: return EMPTY_DIALOG_RESPONSE;`, delete `prevDialogRef` (line 97)
+   and the effect that maintains it (lines 153-155). Leaving this in place burdens the upcoming
+   mutation-testing gate with unreachable branches that no test can meaningfully kill (guaranteed
+   surviving mutants on dead code) and misleads future readers into thinking "keep last content on
+   an unknown dialogType" is still a real behavior this component has.
+
+5. **[code] minor** — `libs/components/src/organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types.tsx`.
+   Filename violates `types.mdc`/`component-split.mdc`'s explicit "no JSX → `.ts`, not `.tsx`" rule —
+   the file's contents (read in full) contain zero JSX, only `import type { ReactNode }` and plain
+   type declarations. Should be `card-list-with-abm-dialog.context.types.ts`.
+
+6. **[code] minor** — `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts:36-42`.
+   `CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID`/`cardListItemCardTestId`/`cardListItemEditTestId`/
+   `cardListItemRemoveTestId` are runtime constants/functions living in a `.types.ts` file —
+   `types.mdc`: "No runtime logic — types files are type-only; pure transforms go in helpers /
+   services." Checked every other `*.types.ts` in `libs/components/src` (grep) — this is the only
+   file in the lib that does this; not an established repo pattern being re-litigated. Low severity
+   (no behavior risk), but move these to a `.helpers.ts` (or inline in the `.tsx`) alongside the
+   type file.
+
+7. **[arch]/[code] major, out-of-scope drive-by change** —
+   `libs/components/src/molecules/text-field/text-field.tsx:85,135-158`. `TextField` — a widely
+   shared, multi-consumer molecule with no relation to this feature's stated scope
+   (`card-list-with-abm-dialog` / `api-key-settings-screen`) — had its focus-state border thickness
+   removed as an apparent drive-by: `borderBottomWidth: focus ? 2 : 1` / `borderWidth: focus ? 2 : 1`
+   (both `filled` and `outlined` variants) collapsed to an unconditional `1`, while the `focus`
+   state itself (and its still-live `accent`/`borderColor` color-swap effect) is untouched. Confirmed
+   via `git show feature-entrega3-HernanLaura:...text-field.tsx` that the removed conditional
+   existed on the delivery branch. No test in `text-field.test.tsx` asserted this before or covers
+   its removal now (the file isn't even part of this diff), and no comment explains the rationale.
+   This is the same risk class the repo's own "Atom ban" rule exists to prevent (a shared
+   component's behavior silently changed by a story that doesn't own it) even though `TextField`
+   technically sits in `molecules/`, not the rule's literal `atoms/**` scope — every other screen in
+   the app using `outlined`/`filled` `TextField` silently loses the on-focus border-thickening
+   affordance. Revert this hunk (or split it into its own reviewed change with its own rationale/
+   test) — it does not belong in this feature's diff.
+
+8. **[security] minor — OWASP A08 (Software/Data Integrity) / unvalidated redirect-adjacent sink** —
+   `libs/study-buddy/src/components/api-key-settings-screen/add-api-key.tsx:77-80`. `guidanceUrls[formProvider]`
+   (server-supplied `AiProviderCatalogEntry.guidanceUrl`, read via Supabase in
+   `use-ai-providers.ts`/`ai-providers.helpers.ts`) is passed straight to `Linking.openURL(url)` with
+   no scheme/host validation before opening (only a `.catch(() => {})` on failure). Likelihood is low
+   (catalog rows are presumably admin-managed, not end-user input), but there is no defense-in-depth
+   check that `url` is `https:`/`http:` before handing it to the platform's link opener — a
+   compromised or misconfigured catalog row could carry a non-http(s) scheme. Recommend validating
+   the scheme (or reusing an existing safe-URL helper if one exists in the repo) before `Linking.openURL`.
+
+9. **[code] minor** — swallowed error, no signal to the user or logs:
+   `add-api-key.tsx:79` (`Linking.openURL(url).catch(() => {})`) silently drops a failed link-open
+   with no user-facing feedback and no log — low severity, but worth a `// biome-ignore`-style
+   comment or at minimum surfacing to the caller if this is intentional.
+
+### Lenses checked, no (new) findings
+
+- **Code quality/TDD** — every `@s1`–`@s27` maps to ≥1 concrete test per `gherkin-scenarios.md`/
+  `tdd.md`'s `@s → test` tables; spot-checked `@s21`–`@s27` directly against
+  `card-list-with-abm-dialog.test.tsx` (confirmed present, correctly tagged — no repeat of the
+  earlier `@s17`/`@s21` traceability collision `spec.md` documents as already fixed). TDD-by-file-type
+  respected: the two non-UI `.ts` files touched by the Mini-gate-3 fix
+  (`use-card-list-with-abm-dialog.ts`, `.reducer.ts`) have Red→Green evidence in `tdd.md`'s "Mini-gate
+  3 CI-red fix" entry and their added production code (the ref-gated effect, the reducer's `submit`
+  change) is directly demanded by the new reducer/hook tests — no scope inflation. UI `.tsx` files
+  (implementation-first) each have `.test.tsx`/`.stories.tsx`; interaction `.e2e.js` re-checked for
+  `e2e.mdc` compliance — all 5 assertions are genuine interactions (button clicks, scrim taps,
+  Escape), no render-only presence checks. No `console.log`/debug leftovers, no bare TODOs (grepped
+  the full primary + secondary scope). i18n: no hardcoded user-facing strings in production code
+  (`error-banner.tsx`, `card-list-with-abm-dialog-dialog.tsx`, `api-key-settings-screen.tsx` all use
+  inline `t('ns.key', ...)`; `en.ts`'s new `general.cancel`/`delete`/`close`/`disabled` keys are a
+  flat key dictionary of raw strings, not a `labels`/pre-resolved-`t()` collection — compliant).
+- **Architecture/layering (data layer)** — `Component → Hook → Service → DAO` respected for the real
+  consumer: `api-key-settings-screen.tsx` only imports `useApiKeySettings`/`useApiKeyManager` (both
+  hooks), never a DAO or `@helsoft/supabase-services` directly. `useApiKey()` (`@helsoft/hooks`)
+  correctly wraps `ApiKeyService` via `@tanstack/react-query`'s `useMutation`/`useQuery` per
+  `tanstack-query.mdc` — no raw `fetch`, no service bypass. `SavedProviderKey`
+  (`libs/types/src/api-key.ts`) is compile-time shape-locked to `provider`/`updatedAt` only (a
+  dedicated `AssertExactKeys` test asserts this) — no raw key material ever reaches this component
+  tree, confirmed by reading `api-key-settings-screen-item.tsx`'s `mapSavedKeysToItems` in full.
+  `use-api-key-manager.ts`'s render-phase `dispatch` (a ref-guarded conditional dispatch during
+  render, not inside a `useEffect`) is a deliberate, commented React 18-recommended pattern
+  ("adjusting state during rendering"), not a `state.mdc`/`hooks-service-dao.mdc` violation.
+- **Performance** — `FlatList` still used for the row list (not `.map()`); `CardListRowAdapter` is
+  `memo`'d with `useCallback`'d press-handler call-throughs, closing out Round 1's [perf] minor
+  finding. Context value (`CardListWithABMDialogValue<TItem>`) is the raw destructured `props`
+  object passed straight through from `CardListWithABMDialog` with no extra `useMemo` wrapper —
+  acceptable per `state-sharing.mdc`'s "do not add `useMemo` by default" and `global.mdc`; the
+  Provider only re-renders its subtree when the caller's own props object identity changes (i.e. on
+  the caller's own re-renders), which the caller already controls via `useCallback`'d render-prop
+  functions (`renderForm`, `renderRemoveConfirmation` in `api-key-settings-screen.tsx`) and a
+  memoized `items` array. No N+1/redundant Supabase round-trips: `useApiKey`/`useAiProviders` are
+  each a single cached `useQuery`, mutations `gcTime: 0` reset the sibling mutation on success (no
+  extra round-trip, just local cache hygiene). No unbounded lists, no heavy synchronous work.
+- **Security** — no secrets/keys/tokens in code or logs (grepped primary + secondary scope for
+  `secret|apikey|api_key|token|password|service_role|EXPO_PUBLIC` — no matches beyond the expected
+  `AiProvider`/`ApiKey*` type/variable names, never a literal credential). No `supabase/` schema/RLS/
+  edge-function changes in this diff (out of scope per spec.md's own non-goal, confirmed no changes
+  under `libs/supabase-services` or `supabase/`). Session-scoped queries (`apiKeyStatusQueryKey(sessionUserId)`)
+  correctly namespace by user id — no cross-user leak. No PII in any log/analytics payload (no
+  logging code paths added anywhere in the diff). No new dependencies added without cause (`pnpm-lock.yaml`'s
+  3-line diff is a transitive bump, not a new direct dependency).
+
+### (a) Explicit answer — `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS` race-avoidance timer
+
+**Fragile, yes — but demonstrably safe *today* by accident of implementation details, not by
+contract.** Traced the real consumer end to end: `api-key-settings-screen.tsx:132` feeds
+`isSubmitting={settings.isSubmitting}` straight from `useApiKeySettings` →
+`useApiKey()` (`libs/hooks/src/hooks/use-api-key.ts:78`) → raw
+`saveMutation.isPending || removeMutation.isPending` from `@tanstack/react-query`'s `useMutation` —
+**not** through `use-api-key-manager.ts`'s own `dialogIsSubmitting` sticky flag (that flag is real
+and deliberately sticky-through-settle, per its own doc comment, but it's only wired to
+`submitDisabled`, a *different* prop, at `api-key-settings-screen.tsx:110-112` — it never reaches the
+organism's `isSubmitting` prop at all, so it provides zero protection against this specific race).
+The actual call chain on submit: `CardListWithABMDialogDialog`'s `onConfirm` → `use-card-list-with-abm-dialog.ts`'s
+`onSubmit` closure → synchronously `dispatch({type:'submit'})` then `onEditSubmit?.()` →
+`handleSave()` → `settings.saveApiKey(...)` → `saveMutation.mutate(...)`. Because all of this runs
+inside one React event-handler call stack, and TanStack Query v5's `mutate()` synchronously dispatches
+its `'pending'` state (before the async `mutationFn` ever runs) which its `useSyncExternalStore`-based
+subscription flushes as part of the same React 18 auto-batched update, the very next render after
+pressing Save already carries **both** `dialogState === 'submitting'` **and** `isSubmitting === true`
+together — so the grace-tick branch (`isSubmitting` false) is never actually entered for this real
+consumer's synchronous-dispatch path, and the 50ms timer never fires for a genuine in-flight mutation.
+That said: this is an assumption about two independent libraries' *current* internal scheduling
+behavior (React 18's auto-batching scope, and `@tanstack/react-query`'s synchronous-pending-dispatch
+implementation detail), not a documented contract either library promises to keep. Nothing in the
+test suite exercises the actual race window with a real, slow-resolving `Promise` (the hook's own
+tests use `jest.useFakeTimers()` + explicit `rerender` with pre-set `isSubmitting` values, and the
+organism's own tests never simulate a delayed mutation) — so a future refactor that moves
+`saveApiKey`'s call site out of the synchronous submit-handler stack (e.g. into a `.then()`, an
+`await` before calling it, a `startTransition`, or a library upgrade that defers the pending dispatch
+to a microtask) could silently reintroduce "dialog closes while a real mutation is still in flight,"
+and no test in this suite would catch it. A more deterministic design that doesn't depend on
+wall-clock racing two independent schedulers: have `onSubmit` (the render-prop return value) be able
+to return a `Promise<void> | void` and let the hook `await` it directly to decide when to close,
+rather than inferring intent from whether `isSubmitting` ever moves within a fixed window; or require
+synchronous/no-op callers to call an exposed `closeDialog()` themselves instead of the hook guessing.
+Recommend documenting this as an accepted risk with the trace above, or adopting a deterministic
+alternative — not a blocker given the trace shows it's safe today, but should not be considered a
+closed question.
+
+### (b) Explicit answer — `prevDialogRef`/`default` branch after `submit` stopped nulling `dialogType`
+
+**Yes, dead/unreachable complexity — confirmed, not merely suspected.** See finding 4 above for the
+full trace: `dialogType` can only be `null` in the reducer's `cardListWithABMDialogInitialState`;
+every action that runs afterward (`open-add`/`open-edit`/`open-remove` set a concrete type,
+`submit`/`close`/the reducer's own `default` all spread `...state`) preserves whatever `dialogType`
+already was, so the `dialog` `useMemo`'s `default:` branch is only reachable pre-first-open, at which
+point `prevDialogRef.current` is provably always `null` too. This should be simplified to
+`default: return EMPTY_DIALOG_RESPONSE;` with `prevDialogRef` and its populating effect deleted.
+
+### (c) Flagged for explicit human sign-off — `@s13` rewrite (not accepted/rejected by this reviewer)
+
+**On pure engineering merit, the rewritten `@s13` text is internally consistent with the current
+code, hook/component tests, and `tdd.md`** — verified directly:
+`card-list-with-abm-dialog.test.tsx:629-653` ("closes the dialog (does not restore the form) once
+isSubmitting returns to false") asserts exactly the new contract (`Edit card`'s `open` prop flips to
+`false`, no form/confirmation content, no Save/Cancel buttons) with the dialog genuinely opened first
+(not just a text-content check), and `use-card-list-with-abm-dialog.test.ts:227-275`'s two
+"exiting the submitting state" tests cover both the synchronous/no-op path (grace-timer close) and
+the genuine-async path (immediate close on true→false) that the new `@s13` text explicitly calls out.
+`tdd.md`'s own `@s → test` table and "Mini-gate 3" narrative match. One stale reference found:
+`dod.md:36` still says "@s13 isSubmitting false restores form" with a now-inaccurate line citation —
+but `dod.md` is already explicitly marked `STALE`/`not currently pr_ready` at its own top and is
+fully superseded by a future `dod_validator` pass, so this is not a fresh inconsistency introduced by
+this rewrite, just an artifact of the DoD doc not yet having been redone. **This reviewer is not
+authorized to approve or reject the `@s13` acceptance-criterion change itself** (per protocol, spec
+changes require the human, not a reviewer) — surfacing distinctly here so `reviews_lead` escalates it:
+the implementer changed a previously human-approved Gherkin scenario unilaterally (self-flagged in
+`tdd.md`, not human-approved) to resolve a genuine contradiction between the old text and the
+already-shipped, already-tested code/consumer behavior. The new text is technically sound and
+consistent with the codebase; the *process* gap (no human sign-off yet) is real and separate from
+that technical soundness.

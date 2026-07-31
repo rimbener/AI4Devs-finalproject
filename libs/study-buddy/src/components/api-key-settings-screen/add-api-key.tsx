@@ -4,6 +4,7 @@ import type { AiProvider } from '@helsoft/types';
 import React, { useRef } from 'react';
 import { Linking, Text, type TextInput } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
+import { isSafeExternalUrl } from './add-api-key.helpers';
 import type { ApiKeyFormMode } from './hooks/use-api-key-manager.reducer';
 
 type AddApiKeyProps = {
@@ -76,7 +77,15 @@ export const AddApiKey = ({
           variant="text"
           onPress={() => {
             const url = guidanceUrls[formProvider];
-            if (url) void Linking.openURL(url).catch(() => {});
+            // Only ever open http(s) urls — the catalog is admin-managed today, but this guards
+            // against a future data-entry mistake or compromise reaching Linking.openURL with a
+            // non-http(s) scheme (OWASP A08-adjacent, review.md finding 8).
+            if (!url || !isSafeExternalUrl(url)) return;
+            // Best-effort UX affordance: if the device can't open the link (e.g. no browser/app
+            // registered for the scheme), there is no actionable recovery surface on this screen
+            // and the OS itself typically surfaces its own error UI for an unhandleable url —
+            // intentional silent no-op (review.md finding 9), not an unhandled failure.
+            void Linking.openURL(url).catch(() => {});
           }}
         >
           {t('settings.apiKey.guidanceTemplate', {

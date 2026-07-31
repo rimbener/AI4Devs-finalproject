@@ -25,12 +25,11 @@ import { Dialog } from '../dialog/dialog';
 import { CardListWithABMDialog } from './card-list-with-abm-dialog';
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
-  type CardListItem,
-  type CardListWithABMDialogProps,
   cardListItemCardTestId,
   cardListItemEditTestId,
   cardListItemRemoveTestId,
-} from './card-list-with-abm-dialog.types';
+} from './card-list-with-abm-dialog.helpers';
+import type { CardListItem, CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
 import type { CardListWithABMDialogValue } from './hooks/card-list-with-abm-dialog.context.types';
 
 type DialogMockProps = { open: boolean; headline?: string; children: ReactNode };
@@ -218,6 +217,22 @@ describe('CardListWithABMDialog', () => {
     expect(screen.getByText('Add form')).toBeTruthy();
     expect(screen.getByText('Add')).toBeTruthy();
     expect(screen.getByText('Cancel')).toBeTruthy();
+  });
+
+  // @s17/@s21 (review.md Mini-gate 3, finding 3) — onAddPress fires once through the real
+  // openAddDialog wiring (use-card-list-with-abm-dialog.ts), not just in isolation on
+  // CardListWithABMDialogHeader (card-list-with-abm-dialog-header.test.tsx already covers that
+  // atom on its own). This is the organism-level integration point the header test can't reach.
+  it('calls onAddPress once through the real add-button wiring, in addition to opening the dialog', async () => {
+    const onAddPress = jest.fn();
+    await render(<CardListWithABMDialog {...makeProps({ onAddPress })} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'Add item' }));
+    });
+
+    expect(onAddPress).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Add card')).toBeTruthy();
   });
 
   it('opens the add dialog from the empty state too', async () => {
@@ -603,17 +618,33 @@ describe('CardListWithABMDialog', () => {
     expect(screen.queryByText('Cancel')).toBeNull();
   });
 
-  // @s13 — isSubmitting returning to false restores the normal content and buttons.
-  it('closes the dialog once isSubmitting returns to false', async () => {
-    const { rerender } = await render(
-      <CardListWithABMDialog {...makeProps({ isSubmitting: true })} />,
-    );
+  // @s13 (review.md Mini-gate 3, finding 2 — reconciled to "close", not "restore": errorMessage
+  // is the dedicated failure channel, so a settled isSubmitting always means done. Matches the
+  // real ApiKeySettingsScreen consumer, whose own local reducer deliberately keeps its sticky
+  // "still submitting" flag through a successful settle specifically so the dialog closes
+  // rather than ever showing its form again — see use-api-key-manager.reducer.ts's
+  // `submit/sync`). Opens the edit dialog for real first (so this proves the dialog's own
+  // `open` prop, not just its text content, actually flips false) — mirrors @s11's own setup.
+  it('closes the dialog (does not restore the form) once isSubmitting returns to false', async () => {
+    const { rerender } = await render(<CardListWithABMDialog {...makeProps()} />);
 
+    await act(async () => {
+      fireEvent.press(
+        within(screen.getByTestId(cardListItemEditTestId('item-1'))).getByRole('button'),
+      );
+    });
+    expect(lastCallFor('Edit card').open).toBe(true);
+    expect(screen.getByText('Edit form for item-1')).toBeTruthy();
+
+    await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: true })} />);
+
+    expect(lastCallFor('Edit card').open).toBe(true);
     expect(screen.getByText('general.saving')).toBeTruthy();
     expect(screen.queryByText('Edit form for item-1')).toBeNull();
 
     await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: false })} />);
 
+    expect(lastCallFor('Edit card').open).toBe(false);
     expect(screen.queryByText('general.saving')).toBeNull();
     expect(screen.queryByText('Edit form for item-1')).toBeNull();
     expect(screen.queryByText('Save')).toBeNull();

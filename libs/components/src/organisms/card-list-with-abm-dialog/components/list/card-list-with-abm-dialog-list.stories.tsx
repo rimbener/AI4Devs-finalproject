@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { Text } from 'react-native';
-import type { CardListItem } from '../card-list-with-abm-dialog/card-list-with-abm-dialog.types';
-import { CardListWithABMDialogProvider } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import type { CardListWithABMDialogValue } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
+import type { CardListItem } from '../../card-list-with-abm-dialog.types';
+import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogList } from './card-list-with-abm-dialog-list';
 
 type StoryFlashcard = { front: string; back: string };
@@ -73,7 +73,7 @@ const CardListWithABMDialogListStory = CardListWithABMDialogList as ComponentTyp
 }>;
 
 const meta = {
-  title: 'Organisms/CardListWithABMDialogList',
+  title: 'Organisms/CardListWithABMDialog/List',
   // `items` isn't one of the component's own props — it only reaches it via context, wired in
   // `render` below — so it needs an extra cast here purely for Storybook's `args` panel to drive
   // it; the JSX call above stays honestly typed against the component's real props.

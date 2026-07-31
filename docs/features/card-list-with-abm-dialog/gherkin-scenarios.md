@@ -91,11 +91,20 @@ Feature: CardListWithABMDialog
     And tapping the scrim or dismissing via Escape does not close the dialog
 
   @s13
-  Scenario: isSubmitting returning to false restores normal dialog content
+  Scenario: isSubmitting returning to false closes the dialog
     Given a dialog is showing SubmittingIndicator because isSubmitting was true
     When isSubmitting returns to false
-    Then the normal form/confirmation content and its cancel/submit buttons are shown again
-    And the dialog is dismissible via scrim/Escape/Cancel again
+    Then the dialog closes outright (no form/confirmation content, no buttons)
+    And a caller whose isSubmitting never becomes true after submit (a synchronous/no-op
+    submit handler) still sees the dialog close on its own, rather than staying in the
+    submitting state forever
+    # Reconciled by review.md's Mini-gate 3 fix round: isSubmitting is a settle signal only —
+    # errorMessage (@s26) is the dedicated failure-communication channel, so a settled
+    # isSubmitting always means "done", never "show the form again". Previously read
+    # "restores normal dialog content"; changed to match the already-implemented, already-
+    # tested "close" behavior (and the real ApiKeySettingsScreen consumer's own local reducer,
+    # which deliberately keeps its sticky submitting flag through a successful settle so the
+    # dialog closes rather than reopening).
 
   @s14
   Scenario: Per-card icon buttons have card-specific accessible names

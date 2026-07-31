@@ -14,12 +14,12 @@ jest.mock('../../../molecules/card-list-row/card-list-row', () => {
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Text } from 'react-native';
 import { CardListRow } from '../../../molecules/card-list-row/card-list-row';
-import type { CardListItem } from '../card-list-with-abm-dialog.types';
 import {
   cardListItemCardTestId,
   cardListItemEditTestId,
   cardListItemRemoveTestId,
-} from '../card-list-with-abm-dialog.types';
+} from '../card-list-with-abm-dialog.helpers';
+import type { CardListItem } from '../card-list-with-abm-dialog.types';
 import { CardListWithABMDialogProvider } from '../hooks/card-list-with-abm-dialog.context';
 import type { CardListWithABMDialogValue } from '../hooks/card-list-with-abm-dialog.context.types';
 import { CardListRowAdapter } from './card-list-row-adapter';

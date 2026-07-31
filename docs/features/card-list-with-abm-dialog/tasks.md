@@ -1,7 +1,7 @@
 ---
 feature: card-list-with-abm-dialog
 phase: in_review # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
-review_round: 0     # incremented by reviews_lead; cap 2 — reset for this mini-gate's new review cycle (architecture rewrite + Add-dialog)
+review_round: 1     # incremented by reviews_lead; cap 2 — Mini-gate 3's CI-red gate (findings fixed) then Full-review Round 1 (CHANGES_REQUESTED, 9 findings open + @s13 human sign-off item) — see review.md
 ---
 
 # Tasks — card-list-with-abm-dialog

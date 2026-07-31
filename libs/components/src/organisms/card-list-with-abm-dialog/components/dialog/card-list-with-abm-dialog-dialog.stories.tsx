@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import type { ComponentType } from 'react';
 import { Text } from 'react-native';
-import type { CardListItem } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types';
-import { CardListWithABMDialogProvider } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import type { CardListWithABMDialogValue } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
+import type { CardListItem } from '../../card-list-with-abm-dialog.types';
+import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogDialog } from './card-list-with-abm-dialog-dialog';
 
 type StoryFlashcard = { front: string; back: string };
@@ -50,7 +50,7 @@ const CardListWithABMDialogDialogStory = CardListWithABMDialogDialog as Componen
 }>;
 
 const meta = {
-  title: 'Molecules/CardListWithABMDialogDialog',
+  title: 'Organisms/CardListWithABMDialog/Dialog',
   component: CardListWithABMDialogDialogStory,
   decorators: [
     (Story) => (

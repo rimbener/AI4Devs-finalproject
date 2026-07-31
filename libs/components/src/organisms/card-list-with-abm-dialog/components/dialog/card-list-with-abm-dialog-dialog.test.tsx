@@ -8,9 +8,9 @@ jest.mock('@helsoft/localization', () => ({
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
-import type { CardListItem } from '../../organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types';
-import { CardListWithABMDialogProvider } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import type { CardListWithABMDialogValue } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
+import type { CardListItem } from '../../card-list-with-abm-dialog.types';
+import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogDialog } from './card-list-with-abm-dialog-dialog';
 
 type StoryItem = { note: string };

@@ -198,4 +198,151 @@ describe('useCardListWithABMDialog', () => {
     expect(result.current?.dialogType).toBe('edit');
     expect(result.current?.dialogItem).toEqual(otherItem);
   });
+
+  // review.md Mini-gate 3, findings 1/2 — exiting 'submitting'. Uses a dynamic wrapper (reads a
+  // mutable `dynamicIsSubmitting` at render time) since the context value can't be threaded
+  // through renderHook's own (prop-less) callback.
+  describe('exiting the submitting state', () => {
+    let dynamicIsSubmitting = false;
+    const dynamicWrapper = ({ children }: { children: ReactNode }) =>
+      CardListWithABMDialogProvider<StoryItem>({
+        value: { ...contextValue, isSubmitting: dynamicIsSubmitting },
+        children,
+      });
+
+    beforeEach(() => {
+      dynamicIsSubmitting = false;
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    // Finding 1 — a caller whose isSubmitting stays false the whole time (a synchronous/no-op
+    // submit handler, e.g. the Populated story) used to strand the dialog in 'submitting'
+    // forever: the only exit effect only ever reacted to `isSubmitting` itself changing value,
+    // which it never did. Immediately after submit it must still look like it's submitting
+    // (@s22) — only after a grace tick, with isSubmitting still false, does it resolve.
+    it('eventually closes on its own when isSubmitting never becomes true after submit', async () => {
+      const { result } = await renderHook(
+        () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'closed' }),
+        { wrapper: dynamicWrapper },
+      );
+
+      await act(async () => {
+        result.current?.openEditDialog(item);
+      });
+      await act(async () => {
+        result.current?.dialog.onSubmit?.();
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      await act(async () => {
+        jest.runOnlyPendingTimers();
+      });
+
+      expect(result.current?.dialogState).toBe('closed');
+    });
+
+    // @s13 — a real async caller's isSubmitting genuinely returning to false (having actually
+    // been true first) closes the dialog immediately, with no grace delay.
+    it('closes immediately once a genuinely-true isSubmitting returns to false', async () => {
+      const { result, rerender } = await renderHook(
+        () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'closed' }),
+        { wrapper: dynamicWrapper },
+      );
+
+      await act(async () => {
+        result.current?.openEditDialog(item);
+      });
+      await act(async () => {
+        result.current?.dialog.onSubmit?.();
+      });
+
+      dynamicIsSubmitting = true;
+      await act(async () => {
+        rerender({});
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      dynamicIsSubmitting = false;
+      await act(async () => {
+        rerender({});
+      });
+
+      expect(result.current?.dialogState).toBe('closed');
+    });
+
+    // review.md's "Full review — Round 1 (post-CI-fix)", finding 3 — the grace timer must not
+    // fire before genuinely-elapsed real time reaches SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS (50ms),
+    // exercised via jest.advanceTimersByTime rather than a synchronous jest.runOnlyPendingTimers
+    // flush, so the boundary itself is proven, not just "eventually fires".
+    it('does not close before the grace period genuinely elapses', async () => {
+      const { result } = await renderHook(
+        () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'closed' }),
+        { wrapper: dynamicWrapper },
+      );
+
+      await act(async () => {
+        result.current?.openEditDialog(item);
+      });
+      await act(async () => {
+        result.current?.dialog.onSubmit?.();
+      });
+
+      await act(async () => {
+        jest.advanceTimersByTime(49);
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      await act(async () => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(result.current?.dialogState).toBe('closed');
+    });
+
+    // review.md's "Full review — Round 1 (post-CI-fix)", finding 3 — proves the grace timer's
+    // actual behavior under a genuinely-delayed async submit (real elapsed time via fake timers,
+    // not a synchronous pre-set isSubmitting value): a caller whose isSubmitting only flips true
+    // partway through the grace window must have its in-flight status respected — the dialog must
+    // NOT be closed by the grace timer just because more than 50ms of real time has now passed.
+    it('does not let a genuinely-delayed async submit be mistaken for a synchronous one', async () => {
+      const { result, rerender } = await renderHook(
+        () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'closed' }),
+        { wrapper: dynamicWrapper },
+      );
+
+      await act(async () => {
+        result.current?.openEditDialog(item);
+      });
+      await act(async () => {
+        result.current?.dialog.onSubmit?.();
+      });
+
+      // Real elapsed time within the grace window (30ms < 50ms) before the caller's isSubmitting
+      // genuinely turns true — modeling an async caller whose own scheduling isn't instantaneous.
+      await act(async () => {
+        jest.advanceTimersByTime(30);
+      });
+      dynamicIsSubmitting = true;
+      await act(async () => {
+        rerender({});
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      // Advance real time well past the original 50ms grace window — since isSubmitting is now
+      // genuinely true, the stale grace timeout must have been canceled and must not fire.
+      await act(async () => {
+        jest.advanceTimersByTime(200);
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      dynamicIsSubmitting = false;
+      await act(async () => {
+        rerender({});
+      });
+      expect(result.current?.dialogState).toBe('closed');
+    });
+  });
 });

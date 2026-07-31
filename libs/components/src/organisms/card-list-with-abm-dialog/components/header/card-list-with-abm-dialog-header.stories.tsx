@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react-native-web-vite';
 import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { Text } from 'react-native';
-import { CardListWithABMDialogProvider } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import type { CardListWithABMDialogValue } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
+import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogHeader } from './card-list-with-abm-dialog-header';
 
 type StoryFlashcard = { front: string; back: string };
@@ -44,7 +44,7 @@ const baseContextValue: Omit<
 };
 
 const meta = {
-  title: 'Atoms/CardListWithABMDialogHeader',
+  title: 'Organisms/CardListWithABMDialog/Header',
   component: CardListWithABMDialogHeader as ComponentType<StoryArgs>,
   render: ({ title, addButtonLabel, showAddButton, onAddPress }) => (
     <CardListWithABMDialogProvider value={{ ...baseContextValue, title, addButtonLabel }}>

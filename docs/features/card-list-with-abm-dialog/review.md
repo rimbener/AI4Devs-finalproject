@@ -1,5 +1,3 @@
-# Full review — card-list-with-abm-dialog
-
 > ⚠ **STALE relative to current code.** Everything below predates a substantial human-authored
 > architecture rewrite (Context + `useReducer`, atom/molecule/organism extraction) and a new
 > Add-dialog feature (see `spec.md`'s "Issues found by this doc pass" and `task-4.md`). This delta
@@ -469,9 +467,506 @@ is now closed with a clean approval — nothing outstanding for `implementer` to
 
 ---
 
-*Full findings trail retained above — nothing deleted. Round 1's two minor findings and Round 2's
-verification remain marked `resolved`; the empty-dialog-flash mini-gate is a clean `APPROVED` round
-with zero findings of any severity; the CardListRow-extraction mini-gate's one major finding is
-now confirmed `resolved` (fix verified in commit `f753311a5`) and that section closes `APPROVED`.
-`review-engineering.md` carries the full lens-by-lens detail for every round, including both
-mini-gates and this fix-delta verification, under its own matching section headers.*
+*Full findings trail retained above through the CardListRow-extraction mini-gate — nothing
+deleted. Round 1's two minor findings and Round 2's verification remain marked `resolved`; the
+empty-dialog-flash mini-gate is a clean `APPROVED` round with zero findings of any severity; the
+CardListRow-extraction mini-gate's one major finding is confirmed `resolved` (fix verified in
+commit `f753311a5`) and that section closed `APPROVED`. `review-engineering.md` carries the full
+lens-by-lens detail for every round above, including both mini-gates, under its own matching
+section headers.*
+
+---
+
+## Mini-gate 3: architecture rewrite + Add-dialog + real consumer wiring
+
+**Context.** After the CardListRow-extraction mini-gate above closed `APPROVED`, the human authored
+a large, direct rewrite outside `implementer` (undocumented by any TDD log until after the fact):
+the organism-decomposition into `CardListWithABMDialogHeader`/`CardListWithABMDialogList`/
+`CardListWithABMDialogDialog`/`CardListRowAdapter` + a `CardListWithABMDialogProvider`/
+`useCardListWithABMDialogContext` React Context wrapping a `useReducer`; a new Add-dialog feature
+(`renderAddForm`/`addDialogTitle`/`addSubmitLabel`/`addCancelLabel`/`onAddSubmit`, `errorMessage`,
+`submitDisabled`, `showAddButton`); and real consumer wiring — `ApiKeySettingsScreen` now uses
+`CardListWithABMDialog` directly, replacing the deleted `ApiKeyManager`/`ApiKeyFormDialog`/
+`ApiKeySavedList`. Full rationale: `spec.md`'s "Architecture", "Open decisions", and "Outstanding"
+sections; `task-4.md`; `gherkin-scenarios.md`'s `@s21`-`@s27`. This is this delta's **first** pass
+through any review gate (`review_round` reset to 0 in `tasks.md` for this cycle, cap 2).
+
+**Scope verified:** `git merge-base feature-entrega3-HernanLaura HEAD` == `git rev-parse
+feature-entrega3-HernanLaura` (`080bc22f4`) — clean, fast-forward-mergeable ancestry, no divergence.
+Diff reviewed: `feature-entrega3-HernanLaura..HEAD` (120 files, +7230/-2831), primarily
+`libs/components/src/{atoms,molecules,organisms}/card-list-with-abm-dialog*` (the direct subject)
+plus `libs/study-buddy/src/components/api-key-settings-screen/**` (real consumer wiring) and
+supporting changes in `libs/hooks`, `libs/services`, `libs/localization`.
+
+### CI (run once by `reviews_lead`, not the reviewer) — **RED, feature-caused**
+
+- `pnpm lint` — green, repo-wide (turbo, 14 packages, cache hit).
+- `pnpm check-types` — green, repo-wide (turbo, 14 packages, cache hit).
+- `pnpm test` (repo-wide) — green via turbo, but fully cached (no packages re-executed by the
+  cache-hit run) — **not trusted as-is**. Force-re-executed explicitly, not cache-trusted, for
+  every package touched by this delta: `@helsoft/components` (72 suites / 517 tests, green),
+  `@helsoft/study-buddy` (43 suites / 384 tests, green), `@helsoft/hooks` (21 suites / 182 tests,
+  green), `@helsoft/services` (5 suites / 24 tests, green), `@helsoft/localization` (14 suites /
+  245 tests, green, including `migration-coverage.test.ts`). All jest green.
+- **Feature e2e — RED.** `libs/components/tests/e2e/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.e2e.js`:
+  **4 of 5 tests fail**, reproduced twice — once parallel (after killing a stale leftover
+  Storybook server on :6011 from an earlier session) and once fully serialized (`--workers=1`,
+  fresh `storybook dev` webServer start both times) — **not flaky**, deterministically red both
+  runs. Per protocol this is feature-caused CI red, not a pre-existing/unrelated infra flake (this
+  exact suite was explicitly green 5/5 at every prior round in this file, including the
+  CardListRow-extraction mini-gate immediately before this rewrite) — **the reviewer is
+  deliberately NOT invoked this round**; findings below are routed to `implementer` first, CI must
+  be re-run and confirmed green, and only then does the full `reviewer_engineering` pass proceed.
+
+**Failing tests (`card-list-with-abm-dialog.e2e.js`):**
+- `:7` `tapping the add button calls onAddPress` — FAIL, times out waiting for `text=Added 0 times`
+  (element never rendered).
+- `:22` `tapping the edit icon opens the edit dialog; submitting it closes the dialog` — FAIL,
+  `text=Edit flashcard` still has count 1 after Save is pressed (expected 0 — dialog never closes).
+- `:53` `scrim tap and Escape do nothing while the edit dialog is submitting` — FAIL, times out
+  waiting for `text=Edit flashcard` to even become visible.
+- `:75` `scrim tap and Escape do nothing while the remove dialog is submitting` — FAIL, same
+  shape, `text=Remove flashcard`.
+- `:38` `tapping the remove icon opens the remove dialog; canceling closes it` — **passes** (the
+  one flow that never reaches the `'submitting'` state).
+
+### Root-cause findings (routed to `implementer`, CI-red — not yet reviewed by `reviewer_engineering`)
+
+1. **[blocker] Dialog gets stuck permanently in `'submitting'` state for any caller whose
+   `isSubmitting` prop never itself toggles true→false** —
+   `libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts:154-158`:
+   ```ts
+   React.useEffect(() => {
+     if (!isSubmitting) {
+       closeDialog();
+     }
+   }, [isSubmitting, closeDialog]);
+   ```
+   This is the **only** code path that ever exits `dialogState === 'submitting'` (the reducer's
+   `'submit'` action, `use-card-list-with-abm-dialog.reducer.ts:39-40`, has no corresponding
+   "un-submit" action, and `'close'` is only ever dispatched from here or from the user-facing
+   `handleClose`/Cancel/scrim/Escape path, which the `Dialog`'s own `onClose={undefined}` blocks
+   while submitting — `card-list-with-abm-dialog.tsx:97,103`). The effect only re-fires when the
+   **prop value** `isSubmitting` changes; it does not observe the internal `dialogState` reducer at
+   all. Any caller that presses Save/Remove/Add without the `isSubmitting` **prop** ever having
+   been `true` (i.e. it's `false` at mount and stays `false` — exactly every static Storybook story
+   except `Interactive`/`*Submitting`, and exactly what the `Populated`/`EditOnlyCard`/
+   `RemoveOnlyCard` stories' `onEditSubmit: () => {}` no-op demonstrates) dispatches `'submit'`
+   internally via `dialog.onSubmit` (`use-card-list-with-abm-dialog.ts:97-101,107-111,117-121`),
+   moving `dialogState` to `'submitting'` — but the effect's dependency array never changes
+   (`isSubmitting` was `false`, is still `false`), so it never re-fires, and the dialog is stuck in
+   `'submitting'` **forever** with no user-facing way to dismiss it (scrim/Escape/Cancel are all
+   blocked while `dialogState === 'submitting'`, by design). This is the direct root cause of e2e
+   failures `:22`, `:53`, `:75` above.
+   - **Fix (implementer, TDD):** the dialog must be able to leave `'submitting'` in response to its
+     own internal `dispatch({type:'submit'})` completing a synchronous/no-async submit (i.e. when
+     the caller's `isSubmitting` was never engaged at all), not only in response to an external
+     `isSubmitting` prop transition. Needs a red test reproducing exactly the `Populated`-story
+     shape (`isSubmitting` prop `false` throughout, real submit callback, no async delay) before
+     picking the fix shape.
+
+2. **[major] Implementation (and its own unit test) contradicts the approved `@s13` acceptance
+   criterion** — `gherkin-scenarios.md`'s `@s13`:
+   > "isSubmitting returning to false restores normal dialog content ... the normal form/
+   > confirmation content and its cancel/submit buttons are shown again ... dismissible via
+   > scrim/Escape/Cancel again"
+
+   vs. `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.test.tsx:606-621`,
+   whose own comment cites `@s13` but whose test title and assertions describe the **opposite**
+   outcome:
+   ```ts
+   // @s13 — isSubmitting returning to false restores the normal content and buttons.
+   it('closes the dialog once isSubmitting returns to false', async () => {
+     ...
+     await rerender(<CardListWithABMDialog {...makeProps({ isSubmitting: false })} />);
+     expect(screen.queryByText('general.saving')).toBeNull();
+     expect(screen.queryByText('Edit form for item-1')).toBeNull();
+     expect(screen.queryByText('Save')).toBeNull();
+     expect(screen.queryByText('Cancel')).toBeNull();
+   });
+   ```
+   This asserts the dialog is **fully closed** (no form content, no buttons, nothing) — not
+   "restored to normal open content with its buttons shown again" as `@s13` requires. `tdd.md:43`
+   also still logs `@s13` as "restores form + buttons", one more place documenting the old,
+   currently-untrue behavior. Either the code is wrong (should restore, per the still-approved
+   Gherkin) or `@s13`/`tdd.md` are stale and a deliberate "isSubmitting-false-always-means-done,
+   close" redesign needs the human's explicit sign-off and a `gherkin-scenarios.md` amendment
+   before it can be treated as intentional — right now it is neither reviewed nor documented as a
+   conscious change, just silently diverged during the rewrite.
+   - **Fix:** implementer + spec owner decide which behavior is correct (retry-after-failure
+     "restore" vs. success-path "close", noting `errorMessage` now exists as a separate
+     failure-communication channel that didn't exist when `@s13` was originally written in
+     task-3) and reconcile code/test/`@s13`/`tdd.md` to agree. Whichever direction is chosen must
+     also resolve finding 1 above (today neither "restore" nor "close" reliably happens for a
+     caller that never toggles `isSubmitting`).
+
+3. **[major] `@s17`/`@s21` ("onAddPress is still called once") has no passing test anywhere in the
+   tree** — `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.stories.tsx:145-195`'s
+   `Interactive` story (renamed `InteractiveAddDemo` during the rewrite) no longer wires
+   `onAddPress` at all (only `onAddSubmit={handleSubmit}`) and renders `` `Submitted ${tapCount}
+   times` `` instead of the `Added N times` text the e2e test (`card-list-with-abm-dialog.e2e.js:7-18`)
+   still looks for — root cause of e2e failure `:7`. Searched the whole feature tree
+   (`grep -rn onAddPress libs/components/src/organisms/card-list-with-abm-dialog/`): the only
+   passing unit-level assertion of "pressing the add button calls `onAddPress`" is
+   `card-list-with-abm-dialog-header.test.tsx:61-68`, which injects `onAddPress` **directly** as an
+   isolated prop on the atom — it does not exercise `openAddDialog`
+   (`use-card-list-with-abm-dialog.ts:52-61`), the actual integration point where `onAddPress?.()`
+   is called before `dispatch({type:'open-add'})`. `card-list-with-abm-dialog.test.tsx:205-207`
+   only has a **comment** pointing at the header test and the (broken) e2e test — no assertion of
+   its own. `use-card-list-with-abm-dialog.test.ts` has zero references to `onAddPress`. Net
+   result: the full-integration "`onAddPress` still fires when the add button is pressed, in
+   addition to opening the add dialog" contract (@s17/@s21, explicitly called out as "unchanged"
+   in `spec.md`'s Open decisions) is currently **untested** at both the organism-unit and hook
+   levels, and its only e2e coverage is red.
+   - **Fix (implementer, TDD):** add a red→green organism-level (or hook-level) test asserting
+     `onAddPress` is called once when the add button is pressed (through the real
+     `openAddDialog`/context wiring, not an isolated atom prop), and repair the `Interactive` story
+     (wire `onAddPress`, fix the counted-text label) so the existing e2e test's `@s17` coverage is
+     restored, or update the e2e test deliberately if the story's intended demo changed (that
+     decision belongs with whoever owns `@s17`'s test-level home, but the contract itself must stay
+     covered end-to-end somewhere green).
+
+**Verdict this pass: CI RED (feature-caused).** Per protocol, `reviewer_engineering` is **not**
+invoked this round. The three findings above (1 blocker, 2 major) are routed to `implementer`
+directly; CI (lint/check-types/test/e2e) must be re-run and confirmed green before
+`reviewer_engineering`'s full four-lens pass (code quality/TDD, architecture, performance,
+security) proceeds over this same delta. `review_round` stays at 0 in `tasks.md` until that pass
+happens — this CI-red gate is not itself a review round.
+
+**Design/accessibility note (not a full pass — flagged, not resolved):** this rewrite has never had
+a `reviewer_slice` pass (design/a11y/`.agents/rules/` per slice) — `review-slice.md` only covers
+task-1/2/3, not task-4. A skim during this pass found nothing additional to flag beyond what
+`spec.md` already documents as resolved (the `accessibleLabel`/`getEditAccessibilityLabel`/
+`getRemoveAccessibilityLabel`-required re-tightening), but a skim is not a substitute for a real
+`reviewer_slice`/design pass — recommend one is still run on this delta once the CI-red findings
+above are fixed, even though it is formally out of `reviews_lead`'s scope.
+
+### CI-red fix round — resolved
+
+`implementer` fixed the 3 CI-red findings above via TDD (working-tree delta on top of the CI-red
+HEAD reviewed above). `reviews_lead` **independently re-verified** (not trusting the implementer's
+self-report):
+- `pnpm --filter @helsoft/components lint check-types` — green.
+- `pnpm --filter @helsoft/components test` — 72 suites / 520 tests green; **repeated 5 additional
+  times** back-to-back specifically to probe the new grace-timer mechanism (below) for flakiness —
+  0 flakes across all runs.
+- Feature e2e, fresh serialized run (`--workers=1`, killed a pre-existing stale Storybook server on
+  :6011 first) — **5/5 passed** (previously 1/5).
+- `pnpm --filter @helsoft/study-buddy check-types test` — green (43 suites/384 tests), confirming
+  the real consumer wiring is unaffected.
+
+Fix shape (implementer's own report, spot-checked against the diff):
+- **Finding 1** (stuck-forever submitting): the exit-effect in `use-card-list-with-abm-dialog.ts`
+  rewritten to a ref-gated design — closes immediately if a genuinely-`true` `isSubmitting` returns
+  to `false`; otherwise waits a `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS = 50` grace tick before
+  treating a submit whose `isSubmitting` never went `true` as settled. The reducer's `submit`
+  action was changed to preserve `dialogType`/`dialogItem` (previously nulled) so the
+  headline/body survive the transition — this in turn required `EditDialogSubmitting`/
+  `RemoveDialogSubmitting`/`AddDialogSubmitting` Storybook stories to regain a `play()` step that
+  opens the dialog first (previously lost — mounting directly with `isSubmitting: true` left
+  `dialogType` null).
+- **Finding 2** (`@s13` contradiction): resolved by **rewriting `@s13`'s gherkin text itself** —
+  from "restores normal dialog content" to "closes the dialog" — justified by the real consumer's
+  own reducer deliberately keeping a sticky submitting flag through settle specifically so the
+  dialog closes rather than reopening. **This changes a previously human-approved acceptance
+  criterion, done unilaterally by `implementer` — not human-approved.** `reviews_lead` cannot
+  ratify a spec-contract change either; **this remains an open item requiring the human's explicit
+  sign-off**, independent of the code-quality verdict below (see "(c)" in the next section).
+- **Finding 3** (missing `onAddPress` coverage): restored `onAddPress` wiring + "Added N times"
+  text to the `Interactive` story; e2e locator switched to target the button by role (its text now
+  collides with the add dialog's own headline); added a new organism-level integration test
+  asserting `onAddPress` fires through the real `openAddDialog` wiring (prior coverage was
+  header-atom-only, isolated).
+
+Files touched by this fix round — production:
+`libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts`,
+`.../hooks/use-card-list-with-abm-dialog.reducer.ts`, `.../card-list-with-abm-dialog.stories.tsx`;
+tests: `.../hooks/use-card-list-with-abm-dialog.reducer.test.ts`,
+`.../hooks/use-card-list-with-abm-dialog.test.ts`, `.../card-list-with-abm-dialog.test.tsx`,
+`libs/components/tests/e2e/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.e2e.js`;
+docs: `gherkin-scenarios.md` (`@s13` text — flagged above, not human-approved yet), `tdd.md`.
+
+---
+
+## Full review — Round 1 (post-CI-fix)
+
+**Reviewer invoked:** `reviewer_engineering`, full four-lens pass over the whole feature diff
+(`feature-entrega3-HernanLaura..HEAD` plus the CI-red fix-round delta above, all present in the
+working tree) — first real review of the architecture split, Add-dialog feature, and the real
+`ApiKeySettingsScreen` consumer wiring. Explicitly briefed to scrutinize the two riskiest pieces of
+the CI-red fix round (the grace-timer mechanism, and whether the reducer's now-non-nulling `submit`
+action left dead fallback code) and to flag — not adjudicate — the `@s13` gherkin rewrite. Full
+findings in `review-engineering.md` under "## Full review — post-rewrite (Context/useReducer split,
+Add-dialog, real ApiKeySettingsScreen consumer)".
+
+### Verdict: CHANGES_REQUESTED
+
+Two `[arch] major` findings on the new sub-component decomposition, one `[arch]/[code] major` on a
+fragile/non-deterministic timing design introduced by the CI-red fix round, one `[arch] major` dead
+code, and one **out-of-scope drive-by regression** to a shared, unrelated molecule (`TextField`) —
+each blocks per protocol (any finding, any severity, blocks). No blocker (no exposed secret, no
+exploitable injection). Plus one item **flagged for explicit human sign-off, not decided by any
+reviewer** (the `@s13` rewrite, carried over from the CI-red fix round above).
+
+### Findings
+
+1. **[arch] major — `resolved`** — Fixed: moved `CardListWithABMDialogHeader`/`CardListWithABMDialogList`/
+   `CardListWithABMDialogDialog` (plus their `.stories.tsx`/`.test.tsx`) out of the shared
+   `atoms/`/`organisms/`/`molecules/` top-level folders into the organism's own private
+   `organisms/card-list-with-abm-dialog/components/{header,list,dialog}/` subfolders, mirroring the
+   existing `components/card-list-row-adapter.tsx` precedent — no flattening, Context wiring
+   unchanged. Updated every import (composition-root `card-list-with-abm-dialog.tsx` and the moved
+   files' own relative imports); Storybook titles updated to
+   `Organisms/CardListWithABMDialog/{Header,List,Dialog}`. None of the three was barrel-exported
+   before or after (unaffected). `pnpm --filter @helsoft/components lint check-types test` green
+   (72 suites/522 tests) and the feature's Playwright e2e re-run 5/5 passed.
+
+   Original finding — `libs/components/src/atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header.tsx:3,15`,
+   `libs/components/src/organisms/card-list-with-abm-dialog-list/card-list-with-abm-dialog-list.tsx:6-9,26`,
+   `libs/components/src/molecules/card-list-with-abm-dialog-dialog/card-list-with-abm-dialog-dialog.tsx:7-12,47-48`.
+   The three components extracted into this rewrite's shared `atoms/`/`molecules/`/`organisms/`
+   top-level folders all import `useCardListWithABMDialogContext` directly from the
+   composition-root organism's **private** `organisms/card-list-with-abm-dialog/hooks/` folder (the
+   List organism additionally imports `CardListItem`/the test-ID constant and the organism's
+   private `components/card-list-row-adapter.tsx`); none renders without the full
+   `CardListWithABMDialogProvider` tree mounted above it, and none is barrel-exported (unlike
+   `error-banner`/`card-list-row`, the other two extractions from this same rewrite, both of which
+   *are* barrel-exported). This is the identical reverse-dependency anti-pattern already caught and
+   fixed once in this same feature for `CardListRow` (see the "CardListRow extraction" mini-gate
+   above) — the fix was never applied to the header/list/dialog. `CardListWithABMDialogHeader` is
+   generic over `<TItem>` and cannot render without one specific organism's Context; it is not an
+   atom by `atomic-design.mdc`'s own definition ("no awareness of where it sits on a page"), it's a
+   private, organism-specific sub-component that happens to live in the shared `atoms/` folder.
+   - **Fix:** either genuinely flatten all three (mirror the `CardListRowAdapter` fix: accept plain
+     props, no Context import) and barrel-export them, or move them into the organism's own private
+     subfolder (e.g. `organisms/card-list-with-abm-dialog/{atoms,molecules}/...`) so their placement
+     stops implying independent reusability that doesn't exist.
+
+2. **[arch] major — `resolved`** — Fixed: `libs/components/tsconfig.json`'s `include` array reduced
+   back to `["src"]`, removing the stale/backwards 5-path addition entirely. `libs/study-buddy/tsconfig.json`'s
+   equivalent `[code] minor` companion issue also fixed the same way — grepped
+   `@helsoft/study-buddy` for any relative import of `ai-providers.helpers.ts`/`use-api-key.helpers.ts`
+   (zero hits beyond a code comment), so its `include` addition was removed rather than explained,
+   per the finding's own recommended path. `pnpm --filter @helsoft/components check-types` and
+   `pnpm --filter @helsoft/study-buddy check-types` both still green.
+
+   Original finding — `libs/components/tsconfig.json:6-12`. New `include` array adds 5 explicit
+   file paths under `../study-buddy/src/components/api-key-settings-screen/...` to
+   `@helsoft/components`'s TypeScript project — a shared UI lib has no legitimate reason to
+   type-check a feature app lib's files (backwards dependency direction; no other `libs/*/tsconfig.json`
+   does this). Worse: all 5 paths are now **stale/nonexistent** — the real files were moved into a
+   `hooks/` subfolder during this same rewrite, and `tsc`'s `include` silently no-ops on a missing
+   path rather than erroring, so this passed `check-types` clean while type-checking nothing. Dead,
+   misleading config.
+   - **Fix:** remove the `include` addition entirely (or, if there was a real reason, fix the paths
+     and explain why in a comment).
+   - Related, kept separate as **[code] minor**: `libs/study-buddy/tsconfig.json:6-9`'s equivalent
+     addition points at real files, but neither is actually imported by relative path from anywhere
+     in `@helsoft/study-buddy` (grepped, zero hits beyond a code comment) — same "no other lib does
+     this" pattern; low severity since it isn't also dead/backwards, but still unexplained.
+
+3. **[arch]/[code] major, fragile design — `resolved` (fallback path taken)** — Fixed via the
+   documented fallback: kept the timer (a deterministic `onSubmit: () => Promise<void> | void`
+   redesign was judged too invasive to land safely in this pass) and (a) expanded
+   `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS`'s doc comment into an explicit "ACCEPTED RISK" note citing
+   the exact timing trace above, and (b) added two new `jest.useFakeTimers()` tests to
+   `use-card-list-with-abm-dialog.test.ts` that genuinely advance real elapsed time past 50ms
+   (`jest.advanceTimersByTime`, not a synchronous pre-set value): one proves the grace timer doesn't
+   fire before the boundary (49ms still submitting, 50ms closed), the other proves a
+   genuinely-delayed async submit whose `isSubmitting` only flips true partway through the grace
+   window is correctly respected (the stale timeout is canceled, dialog stays `'submitting'` even
+   past 200ms of further real elapsed time, closes only once `isSubmitting` later returns to
+   `false`). `pnpm --filter @helsoft/components exec jest use-card-list-with-abm-dialog.test.ts`
+   green (12/12); full suite still 72 suites/522 tests green.
+
+   Original finding — `libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts:30,163-198`.
+   The CI-red fix round's `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS = 50` wall-clock timer, used to
+   disambiguate "a caller whose `isSubmitting` will genuinely flip true shortly" from "a caller
+   that never touches it," is **traced and confirmed safe today**, but only by accident of two
+   independent libraries' current internal scheduling behavior, not by contract:
+   `reviewer_engineering` traced the real consumer end-to-end (`api-key-settings-screen.tsx:132`
+   → `useApiKeySettings` → `useApiKey()`'s raw `saveMutation.isPending || removeMutation.isPending`)
+   and confirmed React 18's auto-batching + TanStack Query v5's synchronous-pending-dispatch land
+   both `dialogState === 'submitting'` and `isSubmitting === true` in the same render for the real
+   consumer's synchronous-dispatch path, so the 50ms timer never actually fires for a genuine
+   in-flight mutation *today*. But nothing in the test suite exercises the real race with a
+   slow-resolving `Promise` (the hook's own tests use `jest.useFakeTimers()` + pre-set `isSubmitting`
+   values; the organism's tests never simulate a delayed mutation) — a future refactor that moves
+   the mutation call site out of the synchronous submit-handler stack (a `.then()`, an `await`
+   before calling it, `startTransition`, or a library upgrade deferring the pending-dispatch to a
+   microtask) could silently reintroduce "dialog closes while a real mutation is still in flight,"
+   undetected by any existing test.
+   - **Fix (recommended, not a hard blocker on its own):** a deterministic alternative that doesn't
+     depend on wall-clock racing two independent schedulers — e.g. let `onSubmit` return
+     `Promise<void> | void` and have the hook `await` it directly to decide when to close, or
+     require synchronous/no-op callers to call an exposed `closeDialog()` themselves instead of the
+     hook guessing from timing. At minimum, document this as an accepted risk with the trace above
+     and add a fake-timer test that actually exercises a >50ms-delayed `isSubmitting: true` to prove
+     the current safety net, if the timing approach is kept.
+
+4. **[arch] major — `resolved`** — Fixed exactly as recommended: `default:` simplified to
+   `return EMPTY_DIALOG_RESPONSE;` (with a comment recording why), `prevDialogRef` and its
+   populating effect deleted. `pnpm --filter @helsoft/components test` still 72 suites/522 tests
+   green (no test relied on the removed dead branches).
+
+   Original finding — `libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts:97,131-135,153-155`.
+   `prevDialogRef` / the `dialog` `useMemo`'s `default:` branch / the effect that populates
+   `prevDialogRef.current` are **confirmed dead code** after the CI-red fix round's reducer change
+   (`submit` no longer nulls `dialogType`): traced every reducer action — only the initial state
+   ever produces `dialogType: null`; every action afterward preserves whatever type was already set.
+   The `default:` branch is therefore only reachable pre-first-open, at which point
+   `prevDialogRef.current` is provably always `null` too.
+   - **Fix:** simplify to `default: return EMPTY_DIALOG_RESPONSE;`, delete `prevDialogRef` (line 97)
+     and its populating effect (lines 153-155). Leaving this in place burdens the upcoming mutation
+     gate with unreachable branches no test can meaningfully kill, and misleads future readers into
+     thinking "keep last content on an unknown dialogType" is still real behavior.
+
+5. **[arch]/[code] major, out-of-scope drive-by regression — `resolved`** — Fixed by reverting the
+   hunk entirely: `git checkout feature-entrega3-HernanLaura -- .../text-field.tsx` restored the
+   conditional `borderBottomWidth`/`borderWidth` focus-thickening on both `filled`/`outlined`
+   variants byte-for-byte (confirmed zero diff against the delivery branch afterward). No new test
+   needed — this is a pure revert to already-tested prior behavior.
+
+   Original finding — `libs/components/src/molecules/text-field/text-field.tsx:85,135-158`.
+   `TextField` — a widely shared, multi-consumer molecule with no relation to this feature's stated
+   scope — had its focus-state border thickness silently removed: `borderBottomWidth: focus ? 2 : 1`
+   / `borderWidth: focus ? 2 : 1` (both `filled`/`outlined` variants) collapsed to an unconditional
+   `1`, while the `focus` state itself (and its still-live color-swap effect) is untouched. Confirmed
+   via `git show feature-entrega3-HernanLaura:...text-field.tsx` that the removed conditional
+   existed on the delivery branch; no test in `text-field.test.tsx` asserted this before or covers
+   its removal now; no rationale comment. Every other screen in the app using `outlined`/`filled`
+   `TextField` silently loses the on-focus border-thickening affordance.
+   - **Fix:** revert this hunk, or split it into its own reviewed change with its own rationale and
+     test — it does not belong in this feature's diff.
+
+6. **[code] minor — `resolved`** — Fixed: `git mv`'d to `card-list-with-abm-dialog.context.types.ts`.
+   No import edits needed (every importer omits the extension); `pnpm --filter @helsoft/components
+   check-types` confirmed clean.
+
+   Original finding — `libs/components/src/organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types.tsx`.
+   Filename violates `types.mdc`/`component-split.mdc`'s "no JSX → `.ts`, not `.tsx`" rule — file
+   contents (read in full) contain zero JSX. Rename to `.context.types.ts`.
+
+7. **[code] minor — `resolved`** — Fixed: moved all 4 constants/functions to a new
+   `card-list-with-abm-dialog.helpers.ts`; updated every importer (organism test, `card-list-row-adapter.tsx`/
+   `.test.tsx`, and the moved list component/test) to import them from `.helpers` and keep only
+   `CardListItem` etc. from `.types`. `pnpm --filter @helsoft/components lint check-types test`
+   green.
+
+   Original finding — `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts:36-42`.
+   `CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID`/`cardListItemCardTestId`/`cardListItemEditTestId`/
+   `cardListItemRemoveTestId` are runtime constants/functions living in a `.types.ts` file
+   (`types.mdc`: type-only). The only file in the lib doing this (grepped every other `*.types.ts`).
+   Low severity, no behavior risk — move to a `.helpers.ts` or inline in the `.tsx`.
+
+8. **[security] minor — OWASP A08-adjacent — `resolved`** — Fixed via strict TDD: added
+   `add-api-key.helpers.ts`'s `isSafeExternalUrl()` (scheme-prefix check, `^https?:\/\//i`, no
+   reliance on RN's patchy `URL` polyfill), test-first in `add-api-key.helpers.test.ts` (7 cases:
+   http/https/uppercase accepted, `javascript:`/`data:`/protocol-less/empty rejected — red before
+   the helper existed, green after). Wired into `add-api-key.tsx`'s guidance-link `onPress` as an
+   early-return guard before `Linking.openURL`; added a new `add-api-key.test.tsx` case asserting
+   `openURL` is never called for a `javascript:` guidance url. `pnpm --filter @helsoft/study-buddy
+   lint check-types test` green (44 suites/392 tests).
+
+   Original finding — `libs/study-buddy/src/components/api-key-settings-screen/add-api-key.tsx:77-80`.
+   Server/catalog-sourced `guidanceUrls[formProvider]` (Supabase-read `AiProviderCatalogEntry.guidanceUrl`)
+   passed straight to `Linking.openURL(url)` with no scheme/host validation. Likelihood low (catalog
+   rows presumably admin-managed), but no defense-in-depth check that `url` is `https:`/`http:`
+   before handing it to the platform's link opener.
+   - **Fix:** validate the scheme (or reuse an existing safe-URL helper if one exists) before
+     `Linking.openURL`.
+
+9. **[code] minor — `resolved`** — Fixed via the documented comment path (no existing logger utility
+   in this repo to route through, and adding a bare `console.*` would itself be a new finding):
+   added an explanatory comment above the `.catch(() => {})` recording that this is an intentional,
+   best-effort silent no-op — a failed `Linking.openURL` (no app/browser registered for the scheme)
+   has no actionable recovery on this screen, and the OS typically surfaces its own error UI for an
+   unhandleable url. Combined with finding 8's scheme guard, the remaining swallowed-rejection
+   surface is now narrowly scoped to "device can't handle this http(s) url," not an unvalidated
+   scheme. No behavior change — existing `add-api-key.test.tsx` assertions still pass unmodified.
+
+   Original finding — same line — `Linking.openURL(url).catch(() => {})` silently swallows a
+   failed link-open with no user-facing feedback and no log.
+   - **Fix:** at minimum a `// biome-ignore`-style comment noting this is intentional, or surface
+     the failure.
+
+### Lenses checked, no (new) findings
+
+See `review-engineering.md`'s "## Full review — post-rewrite..." section for full detail (summary
+only, per protocol): code quality/TDD (every `@s1`-`@s27` maps to ≥1 concrete test, no repeat of the
+earlier `@s17`/`@s21` traceability collision, no console/debug leftovers, i18n compliant — no
+hardcoded user-facing strings), architecture/layering (data layer) — `Component → Hook → Service →
+DAO` respected for the real consumer, `useApiKey()` correctly wraps `ApiKeyService` via
+`@tanstack/react-query` per `tanstack-query.mdc`, `SavedProviderKey` compile-time shape-locked to
+`provider`/`updatedAt` only (no raw key material reaches this component tree), `use-api-key-manager.ts`'s
+render-phase conditional dispatch is a deliberate React 18-recommended pattern, not a violation —
+performance (`FlatList` still used, `CardListRowAdapter` `memo`'d with `useCallback`'d
+call-throughs, Context value un-`useMemo`'d correctly per `state-sharing.mdc`'s "don't add by
+default", no N+1 Supabase round-trips) — security (no secrets/keys/tokens in code or logs, no
+`supabase/` schema/RLS/edge-function changes, session-scoped queries correctly namespaced by user
+id, no PII in logs, no new direct dependency).
+
+### (a)/(b)/(c) — explicit answers requested by `reviews_lead`
+
+- **(a) grace-timer fragility** — see finding 3 above: fragile in principle, demonstrably safe today
+  by implementation-detail coincidence, not a documented contract; recommend a deterministic
+  alternative or an explicit accepted-risk note + a fake-timer regression test for the actual race.
+- **(b) dead `prevDialogRef`/`default`-branch code** — see finding 4 above: confirmed dead, not
+  merely suspected. Simplify.
+- **(c) `@s13` rewrite** — **flagged for human sign-off, not accepted or rejected by any reviewer.**
+  On pure engineering merit the rewritten text is internally consistent with the current code, both
+  directly-relevant tests, and `tdd.md` (one stale reference remains in `dod.md:36`, but `dod.md` is
+  already wholesale marked `STALE` pending a fresh `dod_validator` pass, so this isn't a fresh
+  inconsistency). **Neither `reviewer_engineering` nor `reviews_lead` is authorized to approve or
+  reject a change to a previously human-approved Gherkin acceptance criterion** — this was changed
+  unilaterally by `implementer` (self-flagged in `tdd.md`, not human-approved). The engineering
+  content is sound; the *process* gap (no human sign-off) is real, separate from the code quality of
+  the change itself, and **remains open** regardless of this round's other findings being fixed.
+
+### Notes for the fix (implementer, TDD)
+
+- Findings 1/2/4/6/7: structural/config cleanup, no behavior change expected — existing tests should
+  continue to pass unmodified except where a file is renamed (imports need updating) or a component
+  is genuinely re-homed (barrel exports added/removed accordingly).
+- Finding 3: either adopt the deterministic `onSubmit: () => Promise<void> | void` alternative (would
+  need new hook-level tests with an actually-delayed `Promise`) or explicitly document the accepted
+  risk and add a fake-timer test proving current safety margins — TDD either way.
+- Finding 5: revert the `text-field.tsx` hunk entirely; it has no relationship to this feature.
+- Findings 8/9: add scheme validation before `Linking.openURL`; decide and implement (or explicitly
+  comment) the swallowed-rejection handling.
+- Item (c) is **not** implementer's to resolve unilaterally again — it needs the human's explicit
+  sign-off on the `@s13` text (either confirm the "closes" rewrite, or direct a revert back to
+  "restores" and a corresponding code fix). Flag this to the human directly; do not silently
+  re-confirm it without that sign-off.
+- Re-run `pnpm --filter @helsoft/components lint check-types test`,
+  `pnpm --filter @helsoft/study-buddy check-types test`, and this feature's Playwright e2e suite
+  after all fixes.
+
+**`review_round` incremented to 1 in `tasks.md`** (this is the first real reviewer round of Mini-gate
+3 — the preceding CI-red gate above was not itself a review round, per protocol). Cap remains 2
+rounds for this cycle.
+
+### Fix round — all 9 findings resolved (implementer)
+
+`implementer` fixed findings 1-9 above (item (c), the `@s13` human sign-off, is explicitly out of
+scope for this round — tracked separately, unresolved by any code fix). Fix shape and verification
+recorded inline under each finding above (`— resolved`). Re-verified after all 9 fixes:
+- `pnpm --filter @helsoft/components lint check-types` — clean.
+- `pnpm --filter @helsoft/components test` — 72 suites / 522 tests green.
+- `pnpm --filter @helsoft/study-buddy lint check-types test` — clean; 44 suites / 392 tests green.
+- Feature e2e — `card-list-with-abm-dialog.e2e.js`, fresh run (`--reporter=list`, no stale Storybook
+  server on :6011 beforehand): 5/5 passed.
+
+This fix round touches production source (findings 1/3/4/5/8 all change `.ts`/`.tsx` files, not
+just docs/tests) — per protocol this triggers `orchestrator_lead` to re-run the full review on this
+delta before the next gate.
+
+---
+
+*Durable trail note: every finding raised anywhere in this file — Round 1/Round 2 (both
+`resolved`), both earlier mini-gates (both `APPROVED`), Mini-gate 3's CI-red gate (3 findings,
+`resolved` by the fix round documented above), and Mini-gate 3's Full review Round 1 (9 findings,
+all now `resolved` — see the fix round immediately above) — remains retained here, nothing deleted.
+The `@s13` human-sign-off item is tracked distinctly and is **not** a normal review finding to be
+closed by a code fix alone; it remains open, needing the human's word, independent of the 9
+findings above all being resolved.*

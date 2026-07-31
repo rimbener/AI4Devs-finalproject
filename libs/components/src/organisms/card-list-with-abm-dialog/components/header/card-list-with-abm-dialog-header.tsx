@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { useCardListWithABMDialogContext } from '../../organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import { Button } from '../button/button';
+import { Button } from '../../../../atoms/button/button';
+import { useCardListWithABMDialogContext } from '../../hooks/card-list-with-abm-dialog.context';
 
 type CardListWithABMDialogHeaderProps = {
   showAddButton?: boolean;

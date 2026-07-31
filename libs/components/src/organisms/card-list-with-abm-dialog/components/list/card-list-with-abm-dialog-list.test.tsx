@@ -3,12 +3,12 @@ import { Text } from 'react-native';
 
 import {
   CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID,
-  type CardListItem,
   cardListItemEditTestId,
   cardListItemRemoveTestId,
-} from '../card-list-with-abm-dialog/card-list-with-abm-dialog.types';
-import { CardListWithABMDialogProvider } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context';
-import type { CardListWithABMDialogValue } from '../card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types';
+} from '../../card-list-with-abm-dialog.helpers';
+import type { CardListItem } from '../../card-list-with-abm-dialog.types';
+import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
+import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
 import { CardListWithABMDialogList } from './card-list-with-abm-dialog-list';
 
 type StoryItem = { note: string };

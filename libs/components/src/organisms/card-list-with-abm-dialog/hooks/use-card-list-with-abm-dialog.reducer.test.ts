@@ -60,12 +60,19 @@ describe('cardListWithABMDialogReducer', () => {
     });
   });
 
-  it('clears dialogType/dialogItem and moves to submitting on submit', () => {
+  // Regression coverage (review.md's Mini-gate 3, findings 1/2): submit must preserve the
+  // existing dialogType/dialogItem — like `close` already does — so a caller that mounts (or
+  // ends up) already `isSubmitting` before ever opening a dialog through the reducer, and then
+  // opens one via a real open-* dispatch while still submitting, keeps its headline/body
+  // content once the isSubmitting-driven effect folds it back into 'submitting'. Nulling them
+  // (the old behavior) only worked by accident, via a separate `prevDialogRef` fallback in the
+  // hook, and broke that fallback's very first render (no prior dialog to fall back to).
+  it('preserves the existing dialogType/dialogItem and moves to submitting on submit', () => {
     const editOpen = cardListWithABMDialogReducer(closedState, { type: 'open-edit', item });
 
     expect(cardListWithABMDialogReducer(editOpen, { type: 'submit' })).toEqual({
-      dialogType: null,
-      dialogItem: null,
+      dialogType: 'edit',
+      dialogItem: item,
       dialogState: 'submitting',
     });
   });

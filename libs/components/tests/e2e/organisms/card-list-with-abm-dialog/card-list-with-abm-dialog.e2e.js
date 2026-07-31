@@ -3,17 +3,22 @@ const { test, expect } = require('@playwright/test');
 // Title 'Organisms/CardListWithABMDialog' → slug 'organisms-cardlistwithabmdialog'.
 const story = (name) => `/?path=/story/organisms-cardlistwithabmdialog--${name}`;
 
-// @s17 — tapping the add button notifies the caller (onAddPress).
+// @s17/@s21 — tapping the add button notifies the caller (onAddPress) once per tap, unchanged
+// by the add dialog it also opens (@s21). Targets the button by role/name, not raw text — the
+// add dialog it opens also renders "Add flashcard" as its own headline, which a plain `text=`
+// locator would collide with (review.md Mini-gate 3, finding 3).
 test('tapping the add button calls onAddPress', async ({ page }) => {
   await page.goto(story('interactive'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
+  const addButton = canvas.getByRole('button', { name: 'Add flashcard' });
 
   await expect(canvas.locator('text=Added 0 times')).toBeVisible();
 
-  await canvas.locator('text=Add flashcard').click();
+  await addButton.click();
   await expect(canvas.locator('text=Added 1 times')).toBeVisible();
+  await canvas.locator('text=Cancel').click();
 
-  await canvas.locator('text=Add flashcard').click();
+  await addButton.click();
   await expect(canvas.locator('text=Added 2 times')).toBeVisible();
 });
 

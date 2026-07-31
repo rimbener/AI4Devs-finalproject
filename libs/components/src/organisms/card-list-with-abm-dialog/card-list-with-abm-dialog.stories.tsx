@@ -113,9 +113,15 @@ export const AddDialogOpen: Story = {
   },
 };
 
-/** @s18 — isSubmitting true while the add dialog is open: body swaps to SubmittingIndicator. */
+/** @s18 — isSubmitting true while the add dialog is open: body swaps to SubmittingIndicator.
+ * Opens the add dialog first (play), matching how a real async submit actually reaches this
+ * state — isSubmitting starting true with no dialog ever opened has no dialogType to show
+ * (review.md Mini-gate 3, finding 1's story-level counterpart). */
 export const AddDialogSubmitting: Story = {
   args: { isSubmitting: true },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Add flashcard' }));
+  },
 };
 
 /** @s18 — edit dialog open: tap the edit icon to open it, showing renderEditForm(item). */
@@ -132,23 +138,31 @@ export const RemoveDialogOpen: Story = {
   },
 };
 
-/** @s18 — isSubmitting true while the edit dialog is open: body swaps to SubmittingIndicator. */
+/** @s18 — isSubmitting true while the edit dialog is open: body swaps to SubmittingIndicator.
+ * Opens the edit dialog first (play) — see AddDialogSubmitting's comment above. */
 export const EditDialogSubmitting: Story = {
   args: { isSubmitting: true },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByLabelText('Edit Mitochondria flashcard'));
+  },
 };
 
-/** @s18 — isSubmitting true while the remove dialog is open: body swaps to SubmittingIndicator. */
+/** @s18 — isSubmitting true while the remove dialog is open: body swaps to SubmittingIndicator.
+ * Opens the remove dialog first (play) — see AddDialogSubmitting's comment above. */
 export const RemoveDialogSubmitting: Story = {
   args: { isSubmitting: true },
+  play: async ({ canvas }) => {
+    await userEvent.click(canvas.getByLabelText('Remove Photosynthesis flashcard'));
+  },
 };
 
-/** Demonstrates onAddSubmit/onEditSubmit/onRemoveConfirm firing — the story renders a tap count. */
+/** Demonstrates onAddPress (tap count, @s17/@s21) and the onAddSubmit/onEditSubmit/
+ * onRemoveConfirm → isSubmitting round-trip (auto-closes once isSubmitting settles, @s13). */
 const InteractiveAddDemo = () => {
-  const [tapCount, setTapCount] = useState(0);
+  const [addCount, setAddCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = () => {
-    setTapCount((count) => count + 1);
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
@@ -162,6 +176,7 @@ const InteractiveAddDemo = () => {
         items={items}
         showAddButton
         addButtonLabel="Add flashcard"
+        onAddPress={() => setAddCount((count) => count + 1)}
         renderAddForm={() => <Text>Add flashcard form</Text>}
         addDialogTitle="Add flashcard"
         addSubmitLabel="Add"
@@ -185,7 +200,7 @@ const InteractiveAddDemo = () => {
         getRemoveAccessibilityLabel={(item) => `Remove ${item.accessibleLabel}`}
         isSubmitting={isSubmitting}
       />
-      <Text>{`Submitted ${tapCount} times`}</Text>
+      <Text>{`Added ${addCount} times`}</Text>
     </>
   );
 };

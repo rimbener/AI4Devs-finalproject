@@ -1,9 +1,9 @@
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { CardListWithABMDialogHeader } from '../../atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header';
-import { CardListWithABMDialogDialog } from '../../molecules/card-list-with-abm-dialog-dialog/card-list-with-abm-dialog-dialog';
-import { CardListWithABMDialogList } from '../card-list-with-abm-dialog-list/card-list-with-abm-dialog-list';
 import type { CardListWithABMDialogProps } from './card-list-with-abm-dialog.types';
+import { CardListWithABMDialogDialog } from './components/dialog/card-list-with-abm-dialog-dialog';
+import { CardListWithABMDialogHeader } from './components/header/card-list-with-abm-dialog-header';
+import { CardListWithABMDialogList } from './components/list/card-list-with-abm-dialog-list';
 import {
   CardListWithABMDialogProvider,
   useCardListWithABMDialogContext,
