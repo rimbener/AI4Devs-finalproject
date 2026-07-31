@@ -188,3 +188,5 @@
 
 2026-07-31 | prompts.md | n/a | — | Unified prompt log style; filled course sections 1–7.
 2026-07-31 | golden-path e2e picker (ad hoc) | n/a | — | E2E clicks panel Choose PDF after dialog open (no auto chooser).
+
+2026-07-31 | entrega-final docs (ad hoc) | n/a | — | Filled readme/prompts; synced C4 Mermaid+Excalidraw to BYOK/plans; OpenAPI review fixes.
