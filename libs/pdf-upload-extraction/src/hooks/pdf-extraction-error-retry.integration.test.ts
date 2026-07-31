@@ -14,7 +14,7 @@ import { usePdfExtraction } from './use-pdf-extraction';
 
 /**
  * Slice-2 integration (pdf-upload-extraction, task-12, @s13): usePdfExtraction -> PdfExtractionService
- * -> PdfUploadDao, exercised for real against a mocked Supabase client boundary — a transient
+ * -> PdfUploadService, exercised for real against a mocked Supabase client boundary — a transient
  * network failure on the first `functions.invoke` surfaces as a retryable `network_error`, and a
  * subsequent `retry()` (once the connection is restored) reuses the exact same documentId/storage
  * path and resolves with the typed success result. Mirrors `pdf-extraction.integration.test.ts`'s

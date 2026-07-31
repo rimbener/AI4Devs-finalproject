@@ -7,7 +7,8 @@ export {
   FunctionsHttpError,
   FunctionsRelayError,
 } from '@supabase/supabase-js';
-export * from './dao';
+// DAOs stay internal — consumers use services only (`hooks-service-dao.mdc`).
 export * from './services';
 export * from './supabase/supabase-client';
 export type * from './supabase/supabase-client.types';
+

@@ -1,4 +1,4 @@
-import { PdfUploadDao } from '@helsoft/supabase-services';
+import { PdfUploadService } from '@helsoft/supabase-services';
 import {
   FunctionsFetchError,
   FunctionsHttpError,
@@ -113,12 +113,13 @@ const trackExtractionFailure = (
 };
 
 /**
- * Business layer that orchestrates upload+extract via `PdfUploadDao`: validates the caller and
- * the file client-side (@s9/@s10/@s14), then uploads, inserts, and invokes extraction — all via
- * the DAO, never `fetch`/Supabase directly (@s4) — normalizing any failure into the typed
+ * Business layer that orchestrates upload+extract via `PdfUploadService`: validates the caller
+ * and the file client-side (@s9/@s10/@s14), then uploads, inserts, and invokes extraction —
+ * never `fetch`/Supabase/DAO directly (@s4) — normalizing any failure into the typed
  * `PdfExtractionErrorCode` union (@s8/@s11/@s12/@s13, task-9). Accepts an optional `documentId`
  * so a retry (task-12) can reuse the same row/storage path instead of minting a new one.
  */
+
 export abstract class PdfExtractionService {
   static async extract(
     input: PdfExtractionInput,
@@ -144,14 +145,14 @@ export abstract class PdfExtractionService {
     const startedAt = Date.now();
 
     try {
-      await PdfUploadDao.uploadPdf({ userId, documentId, bytes: input.bytes });
-      await PdfUploadDao.insertDocument({
+      await PdfUploadService.uploadPdf({ userId, documentId, bytes: input.bytes });
+      await PdfUploadService.insertDocument({
         documentId,
         userId,
         filename: input.filename,
         sizeBytes: input.sizeBytes,
       });
-      const result = await PdfUploadDao.invokeExtraction(documentId);
+      const result = await PdfUploadService.invokeExtraction(documentId);
       trackPdfExtractionEvent({
         name: 'pdf_extraction_succeeded',
         properties: {

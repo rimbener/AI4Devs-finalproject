@@ -14,7 +14,7 @@ import { usePdfExtraction } from './use-pdf-extraction';
 
 /**
  * Slice-1 integration (pdf-upload-extraction, task-8): usePdfExtraction -> PdfExtractionService
- * -> PdfUploadDao, exercised for real against a mocked Supabase client boundary — only
+ * -> PdfUploadService, exercised for real against a mocked Supabase client boundary — only
  * storage/table/functions calls are stubbed, mirroring `auth.integration.test.ts`'s pattern of
  * one shared real `SupabaseClient` reused across tests (avoids the "Multiple GoTrueClient
  * instances" warning).
@@ -73,7 +73,7 @@ describe('pdf-upload-extraction slice-1 integration', () => {
     };
     // `functions` is a getter that builds a fresh FunctionsClient on every access (supabase-js's
     // SupabaseClient.ts) — spying on one snapshot instance's `invoke` wouldn't reach the instance
-    // PdfUploadDao later obtains via its own `getSupabase().functions` access; stub the getter.
+    // PdfUploadService later obtains via its own `getSupabase().functions` access; stub the getter.
     jest.spyOn(sharedClient, 'functions', 'get').mockReturnValue({
       invoke: jest.fn().mockResolvedValue({ data: extractionResult, error: null }),
     } as never);

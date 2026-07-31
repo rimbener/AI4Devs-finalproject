@@ -7,5 +7,7 @@ export * from './lesson-generation.service';
 export * from './lesson-image.service';
 export * from './lessons.service';
 export * from './pdf-documents.service';
+export * from './pdf-upload.service';
 export * from './profile.service';
 export type * from './profile.types';
+

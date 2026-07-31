@@ -1,12 +1,12 @@
 jest.mock('@helsoft/supabase-services', () => ({
-  PdfUploadDao: {
+  PdfUploadService: {
     uploadPdf: jest.fn(),
     insertDocument: jest.fn(),
     invokeExtraction: jest.fn(),
   },
 }));
 
-import { PdfUploadDao } from '@helsoft/supabase-services';
+import { PdfUploadService } from '@helsoft/supabase-services';
 
 jest.mock('../analytics/pdf-extraction-analytics', () => ({ trackPdfExtractionEvent: jest.fn() }));
 
@@ -20,7 +20,7 @@ import { trackPdfExtractionEvent } from '../analytics/pdf-extraction-analytics';
 import { PDF_EXTRACTION_LIMITS } from './pdf-extraction.constants';
 import { generateDocumentId, PdfExtractionService } from './pdf-extraction.service';
 
-const dao = PdfUploadDao as jest.Mocked<typeof PdfUploadDao>;
+const uploadService = PdfUploadService as jest.Mocked<typeof PdfUploadService>;
 const trackEvent = trackPdfExtractionEvent as jest.Mock;
 
 /** A `FunctionsHttpError`-shaped rejection carrying the Edge Function's `{ errorCode }` JSON
@@ -38,8 +38,8 @@ describe('PdfExtractionService', () => {
   // extraction, and returns the typed result — going through service -> DAO only, never
   // parsing the PDF itself (@s4).
   it('extract generates a documentId, uploads, inserts, invokes extraction, and returns the typed result', async () => {
-    dao.uploadPdf.mockResolvedValue({ path: 'ignored' } as never);
-    dao.insertDocument.mockResolvedValue({ id: 'ignored' } as never);
+    uploadService.uploadPdf.mockResolvedValue({ path: 'ignored' } as never);
+    uploadService.insertDocument.mockResolvedValue({ id: 'ignored' } as never);
     const extractionResult = {
       documentId: 'ignored',
       filename: 'notes.pdf',
@@ -48,7 +48,7 @@ describe('PdfExtractionService', () => {
       pages: [],
       images: [],
     };
-    dao.invokeExtraction.mockResolvedValue(extractionResult);
+    uploadService.invokeExtraction.mockResolvedValue(extractionResult);
 
     const bytes = new Uint8Array([1, 2, 3]);
     const result = await PdfExtractionService.extract(
@@ -58,14 +58,14 @@ describe('PdfExtractionService', () => {
 
     expect(result).toBe(extractionResult);
 
-    const [uploadArgs] = dao.uploadPdf.mock.calls[0];
+    const [uploadArgs] = uploadService.uploadPdf.mock.calls[0];
     expect(uploadArgs).toEqual({
       userId: 'user-1',
       documentId: expect.stringMatching(UUID_V4_PATTERN),
       bytes,
     });
 
-    const [insertArgs] = dao.insertDocument.mock.calls[0];
+    const [insertArgs] = uploadService.insertDocument.mock.calls[0];
     expect(insertArgs).toEqual({
       documentId: uploadArgs.documentId,
       userId: 'user-1',
@@ -73,7 +73,7 @@ describe('PdfExtractionService', () => {
       sizeBytes: 3,
     });
 
-    expect(dao.invokeExtraction).toHaveBeenCalledWith(uploadArgs.documentId);
+    expect(uploadService.invokeExtraction).toHaveBeenCalledWith(uploadArgs.documentId);
   });
 
   // Exact bit-formatting (mutation-kill, round-3 pass) — the uniqueness assertion below proves
@@ -95,9 +95,9 @@ describe('PdfExtractionService', () => {
   // Uniqueness — two separate extract() calls generate two different documentIds, so concurrent
   // uploads never collide on the same storage path/row.
   it('generates a different documentId for each extract() call', async () => {
-    dao.uploadPdf.mockResolvedValue({} as never);
-    dao.insertDocument.mockResolvedValue({} as never);
-    dao.invokeExtraction.mockResolvedValue({} as never);
+    uploadService.uploadPdf.mockResolvedValue({} as never);
+    uploadService.insertDocument.mockResolvedValue({} as never);
+    uploadService.invokeExtraction.mockResolvedValue({} as never);
 
     await PdfExtractionService.extract(
       { filename: 'a.pdf', sizeBytes: 1, bytes: new Uint8Array() },
@@ -108,8 +108,8 @@ describe('PdfExtractionService', () => {
       'user-1',
     );
 
-    const firstId = dao.uploadPdf.mock.calls[0][0].documentId;
-    const secondId = dao.uploadPdf.mock.calls[1][0].documentId;
+    const firstId = uploadService.uploadPdf.mock.calls[0][0].documentId;
+    const secondId = uploadService.uploadPdf.mock.calls[1][0].documentId;
     expect(firstId).not.toBe(secondId);
   });
 
@@ -127,15 +127,15 @@ describe('PdfExtractionService', () => {
       message: 'PDF extraction failed: unauthenticated',
     });
 
-    expect(dao.uploadPdf).not.toHaveBeenCalled();
+    expect(uploadService.uploadPdf).not.toHaveBeenCalled();
   });
 
   describe('server error normalization (task-9)', () => {
     // @s8 — the Edge Function's scanned-detection result is surfaced as the typed code.
     it('normalizes a scanned_or_image_only server error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(
         httpErrorWithBody({ errorCode: 'scanned_or_image_only' }),
       );
 
@@ -149,9 +149,9 @@ describe('PdfExtractionService', () => {
 
     // @s11 — the Edge Function's page-count guard is surfaced as the typed code.
     it('normalizes a too_many_pages server error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'too_many_pages' }));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'too_many_pages' }));
 
       await expect(
         PdfExtractionService.extract(
@@ -163,9 +163,9 @@ describe('PdfExtractionService', () => {
 
     // @s12 — a parse failure the Edge Function caught is surfaced as the typed code.
     it('normalizes a corrupt_or_unreadable server error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(
         httpErrorWithBody({ errorCode: 'corrupt_or_unreadable' }),
       );
 
@@ -180,9 +180,9 @@ describe('PdfExtractionService', () => {
     // @s14 — the Edge Function's own auth check (e.g. an expired token by the time it runs) is
     // surfaced as the typed code too, not just the client's own pre-check above.
     it('normalizes an unauthenticated server error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'unauthenticated' }));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'unauthenticated' }));
 
       await expect(
         PdfExtractionService.extract(
@@ -195,9 +195,9 @@ describe('PdfExtractionService', () => {
     // Defensive — a missing/malformed error body (violated server contract) never leaks a raw
     // shape to the UI; it falls back to the generic code instead.
     it('falls back to extraction_failed when the server error body has no known errorCode', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'not_a_real_code' }));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'not_a_real_code' }));
 
       await expect(
         PdfExtractionService.extract(
@@ -211,9 +211,9 @@ describe('PdfExtractionService', () => {
     // investigation, round-3 pass): the error body itself resolves to `null` (not just missing the
     // `errorCode` field) — the fallback path this optional chaining protects.
     it('falls back to extraction_failed when the server error body itself resolves to null', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(httpErrorWithBody(null));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody(null));
 
       await expect(
         PdfExtractionService.extract(
@@ -229,9 +229,9 @@ describe('PdfExtractionService', () => {
     // pins the transport-error union check's own boundary, which the two `network_error` tests
     // above can't distinguish from an always-true condition on their own.
     it('normalizes an unrecognized error type as extraction_failed, not network_error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(new Error('unexpected DAO failure'));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(new Error('unexpected DAO failure'));
 
       await expect(
         PdfExtractionService.extract(
@@ -244,9 +244,9 @@ describe('PdfExtractionService', () => {
     // @s13 — a transport-level failure reaching the function at all (offline, DNS, etc.) is
     // surfaced as network_error, distinct from a typed server response.
     it('normalizes a transport-level FunctionsFetchError as network_error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(new FunctionsFetchError(new Error('offline')));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(new FunctionsFetchError(new Error('offline')));
 
       await expect(
         PdfExtractionService.extract(
@@ -259,9 +259,9 @@ describe('PdfExtractionService', () => {
     // @s13 — the Supabase relay itself failing to reach the function is also a transport-level
     // failure from the client's point of view.
     it('normalizes a FunctionsRelayError as network_error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(new FunctionsRelayError({ region: 'us-east-1' }));
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(new FunctionsRelayError({ region: 'us-east-1' }));
 
       await expect(
         PdfExtractionService.extract(
@@ -282,7 +282,7 @@ describe('PdfExtractionService', () => {
         ),
       ).rejects.toMatchObject({ code: 'unsupported_file_type' });
 
-      expect(dao.uploadPdf).not.toHaveBeenCalled();
+      expect(uploadService.uploadPdf).not.toHaveBeenCalled();
     });
 
     // @s10 — an over-size file is rejected before any DAO call.
@@ -296,16 +296,16 @@ describe('PdfExtractionService', () => {
         ),
       ).rejects.toMatchObject({ code: 'file_too_large' });
 
-      expect(dao.uploadPdf).not.toHaveBeenCalled();
+      expect(uploadService.uploadPdf).not.toHaveBeenCalled();
     });
 
     // Boundary (mutation-kill guard, review round-1 Part B #3) — the limit is an exclusive upper
     // bound (spec.md's "exceeds the size limit" language): a file of exactly `maxSizeBytes` is
     // still within the limit and must pass client pre-validation through to the DAO.
     it('accepts a file exactly at the size limit and calls the DAO', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockResolvedValue({} as never);
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockResolvedValue({} as never);
 
       await PdfExtractionService.extract(
         {
@@ -316,16 +316,16 @@ describe('PdfExtractionService', () => {
         'user-1',
       );
 
-      expect(dao.uploadPdf).toHaveBeenCalledTimes(1);
+      expect(uploadService.uploadPdf).toHaveBeenCalledTimes(1);
     });
   });
 
   // Retry support (task-12) — a caller (usePdfExtraction) can pass a previously-generated
   // documentId back in so a retry reuses the same row/storage path instead of minting a new one.
   it('reuses a given documentId instead of generating a new one', async () => {
-    dao.uploadPdf.mockResolvedValue({} as never);
-    dao.insertDocument.mockResolvedValue({} as never);
-    dao.invokeExtraction.mockResolvedValue({} as never);
+    uploadService.uploadPdf.mockResolvedValue({} as never);
+    uploadService.insertDocument.mockResolvedValue({} as never);
+    uploadService.invokeExtraction.mockResolvedValue({} as never);
 
     await PdfExtractionService.extract(
       { filename: 'notes.pdf', sizeBytes: 1, bytes: new Uint8Array() },
@@ -333,8 +333,8 @@ describe('PdfExtractionService', () => {
       'given-document-id',
     );
 
-    expect(dao.uploadPdf.mock.calls[0][0].documentId).toBe('given-document-id');
-    expect(dao.invokeExtraction).toHaveBeenCalledWith('given-document-id');
+    expect(uploadService.uploadPdf.mock.calls[0][0].documentId).toBe('given-document-id');
+    expect(uploadService.invokeExtraction).toHaveBeenCalledWith('given-document-id');
   });
 
   // @s17 (task-15) — the extraction lifecycle emits three PII-free, vendor-agnostic events at the
@@ -342,7 +342,7 @@ describe('PdfExtractionService', () => {
   // extraction-succeeded or extraction-failed. No filename/bytes/user text ever reaches a payload.
   describe('analytics (task-15, @s17)', () => {
     it('emits pdf_upload_started with size_bytes and document_id once validation passes, before any DAO call', async () => {
-      dao.uploadPdf.mockImplementation(() => {
+      uploadService.uploadPdf.mockImplementation(() => {
         // pdf_upload_started must already have fired by the time the DAO is first touched.
         expect(trackEvent).toHaveBeenCalledWith({
           name: 'pdf_upload_started',
@@ -350,15 +350,15 @@ describe('PdfExtractionService', () => {
         });
         return Promise.resolve({} as never);
       });
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockResolvedValue({} as never);
 
       await PdfExtractionService.extract(
         { filename: 'notes.pdf', sizeBytes: 3, bytes: new Uint8Array() },
         'user-1',
       );
 
-      expect(dao.uploadPdf).toHaveBeenCalledTimes(1);
+      expect(uploadService.uploadPdf).toHaveBeenCalledTimes(1);
     });
 
     it('emits pdf_extraction_succeeded with document_id/page_count/image_count/duration_ms on success', async () => {
@@ -368,9 +368,9 @@ describe('PdfExtractionService', () => {
       // `Date.now() - startedAt` → `+` mutation without relying on real wall-clock timing (which
       // could otherwise read 0ms on a fast run and pass by coincidence either way).
       const nowSpy = jest.spyOn(Date, 'now').mockReturnValueOnce(1_000).mockReturnValueOnce(1_050);
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockResolvedValue({
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockResolvedValue({
         documentId: 'ignored',
         pageCount: 4,
         imageCount: 2,
@@ -384,7 +384,7 @@ describe('PdfExtractionService', () => {
         'user-1',
       );
 
-      const documentId = dao.uploadPdf.mock.calls[0][0].documentId;
+      const documentId = uploadService.uploadPdf.mock.calls[0][0].documentId;
       const succeededCall = trackEvent.mock.calls.find(
         ([event]) => event.name === 'pdf_extraction_succeeded',
       );
@@ -444,9 +444,9 @@ describe('PdfExtractionService', () => {
     });
 
     it('emits pdf_extraction_failed with stage server for a normalized server error', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockRejectedValue(
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockRejectedValue(
         httpErrorWithBody({ errorCode: 'scanned_or_image_only' }),
       );
 
@@ -457,7 +457,7 @@ describe('PdfExtractionService', () => {
         ),
       ).rejects.toMatchObject({ code: 'scanned_or_image_only' });
 
-      const documentId = dao.uploadPdf.mock.calls[0][0].documentId;
+      const documentId = uploadService.uploadPdf.mock.calls[0][0].documentId;
       expect(trackEvent).toHaveBeenCalledWith({
         name: 'pdf_extraction_failed',
         properties: {
@@ -469,9 +469,9 @@ describe('PdfExtractionService', () => {
     });
 
     it('never includes filename, bytes, or any field beyond the locked PII-free payload shape', async () => {
-      dao.uploadPdf.mockResolvedValue({} as never);
-      dao.insertDocument.mockResolvedValue({} as never);
-      dao.invokeExtraction.mockResolvedValue({
+      uploadService.uploadPdf.mockResolvedValue({} as never);
+      uploadService.insertDocument.mockResolvedValue({} as never);
+      uploadService.invokeExtraction.mockResolvedValue({
         documentId: 'ignored',
         pageCount: 1,
         imageCount: 0,
