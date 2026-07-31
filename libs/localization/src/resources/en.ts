@@ -112,7 +112,7 @@ export const en = {
         message: 'An API key is required to generate lessons.',
         action: 'Add API key',
       },
-      cannotCreate: "You can't create lessons. Please contact support.",
+      cannotCreate: "You can't create lessons without an API key. Add one in Settings.",
       chooseFile: 'Choose a PDF',
       dialogHeadline: 'Upload PDF',
       dialogClose: 'Close',
@@ -274,6 +274,7 @@ export const en = {
       // (copy review + extending migration-coverage.test.ts's key-existence guard for
       // api-key-form/api-key-settings).
       apiKey: {
+        title: 'API keys',
         inputLabel: 'API key',
         // Full-review Round 1, Major 4 — announced to assistive tech while the initial status
         // fetch is in flight (WCAG 4.1.3); not shown visually (mirrors auth.signingIn).
