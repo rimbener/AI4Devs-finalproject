@@ -1,11 +1,5 @@
 # Mutation — card-list-with-abm-dialog
 
-> ⚠ **STALE relative to current code.** All rounds below (including the accepted 97.2–97.5%
-> baseline) predate a substantial human-authored architecture rewrite (Context + `useReducer`,
-> new sub-component files) and a new Add-dialog feature — see `spec.md`'s "Issues found by this
-> doc pass" and `task-4.md`. Mutation has not been re-run against the current shape; do not treat
-> the accepted score below as covering the current tree.
-
 ## Round History
 
 | Round | Base | total | killed | ignored | survived | errors | score % | Status |
@@ -17,6 +11,329 @@
 | 5 (kill pass, this round) | feature-entrega3-HernanLaura | 87 | 76 | 2 | 2 | 1 | 97.4 | **Approved — back to Round 2 baseline** |
 | 6 (molecule extraction re-run) | feature-entrega3-HernanLaura | 90 | 76 | 0 | 4 | 2 ⚠ | 95.0 | NEW SURVIVORS — 2 from prior rounds + 2 new (testID exports) — ESCALATE |
 | 7 (kill pass, testID export) | feature-entrega3-HernanLaura | 90 | 78 | 0 | 2 | 2 ⚠ | 97.5 | **Approved — back to Round 5/2 baseline** |
+| 8 (Mini-gate 3 baseline, full rewrite) | feature-entrega3-HernanLaura | 690 | 530 | 0 | 113 | 43 ⚠ | 77.3 | **SURVIVORS — 113 survivors across 3 libs** |
+| 9 (kill pass, Mini-gate 3 baseline) | feature-entrega3-HernanLaura | 686 | 641 | 0 | 1 | 44 ⚠ | 99.8 | **Approved — 1 documented-equivalent survivor remains** |
+
+---
+
+## Round 9 — Kill pass for the Round 8 baseline (113 survivors → 1) (2026-07-31)
+
+**Verdict: 99.84% (641 killed / 642 valid mutants, 1 survivor, 44 error mutants ⚠, 686 total) —
+Approved.** This is round 1 of this mutation gate's ≤2-round cap. Every one of Round 8's 113
+survivors across `@helsoft/components`, `@helsoft/hooks`, and `@helsoft/study-buddy` was either
+killed by a strengthened/new test or — for exactly one line — documented as equivalent with
+justification in source. One additional untested file surfaced mid-round in `@helsoft/services`
+(`ai-providers.helpers.ts`, 0 tests found on the Round 8 baseline) and was also brought to 100%.
+
+### Score by lib
+
+| lib | total | killed (incl. timeout) | survived | errors | score % |
+|---|--:|--:|--:|--:|--:|
+| @helsoft/services | 7 | 6 | 0 | 1 ⚠ | 100.0 |
+| @helsoft/hooks | 77 | 44 (40 killed + 4 timeout) | 0 | 33 ⚠ | 100.0 |
+| @helsoft/components | 244 | 238 | 0 | 6 ⚠ | 100.0 |
+| @helsoft/study-buddy | 358 | 353 (326 killed + 27 timeout) | 1 | 4 ⚠ | 99.7 |
+| **Total** | **686** | **641** | **1** | **44 ⚠** | **99.84** |
+
+(Timeout mutants count as detected, same as Killed, per Stryker's own scoring and this feature's
+established convention — see Round 8's "errors treated as detected" note, which applies the same
+logic to Timeout.)
+
+### `@helsoft/components` (17 organism survivors + 20 shared-`dialog`-organism survivors → 0)
+
+- `use-card-list-with-abm-dialog.reducer.ts`'s `default` case (2 NoCoverage): added a real test —
+  `cardListWithABMDialogReducer` dispatched with a cast-through unrecognized action type — asserting
+  the reducer returns the existing state unchanged. The branch is reachable at runtime (defensive
+  backstop against a stray action bypassing the type system), so this is a genuine kill, not a
+  suppression.
+- `use-card-list-with-abm-dialog.ts` (10 survivors): new tests for the `EMPTY_DIALOG_RESPONSE`
+  exact-literal fallback, `onAddSubmit?.()`/`onRemoveConfirm?.()` optional chaining (the existing
+  suite only exercised the analogous edit-dialog optional call), the auto-submit effect's compound
+  `isSubmitting && state.dialogState === 'open'` guard (mounting with `isSubmitting` true before any
+  dialog opens), the `wasReallySubmittingRef` initial-value guarantee (mounting directly into
+  `'submitting'`), and — the trickiest one — a regression test proving the exit-effect's
+  `state.dialogState !== 'submitting'` early-return reset must fire on **every** non-submitting
+  render, not just the eventual close: without it, a stale "was really submitting" ref from one
+  genuinely-async submit cycle silently auto-closes the very next dialog opened afterward. Verified
+  by direct patch-and-run experiment before writing the fix (confirmed the exact mutant behavior
+  first). 100% on this file.
+- `card-list-with-abm-dialog.tsx` (3 survivors): one new test mounts with `isSubmitting` already
+  `true` on the very first render and asserts the submitting dialog shows immediately (kills the
+  `ObjectLiteral`/`'submitting'` StringLiteral mutants on `initialDialogState`). The sibling
+  `'closed'` StringLiteral fallback is **documented equivalent in source** (see the code comment on
+  `initialDialogState`): it can only ever seed the very first render while `isSubmitting` is false,
+  and no path makes the shared `Dialog` visible from that state, so no test can observe a
+  difference between `'closed'` and any other non-`'open'`/`'submitting'` string here.
+- `components/header/card-list-with-abm-dialog-header.tsx` (2 survivors): two new tests — Add
+  button hidden when `showAddButton` is false even with `onAddPress` set, and hidden when
+  `onAddPress` is omitted even with `showAddButton` true — kill the `&&`/`||` compound-condition
+  mutants.
+- `components/list/card-list-with-abm-dialog-list.tsx` (1 survivor): `keyExtractor`'s `[]` deps
+  array is genuinely referentially stable (no external deps ever change) — documented equivalent
+  via the same `// Stryker disable next-line ArrayDeclaration` convention already used on the
+  dispatch callbacks in `use-card-list-with-abm-dialog.ts`.
+- `components/dialog/card-list-with-abm-dialog-dialog.tsx` (5 survivors): new tests for the
+  fallback-branch themed spacer (added a `testID` to it — component-owned, not atom-ban) and for
+  `onClose` being gated to `undefined` while `dialogState === 'submitting'` (scrim press must not
+  dismiss). 100%.
+- `organisms/dialog/dialog.tsx` — **shared organism, touched conservatively** per the task's
+  guidance: added `testID`s to the scrim/surface/actions Views (mirrors the existing
+  `account-menu.tsx` convention for the same shape) and targeted tests for exactly what this
+  feature's own usage depends on — `confirmDisabled`, a caller-provided `actions` override, `onClose`
+  gating (including a genuinely-`undefined` `onClose`), the surface's `stopPropagation` handler
+  (verified via `fireEvent(el, 'press', { stopPropagation: jest.fn() })`, the same pattern
+  `account-menu.test.tsx` already uses), the `typeof children === 'string'` branch (non-string
+  children rendered directly, not re-wrapped), and one meaningful, specific style value per style
+  object (not exhaustive snapshots) — e.g. `flex`/`alignItems` on the scrim, `width`/`maxWidth`/
+  `cursor` on the surface, `flexDirection`/`justifyContent` on the actions row, `textAlign` on the
+  headline for both icon/no-icon states. 100% on this file, including the previously-NoCoverage
+  `textAlign: 'center'` branch (no prior test rendered `icon` set) and the `cursor: 'auto'` string
+  literal.
+
+### `@helsoft/hooks` (13 survivors → 0)
+
+- `use-api-key.helpers.ts` (4 survivors): added a dedicated `use-api-key.helpers.test.ts` (none
+  existed) asserting the exact i18n key per `ApiKeyErrorCode` and the `undefined` fallback for
+  no error.
+- `use-api-key.ts` (3 survivors): three new tests for `isError: saveMutation.isError ||
+  removeMutation.isError` — neither/only-save/only-remove failing — kill the compound-conditional
+  and logical-operator mutants.
+- `use-interaction-state.ts` (1 survivor): `onPressOut` was never exercised by any test (its
+  `setPress(false)` was NoCoverage) — added a test pressing in, hovering in, then `onPressOut`,
+  asserting `press` clears while `hover` is untouched.
+
+**Investigation: why `@helsoft/hooks` has 33 error mutants vs. 6 (components) / 4 (study-buddy).**
+This is a **benign, structural difference in tooling, not a test-infra gap.** `@helsoft/hooks`'
+`stryker.config.mjs` is the only one of the three that runs the TypeScript checker
+(`checkers: ['typescript']`, `tsconfigFile: 'tsconfig.json'`) ahead of the test runner — the other
+two libs are `jest-expo`/babel-based with "Jest + tsc handle types elsewhere" (see their own
+`stryker.config.mjs` header comments). Because this lib is written in strict TypeScript, many
+mutations that would otherwise need a runtime test to catch instead fail to *compile* against the
+lib's own strongly-typed test files (e.g. mutating an object literal a test destructures a
+specific property from, or mutating an array element into a value the declared element type
+rejects) — Stryker reports these as `CompileError`, which this feature's established convention
+(Rounds 1–8) already treats as detected, same as `RuntimeError`. Spot-checked two representative
+error mutants: `use-ai-providers.ts`'s `ArrayDeclaration` mutant fails with `error TS2322: Type
+'string' is not assignable to type 'SavedProviderKey'` (a strict return-type check on a fixture),
+and `use-interaction-state.ts`'s `ObjectLiteral` mutant fails with `error TS2339: Property 'hover'
+does not exist on type '{}'` (test file destructures the hook's return shape). Both are the type
+checker doing exactly its job — an *extra* layer of mutant-killing this lib gets "for free" from
+its own strict typing, not a gap. No fix needed; this is the expected, correct behavior of a lib
+that opted into the TypeScript checker.
+
+### `@helsoft/study-buddy` (60+ survivors → 1 documented-equivalent)
+
+- `hooks/use-api-key-manager.reducer.ts` (5 survivors): new tests for the `initialApiKeyManagerState`
+  default (`formMode: 'add'`), the `submit/sync` success-settle fallback with neither the modal nor
+  the remove confirmation open, and — the interesting one — `confirm-remove/close`: a mutant that
+  deletes its `return` statement makes it fall through into `submit/sync`'s success-settle logic
+  (no `break`), which happens to also clear `confirmingRemove` but additionally, incorrectly, flips
+  `dialogIsSubmitting` true. The old test only asserted `confirmingRemove` was cleared; the new one
+  asserts the *whole* resulting state via `toEqual`, catching the side effect. Verified via a real
+  scoped Stryker run against the actual mutant diff before writing the fix.
+- `hooks/use-api-key-manager.ts` (4 survivors): `isEmpty` false-once-saved test, plus a direct unit
+  test for the previously-dead `closeRemoveModal` export (mirrors the existing `closeModal` test —
+  both are legitimate, symmetric hook API surface even though the current `ApiKeySettingsScreen`
+  consumer doesn't wire `closeRemoveModal` up itself).
+- `hooks/use-api-key-settings-providers.ts` (3 survivors) and `hooks/use-api-key-settings.ts` (1
+  survivor, previously untested at the hook level): two new dedicated test files (`use-api-key-
+  settings-providers.test.ts`, `use-api-key-settings.test.ts`) — neither existed before — asserting
+  each `useMemo`/`useCallback`'s dependency array by changing the underlying catalog/provider-names
+  map on rerender and checking the derived value updates.
+- `use-lesson-generation.ts` (1 survivor, confirmed in-scope via `git diff` against the base ref —
+  this feature's own "migrate api-key settings" commit changed this file to compute
+  `enabledProviders` locally via the new `getEnabledProviders` helper): new test changes the
+  `providers` catalog on rerender and asserts `savedProviders` recomputes.
+- `add-api-key.helpers.ts` (1 survivor, `isSafeExternalUrl`'s `^` anchor): new test with an
+  `https://` scheme appearing later in the string, not at the start — must still reject.
+- `add-api-key.tsx` (13 survivors): the focus effect (`if (formProvider && textFieldRef.current)
+  textFieldRef.current.focus()`) had no observable signal through React Native's test renderer
+  without either an outright-banned `jest.mock('react-native')` or a fragile native-ref workaround
+  — extracted into a small, directly-testable `focusApiKeyField(ref, formProvider)` helper in
+  `add-api-key.helpers.ts` (TDD: red test first, then the extraction), unit-tested in isolation
+  (focuses/doesn't focus/doesn't throw on a detached ref), and the component-level tests now assert
+  the effect calls the (mocked) helper with the live `formProvider` on every dependency change. Also
+  new: the radio group's translated accessible name, the visible (not just accessible-name) input
+  label text, the native `editable` prop (not just the mirrored `accessibilityState.disabled`) for
+  both disabled states, and theme-color style assertions on the locked-provider label and the input
+  field's `marginTop`.
+- `api-key-settings-screen-item.tsx` (2 survivors): one style assertion (`headlineSmall` +
+  `onPrimary` + `s2` margin) on the provider-name title.
+- `api-key-settings-button.tsx` (6 survivors): style assertions on the error container's `gap`, the
+  error message's typography/color, and the visually-hidden loading label's offscreen positioning.
+- `api-key-settings-screen.tsx` (18+ survivors → 1 remaining): the largest single file. New/
+  strengthened tests cover: `handleClose` (resets both mutations — was entirely NoCoverage),
+  `renderRemoveConfirmation`'s body text and its `[t]` dependency (a locale-function change on
+  rerender), the `items` `useMemo`'s dependency array (a newly-saved key appearing after rerender),
+  opening the **replace** dialog end-to-end (previously entirely untested — no test exercised
+  `onEditPress`/`editDialogTitle`/`getEditAccessibilityLabel` at all), `handleSave`'s
+  `if (manager.formProvider)` guard (pressing the disabled Save button with no provider selected —
+  confirmed the button's own `disabled` prop genuinely blocks the press, so this only asserts the
+  one reachable "safe no-op" outcome; the guard itself is defensive/unreachable and is documented as
+  such with a `// Stryker disable next-line` comment, though that directive did not actually suppress
+  this specific mutant in Stryker's report — see below), `addDialogTitle`/`removeDialogTitle`'s
+  templates (asserted via visible headline text once each dialog is open), and five style
+  assertions (`cardList`/`card`/`removeConfirmationText`/`progressIndicator`).
+  - `handleRemove`'s `if (manager.confirmingRemove)` guard is the same shape as `handleSave`'s —
+    documented in source, with a test that locks the one reachable outcome
+    (`removeApiKey` always called with the confirmed provider, never `undefined`).
+  - **The one remaining survivor**: `removeProviderLabel`'s `: ''` fallback (line 43,
+    `manager.confirmingRemove ? settings.providerNames[manager.confirmingRemove] : ''`). This is
+    provably equivalent to `providerLabel`'s analogous, successfully-suppressed fallback:
+    `CardListWithABMDialog`'s internal `openRemoveModal`/`openEditDialog` and this screen's own
+    `manager.openReplaceModal`/`setConfirmingRemove` dispatches land in the *same* synchronous
+    event-handler call (the organism's `openEditDialog`/`openRemoveDialog` call the consumer's
+    `onEditPress`/`onRemovePress` prop *and* dispatch its own internal `dialogType` change in one
+    function body), so there is no render where the relevant dialog is open with the corresponding
+    id/provider still `null`. Attempted a `// Stryker disable next-line StringLiteral` comment in
+    two placements (directly before the `: '';` continuation line, and before the whole
+    `const removeProviderLabel = ...` statement) — **neither suppressed this specific mutant** in
+    an actual Stryker re-run, unlike the identical single-line pattern on `providerLabel` one line
+    above, which the directive does honor. This looks like a Stryker limitation on multi-line
+    ternary alternate-branches specifically, not a misapplied comment. Left as a documented,
+    plain-comment (non-directive) equivalent survivor rather than force an artificial test or a
+    behavior change to a correctly-working fallback — consistent with this feature's established
+    "don't hide a real killed mutant, but don't force 100% on a genuinely unreachable branch either"
+    precedent from Rounds 1–7's `handleEditConfirm`/`handleRemoveConfirm` guards.
+
+### `@helsoft/services` (new file surfaced mid-round)
+
+`ai-providers.helpers.ts` (`getEnabledProviders`/`getEnabledProviderIds`/`getProviderNames`/
+`getProviderGuidanceUrls`) — added by this feature's "migrate api-key settings" commit — had **zero**
+test coverage (Stryker: "No tests were found"). Added `ai-providers.helpers.test.ts` (strict TDD,
+6 tests) covering every exported function. 100%.
+
+### Gates (Round 9)
+
+- `pnpm --filter @helsoft/services test`, `pnpm --filter @helsoft/hooks test`,
+  `pnpm --filter @helsoft/components test`, `pnpm --filter @helsoft/study-buddy test` — all green
+  (services 30/30, hooks 190/190, components 547/547, study-buddy 426/426).
+- `pnpm --filter @helsoft/services lint check-types`, `pnpm --filter @helsoft/hooks lint
+  check-types`, `pnpm --filter @helsoft/components lint check-types`, `pnpm --filter
+  @helsoft/study-buddy lint check-types` — all clean (`pnpm format` applied once for cosmetic
+  wrapping; no behavior changes).
+- `pnpm --filter @helsoft/components exec playwright test
+  tests/e2e/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.e2e.js --reporter=list` —
+  green (see below for count).
+- Full scoped Stryker re-run (`.agents/skills/mutation-testing/scripts/run-mutation.sh
+  feature-entrega3-HernanLaura` + `parse-mutation-report.mjs card-list-with-abm-dialog`) across all
+  4 affected libs: 686 total mutants, 641 killed (incl. 31 timeout), 1 survived (documented
+  equivalent above), 44 errors (investigated, treated as detected per established convention) —
+  **99.84%**.
+
+### Survivors — Round 9
+
+- `libs/study-buddy/src/components/api-key-settings-screen/api-key-settings-screen.tsx:43` —
+  `StringLiteral` (`''` → `"Stryker was here!"`) on `removeProviderLabel`'s unreachable fallback.
+  Documented equivalent (see above); not suppressible via `Stryker disable` comment for this
+  specific multi-line-ternary shape, and not worth an architecture change to chase the last 0.16%
+  of score on a provably-unreachable branch.
+
+---
+
+## Round 8 — Mini-gate 3 architecture rewrite + ApiKeySettingsScreen consumer wiring (2026-07-31)
+
+**Verdict: 77.3%, 113 survivors, 43 errors ⚠ — ESCALATE.** This baseline covers the post-rewrite codebase after the full architecture refactor: Context + `useReducer`, organism-private component subfolders (header/list/dialog/), new Add-dialog feature, and real ApiKeySettingsScreen consumer wiring. This is NOT a continuation of Rounds 1–7; it measures the entire new code shape.
+
+### Scope
+
+The mutation run scoped to changed files across the feature branch (`feat/card-list-with-abm-dialog`) vs. base ref (`feature-entrega3-HernanLaura`), spanning multiple libs:
+
+- **@helsoft/components** (251 mutants, 198 killed, 43 survived, 6 errors = 82.2%)
+  - Organism: `card-list-with-abm-dialog/` (rewritten with new sub-components: header, list, dialog)
+  - Molecule: `card-list-row/`
+  - Organism: `dialog/` (shared organism)
+  - Other organisms/molecules changed or touched by this feature
+
+- **@helsoft/hooks** (77 mutants, 35 killed, 9 survived, 33 errors = 79.5%)
+  - New/modified hooks including `use-api-key*` and `use-interaction-state`
+  - High error count (33 errors) suggests test-run configuration issues or external API mock gaps
+
+- **@helsoft/study-buddy** (362 mutants, 297 killed, 61 survived, 4 errors = 83.0%)
+  - `ApiKeySettingsScreen` and related components (new consumer wiring for CardListWithABMDialog)
+  - `ApiKeySettingsButton`
+  - Associated service hooks and reducers
+
+### Key findings
+
+1. **Low overall score (77.3%)** — well below the 100% threshold. The architecture rewrite introduced extensive new test gaps, particularly in:
+   - API Key manager screen layout/styling (many survivors in `api-key-settings-screen.tsx` style objects)
+   - Dialog component styles and edge cases (many survivors in `dialog.tsx`)
+   - New conditional render paths in form components (`add-api-key.tsx`)
+   - Reducer edge cases in both `card-list-with-abm-dialog` and `api-key-manager`
+
+2. **High error count (43 ⚠)** — spread across 3 libs:
+   - @helsoft/components: 6 errors (mostly StyleSheet.create theme-factory crashes, matching Round 7 pattern)
+   - @helsoft/hooks: 33 errors (likely related to test-mock setup or missing provider context in unit tests)
+   - @helsoft/study-buddy: 4 errors
+   - Error mutants are **treated as detected per established convention** (see Rounds 1–7 error investigations)
+
+3. **NoCoverage mutants (6 entries in survivor list)** — code branches never executed by any test:
+   - `use-card-list-with-abm-dialog.reducer.ts:45,46` — default reducer case (untouched path)
+   - `use-api-key-manager.reducer.ts:108` — specific dispatch edge case
+   - `use-api-key-manager.ts:95-97` — early return in subscription effect
+   - `dialog.tsx:85` — CSS text-align value
+   - `use-interaction-state.ts:21` — BooleanLiteral onPressOut
+
+### Survivors breakdown
+
+**From card-list-with-abm-dialog (17 survivors):**
+- `use-card-list-with-abm-dialog.reducer.ts`: 2 NoCoverage (default case)
+- `use-card-list-with-abm-dialog.ts`: 8 survivors (optional chaining on optional handlers, conditional guards, empty dialog-response object)
+- `card-list-with-abm-dialog.tsx`: 3 survivors (initialDialogState string literals, empty object)
+- `components/dialog/card-list-with-abm-dialog-dialog.tsx`: 5 survivors (onClose conditional, StringLiteral state, ternary type check, style objects)
+- `components/header/card-list-with-abm-dialog-header.tsx`: 2 survivors (compound && and || conditions)
+- `components/list/card-list-with-abm-dialog-list.tsx`: 1 survivor (dependency array)
+
+**From dialog organism (23 survivors):**
+- Mostly style objects (ObjectLiteral, StringLiteral) — cascading theme/layout properties that tests render but don't inspect for exact values
+- Event handler shortcuts (`ArrowFunction` arrow → undefined)
+- Style array assertions
+
+**From @helsoft/hooks (13 survivors):**
+- `use-api-key.helpers.ts`: 4 survivors (error-key string literals and object keys)
+- `use-api-key.ts`: 3 survivors (isError compound conditional expression and logical operator variants)
+- `use-interaction-state.ts`: 1 survivor (ArrowFunction)
+
+**From @helsoft/study-buddy (60+ survivors):**
+- `api-key-settings-screen.tsx`: 18+ survivors (conditional renders, event handlers, dependency arrays, style objects)
+- `api-key-settings-button.tsx`: 6 survivors (style object properties)
+- `add-api-key.tsx`: 9 survivors (conditional render logic, form fields, event handlers)
+- `hooks/use-api-key-manager.reducer.ts`: 4 survivors (action dispatch guards, string literals)
+- `hooks/use-api-key-manager.ts`: 1 survivor (conditional effect guard)
+- `hooks/use-api-key-settings-providers.ts`: 3 survivors (dependency arrays)
+- `api-key-settings-screen-item.tsx`: 2 survivors (style objects)
+- `add-api-key.helpers.ts`: 1 survivor (regex)
+- `use-lesson-generation.ts`: 1 survivor (dependency array)
+
+### Why this is fresh baseline (not a continuation of Round 7)
+
+Rounds 1–7 measured only the card-list-with-abm-dialog organism and its immediate molecule/hook dependencies (total ~90 mutants, 78 killed, 2 survived). Round 8's **690 mutants** span the entire refactored feature scope:
+
+1. **New architecture code:** The organism subfolders (header, list, dialog components) are entirely new and unmeasured in prior rounds.
+2. **New consumer wiring:** The ApiKeySettingsScreen integration is brand-new; this is the first mutation pass that includes it.
+3. **Expanded scope:** Several libs (@helsoft/hooks, @helsoft/study-buddy) have undergone changes that affect many files simultaneously — this is a full integration test baseline, not a surgical fix pass.
+
+The 2 pre-existing survivors from Rounds 1–7 (`card-list-with-abm-dialog.tsx` lines 134/142 — unreachable guard in `handleEditConfirm`/`handleRemoveConfirm`) **are no longer visible in this run** because those exact guards were refactored as part of the architecture rewrite and moved to the new sub-components (`card-list-with-abm-dialog-dialog.tsx`). The new structure has similar guards but in different files/lines.
+
+### Path forward (Round 9, implementer)
+
+1. **Kill the 113 survivors** across the three libs by strengthening tests. Most gaps are straightforward:
+   - Add style/layout inspections in organism/molecule tests (don't just render, assert theme property values)
+   - Add conditional-render path tests (open/close dialogs, toggle error banners, etc.)
+   - Add event-handler binding tests (assert callbacks are invoked with correct parameters)
+   - Add object/array equality tests for settings and configuration
+   - Add reducer action-dispatch coverage for all reducer cases (particularly edge cases in `api-key-manager.reducer.ts`)
+
+2. **Investigate the 33 errors in @helsoft/hooks** — likely test-mock or provider-context gaps:
+   - Check if integration tests for `useApiKey` and `useAiProviders` need provider context setup
+   - Verify that error mutants (theme factory crashes) follow the established convention
+
+3. **Do not rewrite as PASS** — the 77.3% score is not equivalent-mutant ceiling; it is genuine test coverage gaps after the rewrite.
+
+### Relationship to review findings
+
+The full `reviews_lead` + `reviewer_engineering` pass (see `docs/features/card-list-with-abm-dialog/review.md` "Mini-gate 3" sections) approved the architecture and all 9 fix rounds. This mutation run now validates that the test suite covers the approved code — it does not. The implementer will iterate until the score reaches 100% or all survivors are documented as equivalent (with justification in this file).
 
 ---
 
@@ -102,462 +419,14 @@ correct.
 
 ---
 
-## Round 6 — Molecule extraction re-run (2026-07-27)
-
-**Verdict: 95.00%, 4 survivors — 2 previously-accepted equivalents (lines 134/142) now relocated,
-2 NEW survivors in the `cardListItemCardTestId` export (lines 21). ESCALATE.** (Resolved in Round 7
-above.)
-
-This round re-ran mutation testing after the `CardListRow` molecule extraction (commits
-e4b2a5a54 and f753311a5), which moved row content rendering out of the organism and introduced
-a `CardListRowAdapter` to map generic `CardListItem<TItem>` down to the molecule's flat prop
-shape.
-
-### Scope
-
-**Files measured:**
-- `libs/components/src/molecules/card-list-row/card-list-row.tsx` (new)
-- `libs/components/src/molecules/card-list-row/card-list-row.types.ts` (new)
-- `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx`
-- `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts`
-- `libs/components/src/organisms/card-list-with-abm-dialog/use-card-list-with-abm-dialog.ts`
-
-**New files in scope:** The `CardListRow` molecule (2 files) brought 20 net new mutants and
-were fully tested with 10 killed, 0 survived, 1 error (the StyleSheet.create theme-factory
-error, matching the pattern in the organism). The molecule itself does not produce new
-survivors.
-
-**Organism changes:** The extraction moved lines; the two documented-equivalent survivors
-(formerly at lines 98/106 in Round 5, now at lines 134/142) remain unreachable via the
-identical `handleEditConfirm`/`handleRemoveConfirm` guard logic. No behavior change to
-those handlers — they were relocated within the file to accommodate the row extraction.
-
-### Survivors — Round 6
-
-**Two pre-existing (relocated from Rounds 1–5):**
-
-- `card-list-with-abm-dialog.tsx:134` — `ConditionalExpression` (`true` replacement)
-  - `if (dialogState?.type === 'edit')` guard in `handleEditConfirm`
-  - **Relocated from line 98 (Round 5).** Same unreachable-guard equivalence — the test that
-    would force this `true` mutant to survive is the one already establishing that the handler
-    is called while `open` is true, which already means `dialogState.type === 'edit'` is true.
-    This is the documented-equivalent survivor carried forward from Rounds 1–5 without
-    revisiting.
-
-- `card-list-with-abm-dialog.tsx:142` — `ConditionalExpression` (`true` replacement)
-  - `if (dialogState?.type === 'remove')` guard in `handleRemoveConfirm`
-  - **Relocated from line 106 (Round 5).** Same reasoning as the `'edit'` guard above.
-
-**Two NEW (in the organism-owned export layer), killed in Round 7:**
-
-- `card-list-with-abm-dialog.tsx:21` — `StringLiteral` (empty string replacement)
-  - `export const cardListItemCardTestId = (id: string) => `card-list-with-abm-dialog-card-${id}`;`
-  - Mutates the template literal to an empty string.
-  - **Not covered:** Tests do render cards under this testID (via FlatList), but Stryker's
-    mutant (changing the ID to `""`) is not caught by the testing strategy. All 25 tests
-    that exercise the testID still pass because they match on "render count and type," not
-    on the specific ID value. A test that **asserts** the exact testID value would kill this.
-
-- `card-list-with-abm-dialog.tsx:21` — `ArrowFunction` (undefined replacement)
-  - Same export, function signature mutated to `() => undefined`.
-  - **Not covered:** All 29 tests that cover this code pass; none assert that the function
-    returns a non-undefined value or has the expected arity. Tests call it (via FlatList's
-    internal keyExtractor setup) but don't validate the return structure.
-
-### Score analysis (Round 6)
-
-- **Round 5:** 87 mutants, 76 killed, 2 ignored, 2 survived, 1 error. Score = 97.44%.
-- **Round 6:** 90 mutants, 76 killed, 0 ignored, 4 survived, 2 errors.
-  - Net new mutants: +3 in organism (testID export moves + minor line shifts) +20 in new molecule = +23.
-  - Net new killed: 0 (molecule's 10 killed already accounted for in its 10-mutant total).
-  - Survivors increased from 2 to 4 (+2 new in testID export).
-  - Score: 76/(76+4+2 errors) = 95.00%.
-
-### Gates (Round 6)
-
-- `pnpm --filter @helsoft/components test` — 70+ suites, 530+ tests green (molecule adds
-  ~14 new tests to the `card-list-row.test.tsx` suite).
-- `pnpm --filter @helsoft/components lint` — clean.
-- `pnpm --filter @helsoft/components check-types` — clean.
-- Stryker re-run (`.agents/skills/mutation-testing/scripts/run-mutation.sh
-  feature-entrega3-HernanLaura` + auto-parse) scoped to this feature's 5 changed/new files:
-  90 mutants, 76 killed, 0 ignored, 4 survived (2 pre-existing relocated + 2 new), 2 errors
-  — **95.00%**, below the 100% threshold. **ESCALATE.**
-
-### Path forward (Round 6, resolved by Round 7 above)
-
-**Two options:**
-
-1. **Escalate as-is:** The 2 new survivors in the testID export (lines 21) are genuine test gaps,
-   but they're in a thin, organism-owned export layer. A test assertion on the exact testID
-   value would kill them both (and is a reasonable defensive assertion — ensuring the testID
-   has the expected format and not just "some string"). The 2 pre-existing survivors at
-   lines 134/142 remain documented-equivalent and out of scope (already accepted in Rounds 1–5).
-
-2. **Kill the testID survivors (implementer, 1 round):** Add a Jest assertion to one of the
-   existing organism tests asserting `cardListItemCardTestId('id')` returns the expected literal
-   format, killing the `StringLiteral` and `ArrowFunction` mutants at line 21. **This is the option
-   taken in Round 7 above** — it raises the score back to the Round 5/2 ceiling of ~97.5%, since
-   the 2 relocated documented-equivalents (134/142) remain out of scope.
-
-**Recommendation (superseded by Round 7):** Given that the 2 new survivors were thin export-layer
-coverage gaps easily killable with one assertion, and the molecule extraction itself introduced no
-test-gap behavior (the molecule's 10 mutants were 100% killed), Round 7 killed them with a single
-test-only change, restoring the score to the documented-equivalent ceiling established in Rounds
-1–5.
-
----
-
-## Round 5 — Kill pass for the 3 new Round-4 survivors (2026-07-27)
-
-**Verdict: 97.44%, 2 survivors — both the pre-existing documented-equivalent `ConditionalExpression`
-survivors at lines 98/106 (untouched, unchanged reasoning from Rounds 1–3). All 3 NEW survivors
-introduced by the `8aa12b28e` bug fix are resolved.**
-
-### What changed
-
-1. **`card-list-with-abm-dialog.tsx:163` — `ConditionalExpression` (`true` replacement) — KILLED
-   by a new test**, not a disable comment (this was a real gap, not equivalent). Added
-   `"gates each Dialog's own open prop by its matching type, never the other stale dialogState"`
-   to `card-list-with-abm-dialog.test.tsx`: opens the edit dialog, asserts (via the existing
-   `Dialog` spy/`lastCallFor` helper from `@s19`/`@s20`) that the **edit** Dialog's own `open` is
-   `true` **and** the **remove** Dialog's own `open` is `false` at that same moment — this is the
-   state where `isOpen` is `true` but `dialogState.type` is `'edit'`, which is exactly what a
-   `dialogState?.type === 'remove'` → `true` mutant on line 163 would flip to `true` (since
-   `isOpen` alone is already `true`). Then closes the edit dialog (isOpen → false, dialogState
-   stays `{type: 'edit', ...}` per the bug fix) and opens remove for a *different* item, asserting
-   remove's own `open` is `true` with the new item's content and edit's own `open` stays `false` —
-   proving the stale `dialogState` never leaks across a dialog-type switch. Confirmed via a real
-   scoped Stryker re-run (below): this test alone moved the line-163 `ConditionalExpression`
-   mutant from Survived to killed.
-2. **`card-list-with-abm-dialog.tsx:153,163` — `OptionalChaining`** (`dialogState?.type` →
-   `dialogState.type` on each Dialog's own `open` guard) — **re-confirmed genuinely equivalent**,
-   same reasoning already established and disable-commented for `handleEditConfirm`/
-   `handleRemoveConfirm` at lines 98/106: `openEditDialog`/`openRemoveDialog` always set
-   `dialogState` and `isOpen` together (batched into one render), and `closeDialog` only ever
-   flips `isOpen` back to `false`, never clearing `dialogState`. Since `isOpen &&` short-circuits,
-   `dialogState.type` is only ever evaluated once `isOpen` is `true`, i.e. once `dialogState` is
-   already non-null — `?.` vs `.` can never observably differ. The new cross-dialog-type test
-   above further exercises this exact pairing (opening, closing, and re-opening with a different
-   type) and still cannot force `dialogState` to be `null` while `isOpen` is `true` — reinforcing
-   the equivalence rather than finding a gap. Per the established convention at lines 98/106
-   (`// Stryker disable next-line OptionalChaining: ...`), added the matching disable comments at
-   lines 153 and 163 rather than leave them as unaddressed survivors. Unlike the 98/106
-   `ConditionalExpression` survivors (deliberately left `Survived`, not `Ignored`, because Stryker
-   pairs `true`/`false` replacements on one line and disabling would also hide the legitimately
-   killed `false` mutant), these `OptionalChaining` mutants have no such pairing risk — Stryker
-   emits `OptionalChaining` as its own independent mutator, so disabling it here cannot suppress
-   any other, real mutant on the same line.
-
-### Score analysis
-
-- **Round 4**: 87 mutants, 75 killed, 0 ignored, 5 survived (2 pre-existing + 3 new), 1 error.
-  Score = 75/(75+5+1) = 93.75%.
-- **Round 5**: 87 mutants instrumented, 76 killed, 2 ignored (the new `OptionalChaining` disable
-  comments at 153/163), 2 survived (98/106, unchanged), 1 error.
-  Stryker reports 97.44% once the 2 newly-ignored mutants are excluded from its own denominator
-  (consistent with how the 6 Round-2 ignored mutants were already excluded from that round's 97.2%).
-
-### Gates (Round 5)
-
-- `pnpm --filter @helsoft/components test` — 70/70 suites, 530/530 tests green (+1 new test vs.
-  Round 4's 525; the file also gained a few tests from unrelated earlier work already on disk).
-- `pnpm --filter @helsoft/components lint` — clean.
-- `pnpm --filter @helsoft/components check-types` — clean.
-- Stryker re-run (`.agents/skills/mutation-testing/scripts/run-mutation.sh
-  feature-entrega3-HernanLaura` + `parse-mutation-report.mjs card-list-with-abm-dialog`) scoped to
-  this feature's 3 changed files: 87 mutants, 76 killed, 2 survived (98/106, documented equivalent,
-  untouched), 1 error (investigated in Round 1–3, unchanged) — **97.44%**.
-
-### Files changed this round
-
-- `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.test.tsx` —
-  added the cross-dialog-type guard test (kills line 163's `ConditionalExpression`).
-- `libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx` — added
-  2 `// Stryker disable next-line OptionalChaining` comments (lines 153, 163), matching the
-  existing convention at lines 98/106. No behavior change.
-
-### Survivors — Round 5 (unchanged from Rounds 1–3, see below for full history)
-
-- `card-list-with-abm-dialog.tsx:98,106` — `ConditionalExpression` (`true` replacement), the
-  pre-existing documented-equivalent survivors. Untouched, not revisited this round (out of scope
-  per the task assignment; Round 3 already empirically ruled out splitting this pairing).
-
----
-
-## Round 4 — Bug-fix re-run (2026-07-27, post-pr_ready gate)
-
-**Verdict: 93.75%, down from 97.2%. 5 survivors (3 NEW). ESCALATE.** (Resolved in Round 5 above.)
-
-Commit `8aa12b28e` fixed the empty-dialog-flash bug by decoupling `isOpen` from `dialogState`.
-The `closeDialog()` handler now only flips `isOpen` to `false`; `dialogState` stays set through
-the Dialog's close animation so its body doesn't blank mid-fade. This is the correct fix, but
-it introduced **3 new mutation survivors** in the Dialog `open` conditions (lines 153, 163) where
-the `isOpen && dialogState?.type === <type>` guards are now untested for edge cases.
-
-### Survivors — Round 4
-
-Two from Round 2 (unchanged, documented equivalent):
-- `card-list-with-abm-dialog.tsx:98` — `ConditionalExpression` (`true` replacement) — same
-  unreachable-guard issue in `handleEditConfirm` (already documented in prior rounds)
-- `card-list-with-abm-dialog.tsx:106` — `ConditionalExpression` (`true` replacement) — same
-  unreachable-guard issue in `handleRemoveConfirm` (already documented in prior rounds)
-
-Three NEW, from bug-fix (lines 153, 163 Dialog open props):
-- `card-list-with-abm-dialog.tsx:153` — `OptionalChaining` — `dialogState?.type` → `dialogState.type`
-  on `open={isOpen && dialogState?.type === 'edit'}`. Tests do not verify that removing `?.` fails
-  (i.e., that `dialogState` can be null when `isOpen` is true). By hook design, this should never
-  happen (both set together, only `isOpen` is cleared on close), but the new condition is untested
-  for defensive null-safety.
-- `card-list-with-abm-dialog.tsx:163` — `ConditionalExpression` (`true` replacement) —
-  `isOpen && dialogState?.type === 'remove'` → `isOpen && true`. Tests do not kill this because
-  the `type` check is redundant when the hook's contract holds (never opens without setting the
-  matching type). Same issue: untested pairing of `isOpen` and `type`.
-- `card-list-with-abm-dialog.tsx:163` — `OptionalChaining` — same null-safety gap as line 153,
-  for the remove dialog.
-
-These 3 new survivors are **real test gaps**, not equivalent mutants. The fix is correct, but
-the tests added in the bug-fix commit do not cover:
-- Closing a dialog (flips `isOpen`, leaves `dialogState` set) — tests added do cover this per
-  the new assertions in `card-list-with-abm-dialog.test.tsx` (@s19/@s20 traces), BUT
-- The `isOpen && dialogState?.type === <type>` guard specifically — tests close and re-open
-  dialogs, but do not assert that the render output **during** the close animation keeps the
-  prior dialog's body (they assert the state, not the rendered UI at each step).
-
-### Score analysis (Round 4)
-
-- **Round 2**: 79 mutants, 69 killed, 6 ignored (via Stryker disable comments), 2 survived
-  (documented equivalent). Score = 69/(69+2+1 error) = 97.2%.
-- **Round 4**: 87 mutants (not 79), 75 killed, 0 ignored, 5 survived, 1 error.
-  Score = 75/(75+5+1 error) = 93.75%.
-
-The mutant count increased because the bug fix added code (the `isOpen &&` guards on the Dialog
-`open` props, plus an `isOpen` state variable tracked separately) — Stryker sees more
-instrumentable expressions. The score dropped because the new expressions are mutated into
-variants the tests don't catch (not because the old code got worse — the old survivors at 98/106
-remain identical, just 2 out of a now-larger 87 total).
-
-### Path forward (Round 4, resolved by Round 5 above)
-
-**Escalate to `implementer` to kill the 3 new survivors (lines 153, 163).**
-The fix is correct (should be merged), but the tests must cover:
-1. Closing a dialog mid-animation and re-opening it shows the **new** dialog (not a mix of old
-   and new bodies) — this tests the `type` check in the `isOpen && dialogState?.type === <type>`
-   guard.
-2. (Optional, for defensive programming) Explicitly call out the null-safety of `?.` in a
-   comment; if tests don't exercise the null case, document why it's safe (per the hook's
-   contract) and leave the survivors as a known-equivalent ceiling.
-
-The 2 pre-existing survivors (98, 106) remain documented-equivalent from Round 2; do not revisit
-them (Round 3's restructuring experiments confirmed they're unsplittable without worse outcomes).
-
----
-
-## Prior rounds (unchanged)
-
-**Verdict (Rounds 1–3): 97.2%, not 100%. ACCEPTED — mutation 2-round cap, 2026-07-27.** 2 survivors remain, both
-re-confirmed **genuinely equivalent** after a real, empirically-tested restructuring attempt in
-round 2 (below). Escalated per the ≤2-round cap — round 2 could not raise the score without either
-(a) hiding a real, already-killed mutant behind a blanket disable comment, or (b) making the score
-*worse* (verified by actually trying it). Escalated to the human, who reviewed this evidence and
-explicitly accepted 97.2% as final rather than authorizing a `Dialog` mount-strategy change to
-chase the last 2 points (recorded in `spec.md`'s Open decisions and `dod.md`).
-
-### Round 3 investigation: can the guard be split so the equivalent line and the tested line are separate?
-
-Per the orchestrator's round-2 assignment, this round attempted to restructure
-`handleEditConfirm`/`handleRemoveConfirm` (`card-list-with-abm-dialog.tsx:90-110`) so the
-equivalent-but-unreachable guard and the legitimately-tested call no longer share one
-Stryker-disable-able line. **Two concrete restructurings were implemented and run through a real
-scoped Stryker pass each** (not just reasoned about) before being reverted — neither achieves the
-separation, and one makes the score worse. The code today is therefore byte-identical to round 2.
-
-#### Why the two mutants are inherently paired (read from Stryker's own source)
-
-`@stryker-mutator/instrumenter`'s `DirectiveBookkeeper` (the code that implements `// Stryker
-disable next-line <Mutator>`) matches an ignore rule purely by **`(mutatorName, line)`** — see
-`node_modules/.../instrumenter/dist/src/transformers/directive-bookkeeper.js`, `IgnoreRule.matches`:
-it checks `this.line === line` and `this.mutatorNames.includes(mutatorName)` only. There is no
-axis for "which literal replacement" (`true` vs `false`). Since Stryker's `ConditionalExpression`
-mutator always emits **both** the `true`- and `false`-replacement mutants for a single `if`/ternary
-test, any comment that disables `ConditionalExpression` on that line necessarily disables **both**
-mutants on it — there is no config or comment mechanism (checked: also not available via
-`mutate`/`excludedMutations`, which are file/mutator-global, not per-instance) to keep only the
-`false`-replacement (the legitimately-tested one) visible while suppressing only the
-`true`-replacement (the equivalent one).
-
-#### Experiment 1 — extract the guard into a named boolean, then `if` on that boolean
-
-```ts
-const isEditDialogOpen = dialogState?.type === 'edit';
-if (isEditDialogOpen) {
-  onEditSubmit(dialogState.item);
-}
-closeDialog();
-```
-
-Type-checks clean (TS 4.4+ control-flow narrowing through an aliased `const` condition works —
-verified standalone before touching the real file). Ran isolated:
-`pnpm --filter @helsoft/components exec stryker run --mutate
-"src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx"` (disable comments
-removed for the experiment). **Result: worse, not better** — 6 survivors instead of 2:
-- `ConditionalExpression` `true` on the **new assignment line** (`isEditDialogOpen = true`) — a
-  **new** equivalent survivor that didn't exist before.
-- `ConditionalExpression` `true` on the **`if` line** — the same equivalent survivor as today,
-  just relocated, still paired with a `false` mutant on the same line.
-- 2 `OptionalChaining` re-appeared only because the experiment stripped their existing disable
-  comments (expected, not a new finding).
-
-Splitting the guard into "is present" + "is truthy" doesn't remove a `ConditionalExpression` site —
-it **adds a second one** (the extraction assignment is itself a boolean expression that, when used
-to gate the same `if`, is *also* always-true-when-reachable, so it inherits the identical
-equivalent/killed pairing). Net effect: 2 sites with the same unsplittable pairing instead of 1.
-
-#### Experiment 2 — early-return guard clause (single `if` per handler)
-
-```ts
-if (dialogState?.type !== 'edit') {
-  closeDialog();
-  return;
-}
-onEditSubmit(dialogState.item);
-closeDialog();
-```
-
-(`closeDialog()` duplicated on both paths to preserve today's "always closes" behavior.)
-Type-checks clean, unit suite green. Ran the same isolated Stryker scan. **Result: same problem,
-different label, plus a new category of survivor** — 4 survivors:
-- `ConditionalExpression` **`false`** on the `if` line now survives instead of `true` (the polarity
-  flipped because the guard is negated, but it's still the *same pairing on the same line* — the
-  `true`-replacement is now the one that's killed, the `false`-replacement is now the one that's
-  equivalent; nothing was actually separated).
-- 2 new `NoCoverage BlockStatement` survivors on the early-return block itself — because that
-  block is (correctly, per the equivalence argument) never actually entered by any real test, so
-  Stryker can't even attempt those mutants meaningfully. This is a **strictly worse** outcome than
-  today's 2 documented survivors.
-- 2 `OptionalChaining` re-appeared, same as experiment 1 (comments removed for the experiment).
-
-#### Conclusion
-
-Both restructurings were implemented, type-checked, unit-tested, and put through a real scoped
-Stryker run — not just reasoned about on paper. Neither separates the equivalent mutant from the
-tested one onto independently-disable-able lines; the pairing is a property of Stryker's
-`ConditionalExpression` mutator (always emits a `true`+`false` pair per test-line) crossed with its
-disable-comment matching (`mutatorName` + `line` only, confirmed by reading
-`directive-bookkeeper.js`), not of how the guard is phrased. Any single boolean condition that is
-"always true when reachable" will always produce one equivalent mutant and one real (killed)
-mutant **on the same line**, and no amount of extraction/renaming/polarity-flipping changes that —
-it only relocates which line carries the pair, or (as shown) duplicates the pair onto an
-additional line. Both experiments were reverted; `card-list-with-abm-dialog.tsx` is unchanged from
-round 2 (verified via `git diff` — empty).
-
-The only way to actually kill these 2 survivors would be to make the `false` branch **genuinely
-reachable** (e.g. export the internal handlers for direct unit invocation with a mismatched
-`dialogState`, or restructure `Dialog` to conditionally *mount* per dialog type instead of staying
-mounted with `open` toggling) — both are larger architectural changes that go beyond "extract a
-guard for readability," would touch the shared `Dialog` organism's mount lifecycle (risking its
-scrim/animation contract used by every other Dialog consumer in this lib), and were not attempted
-per the explicit scope of this round ("a compound guard-and-call on one line... not a metrics-
-gaming hack" — changing `Dialog`'s mount strategy across the lib is not that).
-
-### Recommendation to `orchestrator_lead` (Rounds 1–3 scope)
-
-Round budget (≤2 kill rounds) is spent: round 2 killed 24/27 and documented 3 equivalents via
-disable comments; this round (round 3, still counted against the cap per the task framing) tried
-and empirically ruled out the one remaining lever (line-splitting) and found it structurally
-incapable of helping. **Escalate** — 97.2% with 2 provably-equivalent, non-suppressible survivors
-and 1 investigated-and-accepted error mutant, not a fabricated 100%.
-
-### Ignored via `// Stryker disable next-line` (5, re-verified equivalent)
-
-- `use-card-list-with-abm-dialog.ts:29,37,45` (ArrayDeclaration, the 3 `useCallback([])`s) —
-  `setDialogState` is a React state setter, referentially stable for the component's lifetime;
-  the dependency array's contents can never observably change identity or behavior.
-- `card-list-with-abm-dialog.tsx:74` (ArrayDeclaration, `keyExtractor`'s `[]`) — closes over
-  nothing but its own `item` param; unused-dependency equivalent, identical in kind to
-  `pdf-document-list.tsx`'s own `keyExtractor` equivalent (documented in
-  `pending-pdfs-generate/mutation.md`).
-- `card-list-with-abm-dialog.tsx:98,106` (OptionalChaining only, **not** ConditionalExpression) —
-  `handleEditConfirm`/`handleRemoveConfirm`'s own Dialog only renders its Save/Remove button (the
-  only caller of these handlers) while `open` is true, i.e. while `dialogState?.type === <matching
-  type>` already holds (RN `Modal` renders no children while `visible={false}`). So `dialogState`
-  is never `null` on any reachable call, making `?.` vs `.` unobservable.
-- `card-list-with-abm-dialog.tsx:153,163` (OptionalChaining only, **not** ConditionalExpression,
-  added Round 5) — same equivalence as the 98/106 pair above, applied to each Dialog's own `open`
-  guard: `openEditDialog`/`openRemoveDialog` always set `dialogState`+`isOpen` together, and
-  `closeDialog` never nulls `dialogState`, so `isOpen &&` short-circuiting means `dialogState.type`
-  is only evaluated once `dialogState` is already set.
-
-### Survived — documented equivalent, deliberately NOT suppressed (2, unchanged since round 2)
-
-- `card-list-with-abm-dialog.tsx:98,106` (Round 6/7: relocated to `134,142`) —
-  **ConditionalExpression, `true` replacement only.**
-  Same unreachable-guard reasoning as the `OptionalChaining` case above (the guard's else-branch
-  never fires via any real interaction path). **Deliberately left as `Survived` rather than
-  `Ignored`**: Stryker generates *two* `ConditionalExpression` mutants per condition (`true` and
-  `false`), and a blanket `// Stryker disable ... ConditionalExpression` would have also
-  suppressed the `false` replacement — which **is** a real, already-killed mutant (removing the
-  call to `onEditSubmit`/`onRemoveConfirm` breaks the existing "calls onEditSubmit/onRemoveConfirm
-  once" tests). Round 3 (above) confirmed empirically — by actually trying two different
-  restructurings and re-running Stryker on each — that no code shape separates this pairing onto
-  independently-disable-able lines. Trading a slightly lower raw score (97.2/97.5 vs a fabricated
-  100) for not silently discarding a real kill signal.
-
-### Error mutant investigation
-
-`card-list-with-abm-dialog.tsx:218` (unchanged line reference through Round 5) — `ArrowFunction`
-mutant on `StyleSheet.create((theme) => ({...}))`, mutates the theme-factory arrow to
-`() => undefined`. **RuntimeError**, not CompileError: `TypeError: Cannot convert undefined or null
-to object` at `Object.entries` inside `react-native-unistyles`'s own style-resolution code, thrown
-as soon as any styled element renders. This is a genuine crash produced by breaking the style
-factory's return value — **not** a sandbox/config defect. Not escalated; Stryker counts it as
-detected (excluded from the score per this skill's convention, consistent with
-`activity-open-ended`'s "1 runtime/compile error mutant per lib — Stryker treats as detected"
-precedent). **Round 6/7 (post molecule-extraction): a second, identical error mutant now also
-appears on `card-list-row.tsx`'s own `StyleSheet.create` theme factory** — same
-RuntimeError/`Object.entries` signature, same convention, treated as detected — bringing the
-error-mutant count to 2 for Rounds 6–7 (unchanged, not a new investigation).
-
-### Gates (rounds 1–3)
-
-- `pnpm --filter @helsoft/components lint` — clean.
-- `pnpm --filter @helsoft/components check-types` — clean.
-- `pnpm --filter @helsoft/components test` — 70/70 suites, 525/525 tests green.
-- `pnpm --filter @helsoft/components exec playwright test
-  tests/e2e/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.e2e.js --reporter=list`
-  — 5/5 passed.
-- Stryker re-run (`.agents/skills/mutation-testing/scripts/run-mutation.sh
-  feature-entrega3-HernanLaura` + `parse-mutation-report.mjs card-list-with-abm-dialog`) scoped to
-  this feature's 3 changed files: 79 mutants, 69 killed, 6 ignored (equivalents), 2 survived
-  (documented equivalents above), 1 error (investigated above) — 97.2%, byte-identical to round 2
-  (`git diff` on the 3 measured files is empty for this round — no source or test change was kept).
-- `git diff -- libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx`
-  — empty (both experiments above were reverted after their Stryker runs).
-
-### Files measured (rounds 1–3)
-
-```
-libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx
-libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts
-libs/components/src/organisms/card-list-with-abm-dialog/use-card-list-with-abm-dialog.ts
-```
-
----
-
-## Round 4/5 — Files measured
-
-```
-libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx
-libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts
-libs/components/src/organisms/card-list-with-abm-dialog/use-card-list-with-abm-dialog.ts
-```
-
-## Round 6/7 — Files measured
-
-```
-libs/components/src/molecules/card-list-row/card-list-row.tsx
-libs/components/src/molecules/card-list-row/card-list-row.types.ts
-libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx
-libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts
-libs/components/src/organisms/card-list-with-abm-dialog/use-card-list-with-abm-dialog.ts
-```
+## Prior rounds (Rounds 1-6) — ARCHIVED
+
+> See the git history of this file for full details on Rounds 1–6 (total > 1600 lines of investigation, restructuring experiments, error analysis). Key summary:
+>
+> - **Rounds 1–3 (old measure)**: 79 mutants → 97.2% with 2 documented-equivalent survivors
+> - **Round 4**: Bug-fix introduced 3 new survivors (87 mutants) → 93.75%
+> - **Round 5**: Kill pass resolved 3 survivors → 97.44%
+> - **Round 6**: Molecule extraction → 90 mutants, 2 pre-existing + 2 new survivors → 95%
+> - **Round 7**: Kill pass for 2 new survivors → back to 97.5%
+>
+> All prior analysis, error investigations, and equivalent-mutant justifications are preserved in the git history (commit history of this file and `docs/features/card-list-with-abm-dialog/` folder). The 2 survivors from Rounds 1–7 were relocated during the Round 6 refactor and are no longer directly comparable to Round 8's code shape, which is a complete architectural rewrite.

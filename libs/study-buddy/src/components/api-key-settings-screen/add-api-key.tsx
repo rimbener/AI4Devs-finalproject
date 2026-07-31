@@ -4,7 +4,7 @@ import type { AiProvider } from '@helsoft/types';
 import React, { useRef } from 'react';
 import { Linking, Text, type TextInput } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-import { isSafeExternalUrl } from './add-api-key.helpers';
+import { focusApiKeyField, isSafeExternalUrl } from './add-api-key.helpers';
 import type { ApiKeyFormMode } from './hooks/use-api-key-manager.reducer';
 
 type AddApiKeyProps = {
@@ -36,9 +36,7 @@ export const AddApiKey = ({
   const getProviderLabel = (p: AiProvider) => providerNames[p];
 
   React.useEffect(() => {
-    if (formProvider && textFieldRef.current) {
-      textFieldRef.current.focus();
-    }
+    focusApiKeyField(textFieldRef, formProvider);
   }, [formProvider]);
 
   return (

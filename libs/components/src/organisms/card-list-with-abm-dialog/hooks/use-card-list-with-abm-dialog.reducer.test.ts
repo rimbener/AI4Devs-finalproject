@@ -97,4 +97,19 @@ describe('cardListWithABMDialogReducer', () => {
       dialogState: 'closed',
     });
   });
+
+  // Defensive fallback (mutation coverage) — the switch is exhaustive over
+  // CardListWithABMDialogReducerAction's discriminated union, so this branch is unreachable
+  // through the typed public API, but stays as a safety net against a stray/unknown action
+  // (e.g. a future caller bypassing the type system). It must return the existing state
+  // unchanged, not throw or drop data.
+  it('returns the existing state unchanged for an unrecognized action type', () => {
+    const editOpen = cardListWithABMDialogReducer(closedState, { type: 'open-edit', item });
+
+    const unknownAction = { type: 'unknown-action' } as unknown as Parameters<
+      typeof cardListWithABMDialogReducer<StoryItem>
+    >[1];
+
+    expect(cardListWithABMDialogReducer(editOpen, unknownAction)).toEqual(editOpen);
+  });
 });

@@ -1,4 +1,5 @@
-import { isSafeExternalUrl } from './add-api-key.helpers';
+import type { TextInput } from 'react-native';
+import { focusApiKeyField, isSafeExternalUrl } from './add-api-key.helpers';
 
 describe('isSafeExternalUrl', () => {
   it('accepts an https:// url', () => {
@@ -27,5 +28,37 @@ describe('isSafeExternalUrl', () => {
 
   it('rejects an empty string', () => {
     expect(isSafeExternalUrl('')).toBe(false);
+  });
+
+  // Mutation coverage: the pattern's `^` anchor — an https:// scheme appearing anywhere OTHER
+  // than the very start (e.g. embedded after an unsafe scheme) must still be rejected.
+  it('rejects a url where http(s):// appears later in the string, not at the start', () => {
+    expect(isSafeExternalUrl('javascript:alert(1)//https://groq.example')).toBe(false);
+  });
+});
+
+describe('focusApiKeyField', () => {
+  it('focuses the ref when a provider is selected', () => {
+    const focus = jest.fn();
+    const ref = { current: { focus } as unknown as TextInput };
+
+    focusApiKeyField(ref, 'groq');
+
+    expect(focus).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not focus when no provider is selected', () => {
+    const focus = jest.fn();
+    const ref = { current: { focus } as unknown as TextInput };
+
+    focusApiKeyField(ref, null);
+
+    expect(focus).not.toHaveBeenCalled();
+  });
+
+  it('does not throw when the ref is not yet attached', () => {
+    const ref = { current: null };
+
+    expect(() => focusApiKeyField(ref, 'groq')).not.toThrow();
   });
 });

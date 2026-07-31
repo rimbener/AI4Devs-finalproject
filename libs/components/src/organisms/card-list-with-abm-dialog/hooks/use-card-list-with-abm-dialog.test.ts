@@ -53,6 +53,107 @@ describe('useCardListWithABMDialog', () => {
     expect(result.current?.dialogItem).toBeNull();
   });
 
+  // Mutation coverage: `dialog` falls back to `EMPTY_DIALOG_RESPONSE` (an exact literal, not just
+  // "something falsy") before any dialog has ever been opened.
+  it('exposes an empty dialog response before any dialog has been opened', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    expect(result.current?.dialog).toEqual({
+      title: '',
+      submitLabel: '',
+      cancelLabel: '',
+      onSubmit: undefined,
+    });
+  });
+
+  // Mutation coverage: onAddPress?.() — a caller that omits onAddPress entirely must not throw
+  // when openAddDialog runs.
+  it('does not throw opening the add dialog when onAddPress is not provided', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      result.current?.openAddDialog();
+    });
+
+    expect(result.current?.dialogType).toBe('add');
+  });
+
+  // Mutation coverage: `onAddSubmit?.()` (the "add" branch of `dialog.onSubmit`) — a caller that
+  // omits onAddSubmit must not throw when the add dialog is submitted.
+  it('does not throw submitting the add dialog when onAddSubmit is not provided', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      result.current?.openAddDialog();
+    });
+
+    await act(async () => {
+      result.current?.dialog.onSubmit?.();
+    });
+
+    expect(result.current?.dialogState).toBe('submitting');
+  });
+
+  // Mutation coverage: `onRemoveConfirm?.()` (the "remove" branch of `dialog.onSubmit`) — a
+  // caller that omits onRemoveConfirm must not throw when the remove dialog is submitted.
+  it('does not throw submitting the remove dialog when onRemoveConfirm is not provided', async () => {
+    const { result } = await renderHook(
+      () =>
+        useCardListWithABMDialog<StoryItem>({
+          initialDialogState: 'closed',
+        }),
+      { wrapper },
+    );
+
+    await act(async () => {
+      result.current?.openRemoveDialog(item);
+    });
+
+    await act(async () => {
+      result.current?.dialog.onSubmit?.();
+    });
+
+    expect(result.current?.dialogState).toBe('submitting');
+  });
+
+  // Mutation coverage: the auto-submit effect's compound guard — `isSubmitting && state.dialogState
+  // === 'open'` — must require BOTH conditions. A caller whose isSubmitting starts true before any
+  // dialog is ever opened (dialogState 'closed') must not have the reducer's 'submit' dispatched
+  // for it (there is nothing open to submit).
+  it('does not auto-dispatch submit when isSubmitting starts true but no dialog is open', async () => {
+    const alreadySubmittingWrapper = ({ children }: { children: ReactNode }) =>
+      CardListWithABMDialogProvider<StoryItem>({
+        value: { ...contextValue, isSubmitting: true },
+        children,
+      });
+
+    const { result } = await renderHook(
+      () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'closed' }),
+      { wrapper: alreadySubmittingWrapper },
+    );
+
+    expect(result.current?.dialogState).toBe('closed');
+    expect(result.current?.dialogType).toBeNull();
+  });
+
   it('openAddDialog sets dialogType to add and opens it', async () => {
     const { result } = await renderHook(
       () =>
@@ -245,6 +346,29 @@ describe('useCardListWithABMDialog', () => {
       expect(result.current?.dialogState).toBe('closed');
     });
 
+    // Mutation coverage: `wasReallySubmittingRef`'s initial value must be `false` — mounting
+    // directly into 'submitting' (e.g. isSubmitting is already true when the caller first
+    // renders) with isSubmitting false from the very first render must still honor the grace
+    // period below, not treat it as an already-genuinely-true submit that closes immediately.
+    it('honors the grace period even when it mounts already in the submitting state', async () => {
+      const { result } = await renderHook(
+        () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'submitting' }),
+        { wrapper: dynamicWrapper },
+      );
+
+      expect(result.current?.dialogState).toBe('submitting');
+
+      await act(async () => {
+        jest.advanceTimersByTime(49);
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      await act(async () => {
+        jest.advanceTimersByTime(1);
+      });
+      expect(result.current?.dialogState).toBe('closed');
+    });
+
     // @s13 — a real async caller's isSubmitting genuinely returning to false (having actually
     // been true first) closes the dialog immediately, with no grace delay.
     it('closes immediately once a genuinely-true isSubmitting returns to false', async () => {
@@ -272,6 +396,43 @@ describe('useCardListWithABMDialog', () => {
       });
 
       expect(result.current?.dialogState).toBe('closed');
+    });
+
+    // Mutation coverage: the exit effect's `state.dialogState !== 'submitting'` early-return guard
+    // must reset `wasReallySubmittingRef` on every render where the dialog isn't 'submitting' —
+    // not just when it eventually closes. Without that reset, a stale "was really submitting" flag
+    // from one genuinely-async submit cycle would silently auto-close the very next dialog the
+    // caller opens, immediately, for no reason of its own.
+    it('does not carry a stale "was really submitting" flag into the next dialog opened afterward', async () => {
+      const { result, rerender } = await renderHook(
+        () => useCardListWithABMDialog<StoryItem>({ initialDialogState: 'closed' }),
+        { wrapper: dynamicWrapper },
+      );
+
+      await act(async () => {
+        result.current?.openEditDialog(item);
+      });
+      await act(async () => {
+        result.current?.dialog.onSubmit?.();
+      });
+
+      dynamicIsSubmitting = true;
+      await act(async () => {
+        rerender({});
+      });
+      expect(result.current?.dialogState).toBe('submitting');
+
+      dynamicIsSubmitting = false;
+      await act(async () => {
+        rerender({});
+      });
+      expect(result.current?.dialogState).toBe('closed');
+
+      await act(async () => {
+        result.current?.openEditDialog(otherItem);
+      });
+
+      expect(result.current?.dialogState).toBe('open');
     });
 
     // review.md's "Full review — Round 1 (post-CI-fix)", finding 3 — the grace timer must not

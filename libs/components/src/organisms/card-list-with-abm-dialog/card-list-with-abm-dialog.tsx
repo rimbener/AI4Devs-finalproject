@@ -69,6 +69,13 @@ function CardListWithABMDialogWithContext<TItem>({
     closeDialog,
     dialog,
   } = useCardListWithABMDialog<TItem>({
+    // Stryker disable next-line StringLiteral: the 'closed' literal (isSubmitting false branch)
+    // is provably equivalent to any other non-'open'/'submitting' string here — this initial
+    // value can only ever seed the very first render, and while isSubmitting is false there is no
+    // path that makes the shared Dialog visible (`open` requires dialogState === 'open' or
+    // 'submitting', neither reachable from this branch) nor any other reader of dialogState that
+    // isn't gated behind the Dialog actually being open (see card-list-with-abm-dialog-dialog.tsx's
+    // `actions` useMemo, whose 'closed' comparison only matters once `open` is already true).
     initialDialogState: isSubmitting ? 'submitting' : 'closed',
   });
 

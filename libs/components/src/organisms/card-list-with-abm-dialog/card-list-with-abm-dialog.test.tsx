@@ -560,6 +560,15 @@ describe('CardListWithABMDialog', () => {
     expect(lastCallFor('Edit card').open).toBe(false);
   });
 
+  // Mutation coverage: `initialDialogState: isSubmitting ? 'submitting' : 'closed'` — a caller
+  // whose isSubmitting prop is already true on the very first render (e.g. a pending mutation the
+  // screen mounted into) must show the submitting dialog immediately, with no prior interaction.
+  it('shows the submitting dialog immediately when isSubmitting is already true on first mount', async () => {
+    await render(<CardListWithABMDialog {...makeProps({ isSubmitting: true })} />);
+
+    expect(screen.getByText('general.saving')).toBeTruthy();
+  });
+
   // @s11 — isSubmitting swaps the open edit dialog to a submitting state.
   it('replaces the edit dialog body with SubmittingIndicator and hides its buttons while isSubmitting', async () => {
     const { rerender } = await render(<CardListWithABMDialog {...makeProps()} />);

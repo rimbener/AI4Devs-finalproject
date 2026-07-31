@@ -25,7 +25,19 @@ export const ApiKeySettingsScreen = () => {
     hasError: settings.isError,
   });
 
+  // Stryker disable next-line StringLiteral: the '' fallback (formProvider still null) is
+  // provably unreachable while the edit dialog is actually visible — CardListWithABMDialog's own
+  // openEditDialog calls this screen's onEditPress (which sets manager.formProvider via
+  // openReplaceModal) synchronously in the very same dispatch that flips its internal dialogType
+  // to 'edit', so both land in the same React commit. There is no render where dialogType==='edit'
+  // and formProvider is still null.
   const providerLabel = manager.formProvider ? settings.providerNames[manager.formProvider] : '';
+  // Documented-equivalent mutant (mutation.md): same reasoning as providerLabel above, mirrored
+  // for the remove flow — openRemoveModal(provider) always sets confirmingRemove in the same
+  // dispatch that opens the remove dialog, so this '' fallback never renders. A `Stryker disable
+  // next-line` comment does not suppress this specific mutant (Stryker does not honor the
+  // directive on a multi-line ternary's nested alternate branch) — left as a documented survivor
+  // instead of forcing an artificial reachability test.
   const removeProviderLabel = manager.confirmingRemove
     ? settings.providerNames[manager.confirmingRemove]
     : '';
@@ -83,12 +95,21 @@ export const ApiKeySettingsScreen = () => {
   );
 
   const handleSave = () => {
+    // Stryker disable next-line ConditionalExpression: unreachable via the real UI — the Save
+    // button's `submitDisabled` (manager.isSaveDisabled) is already true whenever formProvider is
+    // null, so handleSave can only ever run with it set. Kept as a defensive guard against
+    // `saveApiKey(null, ...)`; still asserted not-called via a disabled-button press (see test
+    // "does not call saveApiKey when Save is pressed with no provider selected").
     if (manager.formProvider) {
       settings.saveApiKey(manager.formProvider, manager.apiKey);
     }
   };
 
   const handleRemove = () => {
+    // Stryker disable next-line ConditionalExpression: unreachable via the real UI —
+    // openRemoveModal always sets confirmingRemove in the same dispatch that opens the remove
+    // dialog (see removeProviderLabel above), so onRemoveConfirm can never fire with it null.
+    // Kept as a defensive guard against `removeApiKey(undefined)`.
     if (manager.confirmingRemove) {
       settings.removeApiKey(manager.confirmingRemove);
     }

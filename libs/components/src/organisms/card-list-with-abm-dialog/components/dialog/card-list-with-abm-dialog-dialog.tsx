@@ -85,7 +85,7 @@ export function CardListWithABMDialogDialog<TItem>({
           renderRemoveConfirmation(dialogItem)
         ) : null
       ) : (
-        <View style={styles.spacer} />
+        <View style={styles.spacer} testID="card-list-with-abm-dialog-spacer" />
       )}
     </Dialog>
   );

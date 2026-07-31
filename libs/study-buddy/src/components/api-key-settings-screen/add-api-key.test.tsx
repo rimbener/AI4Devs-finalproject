@@ -2,6 +2,15 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
 
+// Spies on the extracted focusApiKeyField helper (add-api-key.helpers.test.ts owns its own
+// conditional-focus logic) — this only asserts AddApiKey's effect calls it with the right args
+// on the right renders, not the underlying imperative TextInput.focus() itself.
+jest.mock('./add-api-key.helpers', () => ({
+  ...jest.requireActual('./add-api-key.helpers'),
+  focusApiKeyField: jest.fn(),
+}));
+
+import { lightTheme } from '@helsoft/components/theme';
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
@@ -9,8 +18,10 @@ import { Linking } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import { AddApiKey } from './add-api-key';
+import { focusApiKeyField } from './add-api-key.helpers';
 
 const mockUseLocalization = useLocalization as jest.Mock;
+const mockFocusApiKeyField = focusApiKeyField as jest.Mock;
 
 const providerNames: Record<AiProvider, string> = {
   groq: 'Groq',
@@ -44,6 +55,47 @@ describe('AddApiKey', () => {
 
     expect(screen.getByRole('radio', { name: 'Groq' })).toBeTruthy();
     expect(screen.getByRole('radio', { name: 'OpenAI' })).toBeTruthy();
+  });
+
+  // Mutation coverage — the radio group's own accessible name comes from the translated key.
+  it('gives the radio group its translated accessible name', async () => {
+    await render(<AddApiKey {...baseProps} />);
+
+    expect(screen.getByLabelText('settings.apiKey.manager.selectProvider')).toBeTruthy();
+  });
+
+  // Mutation coverage — TextField's own visible label (not just its accessible name) comes from
+  // the translated key.
+  it('shows the translated visible label above the api key field', async () => {
+    await render(<AddApiKey {...baseProps} formProvider="groq" />);
+
+    expect(screen.getByText('settings.apiKey.inputLabel')).toBeTruthy();
+  });
+
+  // Mutation coverage — the focus effect calls the extracted helper with the live formProvider
+  // (its own conditional-focus logic is unit-tested directly in add-api-key.helpers.test.ts).
+  it('calls focusApiKeyField with the selected provider', async () => {
+    await render(<AddApiKey {...baseProps} formProvider="groq" />);
+
+    expect(mockFocusApiKeyField).toHaveBeenCalledWith(expect.anything(), 'groq');
+  });
+
+  it('calls focusApiKeyField with null while no provider is selected', async () => {
+    await render(<AddApiKey {...baseProps} formProvider={null} />);
+
+    expect(mockFocusApiKeyField).toHaveBeenCalledWith(expect.anything(), null);
+  });
+
+  // Mutation coverage — the effect's `[formProvider]` dependency: re-selecting a different
+  // provider must re-run the effect (call the helper again).
+  it('re-invokes focusApiKeyField when the selected provider changes', async () => {
+    const { rerender } = await render(<AddApiKey {...baseProps} formProvider="groq" />);
+    expect(mockFocusApiKeyField).toHaveBeenCalledTimes(1);
+
+    await rerender(<AddApiKey {...baseProps} formProvider="openai" />);
+
+    expect(mockFocusApiKeyField).toHaveBeenCalledTimes(2);
+    expect(mockFocusApiKeyField).toHaveBeenLastCalledWith(expect.anything(), 'openai');
   });
 
   it('marks the selected radio option as checked', async () => {
@@ -99,9 +151,11 @@ describe('AddApiKey', () => {
   it('disables the api key field while no provider is selected', async () => {
     await render(<AddApiKey {...baseProps} formProvider={null} />);
 
-    expect(
-      screen.getByLabelText('settings.apiKey.inputLabel').props.accessibilityState.disabled,
-    ).toBe(true);
+    const field = screen.getByLabelText('settings.apiKey.inputLabel');
+    expect(field.props.accessibilityState.disabled).toBe(true);
+    // Mutation coverage — the native `disabled` prop (TextField's own `editable={!disabled}`),
+    // not just the mirrored accessibilityState, must also reflect it.
+    expect(field.props.editable).toBe(false);
   });
 
   it('disables the api key field while submitting even with a provider selected', async () => {
@@ -115,9 +169,9 @@ describe('AddApiKey', () => {
   it('enables the api key field once a provider is selected and not submitting', async () => {
     await render(<AddApiKey {...baseProps} formProvider="groq" isSubmitting={false} />);
 
-    expect(
-      screen.getByLabelText('settings.apiKey.inputLabel').props.accessibilityState.disabled,
-    ).toBe(false);
+    const field = screen.getByLabelText('settings.apiKey.inputLabel');
+    expect(field.props.accessibilityState.disabled).toBe(false);
+    expect(field.props.editable).toBe(true);
   });
 
   it('renders the guidance link when the selected provider has a guidance url', async () => {
@@ -216,5 +270,24 @@ describe('AddApiKey', () => {
 
     expect(openURL).not.toHaveBeenCalled();
     openURL.mockRestore();
+  });
+
+  // Mutation coverage — the locked-provider text (formMode "replace") is styled from the theme.
+  it('styles the locked-provider label from the theme', async () => {
+    await render(<AddApiKey {...baseProps} formMode="replace" formProvider="groq" />);
+
+    expect(screen.getByText('Groq')).toHaveStyle({
+      ...lightTheme.typography.bodyMedium,
+      color: lightTheme.colors.onSurfaceVariant,
+    });
+  });
+
+  // Mutation coverage — the api key field gets its top spacing from the theme.
+  it('spaces the api key field from the theme', async () => {
+    await render(<AddApiKey {...baseProps} formProvider="groq" />);
+
+    expect(screen.getByLabelText('settings.apiKey.inputLabel').parent?.parent).toHaveStyle({
+      marginTop: lightTheme.spacing.s4,
+    });
   });
 });

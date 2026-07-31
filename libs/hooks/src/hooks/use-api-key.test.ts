@@ -413,6 +413,46 @@ describe('useApiKey', () => {
     await waitFor(() => expect(result.current.isSubmitting).toBe(false));
   });
 
+  // Mutation coverage: `isError: saveMutation.isError || removeMutation.isError` — either
+  // mutation being in error must surface true; neither being in error must surface false.
+  it('reports isError false while neither mutation has failed', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.isError).toBe(false);
+  });
+
+  it('reports isError true when only saveApiKey has failed', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    service.saveApiKey.mockRejectedValue(
+      Object.assign(new Error('bad key'), { code: 'validation_error' }),
+    );
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.saveApiKey('groq', 'sk-test');
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
+  it('reports isError true when only removeApiKey has failed', async () => {
+    mockUseSession.mockReturnValue(authenticatedSession);
+    service.removeApiKey.mockRejectedValue(
+      Object.assign(new Error('offline'), { code: 'network_error' }),
+    );
+    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.removeApiKey('groq');
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+  });
+
   // @s49 — two consumers share one read with no provider in the tree: the shared QueryClient
   // cache is the only thing deduping the read now that ApiKeyProvider is gone.
   it('calls the status service once when two consumers mount under the same QueryClient', async () => {

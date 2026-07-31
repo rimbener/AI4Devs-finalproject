@@ -9,6 +9,7 @@ jest.mock('expo-router', () => ({
   useRouter: jest.fn(),
 }));
 
+import { lightTheme } from '@helsoft/components/theme';
 import { useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { fireEvent, render, screen } from '@testing-library/react-native';
@@ -112,6 +113,13 @@ describe('ApiKeySettings', () => {
     expect(screen.getByText('entitlements.loading').props.accessibilityLiveRegion).toBe('polite');
     expect(announce).toHaveBeenCalledWith('entitlements.loading');
     announce.mockRestore();
+    // Mutation coverage — the visually-hidden loading label is offscreen, not just invisible.
+    expect(screen.getByText('entitlements.loading')).toHaveStyle({
+      position: 'absolute',
+      width: 1,
+      height: 1,
+      overflow: 'hidden',
+    });
   });
 
   // @s9/@s17 — paid users never see BYOK settings.
@@ -152,5 +160,12 @@ describe('ApiKeySettings', () => {
     expect(screen.queryByText('settings.apiKey.showSettings')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: 'entitlements.error.retry' }));
     expect(retry).toHaveBeenCalledTimes(1);
+
+    // Mutation coverage — the error container/message are styled from the theme.
+    expect(screen.getByRole('alert').parent).toHaveStyle({ gap: lightTheme.spacing.s4 });
+    expect(screen.getByRole('alert')).toHaveStyle({
+      ...lightTheme.typography.bodyMedium,
+      color: lightTheme.colors.error,
+    });
   });
 });

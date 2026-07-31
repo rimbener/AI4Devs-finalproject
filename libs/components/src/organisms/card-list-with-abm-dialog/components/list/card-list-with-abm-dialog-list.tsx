@@ -22,7 +22,14 @@ export function CardListWithABMDialogList<TItem>({
   openRemoveDialog,
 }: CardListWithABMDialogListProps<TItem>) {
   const { items } = useCardListWithABMDialogContext<TItem>();
-  const keyExtractor = useCallback((item: CardListItem<TItem>) => item.id, []);
+  const keyExtractor = useCallback(
+    (item: CardListItem<TItem>) => item.id,
+    // Stryker disable next-line ArrayDeclaration: keyExtractor closes over no props/state — its
+    // dependency array's contents can never observably change identity or behavior of this
+    // callback (same referential-stability guarantee documented on the dispatch callbacks in
+    // use-card-list-with-abm-dialog.ts).
+    [],
+  );
 
   const renderItem = useCallback(
     ({ item }: { item: CardListItem<TItem> }) => (

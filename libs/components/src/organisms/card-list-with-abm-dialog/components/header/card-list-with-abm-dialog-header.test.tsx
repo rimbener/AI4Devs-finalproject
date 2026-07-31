@@ -67,6 +67,24 @@ describe('CardListWithABMDialogHeader', () => {
     expect(onAddPress).toHaveBeenCalledTimes(1);
   });
 
+  // Mutation coverage: `showAddButton && onAddPress` — BOTH must be truthy; either alone must not
+  // render the button.
+  it('does not render the Add button when showAddButton is false, even with onAddPress set', async () => {
+    await renderHeader(jest.fn(), {}, false);
+
+    expect(screen.queryByRole('button', { name: 'Add item' })).toBeNull();
+  });
+
+  it('does not render the Add button when onAddPress is omitted, even with showAddButton true', async () => {
+    await render(
+      <CardListWithABMDialogProvider value={makeContextValue()}>
+        <CardListWithABMDialogHeader showAddButton />
+      </CardListWithABMDialogProvider>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Add item' })).toBeNull();
+  });
+
   // Mutation coverage: title/addButtonLabel come straight from context, not a hardcoded string —
   // changing context values without remounting must be reflected on rerender.
   it('reflects new title and addButtonLabel on rerender from the same provider tree', async () => {

@@ -346,4 +346,211 @@ describe('ApiKeySettingsScreen', () => {
     });
     expect(title.parent.parent).toHaveStyle({ gap: lightTheme.spacing.s4 });
   });
+
+  // Mutation coverage — the cardList style (minWidth/maxWidth/alignSelf) reaches
+  // CardListWithABMDialog's own root, merged alongside its own layout.
+  it('constrains the card list width and centers it (styles.cardList)', async () => {
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    const title = screen.getByRole('header', { name: 'settings.apiKey.screenTitle' });
+    expect(title.parent.parent).toHaveStyle({
+      minWidth: 620,
+      maxWidth: 800,
+      alignSelf: 'center',
+    });
+  });
+
+  // Mutation coverage — the cardStyle (styles.card) reaches each saved-provider row.
+  it('colors each saved-provider card from the theme (styles.card)', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.getByTestId('card-list-with-abm-dialog-card-groq')).toHaveStyle({
+      backgroundColor: lightTheme.colors.onSurface,
+    });
+  });
+
+  // Mutation coverage — removeConfirmationText styles the confirmation body from the theme.
+  it('styles the remove-confirmation body from the theme (styles.removeConfirmationText)', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.remove Groq' }));
+    });
+
+    expect(screen.getByText('settings.apiKey.removeConfirmBody')).toHaveStyle({
+      ...lightTheme.typography.bodyMedium,
+      color: lightTheme.colors.onSurfaceVariant,
+    });
+  });
+
+  // Mutation coverage — progressIndicator centers the loading spinner (styles.progressIndicator).
+  it('centers the loading spinner (styles.progressIndicator)', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ isLoading: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.getByTestId('progress-circular-track').parent?.parent).toHaveStyle({
+      alignSelf: 'center',
+    });
+  });
+
+  // Mutation coverage — handleClose's body (resetSave/resetRemove) is exercised when the shared
+  // dialog is dismissed via the Cancel button.
+  it('resets both save and remove mutations when the add dialog is closed', async () => {
+    const resetSave = jest.fn();
+    const resetRemove = jest.fn();
+    mockUseApiKey.mockReturnValue(apiKeyValue({ resetSave, resetRemove }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByText('general.cancel'));
+    });
+
+    expect(resetSave).toHaveBeenCalledTimes(1);
+    expect(resetRemove).toHaveBeenCalledTimes(1);
+  });
+
+  // Mutation coverage — renderRemoveConfirmation actually renders the localized confirmation
+  // body (not a no-op), built from the exact i18n key.
+  it('shows the localized remove-confirmation body when the remove dialog is open', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.remove Groq' }));
+    });
+
+    expect(screen.getByText('settings.apiKey.removeConfirmBody')).toBeTruthy();
+    // Mutation coverage — removeDialogTitle's template resolves to the translated prefix plus
+    // the confirmed provider's name.
+    expect(screen.getByText('settings.apiKey.remove Groq')).toBeTruthy();
+  });
+
+  // Mutation coverage — addDialogTitle resolves the same translated key as the Add button, so
+  // once the dialog opens there must be TWO renders of that text (button + dialog headline).
+  it('shows the add dialog title from the translated add-new key', async () => {
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.getAllByText('settings.apiKey.manager.addNew')).toHaveLength(1);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
+    });
+
+    expect(screen.getAllByText('settings.apiKey.manager.addNew')).toHaveLength(2);
+  });
+
+  // Mutation coverage — the `items` useMemo must recompute when `savedKeys` changes on rerender,
+  // not keep serving the first render's memoized list.
+  it('reflects a newly saved key added after the initial render', async () => {
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    expect(screen.queryByRole('button', { name: 'settings.apiKey.remove Groq' })).toBeNull();
+
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+
+    await act(async () => {
+      screen.rerender(<ApiKeySettingsScreen />);
+    });
+
+    expect(screen.getByRole('button', { name: 'settings.apiKey.remove Groq' })).toBeTruthy();
+  });
+
+  // Mutation coverage — renderRemoveConfirmation's `[t]` dependency must recompute the body when
+  // the localization function itself changes on rerender.
+  it('reflects an updated translation function in the remove-confirmation body', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    mockUseLocalization.mockReturnValue(localizationValue({ t: (key: string) => `es:${key}` }));
+    await act(async () => {
+      screen.rerender(<ApiKeySettingsScreen />);
+    });
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'es:settings.apiKey.remove Groq' }));
+    });
+
+    expect(screen.getByText('es:settings.apiKey.removeConfirmBody')).toBeTruthy();
+  });
+
+  // Mutation coverage — opening the replace dialog for a saved provider both calls the correct
+  // wiring (onEditPress → openReplaceModal) and shows the correctly-labeled dialog headline.
+  it('opens the replace dialog for a saved provider with its locked-provider title', async () => {
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.replace Groq' }));
+    });
+
+    expect(screen.getByText('settings.apiKey.replace Groq')).toBeTruthy();
+  });
+
+  // handleSave's `if (manager.formProvider)` guard (see the `Stryker disable` comment on that
+  // line: unreachable via the real UI, since the Save button is itself disabled whenever
+  // formProvider is null) — this asserts the one reachable outcome: the disabled button's press
+  // is a safe no-op, never a saveApiKey(null, ...) call.
+  it('does not call saveApiKey when Save is pressed with no provider selected', async () => {
+    const saveApiKey = jest.fn();
+    mockUseApiKey.mockReturnValue(apiKeyValue({ saveApiKey }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.manager.addNew' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'general.save' }));
+    });
+
+    expect(saveApiKey).not.toHaveBeenCalled();
+  });
+
+  // handleRemove's `if (manager.confirmingRemove)` guard (see the `Stryker disable` comment on
+  // that line: unreachable via the real UI, since the remove dialog can only ever be open with
+  // confirmingRemove already set) — this locks the one reachable path: removeApiKey is always
+  // called with the confirmed provider, never undefined.
+  it('always calls removeApiKey with the confirmed provider, never undefined', async () => {
+    const removeApiKey = jest.fn();
+    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true, removeApiKey }));
+    mockUseLocalization.mockReturnValue(localizationValue());
+
+    await render(<ApiKeySettingsScreen />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.remove Groq' }));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'general.delete' }));
+    });
+
+    expect(removeApiKey).toHaveBeenCalledWith('groq');
+    expect(removeApiKey).not.toHaveBeenCalledWith(undefined);
+  });
 });

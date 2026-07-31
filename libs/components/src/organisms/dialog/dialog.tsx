@@ -27,11 +27,12 @@ export const Dialog = ({
 
   return (
     <Modal transparent visible={open} animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={styles.scrim}>
+      <Pressable onPress={onClose} style={styles.scrim} testID="dialog-scrim">
         <Pressable
           accessibilityViewIsModal
           onPress={(e) => e.stopPropagation()}
           style={[styles.surface, style]}
+          testID="dialog-surface"
         >
           {icon ? (
             <View style={styles.iconWrap}>
@@ -40,7 +41,7 @@ export const Dialog = ({
           ) : null}
           {headline ? <Text style={styles.headline(!!icon)}>{headline}</Text> : null}
           {typeof children === 'string' ? <Text style={styles.body}>{children}</Text> : children}
-          <View style={styles.actions}>
+          <View style={styles.actions} testID="dialog-actions">
             {actions ?? (
               <>
                 <Button variant="text" onPress={onClose}>

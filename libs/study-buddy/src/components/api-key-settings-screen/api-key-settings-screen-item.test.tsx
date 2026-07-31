@@ -1,3 +1,4 @@
+import { lightTheme } from '@helsoft/components/theme';
 import type { AiProvider, SavedProviderKey } from '@helsoft/types';
 import { render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
@@ -98,6 +99,12 @@ describe('mapSavedKeysToItems', () => {
     expect(screen.getByText('Groq')).toBeTruthy();
     expect(screen.getByText('groq saved 2026-01-01T00:00:00.000Z')).toBeTruthy();
     expect(screen.queryByText('Disabled for this plan')).toBeNull();
+    // Mutation coverage — the provider-name title is styled from the theme (styles.title).
+    expect(screen.getByText('Groq')).toHaveStyle({
+      ...lightTheme.typography.headlineSmall,
+      color: lightTheme.colors.onPrimary,
+      marginBottom: lightTheme.spacing.s2,
+    });
   });
 
   it('renders the disabled label when the provider is not enabled', async () => {

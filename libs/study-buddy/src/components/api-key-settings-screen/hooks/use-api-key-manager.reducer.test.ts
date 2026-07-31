@@ -1,6 +1,12 @@
 import { apiKeyManagerReducer, initialApiKeyManagerState } from './use-api-key-manager.reducer';
 
 describe('apiKeyManagerReducer', () => {
+  // Mutation coverage: the initial form mode is exactly 'add', not an empty/other string —
+  // form/select-provider and the add-flow radio group both key off this default.
+  it('initialApiKeyManagerState defaults formMode to add', () => {
+    expect(initialApiKeyManagerState.formMode).toBe('add');
+  });
+
   it('modal/open-add opens add mode with a cleared form', () => {
     const prev = {
       ...initialApiKeyManagerState,
@@ -88,15 +94,19 @@ describe('apiKeyManagerReducer', () => {
     });
   });
 
-  it('confirm-remove/close clears the provider', () => {
+  // Mutation coverage: confirm-remove/close must return its own dedicated state, not fall
+  // through into submit/sync's success-settle logic (which would also flip dialogIsSubmitting
+  // true as a side effect).
+  it('confirm-remove/close clears the provider without touching dialogIsSubmitting', () => {
     const open = apiKeyManagerReducer(initialApiKeyManagerState, {
       type: 'confirm-remove/open',
       provider: 'deepseek',
     });
 
-    expect(
-      apiKeyManagerReducer(open, { type: 'confirm-remove/close' }).confirmingRemove,
-    ).toBeNull();
+    expect(apiKeyManagerReducer(open, { type: 'confirm-remove/close' })).toEqual({
+      ...open,
+      confirmingRemove: null,
+    });
   });
 
   describe('submit/sync', () => {
@@ -186,6 +196,27 @@ describe('apiKeyManagerReducer', () => {
       });
 
       expect(settled.confirmingRemove).toBe('groq');
+      expect(settled.dialogIsSubmitting).toBe(false);
+    });
+
+    // Mutation coverage: a success settle with neither the modal nor the remove confirmation
+    // open (defensive fallback — not reachable via the hook's own real dispatch sequence, but a
+    // safety net worth locking down) must drop the sticky flag, not leave it stuck true.
+    it('drops the sticky flag when a submit succeeds with nothing open', () => {
+      const submitting = apiKeyManagerReducer(initialApiKeyManagerState, {
+        type: 'submit/sync',
+        isSubmitting: true,
+        hasError: false,
+      });
+
+      const settled = apiKeyManagerReducer(submitting, {
+        type: 'submit/sync',
+        isSubmitting: false,
+        hasError: false,
+      });
+
+      expect(settled.modalOpen).toBe(false);
+      expect(settled.confirmingRemove).toBeNull();
       expect(settled.dialogIsSubmitting).toBe(false);
     });
   });

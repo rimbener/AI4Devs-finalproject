@@ -39,6 +39,15 @@ describe('useApiKeyManager', () => {
     expect(result.current?.unsavedProviders).toContain('openai');
   });
 
+  // Mutation coverage: isEmpty is strictly `savedKeys.length === 0` — false once any key exists.
+  it('reports isEmpty false once at least one key is saved', async () => {
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers }),
+    );
+
+    expect(result.current?.isEmpty).toBe(false);
+  });
+
   // Decision 4 — unsavedProviders iterates the passed-in enabledProviders order, not a
   // hardcoded registry (task-7 moved this from `providers` to `enabledProviders`).
   it('orders unsavedProviders by the passed-in enabledProviders list, not alphabetically', async () => {
@@ -184,6 +193,24 @@ describe('useApiKeyManager', () => {
 
     expect(result.current?.confirmingRemove).toBeNull();
     expect(result.current?.dialogIsSubmitting).toBe(true);
+  });
+
+  // Mutation coverage — closeRemoveModal is openRemoveModal's dedicated closer (dispatches
+  // 'confirm-remove/close' directly, same contract as setConfirmingRemove(null)).
+  it('closeRemoveModal clears confirmingRemove', async () => {
+    const { result } = await renderHook(() =>
+      useApiKeyManager({ savedKeys: [groqKey], enabledProviders: providers }),
+    );
+
+    await act(async () => {
+      result.current?.openRemoveModal('groq');
+    });
+    expect(result.current?.confirmingRemove).toBe('groq');
+
+    await act(async () => {
+      result.current?.closeRemoveModal();
+    });
+    expect(result.current?.confirmingRemove).toBeNull();
   });
 
   it('recomputes unsaved providers when savedKeys changes', async () => {

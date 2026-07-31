@@ -8,6 +8,7 @@ jest.mock('@helsoft/localization', () => ({
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
+import { spacing } from '../../../../theme';
 import type { CardListItem } from '../../card-list-with-abm-dialog.types';
 import { CardListWithABMDialogProvider } from '../../hooks/card-list-with-abm-dialog.context';
 import type { CardListWithABMDialogValue } from '../../hooks/card-list-with-abm-dialog.context.types';
@@ -115,6 +116,33 @@ describe('CardListWithABMDialogDialog', () => {
     await renderDialog({ dialogType: 'remove', dialogState: 'open', dialogItem: null });
 
     expect(screen.queryByText(/^Remove item/)).toBeNull();
+  });
+
+  // Mutation coverage: the final fallback branch (dialogType matches none of add/edit/remove,
+  // e.g. pre-first-open) renders the themed spacer, not a "remove" form.
+  it('renders the themed spacer when dialogType matches none of add/edit/remove', async () => {
+    await renderDialog({ dialogType: null, dialogState: 'open', dialogItem: null });
+
+    expect(screen.getByTestId('card-list-with-abm-dialog-spacer').props.style).toMatchObject({
+      height: spacing.s10,
+    });
+    expect(screen.queryByText(/^Remove/)).toBeNull();
+  });
+
+  // Mutation coverage: `onClose={dialogState === 'submitting' ? undefined : onClose}` — pressing
+  // the shared Dialog's scrim must not dismiss it while genuinely submitting.
+  it('disables scrim dismissal while submitting', async () => {
+    const onClose = jest.fn();
+    await renderDialog({
+      dialogType: 'edit',
+      dialogState: 'submitting',
+      dialogItem: item,
+      onClose,
+    });
+
+    fireEvent.press(screen.getByTestId('dialog-scrim'));
+
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it('replaces the body with ErrorBanner and hides the form when errorMessage is set', async () => {
