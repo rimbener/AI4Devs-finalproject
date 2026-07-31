@@ -11,6 +11,7 @@ const { NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID } = require('@helsoft/study-buddy/
 const {
   LESSON_GENERATION_GENERATE_TEST_ID,
   LESSON_GENERATION_OPEN_IN_PLAYER_TEST_ID,
+  PDF_UPLOAD_PANEL_CHOOSE_FILE_TEST_ID,
 } = require('@helsoft/components/test-ids');
 const { LESSON_PLAYER_TEST_ID } = require('@helsoft/activities/test-ids');
 
@@ -98,20 +99,23 @@ const login = async (page) => {
   await expect(page.getByTestId(LOGIN_EMAIL_FIELD_TEST_ID)).toBeHidden();
 };
 
-/** Clicks the PDF list's "Choose file" trigger and stages the fixture on the real file-chooser
- * expo-document-picker's web implementation opens, then waits for extraction to succeed (the
- * dialog auto-advances from the upload step straight to the generate step on success).
+/** Opens the upload dialog, then clicks the panel's "Choose file" (which owns the picker) and
+ * stages the fixture on the real file-chooser expo-document-picker opens. Waits for extraction
+ * to succeed (dialog auto-advances upload → generate on success).
  *
- * The trigger click is a genuine user gesture, so `input.dispatchEvent(new MouseEvent('click'))`
- * inside `getDocumentAsync` actually opens the browser's native file chooser (Chromium
- * auto-cancels it in headless mode almost immediately) rather than merely toggling a plain
- * `<input>` element — `page.locator('input[type="file"]').setInputFiles()` loses that race
- * ~100% of the time. `waitForEvent('filechooser')` intercepts the chooser directly instead. */
+ * Outer list button only opens the dialog — the panel button must be the gesture that opens
+ * the chooser. The panel click is a genuine user gesture, so `input.dispatchEvent(new
+ * MouseEvent('click'))` inside `getDocumentAsync` opens Chromium's native file chooser
+ * (auto-cancelled almost immediately in headless) rather than a plain `<input>` toggle —
+ * `page.locator('input[type="file"]').setInputFiles()` loses that race ~100% of the time.
+ * `waitForEvent('filechooser')` intercepts the chooser directly instead. */
 const chooseFileAndExtract = async (page, fixturePath) => {
   await page.goto('/pdf-files');
+  await page.getByTestId(NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID).click();
+  await expect(page.getByTestId(PDF_UPLOAD_PANEL_CHOOSE_FILE_TEST_ID)).toBeVisible();
   const [fileChooser] = await Promise.all([
     page.waitForEvent('filechooser'),
-    page.getByTestId(NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID).click(),
+    page.getByTestId(PDF_UPLOAD_PANEL_CHOOSE_FILE_TEST_ID).click(),
   ]);
   await fileChooser.setFiles(fixturePath);
   await expect(page.getByTestId(LESSON_GENERATION_GENERATE_TEST_ID)).toBeVisible({

@@ -7,8 +7,9 @@ import type { NewLessonDialogProps } from './new-lesson-dialog.types';
 import { useNewLessonDialog } from './use-new-lesson-dialog';
 
 /**
- * Upload + generate in one dialog: Choose PDF opens dialog + picker; after extract shows
- * LessonGeneration. List Generate opens the same dialog on the generate step.
+ * Upload + generate in one dialog: outer Choose PDF opens the dialog; panel Choose PDF
+ * opens the picker. After extract shows LessonGeneration. List Generate opens the same
+ * dialog on the generate step.
  */
 export const NewLessonDialog = ({
   onExtracted,
