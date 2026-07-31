@@ -15,9 +15,7 @@ import type {
 } from './matching.types';
 import { useMatching } from './use-matching';
 
-/**
- * Matching — activity organism. Owns pairing + grading; reports via `onAnswered` once.
- */
+/** Matching — pairs + grades; reports via `onAnswered` once. */
 export const Matching = ({
   slide,
   onAnswered,

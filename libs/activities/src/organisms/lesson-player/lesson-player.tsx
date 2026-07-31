@@ -14,23 +14,17 @@ import { useLessonPlayer } from './use-lesson-player';
 export const LESSON_PLAYER_EMPTY_TEST_ID = 'lesson-player-empty';
 export const LESSON_PLAYER_ERROR_TEST_ID = 'lesson-player-error';
 
-/**
- * LessonPlayer — one step at a time: content slides via SlideView, terminal results via
- * LessonResults. Deck state is a useReducer (currentIndex + answers + attemptSaved).
- * Empty (0 slides) and Error (load failure) short-circuit before the deck.
- */
+/** LessonPlayer — SlideView steps, then LessonResults; empty/error short-circuit. */
 export const LessonPlayer = ({
   lesson,
   error = null,
   onRetry,
   onBackToLessons,
 }: LessonPlayerProps) => {
-  // @s16 — load failure → Error + Retry + Back (no deck).
   if (error) {
     return <LessonPlayerError onRetry={onRetry} onBackToLessons={onBackToLessons} />;
   }
 
-  // @s15 — slideless lesson → Empty + Back only (never a 1-step results deck).
   if (!lesson || lesson.slides.length === 0) {
     return <LessonPlayerEmpty onBackToLessons={onBackToLessons} />;
   }
