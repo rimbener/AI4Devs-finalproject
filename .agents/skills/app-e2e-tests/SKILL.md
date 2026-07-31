@@ -186,20 +186,19 @@ const stageFixtureCopy = (tag) => {
 ```
 
 Pass a distinct `tag` per test file (e.g. `'upload-and-generate'`, `'lesson-player'`). Fixture
-uniqueness complements — does not replace — the suite's automatic `supabase db reset` in
-`scripts/e2e-prepare-supabase.sh` (see `E2E_TESTS.md`'s "App-level E2E").
+uniqueness complements — does not replace — the suite's automatic `supabase db reset` before
+and after the run (see `E2E_TESTS.md`'s "App-level E2E").
 
 ## Running tests
 
 ```bash
-pnpm --filter app-study-buddy test:e2e         # prepare supabase + headless
-pnpm --filter app-study-buddy test:e2e:ui      # prepare supabase + UI mode (humans only)
+pnpm --filter app-study-buddy test:e2e         # prepare + headless + cleanup
+pnpm --filter app-study-buddy test:e2e:ui      # prepare + UI mode + cleanup (humans only)
 pnpm --filter app-study-buddy test:e2e:report  # open the last HTML report
 ```
 
-`test:e2e` / `:ci` / `:ui` go through `scripts/run-e2e.sh` → `e2e-prepare-supabase.sh`
-(`supabase start`, sync `.env`, `db reset`) then Playwright. Docker must be running.
-`SKIP_E2E_SUPABASE_PREPARE=1` skips prepare.
+`test:e2e` / `:ci` / `:ui` go through `scripts/run-e2e.sh` → prepare (`db reset`) → Playwright →
+cleanup (`db reset` again). Docker must be running. `SKIP_E2E_SUPABASE_PREPARE=1` skips both.
 
 The config's reporter is `[['list'], ['html', { open: 'never' }]]` — pass/fail prints inline and
 the process exits on its own; it never auto-opens a blocking report server, so `test:e2e` is safe

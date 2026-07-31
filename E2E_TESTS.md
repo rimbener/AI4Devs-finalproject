@@ -125,7 +125,7 @@ Separate from the Storybook e2e above: `apps/app-study-buddy` has its own Playwr
 
 The suite drives real login and real PDF extraction (local mupdf, no external cost) against a local Supabase stack — there is no mocking layer for those.
 
-`pnpm --filter app-study-buddy test:e2e` (and `:ci` / `:ui`) runs `scripts/run-e2e.sh`, which calls `scripts/e2e-prepare-supabase.sh` **before** Playwright: Docker must be up; then `npx supabase start`, syncs `apps/app-study-buddy/.env` (`EXPO_PUBLIC_SUPABASE_*` from `supabase status`), then `npx supabase db reset` (seeded accounts + clean slate — see Determinism below). Escape hatch: `SKIP_E2E_SUPABASE_PREPARE=1` skips that prepare (e.g. you already reset and only want to re-run Playwright).
+`pnpm --filter app-study-buddy test:e2e` (and `:ci` / `:ui`) runs `scripts/run-e2e.sh`, which calls `scripts/e2e-prepare-supabase.sh` **before** Playwright and `scripts/e2e-cleanup-supabase.sh` **after** (pass or fail): Docker must be up; then `npx supabase start`, syncs `apps/app-study-buddy/.env` (`EXPO_PUBLIC_SUPABASE_*` from `supabase status`), then `npx supabase db reset` (seeded accounts + clean slate — see Determinism below). Post-run reset drops golden-path upload/extract rows and restores the seed. Escape hatch: `SKIP_E2E_SUPABASE_PREPARE=1` skips both prepare and cleanup (e.g. you already reset and only want to re-run Playwright / inspect leftover rows).
 
 Login uses the seeded `test@paid.com` / `test123` account (`supabase/seed.sql`, plan `use_platform_key = true` → `canCreate` true, so generation isn't gated by `ApiKeyGate`'s missing-key screen — irrelevant to whether generation itself is mocked, but still required for the upload affordance to render at all).
 
@@ -142,7 +142,7 @@ If a test genuinely needs to exercise the real Groq call (e.g. testing the edge 
 
 ### Determinism
 
-Every extraction/upload inserts a new `documents` row (no uniqueness constraint on filename), and the row's status-driven action button is located by filename (`pdfDocumentListItemActionTestId`) — a second upload of the same filename makes that locator ambiguous. `npx supabase db reset` before a run gives a clean slate; the shared helper's `stageFixtureCopy(tag)` additionally copies the committed fixture to a uniquely-named temp file per test file, so the three specs never collide with each other even within one run.
+Every extraction/upload inserts a new `documents` row (no uniqueness constraint on filename), and the row's status-driven action button is located by filename (`pdfDocumentListItemActionTestId`) — a second upload of the same filename makes that locator ambiguous. `npx supabase db reset` before a run gives a clean slate; the same reset after the run removes those rows. The shared helper's `stageFixtureCopy(tag)` additionally copies the committed fixture to a uniquely-named temp file per test file, so the three specs never collide with each other even within one run.
 
 ### Scripts
 
