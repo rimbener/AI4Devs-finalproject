@@ -184,3 +184,4 @@
 2026-07-31 | hooks-service-dao mapping (ad hoc) | n/a | — | DAO raw rows + service mapping for lessons/attempt/api-key/profile.
 2026-07-31 | unit-test coverage (ad hoc) | n/a | — | Fill unit coverage gaps across hooks/components/study-buddy/rn-utils/supabase-services; wire Jest for rn-utils; RTL fallback rule (548061aad).
 2026-07-31 | expo-tests + e2e cleanup (ad hoc) | n/a | — | Layout tests out of app/; post-e2e db reset; dialog chooseFile; prompts/findings cleanup.
+2026-07-31 | settings/player polish (ad hoc) | n/a | — | ApiKeySettingsSection + i18n title/cannotCreate; lesson player maxWidth; dialog test.
