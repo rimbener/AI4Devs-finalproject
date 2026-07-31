@@ -191,6 +191,10 @@ export const es: TranslationResource = {
       next: 'Siguiente',
       back: 'Atrás',
       slideOf: 'Diapositiva {{current}} de {{total}}',
+      progress: {
+        lesson: 'Lección {{n}}',
+        activity: 'Actividad {{n}}',
+      },
       empty: {
         message: 'Esta lección aún no tiene diapositivas.',
       },

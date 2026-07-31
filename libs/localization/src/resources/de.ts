@@ -195,6 +195,10 @@ export const de: TranslationResource = {
       next: 'Weiter',
       back: 'Zurück',
       slideOf: 'Folie {{current}} von {{total}}',
+      progress: {
+        lesson: 'Lektion {{n}}',
+        activity: 'Aktivität {{n}}',
+      },
       empty: {
         message: 'Diese Lektion hat noch keine Folien.',
       },

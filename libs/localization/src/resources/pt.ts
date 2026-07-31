@@ -190,6 +190,10 @@ export const pt: TranslationResource = {
       next: 'Próximo',
       back: 'Voltar',
       slideOf: 'Slide {{current}} de {{total}}',
+      progress: {
+        lesson: 'Lição {{n}}',
+        activity: 'Atividade {{n}}',
+      },
       empty: {
         message: 'Esta lição ainda não tem slides.',
       },

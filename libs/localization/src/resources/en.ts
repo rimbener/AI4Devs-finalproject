@@ -210,6 +210,10 @@ export const en = {
       next: 'Next',
       back: 'Back',
       slideOf: 'Slide {{current}} of {{total}}',
+      progress: {
+        lesson: 'Lesson {{n}}',
+        activity: 'Activity {{n}}',
+      },
       empty: {
         message: 'This lesson has no slides yet.',
       },

@@ -1,3 +1,4 @@
+import { useLocalization } from '@helsoft/localization';
 import { Pressable, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -7,29 +8,38 @@ import type { SlideProgressProps } from './slide-progress.types';
  * SlideProgress — segmented lesson tracker; the signature blue/rust motif.
  * One segment per slide: blue = instructional, rust = activity; filled up to `current`.
  */
-export const SlideProgress = ({ slides = [], current = 0, onSeek, style }: SlideProgressProps) => (
-  <View style={[styles.track, style]}>
-    {slides.map((slide, i) => {
-      const done = i < current;
-      const active = i === current;
-      const isActivity = slide.type === 'activity';
-      return (
-        <Pressable
-          // biome-ignore lint/suspicious/noArrayIndexKey: segments are purely positional — the index IS the identity
-          key={i}
-          accessibilityRole="button"
-          accessibilityLabel={`${isActivity ? 'Activity' : 'Lesson'} ${i + 1}`}
-          disabled={!onSeek}
-          onPress={() => onSeek?.(i)}
-          style={styles.segment}
-        >
-          {active ? <View pointerEvents="none" style={styles.activeRing(isActivity)} /> : null}
-          <View style={styles.fill(isActivity, done, active)} />
-        </Pressable>
-      );
-    })}
-  </View>
-);
+export const SlideProgress = ({ slides = [], current = 0, onSeek, style }: SlideProgressProps) => {
+  const { t } = useLocalization();
+
+  return (
+    <View style={[styles.track, style]}>
+      {slides.map((slide, i) => {
+        const done = i < current;
+        const active = i === current;
+        const isActivity = slide.type === 'activity';
+        return (
+          <Pressable
+            // biome-ignore lint/suspicious/noArrayIndexKey: segments are purely positional — the index IS the identity
+            key={i}
+            accessibilityRole="button"
+            accessibilityLabel={t(
+              isActivity ? 'player.progress.activity' : 'player.progress.lesson',
+              {
+                n: i + 1,
+              },
+            )}
+            disabled={!onSeek}
+            onPress={() => onSeek?.(i)}
+            style={styles.segment}
+          >
+            {active ? <View pointerEvents="none" style={styles.activeRing(isActivity)} /> : null}
+            <View style={styles.fill(isActivity, done, active)} />
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create((theme) => ({
   track: {
