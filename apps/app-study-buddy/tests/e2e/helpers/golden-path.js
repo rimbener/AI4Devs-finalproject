@@ -12,10 +12,7 @@ const {
   LESSON_GENERATION_GENERATE_TEST_ID,
   LESSON_GENERATION_OPEN_IN_PLAYER_TEST_ID,
 } = require('@helsoft/components/test-ids');
-const {
-  LESSON_PLAYER_TEST_ID,
-  multipleChoiceOptionTestId,
-} = require('@helsoft/activities/test-ids');
+const { LESSON_PLAYER_TEST_ID } = require('@helsoft/activities/test-ids');
 
 // Seeded entitlement account from supabase/seed.sql — plan `use_platform_key = true`
 // (`canCreate` true, generation not blocked by ApiKeyGate).
@@ -122,16 +119,16 @@ const chooseFileAndExtract = async (page, fixturePath) => {
   });
 };
 
-/** Intercepts both real network calls generation triggers, so the suite never places a real
+/** Intercepts the network calls generation triggers, so the suite never places a real
  * (paid) call to the AI provider:
- *  1. `POST .../functions/v1/generate-lesson` — the edge function itself calls Groq and persists
- *     the lesson; mocked to return a fixed deck instantly instead.
- *  2. `GET .../rest/v1/lessons?...id=eq.<id>...` — the player screen re-fetches the lesson by id
- *     via a *separate* direct Postgres read (`LessonsDao.getLessonById`), not through the edge
- *     function response — mocking only #1 leaves the player screen fetching a lesson that was
- *     never actually persisted. Only the single-lesson-by-id shape is intercepted; other
- *     `lessons` queries (e.g. the Home tab's saved-lessons list) `route.continue()` through to
- *     the real local Supabase stack untouched.
+ *  1. `POST .../functions/v1/generate-lesson` — edge fn calls Groq + persists; mocked to a fixed
+ *     deck instantly instead.
+ *  2. `GET .../rest/v1/lessons?...id=eq.<id>...` — player re-fetches by id via
+ *     `LessonsDao.getLessonById` (separate from the edge response); mocking only #1 leaves the
+ *     player reading a lesson that was never persisted.
+ *  3. Home saved-lessons list (`select` includes `title`, no `id` filter) — also fulfilled with
+ *     the mocked row, because generate never writes to Postgres so a real list query would omit
+ *     the lesson (needed for "back home" after play). Other `lessons` shapes `route.continue()`.
  * Returns the mocked deck so a test can assert against known slide content/positions. */
 const mockLessonGeneration = async (page) => {
   const lesson = buildMockLesson();
@@ -206,6 +203,5 @@ module.exports = {
   chooseFileAndExtract,
   mockLessonGeneration,
   generateLesson,
-  multipleChoiceOptionTestId,
   openInPlayer,
 };

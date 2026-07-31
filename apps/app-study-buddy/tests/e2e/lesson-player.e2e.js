@@ -5,6 +5,7 @@ const {
   FLASHCARD_ANSWER_TEST_ID,
   FLASHCARD_MARK_RECALLED_TEST_ID,
   MULTIPLE_CHOICE_SUBMIT_TEST_ID,
+  multipleChoiceOptionTestId,
 } = require('@helsoft/activities/test-ids');
 const {
   RESULTS_BACK_HOME_TEST_ID,
@@ -16,7 +17,6 @@ const {
   chooseFileAndExtract,
   generateLesson,
   openInPlayer,
-  multipleChoiceOptionTestId,
   stageFixtureCopy,
 } = require('./helpers/golden-path');
 
