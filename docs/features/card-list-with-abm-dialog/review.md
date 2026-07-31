@@ -1076,3 +1076,114 @@ Mini-gate 3's Full review Round 2 (fix-delta verification, zero findings open, `
 retained here, nothing deleted. The `@s13` human-sign-off item is tracked distinctly and is
 confirmed closed by the human's own word (`8a6a3afab`), independent of and prior to Round 2's code
 verification above.*
+
+---
+
+## Mini-gate 3: mutation-kill production-source re-review
+
+**Context.** Mini-gate 3's full-review cycle above closed `APPROVED` (Round 2, zero findings open,
+`review_round` = 2/2 in `tasks.md`), and the feature moved into the mutation-testing phase
+(`mutation.md`, Round 8 baseline 77.3% -> Round 9 kill pass 99.84%, 1 documented-equivalent
+survivor). Commit `c76469ea5` (`test(card-list-with-abm-dialog): kill Round 8 mutation survivors
+(113 -> 1)`) is that kill pass. Per protocol, a mutation-kill commit that touches **production**
+source (not just tests) requires `reviews_lead` to re-run the full review on that production-source
+delta before the feature can proceed. `git show --stat c76469ea5` confirms production-source changes
+in exactly 7 files (the rest of the 28-file diff is tests/`mutation.md`):
+`card-list-with-abm-dialog.tsx` (+7), `components/dialog/card-list-with-abm-dialog-dialog.tsx`
+(+1/-1), `components/list/card-list-with-abm-dialog-list.tsx` (+9), `organisms/dialog/dialog.tsx`
+(+5) - the **shared** `Dialog` organism - `add-api-key.helpers.ts` (+18, new `focusApiKeyField`
+extraction), `add-api-key.tsx` (+6), `api-key-settings-screen.tsx` (+21). This is **Round 1** of
+this sub-gate's own 2-round cap (independent of Mini-gate 3's already-closed 2/2 above, same pattern
+as the two earlier post-`pr_ready` mini-gates in this file).
+
+### CI (run once by `reviews_lead`, not the reviewer) — GREEN
+
+- `pnpm turbo run lint check-types --filter=@helsoft/components --filter=@helsoft/study-buddy
+  --filter=@helsoft/hooks --filter=@helsoft/services` — green (15/15 tasks, cache hits where
+  unaffected).
+- `pnpm --filter @helsoft/components test` — 72 suites / 547 tests green.
+- `pnpm --filter @helsoft/study-buddy test` — 46 suites / 426 tests green.
+- `pnpm --filter @helsoft/hooks test` — 22 suites / 190 tests green.
+- `pnpm --filter @helsoft/services test` — 6 suites / 30 tests green.
+- Feature e2e — `libs/components/tests/e2e/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.e2e.js`,
+  run explicitly with `--reporter=list`: 5/5 passed, single parallel run, no flake observed.
+- **CI green @ `c76469ea5`.**
+
+### Reviewer invoked
+
+`reviewer_engineering`, scoped strictly to the production-source delta of `c76469ea5` (the 7 files
+above) — code quality/TDD discipline, architecture/layering, runtime/delivery performance, security.
+Explicitly briefed to scrutinize `organisms/dialog/dialog.tsx` (shared, multi-consumer organism)
+for any behavior change affecting consumers other than this feature. Full findings in
+`review-engineering.md` under "## Mini-gate 3: mutation-kill production-source re-review".
+
+### Verdict: CHANGES_REQUESTED
+
+One minor finding below — blocks per protocol (any finding, any severity, blocks). Everything else —
+code quality/TDD, the rest of architecture/layering, performance, security — checked clean, zero
+findings (see "Lenses checked, no findings this round" below).
+
+### Findings
+
+1. **[arch] minor — open** — `libs/components/src/organisms/dialog/dialog.tsx:30,35,44` — the new
+   `testID="dialog-scrim"` / `"dialog-surface"` / `"dialog-actions"` are hardcoded string literals
+   on the **shared** `Dialog` organism (6 call sites: `sign-out.tsx`, `new-lesson-dialog.tsx`,
+   `pdf-document-list.tsx`, `api-key-form.tsx`, `lesson-list.tsx`, plus this feature's own
+   `card-list-with-abm-dialog-dialog.tsx`), and `dialog.types.ts:4-18`'s `DialogProps` has no
+   `testID` prop for callers to override/namespace them.
+   - `reviewer_engineering` confirmed a real tree where **two independent `<Dialog>` instances
+     mount as siblings**: `libs/study-buddy/src/components/pdf-documents/pdf-documents.tsx:49,58`
+     renders `NewLessonDialog` (own `<Dialog>`, `open` from `useNewLessonDialog`) alongside
+     `PdfDocumentList` (own `<Dialog>` at `pdf-document-list.tsx:104`, `open` from independent
+     `pendingDeleteId` state). Nothing in the type system or component contract prevents both
+     `open` booleans from being `true` simultaneously today — only *practically* blocked by the
+     first modal's scrim capturing input, not a structural guarantee.
+   - If both were ever open at once (or a future consumer intentionally nests/stacks two
+     `Dialog`s), both would render the same three hardcoded testIDs simultaneously in one tree —
+     any `getByTestId('dialog-scrim')`-style query (RTL or Playwright, both throw/fail on multiple
+     matches) would break, with the failure surfacing far from `dialog.tsx` itself.
+   - Confirmed **not currently a live break**: verified via `react-native-web`'s actual
+     `ModalAnimation.js` (`return isRendering || visible ? createElement(...) : null`) and
+     `dialog.test.tsx:27-35` that a *closed* `Dialog` doesn't mount its testID'd subtree, and
+     grepped every other consumer's tests/stories for these three testID strings — none reference
+     or depend on them. This is a durability/reusability gap on the shared organism, not a
+     currently-failing assertion.
+   - **Fix (implementer, TDD):** add an optional `testID`-prefix prop to `DialogProps` (e.g.
+     `testID?: string`, used to derive `${testID}-scrim`/`-surface`/`-actions`, falling back to
+     today's literals when omitted so all 6 existing call sites keep passing unmodified) so
+     multi-instance trees can disambiguate; or, alternatively, document why the current
+     hardcoded/non-namespaced literals are accepted as-is for this shared organism (would need
+     explicit human sign-off, since that alternative accepts the latent-collision risk
+     permanently rather than fixing it).
+
+### Lenses checked, no findings this round
+
+See `review-engineering.md`'s "## Mini-gate 3: mutation-kill production-source re-review" section
+for full detail (summary only, per protocol): code quality/TDD discipline — `add-api-key.helpers.ts`'s
+new `focusApiKeyField` extraction is test-first (`add-api-key.helpers.test.ts`), behavior-preserving
+(verified against `add-api-key.test.tsx`); the 5 new `Stryker disable` comments across
+`card-list-with-abm-dialog.tsx`, `card-list-with-abm-dialog-list.tsx`, `api-key-settings-screen.tsx`
+are documentation-only, each backed by pre-existing/unmodified passing tests, no logic changed
+under any of them; the `removeProviderLabel` comment honestly discloses the directive did **not**
+suppress that mutant (cross-checked against `mutation.md`'s Round 9 investigation — consistent, not
+misleading); no console/debugger/TODO leftovers. Architecture/layering (aside from finding 1) — no
+new cross-layer import, no DTO leakage, no new dependency. Performance — negligible (comment-only in
+3 files, one hardcoded testID attribute apiece on already-rendered elements in 2 files, one
+identical-cost function extraction). Security — N/A, no service/DAO/auth/network/storage surface
+touched in any of the 7 files, no secrets/PII.
+
+### Notes for the fix (implementer, TDD)
+
+- Finding 1: `libs/components/src/organisms/dialog/dialog.tsx:30,35,44` +
+  `libs/components/src/organisms/dialog/dialog.types.ts:4-18` — add an optional `testID` prefix prop
+  so the 3 internal testIDs are derived/namespaced per-instance, defaulting to today's literals when
+  the prop is omitted (keeps all 6 existing consumers passing with zero changes required on their
+  side). Re-run `pnpm --filter @helsoft/components lint check-types test` and this feature's
+  Playwright e2e suite after the fix; add a small `dialog.test.tsx` case asserting the prefix is
+  applied when the prop is passed, per TDD discipline.
+- Not blocking on functional/behavioral grounds (CI green, no live break today) — but blocks per this
+  gate's "any finding blocks" rule.
+
+**Per explicit instruction for this invocation, this finding is being listed for `orchestrator_lead`/
+the human to route to `implementer` rather than self-driven by `reviews_lead` in this same turn.**
+This sub-gate's own round counter: 1/2.

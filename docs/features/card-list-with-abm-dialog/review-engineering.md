@@ -902,3 +902,82 @@ handled by `8a6a3afab`'s ratification commit, which precedes this delta) and is 
 findings) all confirmed `resolved`; this feature's Mini-gate 3 cycle is now clean at the engineering
 lens with zero open findings (the `@s13` human-sign-off item remains tracked separately per (c)
 above, already handled by the preceding ratification commit `8a6a3afab`, outside this delta's scope).
+
+## Mini-gate 3: mutation-kill production-source re-review
+
+**Scope**: production (non-test, non-doc) source delta of `c76469ea5` only, per `reviews_lead`'s
+instruction — the 7 files: `card-list-with-abm-dialog.tsx`, `card-list-with-abm-dialog-dialog.tsx`,
+`card-list-with-abm-dialog-list.tsx`, `dialog.tsx`, `add-api-key.helpers.ts`, `add-api-key.tsx`,
+`api-key-settings-screen.tsx`. CI green @ `c76469ea5` per `reviews_lead` (not re-run here).
+
+**Verdict: APPROVED — one minor finding, no blockers/majors.**
+
+### Findings
+
+1. **[arch] minor — shared `Dialog` organism hardcodes non-parameterized testID literals with no
+   passthrough, latent duplicate-testID risk across independently-open sibling Dialogs.**
+   `libs/components/src/organisms/dialog/dialog.tsx:30,35,44` — `testID="dialog-scrim"`,
+   `testID="dialog-surface"`, `testID="dialog-actions"` are hardcoded string literals on a shared
+   organism consumed by 6 call sites (`sign-out.tsx`, `new-lesson-dialog.tsx`,
+   `pdf-document-list.tsx`, `api-key-form.tsx`, `lesson-list.tsx`, plus this feature's own
+   `card-list-with-abm-dialog-dialog.tsx`). `dialog.types.ts:4-18` (`DialogProps`) has no `testID`
+   prop for callers to override/namespace these literals.
+   - Confirmed a real tree where **two independent `<Dialog>` instances mount as siblings**:
+     `libs/study-buddy/src/components/pdf-documents/pdf-documents.tsx:49,58` renders
+     `NewLessonDialog` (owns one `<Dialog>`, `open` driven by `useNewLessonDialog`'s upload/generate
+     step) and `PdfDocumentList` (owns a second `<Dialog>` at
+     `libs/components/src/organisms/pdf-document-list/pdf-document-list.tsx:104`, `open` driven by
+     independent `pendingDeleteId` state) in the same component tree. Nothing in the type system or
+     component contract prevents both `open` booleans from being `true` simultaneously; today it's
+     merely *practically* unreachable because the first open Modal's scrim visually/input-blocks
+     the underlying list before a delete can be requested — not a structural guarantee.
+   - If that ever became reachable (or a future consumer intentionally nests/stacks two `Dialog`s,
+     e.g. a confirm-within-a-confirm), both would render `testID="dialog-scrim"` /
+     `"dialog-surface"` / `"dialog-actions"` at once in the same tree, and any
+     `getByTestId('dialog-scrim')`-style query (RTL or Playwright, both throw/fail on multiple
+     matches) would break silently for whoever added the second instance, with the failure surfacing
+     far from `dialog.tsx` itself.
+   - Verified via `react-native-web`'s actual `Modal`/`ModalAnimation` implementation
+     (`node_modules/.pnpm/react-native-web@0.21.2.../ModalAnimation.js`: `return isRendering ||
+     visible ? createElement(...) : null`) and `dialog.test.tsx:27-35`'s
+     `'hides content when closed'` case that a *closed* Dialog does not mount its testID'd subtree
+     into the DOM/render tree — so today's actual collision surface is limited to the
+     both-simultaneously-*open* case above, not merely both-mounted.
+   - Grepped every other consumer's own tests/stories for `dialog-scrim`/`dialog-surface`/
+     `dialog-actions` — none reference these testIDs or rely on their absence, so this commit
+     introduces no *currently failing* assertion; the finding is a durability/reusability gap, not
+     a live break. No action required to unblock this gate; recommend the next touch of `Dialog`
+     add an optional `testID` prop (prefix override) so multi-instance trees can disambiguate,
+     rather than baking literals into a shared organism for one feature's mutation-kill convenience.
+
+### Lens-by-lens summary
+
+- **[code]** Clean. `add-api-key.helpers.ts:22-33`'s new `focusApiKeyField` (non-UI `.ts`) has
+  test-first coverage in `add-api-key.helpers.test.ts:40-63` (3 cases: focuses with provider+ref,
+  no-op with `null`, no-op/no-throw with unattached ref) — no production logic added beyond what
+  the tests demand. `add-api-key.tsx:37-39`'s call site is a straight extraction, same
+  `[formProvider]` effect deps, verified behavior-preserving by
+  `add-api-key.test.tsx:77-99`'s three `focusApiKeyField`-spy assertions. The five `Stryker disable`
+  comments (`card-list-with-abm-dialog.tsx:72-78`, `card-list-with-abm-dialog-list.tsx:26-29`,
+  `api-key-settings-screen.tsx:28-33,98-102,108-112`) are documentation-only, each backed by
+  pre-existing/unmodified passing tests — no logic changed under any of them (confirmed: the
+  `keyExtractor`/`initialDialogState` mutation-coverage tests in `card-list-with-abm-dialog.test.tsx`
+  and `card-list-with-abm-dialog-list.test.tsx` are untouched by this commit). The
+  `removeProviderLabel` comment (`api-key-settings-screen.tsx:35-40`) explicitly and accurately
+  states the `Stryker disable` directive did **not** suppress that mutant — cross-checked against
+  `mutation.md:180-197,224-230` (Round 9) and found consistent; not misleading. No
+  `console.log`/`debugger`/bare `TODO`, no new magic numbers/hardcoded user-facing strings (testIDs
+  are not user-facing i18n surface).
+- **[arch]** One minor finding above (testID passthrough gap on shared `Dialog`). Everything else
+  respects layering: `add-api-key.helpers.ts` stays a plain co-located UI helper (no
+  service/DAO/React import beyond type-only `RefObject`/`TextInput`), no new cross-layer import
+  introduced anywhere in the 7 files, no DTO leakage, no new dependency (`git show --stat` confirms
+  zero `package.json`/lockfile touched).
+- **[perf]** N/A/negligible — the entire delta is comment-only (3 files), one hardcoded-string
+  testID attribute apiece on already-rendered elements (2 files, zero new elements/renders/list
+  items), and one function extraction with identical call-site cost (same single `if` + one
+  `.focus()` call, no new allocation, same `[formProvider]` effect dep array — no additional
+  re-renders introduced).
+- **[security]** N/A — no service/DAO/auth/network/storage surface touched. `focusApiKeyField`
+  performs no I/O; testID string literals are not secrets and are not logged; no PII path in any of
+  the 7 files.
