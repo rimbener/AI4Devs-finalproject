@@ -753,3 +753,33 @@
 **Prompt 18:** *(log this session's prompts)*
 
 > save all the prompts of this session into prompts.md
+
+---
+
+## Prompts de la sesión 23 — Entrega final: readme.md completo y sincronización de diagramas (Mermaid ↔ Excalidraw)
+
+> Note: prompts reproduced verbatim, in chronological order. This session read `Instrucciones Proyecto Final.md` and filled the entire `readme.md` deliverable (ficha, producto, arquitectura, modelo de datos con ER Mermaid reconstruido de las 14 migraciones, API OpenAPI de las 3 edge functions, 3 historias, 3 tickets, 3 PRs) leaving everything staged without commits; removed sign-up from the documented scope; updated the 6 `docs/architecture/*.md` to the final architecture (multi-provider BYOK, provider registry, entitlements/plan key routing, no resume); regenerated the 6 `.excalidraw` via the Excalidraw MCP; and verified twice that each Mermaid matches its `.excalidraw` (second pass regenerated them with arrow bindings + grouped labels after manual canvas edits left arrows dangling, and fixed a wrong arrow target and mislabeled arrows).
+
+**Prompt 1:** *(fill the delivery template per the course instructions; stage only)*
+
+> Este repositorio es para realizar una entrega de un proyecto final, revisa las instrucciones en @"Instrucciones Proyecto Final.md" y haz los cambios que consideres necesarios para cumplirlas, no hagas commit de nada, solamente deja los cambios staged
+
+**Prompt 2:** *(sign-up is out of scope — fix the readme)*
+
+> el sign-up no fue realizado todavia, esta fuera del scope
+
+**Prompt 3:** *(audit docs/architecture against the final system)*
+
+> ok, revisa si los documentos de arquitectura reflejan la arquitectura final del sistema
+
+**Prompt 4:** *(update all architecture docs + readme)*
+
+> si, actualiza todo, incluido el readme.md
+
+**Prompt 5:** *(regenerate the .excalidraw files via the Excalidraw MCP)*
+
+> puedes usar el mcp de excalidraw para regenerar esos archivos
+
+**Prompt 6:** *(re-verify the match after manual canvas edits)*
+
+> vuelve a revisar que los mermaid coinciden con excalidraw
