@@ -7,9 +7,9 @@ import { AccessibilityInfo, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
 /**
- * ApiKeySettingsButton — Settings entry: button to open the dedicated API keys screen.
+ * ApiKeySettingsSection — Settings entry: button to open the dedicated API keys screen.
  */
-export const ApiKeySettingsButton = () => {
+export const ApiKeySettingsSection = () => {
   const router = useRouter();
   const { profile, isLoading: isProfileLoading, error: profileError, retry } = useProfile();
   const { t } = useLocalization();
@@ -42,13 +42,24 @@ export const ApiKeySettingsButton = () => {
   if (!profile?.showKeySettings) return null;
 
   return (
-    <Button onPress={() => router.push('/settings/api-keys')}>
-      {t('settings.apiKey.showSettings')}
-    </Button>
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{t('settings.apiKey.title')}</Text>
+      <Button onPress={() => router.push('/settings/api-keys')}>
+        {t('settings.apiKey.showSettings')}
+      </Button>
+    </View>
   );
 };
 
 const styles = StyleSheet.create((theme) => ({
+  section: {
+    marginBottom: theme.spacing.s6,
+    gap: theme.spacing.s4,
+  },
+  sectionTitle: {
+    ...theme.typography.titleMedium,
+    color: theme.colors.onSurface,
+  },
   error: {
     gap: theme.spacing.s4,
   },

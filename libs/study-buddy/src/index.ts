@@ -2,8 +2,8 @@
 // Keep the app itself as a thin shell (routing + wiring only).
 export * from './components/api-key-gate/api-key-gate';
 export type * from './components/api-key-gate/api-key-gate.types';
-export * from './components/api-key-settings-button/api-key-settings-button';
 export * from './components/api-key-settings-screen/api-key-settings-screen';
+export * from './components/api-key-settings-section/api-key-settings-section';
 export * from './components/app-chrome/app-chrome';
 export type * from './components/app-chrome/app-chrome.types';
 export type { LessonStackScreenConfig } from './components/app-chrome/lesson-stack-screens';

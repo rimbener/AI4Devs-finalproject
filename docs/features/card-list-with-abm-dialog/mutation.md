@@ -159,7 +159,7 @@ that opted into the TypeScript checker.
   field's `marginTop`.
 - `api-key-settings-screen-item.tsx` (2 survivors): one style assertion (`headlineSmall` +
   `onPrimary` + `s2` margin) on the provider-name title.
-- `api-key-settings-button.tsx` (6 survivors): style assertions on the error container's `gap`, the
+- `api-key-settings-section.tsx` (6 survivors): style assertions on the error container's `gap`, the
   error message's typography/color, and the visually-hidden loading label's offscreen positioning.
 - `api-key-settings-screen.tsx` (18+ survivors → 1 remaining): the largest single file. New/
   strengthened tests cover: `handleClose` (resets both mutations — was entirely NoCoverage),
@@ -251,7 +251,7 @@ The mutation run scoped to changed files across the feature branch (`feat/card-l
 
 - **@helsoft/study-buddy** (362 mutants, 297 killed, 61 survived, 4 errors = 83.0%)
   - `ApiKeySettingsScreen` and related components (new consumer wiring for CardListWithABMDialog)
-  - `ApiKeySettingsButton`
+  - `ApiKeySettingsSection`
   - Associated service hooks and reducers
 
 ### Key findings
@@ -297,7 +297,7 @@ The mutation run scoped to changed files across the feature branch (`feat/card-l
 
 **From @helsoft/study-buddy (60+ survivors):**
 - `api-key-settings-screen.tsx`: 18+ survivors (conditional renders, event handlers, dependency arrays, style objects)
-- `api-key-settings-button.tsx`: 6 survivors (style object properties)
+- `api-key-settings-section.tsx`: 6 survivors (style object properties)
 - `add-api-key.tsx`: 9 survivors (conditional render logic, form fields, event handlers)
 - `hooks/use-api-key-manager.reducer.ts`: 4 survivors (action dispatch guards, string literals)
 - `hooks/use-api-key-manager.ts`: 1 survivor (conditional effect guard)

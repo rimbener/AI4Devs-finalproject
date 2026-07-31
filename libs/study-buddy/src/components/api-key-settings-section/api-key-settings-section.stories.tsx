@@ -2,7 +2,7 @@ import type { ApiKeyStatus } from '@helsoft/types';
 import type { Decorator, Meta, StoryObj } from '@storybook/react-native-web-vite';
 
 import { configureApiKeyMock, configureProfileMock } from '../../../.storybook/mocks/hooks';
-import { ApiKeySettingsButton } from './api-key-settings-button';
+import { ApiKeySettingsSection } from './api-key-settings-section';
 
 const FREE_PROFILE = {
   plan: 'free' as const,
@@ -27,9 +27,9 @@ const withProfileMock =
   };
 
 const meta = {
-  title: 'Features/ApiKeySettingsButton',
-  component: ApiKeySettingsButton,
-} satisfies Meta<typeof ApiKeySettingsButton>;
+  title: 'Features/ApiKeySettingsSection',
+  component: ApiKeySettingsSection,
+} satisfies Meta<typeof ApiKeySettingsSection>;
 
 export default meta;
 

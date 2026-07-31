@@ -17,7 +17,7 @@ import { useRouter } from 'expo-router';
 import { AccessibilityInfo } from 'react-native';
 
 import { localizationValue } from '../../test-utils/auth-test-factories';
-import { ApiKeySettingsButton } from './api-key-settings-button';
+import { ApiKeySettingsSection } from './api-key-settings-section';
 
 const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
@@ -50,7 +50,7 @@ describe('ApiKeySettings', () => {
       .mockImplementation(jest.fn());
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    await render(<ApiKeySettingsButton />);
+    await render(<ApiKeySettingsSection />);
 
     expect(announce).not.toHaveBeenCalled();
     announce.mockRestore();
@@ -61,10 +61,10 @@ describe('ApiKeySettings', () => {
       .spyOn(AccessibilityInfo, 'announceForAccessibility')
       .mockImplementation(jest.fn());
     mockUseLocalization.mockReturnValue(localizationValue());
-    const view = await render(<ApiKeySettingsButton />);
+    const view = await render(<ApiKeySettingsSection />);
 
     mockUseProfile.mockReturnValue(profileValue({ profile: null, isLoading: true }));
-    await view.rerender(<ApiKeySettingsButton />);
+    await view.rerender(<ApiKeySettingsSection />);
 
     expect(announce).toHaveBeenCalledWith('entitlements.loading');
     announce.mockRestore();
@@ -74,7 +74,7 @@ describe('ApiKeySettings', () => {
     mockUseProfile.mockReturnValue(profileValue({ profile: null }));
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    const view = await render(<ApiKeySettingsButton />);
+    const view = await render(<ApiKeySettingsSection />);
 
     expect(view.toJSON()).toBeNull();
   });
@@ -82,7 +82,7 @@ describe('ApiKeySettings', () => {
   it('renders the Show API keys settings entry button', async () => {
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    await render(<ApiKeySettingsButton />);
+    await render(<ApiKeySettingsSection />);
 
     expect(screen.getByRole('button', { name: 'settings.apiKey.showSettings' })).toBeTruthy();
   });
@@ -92,7 +92,7 @@ describe('ApiKeySettings', () => {
     mockUseRouter.mockReturnValue({ push });
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    await render(<ApiKeySettingsButton />);
+    await render(<ApiKeySettingsSection />);
 
     fireEvent.press(screen.getByRole('button', { name: 'settings.apiKey.showSettings' }));
 
@@ -107,7 +107,7 @@ describe('ApiKeySettings', () => {
     mockUseProfile.mockReturnValue(profileValue({ profile: null, isLoading: true }));
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    await render(<ApiKeySettingsButton />);
+    await render(<ApiKeySettingsSection />);
 
     expect(screen.queryByText('settings.apiKey.showSettings')).toBeNull();
     expect(screen.getByText('entitlements.loading').props.accessibilityLiveRegion).toBe('polite');
@@ -137,7 +137,7 @@ describe('ApiKeySettings', () => {
     );
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    const view = await render(<ApiKeySettingsButton />);
+    const view = await render(<ApiKeySettingsSection />);
 
     expect(view.toJSON()).toBeNull();
   });
@@ -154,7 +154,7 @@ describe('ApiKeySettings', () => {
     );
     mockUseLocalization.mockReturnValue(localizationValue());
 
-    await render(<ApiKeySettingsButton />);
+    await render(<ApiKeySettingsSection />);
 
     expect(screen.getByRole('alert')).toHaveTextContent('entitlements.error.message');
     expect(screen.queryByText('settings.apiKey.showSettings')).toBeNull();
