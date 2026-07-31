@@ -11,7 +11,10 @@ export type DialogProps = {
   confirmLabel?: string;
   cancelLabel?: string;
   onConfirm?: () => void;
+  confirmDisabled?: boolean;
   /** Custom action row; replaces the default cancel/confirm buttons. */
   actions?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** testID prefix for the scrim/surface/actions nodes. Defaults to `dialog`. */
+  testID?: string;
 };

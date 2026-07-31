@@ -214,7 +214,6 @@ export const useAiProviders = () => {
 
   return {
     providers,
-    enabledProviders: providers.filter((provider) => provider.enabled),
     isLoading: config.isLoading ?? false,
   };
 };

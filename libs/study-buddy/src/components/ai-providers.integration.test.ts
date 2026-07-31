@@ -4,13 +4,13 @@ jest.mock('@helsoft/hooks', () => ({
   useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/services', () => ({
+  ...jest.requireActual('@helsoft/services'),
   GenerationPreferenceService: {
     getStoredPreference: jest.fn(),
     setStoredPreference: jest.fn(),
   },
 }));
 
-import { useApiKeyManager } from '@helsoft/components';
 import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
@@ -20,6 +20,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
 
+import { useApiKeyManager } from './api-key-settings-screen/hooks/use-api-key-manager';
 import { useLessonGenerationForm } from './lesson-generation/use-lesson-generation';
 
 /**
@@ -130,15 +131,10 @@ describe('ai-providers integration (catalog -> useAiProviders -> useApiKeyManage
       { id: 'openai', name: 'OpenAI Renamed' },
       { id: 'groq', name: 'Groq Renamed' },
     ]);
-    expect(catalog.current.enabledProviders).toEqual(
-      catalog.current.providers.filter((provider) => provider.enabled),
-    );
-    expect(catalog.current.enabledProviders.map((provider) => provider.id)).toEqual([
-      'openai',
-      'groq',
-    ]);
+    const enabledProviders = catalog.current.providers.filter((provider) => provider.enabled);
+    expect(enabledProviders.map((provider) => provider.id)).toEqual(['openai', 'groq']);
 
-    const enabledProviderIds = catalog.current.enabledProviders.map((provider) => provider.id);
+    const enabledProviderIds = enabledProviders.map((provider) => provider.id);
 
     // 3 — real useApiKeyManager, fed `enabledProviders` (ids), not the raw `providers` array.
     const { result: manager } = await renderHook(

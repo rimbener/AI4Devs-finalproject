@@ -6,6 +6,10 @@ export const pt: TranslationResource = {
     general: {
       save: 'Salvar',
       saving: 'Salvando…',
+      cancel: 'Cancelar',
+      delete: 'Excluir',
+      close: 'Fechar',
+      disabled: 'Desabilitado',
     },
     brand: {
       name: 'AI Study Buddy',
@@ -243,11 +247,12 @@ export const pt: TranslationResource = {
         screenTitle: 'Configurações de chaves de API',
         replace: 'Substituir',
         remove: 'Remover',
-        savedStatus: 'Chave da {{provider}} salva · Atualizada em {{date}}',
+        savedStatus: 'Chave da {{provider}} salva. Atualizada em {{date}}.',
         guidanceTemplate: 'Não tem uma chave? Obtenha uma na {{provider}}',
         guidance: 'Não tem uma chave? Obtenha uma na Groq',
         removeConfirmHeadline: 'Remover chave de API?',
-        removeConfirmBody: 'Você precisará adicionar uma nova chave para gerar lições novamente.',
+        removeConfirmBody:
+          'Tem certeza que deseja remover esta chave? \nVocê precisará adicionar uma nova chave para gerar lições novamente.',
         removeConfirmAction: 'Confirmar remoção',
         removeConfirmCancelAction: 'Cancelar',
         manager: {
@@ -255,7 +260,6 @@ export const pt: TranslationResource = {
           addNew: 'Adicionar novo provedor',
           selectProvider: 'Selecionar provedor',
           emptyMessage: 'Nenhuma chave de API salva',
-          disabled: 'Desativado',
         },
         error: {
           empty: 'Informe sua chave de API.',

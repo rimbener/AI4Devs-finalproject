@@ -1,13 +1,10 @@
 export * from './use-ai-providers';
 export * from './use-ai-providers.fixture';
-export type * from './use-ai-providers.types';
 export * from './use-api-key';
-export type * from './use-api-key.types';
 export * from './use-auth';
 export type * from './use-auth.types';
 export * from './use-breakpoint';
 export * from './use-interaction-state';
-export type * from './use-interaction-state.types';
 export * from './use-lesson';
 export type * from './use-lesson.types';
 export * from './use-lesson-attempt';

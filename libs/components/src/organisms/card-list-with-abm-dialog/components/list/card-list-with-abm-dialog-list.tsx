@@ -1,0 +1,66 @@
+import { useCallback } from 'react';
+import { FlatList, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet } from 'react-native-unistyles';
+import { CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID } from '../../card-list-with-abm-dialog.helpers';
+import type { CardListItem } from '../../card-list-with-abm-dialog.types';
+import { useCardListWithABMDialogContext } from '../../hooks/card-list-with-abm-dialog.context';
+import { CardListRowAdapter } from '../card-list-row-adapter';
+
+type CardListWithABMDialogListProps<TItem> = {
+  cardStyle?: StyleProp<ViewStyle>;
+  cardListStyle?: StyleProp<ViewStyle>;
+  cardListContentContainerStyle?: StyleProp<ViewStyle>;
+  openEditDialog: (item: CardListItem<TItem>) => void;
+  openRemoveDialog: (item: CardListItem<TItem>) => void;
+};
+
+export function CardListWithABMDialogList<TItem>({
+  cardStyle,
+  cardListStyle,
+  cardListContentContainerStyle,
+  openEditDialog,
+  openRemoveDialog,
+}: CardListWithABMDialogListProps<TItem>) {
+  const { items } = useCardListWithABMDialogContext<TItem>();
+  const keyExtractor = useCallback(
+    (item: CardListItem<TItem>) => item.id,
+    // Stryker disable next-line ArrayDeclaration: keyExtractor closes over no props/state — its
+    // dependency array's contents can never observably change identity or behavior of this
+    // callback (same referential-stability guarantee documented on the dispatch callbacks in
+    // use-card-list-with-abm-dialog.ts).
+    [],
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: CardListItem<TItem> }) => (
+      <CardListRowAdapter
+        item={item}
+        cardStyle={cardStyle}
+        onEditPress={openEditDialog}
+        onRemovePress={openRemoveDialog}
+      />
+    ),
+    [openEditDialog, openRemoveDialog, cardStyle],
+  );
+
+  return (
+    <FlatList
+      testID={CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID}
+      data={items}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      style={[styles.list, cardListStyle]}
+      contentContainerStyle={[styles.listContent, cardListContentContainerStyle]}
+    />
+  );
+}
+
+const styles = StyleSheet.create((theme) => ({
+  list: {
+    flex: 1,
+    padding: theme.spacing.s1,
+  },
+  listContent: {
+    gap: theme.spacing.s3,
+  },
+}));

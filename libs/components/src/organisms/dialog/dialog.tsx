@@ -19,18 +19,21 @@ export const Dialog = ({
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
   onConfirm,
+  confirmDisabled,
   actions,
   style,
+  testID = 'dialog',
 }: DialogProps) => {
   const { theme } = useUnistyles();
 
   return (
     <Modal transparent visible={open} animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={styles.scrim}>
+      <Pressable onPress={onClose} style={styles.scrim} testID={`${testID}-scrim`}>
         <Pressable
           accessibilityViewIsModal
           onPress={(e) => e.stopPropagation()}
           style={[styles.surface, style]}
+          testID={`${testID}-surface`}
         >
           {icon ? (
             <View style={styles.iconWrap}>
@@ -39,13 +42,13 @@ export const Dialog = ({
           ) : null}
           {headline ? <Text style={styles.headline(!!icon)}>{headline}</Text> : null}
           {typeof children === 'string' ? <Text style={styles.body}>{children}</Text> : children}
-          <View style={styles.actions}>
+          <View style={styles.actions} testID={`${testID}-actions`}>
             {actions ?? (
               <>
                 <Button variant="text" onPress={onClose}>
                   {cancelLabel}
                 </Button>
-                <Button variant="filled" onPress={onConfirm}>
+                <Button variant="filled" onPress={onConfirm} disabled={confirmDisabled}>
                   {confirmLabel}
                 </Button>
               </>

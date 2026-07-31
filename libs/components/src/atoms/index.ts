@@ -3,6 +3,7 @@ export * from './button/button';
 export * from './card/card';
 export * from './checkbox/checkbox';
 export * from './chip/chip';
+export * from './error-banner/error-banner';
 export * from './fab/fab';
 export * from './icon/icon';
 export * from './icon-button/icon-button';

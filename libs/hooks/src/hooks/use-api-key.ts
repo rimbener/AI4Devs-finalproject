@@ -3,7 +3,7 @@ import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@he
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
-import type { UseApiKeyResult } from './use-api-key.types';
+import { getApiKeyErrorMessageKey } from './use-api-key.helpers';
 import { useSessionGate } from './use-session-gate';
 
 const EMPTY_STATUS: ApiKeyStatus = { keys: [] };
@@ -32,7 +32,7 @@ const toErrorCode = (cause: unknown | null): ApiKeyErrorCode | null =>
  * Exposes a derived `hasKey` so `useProfile().canCreate` + `ApiKeyGate` keep working unchanged.
  * Two consumers under the same QueryClient share one read — no provider needed (s49).
  */
-export const useApiKey = (): UseApiKeyResult => {
+export const useApiKey = () => {
   const queryClient = useQueryClient();
   const { sessionUserId, enabled, deriveIsLoading } = useSessionGate();
 
@@ -68,12 +68,19 @@ export const useApiKey = (): UseApiKeyResult => {
 
   const status = data ?? EMPTY_STATUS;
   const hasKey = useMemo(() => status.keys.length > 0, [status]);
+  const error = toErrorCode(saveMutation.error) || toErrorCode(removeMutation.error);
+
+  const errorKey = getApiKeyErrorMessageKey(error);
 
   return {
     status,
     isLoading: deriveIsLoading(isPending),
     isSubmitting: saveMutation.isPending || removeMutation.isPending,
-    error: toErrorCode(saveMutation.error) || toErrorCode(removeMutation.error),
+    isError: saveMutation.isError || removeMutation.isError,
+    resetSave: saveMutation.reset,
+    resetRemove: removeMutation.reset,
+    error,
+    errorKey,
     hasKey,
     saveApiKey,
     removeApiKey: removeMutation.mutate,

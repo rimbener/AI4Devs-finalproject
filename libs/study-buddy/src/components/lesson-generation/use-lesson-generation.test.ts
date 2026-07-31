@@ -1,5 +1,6 @@
 // @ts-nocheck
 jest.mock('@helsoft/services', () => ({
+  ...jest.requireActual('@helsoft/services'),
   GenerationPreferenceService: {
     getStoredPreference: jest.fn(),
     setStoredPreference: jest.fn(),
@@ -139,6 +140,37 @@ describe('useLessonGenerationForm', () => {
     await waitFor(() =>
       expect(result.current.savedProviders).toEqual([{ id: 'openai', name: 'OpenAI' }]),
     );
+  });
+
+  // Mutation coverage: `useMemo(() => getEnabledProviders(providers), [providers])` — a `providers`
+  // catalog update (e.g. a provider newly disabled after mount) must recompute enabledProviders,
+  // not keep serving the first render's memoized value.
+  it('recomputes enabledProviders when the providers catalog changes on rerender', async () => {
+    mockUseApiKey.mockReturnValue({
+      status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
+      hasKey: true,
+    });
+
+    const { result, rerender } = await renderHook(
+      ({ documentId }: { documentId?: string }) =>
+        useLessonGenerationForm({ documentId, composition: 'both' }),
+      { initialProps: { documentId: 'doc-1' } },
+    );
+
+    await waitFor(() =>
+      expect(result.current.savedProviders).toEqual([{ id: 'groq', name: 'Groq' }]),
+    );
+
+    const catalogWithDisabledGroq = aiProvidersValue().providers.map((provider) =>
+      provider.id === 'groq' ? { ...provider, enabled: false } : provider,
+    );
+    mockUseAiProviders.mockReturnValue(aiProvidersValue({ providers: catalogWithDisabledGroq }));
+
+    await act(async () => {
+      await rerender({ documentId: 'doc-1' });
+    });
+
+    await waitFor(() => expect(result.current.savedProviders).toEqual([]));
   });
 
   // @s16 — free-BYOK without keys exposes missing-key gate and blocks generate body.

@@ -1,0 +1,48 @@
+---
+globs: *.test.ts,*.test.tsx
+alwaysApply: true
+---
+
+# Unit tests (Jest)
+
+Every layer (`Component → Hook → Service → DAO`, plus reducers/helpers) gets its own co-located
+Jest suite: `{file-name}.test.ts(x)` next to the file it exercises. No shared `test/` folder, no
+snapshot-only suites.
+
+- **Runner**: Jest (`jest-expo` preset) per workspace — there is no root `test` script and no
+  `test-ci`. Always scope to a workspace and, while iterating, to a file:
+  ```bash
+  pnpm --filter <workspace> test -- <file> --silent   # e.g. --filter @helsoft/hooks
+  pnpm --filter <workspace> test                       # full workspace suite, once at the gate
+  ```
+  Never invent a `yarn`/`test-ci` command — this repo is pnpm + Turborepo (see root `AGENTS.md`).
+- **Library**: `@testing-library/react-native` (`renderHook`, `render`, `fireEvent`, `waitFor`).
+  Do **not** use `@testing-library/react-hooks` — it's superseded by the built-in `renderHook`.
+- **Mocking boundary is layer-specific** — mock exactly one layer below the file under test, never
+  the file itself and never two layers down. Full patterns and worked examples: the
+  `add-unit-test` skill and its per-layer table (DAO → transport, Service → DAO, Hook → Service,
+  Component → its own hook/context). Cross-cutting layer rules: `.agents/rules/hooks-service-dao.mdc`,
+  `.agents/rules/tanstack-query.mdc`, `.agents/rules/component-split.mdc`, `.agents/rules/state.mdc`.
+- **Build order**: non-UI `.ts` is strict TDD (test first); UI `.tsx` is implementation-first, unit
+  tests written last — see `.agents/rules/tdd.mdc`. Either way, a test that passes on its first run
+  proves nothing: momentarily break the implementation to confirm it can actually go red.
+- **Behavior over snapshots.** Prefer explicit assertions (roles, labels, callback args, exact
+  reducer state) to snapshot bloat..
+- **Deterministic**: no real timers/network — fake timers for anything time-based, mock the
+  service/DAO boundary for anything networked. No flaky `sleep`-based waits; use `await waitFor(...)`.
+- **No skipped or focused tests** in what you hand back (`it.skip`, `.only`).
+
+## Fixing vs. weakening a failing test
+
+A failing test is either **stale** (the code legitimately changed shape — fix the test) or a
+**source regression** (the test is correct and the code broke — do not touch the test to force
+green: no deleted assertions, no loosened matchers, no `.skip`, no expected value changed to match
+broken output). Flag a regression instead of "fixing" it. This is not optional here: root
+`AGENTS.md` requires asking the user before modifying source code in response to a
+"fix unit tests" request — never make that call unilaterally, and treat every regression as an
+explicit stop-and-flag, not a silent code edit.
+
+## Which skill to reach for
+
+- Writing/extending the suite for **one file** → `add-unit-test` skill.
+- Driving a **whole workspace's suite** to green after a refactor → `fix-unit-tests` skill.

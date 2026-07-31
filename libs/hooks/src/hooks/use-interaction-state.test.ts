@@ -47,6 +47,19 @@ describe('useInteractionState', () => {
     expect(result.current.press).toBe(false);
   });
 
+  it('clears press on onPressOut without touching hover', () => {
+    const { result } = renderHook(() => useInteractionState());
+
+    act(() => {
+      result.current.handlers.onHoverIn();
+      result.current.handlers.onPressIn();
+    });
+    act(() => result.current.handlers.onPressOut());
+
+    expect(result.current.press).toBe(false);
+    expect(result.current.hover).toBe(true);
+  });
+
   // N6 (accessibility review round-1 fix, WCAG 2.4.7) — a visible keyboard-focus indicator needs
   // its own tracked state, wired the same way hover/press already are.
   it('starts with focus false', () => {

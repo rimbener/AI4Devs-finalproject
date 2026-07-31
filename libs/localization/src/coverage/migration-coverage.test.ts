@@ -119,13 +119,16 @@ const FLASHCARD_DIR = resolve(REPO_ROOT, 'libs/activities/src/organisms/flashcar
 
 /**
  * ai-key-management task-13 (Slice 3) — same class of guard, extended for this feature's
- * feature-wiring components. `api-key-settings.tsx` / `api-key-settings-screen.tsx` still call
- * `t('settings.apiKey.*'...)` directly (builds labels for presentational `ApiKeyManager`).
+ * feature-wiring components. `api-key-settings-button.tsx` / `api-key-settings-screen.tsx` still
+ * call `t('settings.apiKey.*'...)` directly (builds labels for presentational `ApiKeyManager`).
  * `ApiKeyRequiredNotice` now owns
  * `t('upload.apiKeyRequired.*')` itself — the study-buddy `api-key-gate` wrapper has no t()
  * calls, so the gate entry points at the notice organism.
  */
-const API_KEY_SETTINGS_DIR = resolve(REPO_ROOT, 'libs/study-buddy/src/components/api-key-settings');
+const API_KEY_SETTINGS_DIR = resolve(
+  REPO_ROOT,
+  'libs/study-buddy/src/components/api-key-settings-button',
+);
 const API_KEY_SETTINGS_SCREEN_DIR = resolve(
   REPO_ROOT,
   'libs/study-buddy/src/components/api-key-settings-screen',

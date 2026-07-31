@@ -323,6 +323,9 @@ importers:
 
   libs/hooks:
     dependencies:
+      '@helsoft/services':
+        specifier: workspace:*
+        version: link:../services
       '@helsoft/supabase-services':
         specifier: workspace:*
         version: link:../supabase-services

@@ -1,10 +1,8 @@
 import { useState } from 'react';
 
-import type { InteractionState } from './use-interaction-state.types';
-
 /** Shared hover/press/focus bookkeeping for Pressable atoms; press clears on hover-out (drag-off
  * cancel). */
-export const useInteractionState = (): InteractionState => {
+export const useInteractionState = () => {
   const [hover, setHover] = useState(false);
   const [press, setPress] = useState(false);
   const [focus, setFocus] = useState(false);

@@ -18,7 +18,7 @@ import { Text, View } from 'react-native';
 
 import { localizationValue } from '../test-utils/auth-test-factories';
 import { ApiKeyGate } from './api-key-gate/api-key-gate';
-import { ApiKeySettings } from './api-key-settings/api-key-settings';
+import { ApiKeySettingsButton } from './api-key-settings-button/api-key-settings-button';
 
 const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
@@ -62,7 +62,7 @@ describe('profile UI integration', () => {
         <ApiKeyGate>
           <Text>create lesson</Text>
         </ApiKeyGate>
-        <ApiKeySettings />
+        <ApiKeySettingsButton />
       </View>,
     );
 
