@@ -182,3 +182,4 @@
 2026-07-31 | global.mdc ports+comments (ad hoc) | n/a | — | Storybook ports aligned; shrunk long-file comments (matching/player/card-list).
 2026-07-31 | atomic-design Card padding (ad hoc) | n/a | — | Card default padding → theme.spacing.s4.
 2026-07-31 | hooks-service-dao mapping (ad hoc) | n/a | — | DAO raw rows + service mapping for lessons/attempt/api-key/profile.
+2026-07-31 | unit-test coverage (ad hoc) | n/a | — | Fill unit coverage gaps across hooks/components/study-buddy/rn-utils/supabase-services; wire Jest for rn-utils; RTL fallback rule (548061aad).
