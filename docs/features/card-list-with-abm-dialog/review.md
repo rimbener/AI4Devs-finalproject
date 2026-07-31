@@ -1125,7 +1125,9 @@ findings (see "Lenses checked, no findings this round" below).
 
 ### Findings
 
-1. **[arch] minor — resolved** — fix note: added optional `testID` prop to `DialogProps`
+1. **[arch] minor — open (implementer's self-report below was premature; see "Round 2
+   verification" at the end of this section for the actual re-review outcome)** —
+   implementer's fix note: added optional `testID` prop to `DialogProps`
    (`dialog.types.ts`), defaulting to `'dialog'`; `dialog.tsx` now derives
    `${testID}-scrim`/`-surface`/`-actions` from it, so behavior for all existing call sites is
    unchanged while multi-instance consumers can opt into a custom prefix. Verified:
@@ -1193,3 +1195,78 @@ touched in any of the 7 files, no secrets/PII.
 **Per explicit instruction for this invocation, this finding is being listed for `orchestrator_lead`/
 the human to route to `implementer` rather than self-driven by `reviews_lead` in this same turn.**
 This sub-gate's own round counter: 1/2.
+
+---
+
+### Round 2 verification (this sub-gate's cap: 2/2 — final)
+
+**Commit reviewed (delta only):** `9b0074e2c` (`fix(components): namespace Dialog testIDs via
+optional testID prop`), on top of the Round-1-reviewed HEAD. `git show --stat` confirms only
+`libs/components/src/organisms/dialog/dialog.tsx`, `libs/components/src/organisms/dialog/dialog.types.ts`,
+and this file changed.
+
+**CI (run once by `reviews_lead`, not the reviewer):**
+- `pnpm --filter @helsoft/components lint` — clean.
+- `pnpm --filter @helsoft/components check-types` — clean.
+- `pnpm --filter @helsoft/components exec jest` — explicitly re-run, not cache-trusted: 72 suites /
+  547 tests green, including `dialog.test.tsx`'s 14 cases.
+- Feature e2e — `card-list-with-abm-dialog.e2e.js` (5/5) + `dialog.e2e.js` (1/1), run together with
+  `--reporter=list`, no stale Storybook server beforehand: 6/6 passed, no flake.
+- **CI green @ `9b0074e2c`.**
+
+**Reviewer invoked:** `reviewer_engineering`, scoped strictly to `9b0074e2c`'s diff
+(`dialog.tsx` + `dialog.types.ts`), briefed to confirm the fix is genuinely additive/
+backward-compatible for all 6 real consumers and introduces nothing new. Full findings in
+`review-engineering.md` under "## Mini-gate 3: Dialog testID-prefix fix-delta review (2026-07-31)".
+
+**Outcome: one `[code] minor` finding remains open — implementer's "resolved" self-report above
+was premature.**
+
+- **Architecture (backward-compatibility)** — confirmed clean. All 6 real `<Dialog>` call sites
+  (`sign-out.tsx:59,79`, `new-lesson-dialog.tsx:45`, `pdf-document-list.tsx:108`,
+  `card-list-with-abm-dialog-dialog.tsx:63`, `api-key-form.tsx:129`, `lesson-list.tsx:102`) pass no
+  `testID` prop today, so `testID = 'dialog'`'s default reproduces the prior hardcoded literals
+  byte-for-byte for every existing consumer — genuinely additive, no collision, no meaning change.
+- **Performance** — negligible (3 template-literal interpolations on already-rendered elements, no
+  new render/allocation of consequence).
+- **Security** — N/A, presentational-only, no new I/O/auth/network/storage surface.
+- **Code quality/TDD — open.** `git show 9b0074e2c --stat` confirms no test file was touched by this
+  commit. The Round-1 finding's own "Notes for the fix" explicitly asked for "a small
+  `dialog.test.tsx` case asserting the prefix is applied when the prop is passed, per TDD
+  discipline"; reading the current `dialog.test.tsx` in full, all 14 existing cases render
+  `<Dialog>` without a `testID` prop, so every testID-touching assertion
+  (`dialog-surface`/`dialog-scrim`/`dialog-actions`) only ever exercises the default path. Zero
+  test asserts that a custom `testID="foo"` produces `foo-scrim`/`foo-surface`/`foo-actions`. This
+  is a real gap, not negligible: `testID` is a new **public** prop on a shared organism consumed by
+  6+ callers; its only reason to exist (disambiguating stacked instances) is completely unasserted —
+  a future refactor could silently re-hardcode the literals and no test would fail.
+  - **Fix:** add one case to `dialog.test.tsx` rendering `<Dialog open headline="..."
+    testID="custom">...</Dialog>` and asserting `screen.getByTestId('custom-scrim')` /
+    `'custom-surface'` / `'custom-actions'` resolve.
+
+### Verdict this round: ESCALATE_MINORS
+
+This sub-gate's round counter reaches **2/2 (cap)** with this round. Per protocol, after the 2nd
+round: an open blocker/major would hard-block (`ESCALATE`); here only the one `[code] minor` above
+remains open — architecture, performance, and security are all clean, and the earlier `[arch]`
+half of this same finding (backward-compatible default, no collision) is confirmed resolved. This
+is offered to the human as a **documented, risk-accepted minor** — it is not self-approved by
+`reviews_lead`, and it is not marked `ACCEPTED` in this file (that requires the human's explicit
+sign-off, same convention as the `@s13` item earlier in this file). Until the human accepts or
+directs a further fix, this finding stays `open`.
+
+**No CI regression, no new finding introduced by the fix itself** — the only outstanding item is
+the missing test coverage for the new opt-in `testID` prop.
+
+*Durable trail note: nothing above is deleted — the implementer's original fix-note paragraph is
+retained verbatim (relabeled from `resolved` to `open` to reflect this round's independent
+re-verification), the original finding text is unchanged, and this Round 2 verification is
+appended, not overwritten.*
+
+**Status update (2026-07-31, human-approved): resolved.** Added two cases to
+`libs/components/src/organisms/dialog/dialog.test.tsx` — one asserting the default (`testID`
+omitted) still yields exactly `dialog-scrim`/`dialog-surface`/`dialog-actions`, one asserting a
+caller-provided `testID="custom"` yields `custom-scrim`/`custom-surface`/`custom-actions`. Verified
+green: `pnpm --filter @helsoft/components lint`, `check-types`, and `test` (72 suites / 549 tests,
+up from 547). Finding 1 (both the Round 1 `[arch]` half and the Round 2 `[code]` TDD-coverage half)
+is now `resolved`.

@@ -193,4 +193,33 @@ describe('Dialog', () => {
 
     await expect(fireEvent.press(screen.getByTestId('dialog-scrim'))).resolves.not.toThrow();
   });
+
+  // Mutation: `testID = 'dialog'` default param (dialog.tsx:25) — omitting `testID` must still
+  // produce the exact `dialog-scrim`/`dialog-surface`/`dialog-actions` literals every existing
+  // consumer relies on.
+  it('defaults the scrim/surface/actions testIDs to the `dialog` prefix when testID is omitted', async () => {
+    await render(
+      <Dialog open headline="Delete lesson?">
+        This cannot be undone.
+      </Dialog>,
+    );
+
+    expect(screen.getByTestId('dialog-scrim')).toBeTruthy();
+    expect(screen.getByTestId('dialog-surface')).toBeTruthy();
+    expect(screen.getByTestId('dialog-actions')).toBeTruthy();
+  });
+
+  // Mutation: `` `${testID}-scrim/surface/actions` `` template literals (dialog.tsx:31,36,45) — a
+  // caller-provided `testID` must fully replace the `dialog` prefix on all three nodes.
+  it('prefixes the scrim/surface/actions testIDs with a caller-provided testID', async () => {
+    await render(
+      <Dialog open headline="Delete lesson?" testID="custom">
+        This cannot be undone.
+      </Dialog>,
+    );
+
+    expect(screen.getByTestId('custom-scrim')).toBeTruthy();
+    expect(screen.getByTestId('custom-surface')).toBeTruthy();
+    expect(screen.getByTestId('custom-actions')).toBeTruthy();
+  });
 });

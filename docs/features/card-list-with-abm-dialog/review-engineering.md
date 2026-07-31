@@ -981,3 +981,45 @@ instruction — the 7 files: `card-list-with-abm-dialog.tsx`, `card-list-with-ab
 - **[security]** N/A — no service/DAO/auth/network/storage surface touched. `focusApiKeyField`
   performs no I/O; testID string literals are not secrets and are not logged; no PII path in any of
   the 7 files.
+
+## Mini-gate 3: Dialog testID-prefix fix-delta review (2026-07-31)
+
+Scoped re-review of commit `9b0074e2c` only (`libs/components/src/organisms/dialog/dialog.tsx`,
+`libs/components/src/organisms/dialog/dialog.types.ts`). CI green @ `9b0074e2c` per reviews_lead
+(`@helsoft/components` lint/check-types clean; jest 72/72 suites, 547/547 tests incl.
+`dialog.test.tsx`'s 14; Playwright `card-list-with-abm-dialog.e2e.js` 5/5 + `dialog.e2e.js` 1/1).
+
+**Verdict: CHANGES_REQUESTED (minor)**
+
+- **[code] minor — `libs/components/src/organisms/dialog/dialog.test.tsx` (no line; whole file
+  unmodified by `9b0074e2c`).** `git show 9b0074e2c --stat` confirms only `dialog.tsx` +
+  `dialog.types.ts` + `review.md` changed — no test file touched. Read the current
+  `dialog.test.tsx` in full (14 cases): every assertion that touches a testID
+  (`dialog-surface`/`dialog-scrim`/`dialog-actions`, lines 49, 92, 141, 161, 177, 194) renders
+  `<Dialog>` **without** passing `testID`, so all 14 exercise only the `testID = 'dialog'` default
+  path. Zero test renders `<Dialog testID="foo">` and asserts `foo-scrim`/`foo-surface`/
+  `foo-actions` are produced. The original finding's "Notes for the fix" explicitly asked for this
+  case ("add a small dialog.test.tsx case asserting the prefix is applied when the prop is
+  passed, per TDD discipline") and it was not done — this is real, not negligible: `testID` is a
+  new **public** prop on a shared organism consumed by 6+ callers, its behavior is a derived
+  template-literal string, and per `tdd.mdc` non-UI logic is test-first/no-test-no-code, but even
+  under the more lenient UI-component allowance this is a new prop whose only reason to exist
+  (disambiguating instances) is completely unasserted — if a future refactor drops the
+  `${testID}-` interpolation and hardcodes `'dialog-scrim'` again, no test fails. Fix: add one
+  `dialog.test.tsx` case rendering `<Dialog open headline="..." testID="custom">...</Dialog>` and
+  asserting `screen.getByTestId('custom-scrim')` / `'custom-surface'` / `'custom-actions'` resolve
+  (and/or that `'dialog-scrim'` is absent when a custom prefix is given).
+- **[arch] resolved.** Grepped all 6 non-test/non-story `<Dialog` call sites repo-wide
+  (`sign-out.tsx:59,79`, `new-lesson-dialog.tsx:45`, `pdf-document-list.tsx:108`,
+  `card-list-with-abm-dialog-dialog.tsx:63`, `api-key-form.tsx:129`, `lesson-list.tsx:102`) —
+  none passes a `testID` prop to `Dialog` today (confirmed no `testID=` on any `<Dialog` JSX
+  attribute across those files), so `testID = 'dialog'` default in
+  `dialog.tsx:25`/`dialog.types.ts:19` reproduces the prior hardcoded literals exactly for every
+  existing consumer; genuinely backward-compatible, no collision, no meaning change. The prop is
+  additive and opt-in — layering, DTO, and dependency surface are otherwise untouched by this
+  commit.
+- **[perf] N/A/negligible.** Diff is 3 template-literal interpolations replacing 3 string literals
+  on already-rendered elements (`dialog.tsx:26,29,38`) — no new elements, no new renders, no new
+  allocation of consequence (one extra string concat per instance mount).
+- **[security] N/A.** Presentational-only change; testID strings are not secrets, not logged, no
+  new I/O/auth/network/storage surface introduced.
