@@ -185,24 +185,26 @@ const stageFixtureCopy = (tag) => {
 };
 ```
 
-Pass a distinct `tag` per test file (e.g. `'upload-and-generate'`, `'lesson-player'`). This is
-in addition to — not a replacement for — running `npx supabase db reset` before a suite run (see
-`E2E_TESTS.md`'s "App-level E2E" section for the full prerequisite list).
+Pass a distinct `tag` per test file (e.g. `'upload-and-generate'`, `'lesson-player'`). Fixture
+uniqueness complements — does not replace — the suite's automatic `supabase db reset` in
+`scripts/e2e-prepare-supabase.sh` (see `E2E_TESTS.md`'s "App-level E2E").
 
 ## Running tests
 
 ```bash
-pnpm --filter app-study-buddy test:e2e         # headless
-pnpm --filter app-study-buddy test:e2e:ui      # interactive UI mode (humans only)
+pnpm --filter app-study-buddy test:e2e         # prepare supabase + headless
+pnpm --filter app-study-buddy test:e2e:ui      # prepare supabase + UI mode (humans only)
 pnpm --filter app-study-buddy test:e2e:report  # open the last HTML report
 ```
+
+`test:e2e` / `:ci` / `:ui` go through `scripts/run-e2e.sh` → `e2e-prepare-supabase.sh`
+(`supabase start`, sync `.env`, `db reset`) then Playwright. Docker must be running.
+`SKIP_E2E_SUPABASE_PREPARE=1` skips prepare.
 
 The config's reporter is `[['list'], ['html', { open: 'never' }]]` — pass/fail prints inline and
 the process exits on its own; it never auto-opens a blocking report server, so `test:e2e` is safe
 for agents and CI to run directly (unlike a bare `reporter: 'html'`, which does auto-open on
 failure and hangs a non-interactive run).
-
-Requires local Supabase running and reset first — see `E2E_TESTS.md`'s "App-level E2E" section.
 
 ## Adding a test to an existing journey file
 
@@ -250,11 +252,16 @@ Supabase-backed account/dataset across tests — unlike the Storybook e2e config
 **2. `package.json` scripts** (keep whatever `dev`/`web`/`build` already exist):
 
 ```json
-"test:e2e": "npx playwright test",
-"test:e2e:ci": "npx playwright test --list",
-"test:e2e:ui": "npx playwright test --ui",
+"test:e2e": "bash ./scripts/run-e2e.sh",
+"test:e2e:ci": "bash ./scripts/run-e2e.sh --reporter=list",
+"test:e2e:ui": "bash ./scripts/run-e2e.sh --ui",
 "test:e2e:report": "npx playwright show-report"
 ```
+
+Also copy `scripts/e2e-prepare-supabase.sh` + `scripts/run-e2e.sh` from `app-study-buddy` (or
+equivalent) so prepare stays tied to the suite entrypoint — Playwright `globalSetup` alone is
+not enough: `webServer` starts before `globalSetup`, and Expo needs `.env` pointing at local
+Supabase first.
 
 **3. `apps/{app}/tests/e2e/` and `apps/{app}/tests/fixtures/`** — journey files and a
 `helpers/` folder for shared flows; fixtures alongside, not inside, `tests/e2e/`.

@@ -67,9 +67,9 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "jest --coverage=false --passWithNoTests --watchman=false",
-    "test:e2e": "npx playwright test",
-    "test:e2e:ci": "npx playwright test --reporter=list",
-    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e": "bash ./scripts/run-e2e.sh",
+    "test:e2e:ci": "bash ./scripts/run-e2e.sh --reporter=list",
+    "test:e2e:ui": "bash ./scripts/run-e2e.sh --ui",
     "test:e2e:report": "npx playwright show-report"
   },
   "private": true

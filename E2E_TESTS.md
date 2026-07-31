@@ -125,10 +125,7 @@ Separate from the Storybook e2e above: `apps/app-study-buddy` has its own Playwr
 
 The suite drives real login and real PDF extraction (local mupdf, no external cost) against a local Supabase stack — there is no mocking layer for those.
 
-```bash
-npx supabase start        # once per machine session
-npx supabase db reset     # before each suite run — see Determinism below
-```
+`pnpm --filter app-study-buddy test:e2e` (and `:ci` / `:ui`) runs `scripts/run-e2e.sh`, which calls `scripts/e2e-prepare-supabase.sh` **before** Playwright: Docker must be up; then `npx supabase start`, syncs `apps/app-study-buddy/.env` (`EXPO_PUBLIC_SUPABASE_*` from `supabase status`), then `npx supabase db reset` (seeded accounts + clean slate — see Determinism below). Escape hatch: `SKIP_E2E_SUPABASE_PREPARE=1` skips that prepare (e.g. you already reset and only want to re-run Playwright).
 
 Login uses the seeded `test@paid.com` / `test123` account (`supabase/seed.sql`, plan `use_platform_key = true` → `canCreate` true, so generation isn't gated by `ApiKeyGate`'s missing-key screen — irrelevant to whether generation itself is mocked, but still required for the upload affordance to render at all).
 
@@ -150,9 +147,9 @@ Every extraction/upload inserts a new `documents` row (no uniqueness constraint 
 ### Scripts
 
 ```bash
-pnpm --filter app-study-buddy test:e2e         # run the suite headless
-pnpm --filter app-study-buddy test:e2e:ui      # Playwright UI mode
-pnpm --filter app-study-buddy test:e2e:report  # open the last HTML report
+pnpm --filter app-study-buddy test:e2e         # prepare supabase + run headless
+pnpm --filter app-study-buddy test:e2e:ui      # prepare supabase + Playwright UI mode
+pnpm --filter app-study-buddy test:e2e:report  # open the last HTML report (no prepare)
 ```
 
 No `turbo.json` task is wired for this — invoke directly via `pnpm --filter app-study-buddy test:e2e`, matching this repo's existing precedent of not running e2e through turbo's pipeline.

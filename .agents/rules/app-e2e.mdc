@@ -66,9 +66,11 @@ mechanics differ because there's no Storybook story to target and no iframe to r
 ## Prerequisites
 
 Anything hitting Supabase-backed screens needs the local stack running and reset for a clean
-slate: `npx supabase start` once per machine session, `npx supabase db reset` before each run (see
-`E2E_TESTS.md`'s "App-level E2E" section for the full rationale, including the filename-uniqueness
-determinism gotcha and which calls are mocked vs. real).
+slate. App e2e scripts enforce this: `test:e2e` / `test:e2e:ci` / `test:e2e:ui` run
+`scripts/run-e2e.sh` → `scripts/e2e-prepare-supabase.sh` (`supabase start`, sync `.env`,
+`supabase db reset`) before Playwright. Do not call bare `npx playwright test` for this suite
+unless you have already prepared (or set `SKIP_E2E_SUPABASE_PREPARE=1`). See `E2E_TESTS.md`'s
+"App-level E2E" section for rationale (filename-uniqueness determinism, mocked vs real calls).
 
 ## Extending for a new platform
 
