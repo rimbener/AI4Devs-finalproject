@@ -179,3 +179,4 @@
 2026-07-30 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Migrate api-key settings onto CardListWithABMDialog; drop ApiKeyManager; fix-unit-tests skill (312d2ccf4).
 2026-07-31 | card-list-with-abm-dialog | pr_ready | docs/features/card-list-with-abm-dialog/ | Mini-gate 3: full review (9 findings fixed), mutation 77.3%->99.84% (1 equivalent), @s13 human sign-off, DoD Round 4 PASS.
 2026-07-31 | rule-compliance fixes (ad hoc) | n/a | — | i18n dialog/error defaults; COMPOSITION_LABEL_KEYS→helpers; OpenEndedBody→molecules; study-buddy stories/tests (4 commits).
+2026-07-31 | global.mdc ports+comments (ad hoc) | n/a | — | Storybook ports aligned; shrunk long-file comments (matching/player/card-list).
