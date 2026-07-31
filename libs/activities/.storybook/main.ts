@@ -56,6 +56,8 @@ const config: StorybookConfig = {
         ...viteConfig.resolve?.alias,
         // LessonResults/SlideImage need fake useLessonAttempt/useSlideImageUrl (real one needs Supabase).
         '@helsoft/hooks': `${dirname}mocks/hooks.ts`,
+        // @helsoft/components barrel pulls WebBottomTabs → expo-router/ui; no router in Storybook.
+        'expo-router/ui': `${dirname}mocks/expo-router-ui.tsx`,
       },
     };
     return viteConfig;
