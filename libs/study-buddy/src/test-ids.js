@@ -1,12 +1,6 @@
 /**
- * testID strings for this lib's components, exported at `@helsoft/study-buddy/test-ids`.
- * See `.agents/rules/app-e2e.mdc` for why this file is plain CommonJS and self-contained per lib.
- * TS-side types: `test-ids.d.ts`. Add a testID here (not a local constant) whenever it's needed by
- * an app-level e2e test — component-only testIDs (same-file Jest/RTL only) can stay local.
+ * ESM testIDs for @helsoft/study-buddy/test-ids (Vite/Storybook).
+ * Playwright Node require() uses test-ids.cjs — keep both in sync.
  */
 
-const NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID = 'new-lesson-dialog-choose-file';
-
-module.exports = {
-  NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID,
-};
+export const NEW_LESSON_DIALOG_CHOOSE_FILE_TEST_ID = 'new-lesson-dialog-choose-file';

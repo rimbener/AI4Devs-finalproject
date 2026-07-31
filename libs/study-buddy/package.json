@@ -8,6 +8,8 @@
     ".": "./src/index.ts",
     "./test-ids": {
       "types": "./src/test-ids.d.ts",
+      "import": "./src/test-ids.js",
+      "require": "./src/test-ids.cjs",
       "default": "./src/test-ids.js"
     },
     "./package.json": "./package.json"

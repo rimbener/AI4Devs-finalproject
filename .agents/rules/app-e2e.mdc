@@ -23,13 +23,11 @@ mechanics differ because there's no Storybook story to target and no iframe to r
   constant/function from there; don't declare the same string as a local component constant *and*
   a second literal/constant in the test file. There is no separate, centralized test-ids package.
   See the `app-e2e-tests` skill's "testID convention" section for the add-a-new-one workflow.
-- **Each `src/test-ids.js` is plain CommonJS, not this repo's usual ESM `export`, and is
-  self-contained (no cross-lib import) by design.** `module.exports` is the one syntax a
-  bundler-interop TypeScript import (`test-ids.d.ts` supplies the types) and a bare Node
-  `require()` in a Playwright test can both consume without a transform/build step — that's also
-  why the rationale isn't factored into a single shared file: each `test-ids.js` must stay
-  independently `require()`-able with zero build step, so this note is duplicated per lib on
-  purpose rather than centralized.
+- **Each lib ships dual `test-ids` files (self-contained, no cross-lib import):** `test-ids.js`
+  (ESM `export` for Vite/Storybook) + `test-ids.cjs` (`module.exports` for bare Node
+  `require()` in Playwright app e2e) + `test-ids.d.ts` for types. `package.json` `./test-ids`
+  maps `import` → `.js`, `require` → `.cjs`. Keep both runtime files in sync when adding an ID —
+  note duplicated per lib on purpose rather than centralized.
 - **No `frameLocator`.** The app renders directly in the page, not inside an iframe — query with
   `page.getByTestId(...)` / `page.locator(...)` directly.
 - **Still interaction-only** (`.agents/rules/e2e.mdc`'s rule applies verbatim): drive a real
