@@ -1,4 +1,5 @@
 export * from './ai-providers.dao';
+export type * from './ai-providers.types';
 export * from './api-key.dao';
 export * from './auth.dao';
 export type * from './auth.types';

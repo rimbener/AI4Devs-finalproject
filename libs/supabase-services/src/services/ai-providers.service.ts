@@ -1,6 +1,7 @@
 import type { AiProvider, AiProviderCatalogEntry, AiProviderCatalogModel } from '@helsoft/types';
 
-import { AiProvidersDao, type RawProviderRow } from '../dao/ai-providers.dao';
+import { AiProvidersDao } from '../dao/ai-providers.dao';
+import type { RawProviderRow } from '../dao/ai-providers.types';
 
 /** The closed six-literal `AiProvider` union, as a runtime array — the single place this DAO→
  * Service trust boundary checks a row's raw `id` string against the type before narrowing it. */
