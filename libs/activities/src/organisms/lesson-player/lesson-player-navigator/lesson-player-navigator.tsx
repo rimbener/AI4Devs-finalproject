@@ -67,7 +67,6 @@ const styles = StyleSheet.create((theme) => ({
   },
   progress: {
     flex: 1,
-    minWidth: 0,
   },
   navSlot: {
     width: NAV_ICON_SIZE,

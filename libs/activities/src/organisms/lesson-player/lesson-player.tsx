@@ -1,5 +1,5 @@
 import { LESSON_PLAYER_TEST_ID } from '@helsoft/activities/test-ids';
-import { Button } from '@helsoft/components';
+import { Button, layout } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import { useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
@@ -159,6 +159,9 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
 const styles = StyleSheet.create((theme) => ({
   root: {
     flex: 1,
+    marginHorizontal: 'auto',
+    width: '100%',
+    maxWidth: layout.contentMax,
     gap: theme.spacing.s4,
   },
   body: {
