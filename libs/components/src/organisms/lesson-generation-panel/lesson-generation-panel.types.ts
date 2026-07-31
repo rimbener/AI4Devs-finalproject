@@ -1,11 +1,5 @@
 import type { AiProvider, GenerationProgressStep, LessonComposition } from '@helsoft/types';
 
-export const COMPOSITION_LABEL_KEYS: Record<LessonComposition, string> = {
-  'instructional-only': 'generation.composition.instructionalOnly',
-  'activity-only': 'generation.composition.activityOnly',
-  both: 'generation.composition.both',
-};
-
 export type LessonGenerationPanelState = 'empty' | 'loading' | 'content' | 'error' | 'missing-key';
 
 export type LessonGenerationModelOption = {

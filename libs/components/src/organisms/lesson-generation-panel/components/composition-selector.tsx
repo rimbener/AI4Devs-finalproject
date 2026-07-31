@@ -1,8 +1,10 @@
 import { useLocalization } from '@helsoft/localization';
 import { RadioGroupSection } from '../../../molecules/radio-group-section/radio-group-section';
 import { useLessonGenerationPanel } from '../lesson-generation-panel.context';
-import { COMPOSITION_OPTION_VALUES } from '../lesson-generation-panel.helpers';
-import { COMPOSITION_LABEL_KEYS } from '../lesson-generation-panel.types';
+import {
+  COMPOSITION_LABEL_KEYS,
+  COMPOSITION_OPTION_VALUES,
+} from '../lesson-generation-panel.helpers';
 
 type CompositionSelectorProps = {
   disabled: boolean;

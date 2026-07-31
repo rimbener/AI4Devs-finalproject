@@ -4,6 +4,12 @@ import {
   type LessonComposition,
 } from '@helsoft/types';
 
+export const COMPOSITION_LABEL_KEYS: Record<LessonComposition, string> = {
+  'instructional-only': 'generation.composition.instructionalOnly',
+  'activity-only': 'generation.composition.activityOnly',
+  both: 'generation.composition.both',
+};
+
 /** The three composition values, in the order the picker shows them (@s1 — the gherkin scenario
  * itself lists "instructional only", "activity only", then "both"). */
 export const COMPOSITION_OPTION_VALUES: LessonComposition[] = [

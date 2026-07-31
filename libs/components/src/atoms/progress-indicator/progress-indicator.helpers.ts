@@ -1,9 +1,6 @@
 import { Animated, Easing } from 'react-native';
 
-import type {
-  IndeterminateTiming,
-  ProgressIndicatorVariant,
-} from './progress-indicator.types';
+import type { IndeterminateTiming, ProgressIndicatorVariant } from './progress-indicator.types';
 
 /** Clamp a progress value to the 0–100 range used by the fill and arc. */
 export const clampProgressPercent = (value: number): number => Math.min(100, Math.max(0, value));

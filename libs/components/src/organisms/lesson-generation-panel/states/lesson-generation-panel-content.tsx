@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native-unistyles';
 import { Button } from '../../../atoms/button/button';
 import { LessonGenerationPanelControls } from '../components/lesson-generation-panel-controls';
 import { useLessonGenerationPanel } from '../lesson-generation-panel.context';
-import { COMPOSITION_LABEL_KEYS } from '../lesson-generation-panel.types';
+import { COMPOSITION_LABEL_KEYS } from '../lesson-generation-panel.helpers';
 
 export const LessonGenerationPanelContent = () => {
   const { composition, slideCount = 0, onOpenInPlayer } = useLessonGenerationPanel();
