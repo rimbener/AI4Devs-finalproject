@@ -181,3 +181,4 @@
 2026-07-31 | rule-compliance fixes (ad hoc) | n/a | — | i18n dialog/error defaults; COMPOSITION_LABEL_KEYS→helpers; OpenEndedBody→molecules; study-buddy stories/tests (4 commits).
 2026-07-31 | global.mdc ports+comments (ad hoc) | n/a | — | Storybook ports aligned; shrunk long-file comments (matching/player/card-list).
 2026-07-31 | atomic-design Card padding (ad hoc) | n/a | — | Card default padding → theme.spacing.s4.
+2026-07-31 | hooks-service-dao mapping (ad hoc) | n/a | — | DAO raw rows + service mapping for lessons/attempt/api-key/profile.
