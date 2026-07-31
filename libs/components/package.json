@@ -14,7 +14,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "storybook dev -p 6011",
+    "dev": "storybook dev -p 6007",
     "build": "storybook build",
     "check-types": "tsc --noEmit",
     "lint": "biome check .",
