@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const tabsRoot = __dirname;
-const appRoot = resolve(__dirname, '..');
+const appRoot = resolve(__dirname, '../../../app/(app)');
+const tabsRoot = resolve(appRoot, '(tabs)');
 const tabsRoute = (name: string) => resolve(tabsRoot, name);
 const appRoute = (name: string) => resolve(appRoot, name);
 
@@ -62,7 +62,7 @@ describe('(app)/_layout.tsx Stack structure', () => {
     expect(existsSync(appRoute('upload.tsx'))).toBe(false);
   });
 
-  // @s9 structural proof lives in `../_layout.test.tsx` (rendered Stack.Screen order).
+  // @s9 structural proof lives in `app-layout-settings.test.tsx` (rendered Stack.Screen order).
   // Kept here only as a cheap source-presence guard.
 
   it('imports LESSON_STACK_SCREENS from @helsoft/study-buddy for the lesson Stack.Screen list', () => {

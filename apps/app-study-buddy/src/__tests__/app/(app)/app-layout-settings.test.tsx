@@ -29,7 +29,7 @@ jest.mock('expo-router', () => {
 import { LESSON_STACK_SCREENS } from '@helsoft/study-buddy';
 import { render, screen as rtlScreen } from '@testing-library/react-native';
 
-import AppLayout, { unstable_settings } from './_layout';
+import AppLayout, { unstable_settings } from '../../../app/(app)/_layout';
 
 // @s7 @s16 — concrete deep-link back destination (not only headerShown)
 describe('(app)/_layout unstable_settings', () => {

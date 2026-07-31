@@ -7,7 +7,8 @@ alwaysApply: true
 
 Every layer (`Component → Hook → Service → DAO`, plus reducers/helpers) gets its own co-located
 Jest suite: `{file-name}.test.ts(x)` next to the file it exercises. No shared `test/` folder, no
-snapshot-only suites.
+snapshot-only suites. **Exception:** Expo Router `app/` — never put `*.test.*` there (route conflict);
+use `src/__tests__/app/...` instead (Expo docs).
 
 - **Runner**: Jest (`jest-expo` preset) per workspace — there is no root `test` script and no
   `test-ci`. Always scope to a workspace and, while iterating, to a file:
