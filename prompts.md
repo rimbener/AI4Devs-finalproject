@@ -542,3 +542,80 @@ These prompts drove refinement, reconciliation and review across the documents r
 3. ok, I want to split the plan in 2 phases: first the web full implementation and golden path, basically these points of the Order: 1,2,5,6. and a second independent phase for android & ios. so split the plan into 2 files
 
 4. move both files into @docs/plans
+
+# Friday, Jul 31 Session prompts
+
+Source transcript: `4f290287-fb7e-4e57-8578-a5c4c4731fad`
+Count: 18 (human prompts; harness follow-ups omitted)
+
+## 1 — Friday, Jul 31, 2026, 9:33 AM (UTC-3)
+
+For the entire repository: launch one subagent for each file on the @.agents/rules/ and check if the rules in there are being followed. Create .md files for any finding naming it like this: `findings-<rule-file-name>.md`
+
+## 2 — Friday, Jul 31, 2026, 9:40 AM (UTC-3)
+
+fix @findings-app-e2e.md
+
+## 3 — Friday, Jul 31, 2026, 9:49 AM (UTC-3)
+
+can you fix this one too: Rule prerequisites (supabase start / db reset) live in E2E_TESTS.md, not enforced by Playwright config/scripts.
+
+## 4 — Friday, Jul 31, 2026, 10:09 AM (UTC-3)
+
+re-read @findings-component-split.md and fix it
+
+## 5 — Friday, Jul 31, 2026, 10:13 AM (UTC-3)
+
+commit each fix you made in a different commit (and do it like that from now on)
+
+## 6 — Friday, Jul 31, 2026, 10:16 AM (UTC-3)
+
+re-read @findings-types.md and fix it, run "pnpm check-types" on the root folder to check the changes
+
+## 7 — Friday, Jul 31, 2026, 11:44 AM (UTC-3)
+
+re-read @findings-tdd.md fix and commit
+
+## 8 — Friday, Jul 31, 2026, 12:09 PM (UTC-3)
+
+re-read @findings-i18n.md fix and commit
+
+## 9 — Friday, Jul 31, 2026, 12:15 PM (UTC-3)
+
+re-read @findings-atomic-design.md fix and commit
+
+## 10 — Friday, Jul 31, 2026, 12:17 PM (UTC-3)
+
+re-read @findings-e2e.md fix and commit
+
+## 11 — Friday, Jul 31, 2026, 12:26 PM (UTC-3)
+
+re-read @findings-state.md fix and commit
+
+## 12 — Friday, Jul 31, 2026, 12:29 PM (UTC-3)
+
+re-read @findings-tanstack-query.md fix and commit
+
+## 13 — Friday, Jul 31, 2026, 12:36 PM (UTC-3)
+
+re-read @findings-tanstack-query.md fix and commit
+
+## 14 — Friday, Jul 31, 2026, 12:38 PM (UTC-3)
+
+re-read @findings-pre-slice-checklist.md fix and commit
+
+## 15 — Friday, Jul 31, 2026, 12:42 PM (UTC-3)
+
+re-read @findings-hooks-service-dao.md fix and commit
+
+## 16 — Friday, Jul 31, 2026, 12:45 PM (UTC-3)
+
+re-read @findings-global.md fix and commit
+
+## 17 — Friday, Jul 31, 2026, 12:46 PM (UTC-3)
+
+re-read @findings-unit-tests.md fix and commit
+
+## 18 — Friday, Jul 31, 2026, 12:59 PM (UTC-3)
+
+save all the prompts of this session into prompts.md
