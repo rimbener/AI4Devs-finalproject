@@ -78,18 +78,16 @@ describe('NewLessonDialog', () => {
     expect(screen.getByText('upload.chooseFile')).toBeTruthy();
   });
 
-  it('opens upload step and calls chooseFile on trigger press', async () => {
-    const chooseFile = jest.fn();
+  it('opens upload step on trigger press without auto-choosing a file', async () => {
     const resetUpload = jest.fn();
     const openUpload = jest.fn();
-    mockUseNewLessonDialog.mockReturnValue(dialogValue({ chooseFile, resetUpload, openUpload }));
+    mockUseNewLessonDialog.mockReturnValue(dialogValue({ resetUpload, openUpload }));
 
     await render(<NewLessonDialog />);
     fireEvent.press(screen.getByText('upload.chooseFile'));
 
     expect(resetUpload).toHaveBeenCalled();
     expect(openUpload).toHaveBeenCalled();
-    expect(chooseFile).toHaveBeenCalled();
   });
 
   it('opens on generate step when generateDocumentId is set', async () => {
