@@ -6,7 +6,6 @@ const appRoot = resolve(__dirname, '..');
 const tabsRoute = (name: string) => resolve(tabsRoot, name);
 const appRoute = (name: string) => resolve(appRoot, name);
 
-
 const readTabsLayout = (name: '_layout.tsx' | '_layout.web.tsx') =>
   readFileSync(tabsRoute(name), 'utf8');
 

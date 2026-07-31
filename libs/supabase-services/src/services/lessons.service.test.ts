@@ -46,7 +46,6 @@ describe('LessonsService', () => {
     expect(dao.deleteLesson).not.toHaveBeenCalled();
   });
 
-
   // @s8/@s12 — valid id delegates to LessonsDao.deleteLesson (RLS scopes ownership).
   it('deleteLesson delegates a valid id to LessonsDao.deleteLesson', async () => {
     dao.deleteLesson.mockResolvedValue(undefined);
@@ -73,7 +72,6 @@ describe('LessonsService', () => {
     });
     expect(dao.getLessonById).not.toHaveBeenCalled();
   });
-
 
   it('getLesson maps a valid id raw row from LessonsDao.getLessonById', async () => {
     dao.getLessonById.mockResolvedValue({
@@ -105,4 +103,3 @@ describe('LessonsService', () => {
     });
   });
 });
-

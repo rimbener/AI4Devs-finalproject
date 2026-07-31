@@ -2,8 +2,8 @@ import type { MatchingAnswer } from '@helsoft/types';
 
 import {
   createMatchingInitialState,
-  matchingReducer,
   type MatchingState,
+  matchingReducer,
 } from './use-matching.reducer';
 
 const graded: MatchingAnswer = {
@@ -22,9 +22,7 @@ describe('matchingReducer', () => {
       formedPairs: [],
       answer: null,
     });
-    expect(
-      createMatchingInitialState([{ leftId: 'l1', rightId: 'r1' }], graded),
-    ).toEqual({
+    expect(createMatchingInitialState([{ leftId: 'l1', rightId: 'r1' }], graded)).toEqual({
       pending: null,
       formedPairs: [{ leftId: 'l1', rightId: 'r1' }],
       answer: graded,

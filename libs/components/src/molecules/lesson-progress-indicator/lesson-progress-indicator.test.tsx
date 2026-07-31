@@ -1,7 +1,14 @@
+jest.mock('@helsoft/localization', () => ({
+  useLocalization: jest.fn(),
+}));
+
+import { useLocalization } from '@helsoft/localization';
 import { render, screen } from '@testing-library/react-native';
 
 import type { SlideProgressSlide } from '../slide-progress/slide-progress.types';
 import { LESSON_PROGRESS_TEST_ID, LessonProgressIndicator } from './lesson-progress-indicator';
+
+const mockUseLocalization = useLocalization as jest.Mock;
 
 const deck: SlideProgressSlide[] = [
   { type: 'lesson' },
@@ -11,6 +18,13 @@ const deck: SlideProgressSlide[] = [
 ];
 
 describe('LessonProgressIndicator', () => {
+  beforeEach(() => {
+    mockUseLocalization.mockReturnValue({
+      t: (key: string, options?: { n?: number }) =>
+        key === 'player.progress.activity' ? `Activity ${options?.n}` : `Lesson ${options?.n}`,
+    });
+  });
+
   // @s10 — shows the provided "slide X of N" label and segmented progress.
   it('renders the label and slide segments for the current step', async () => {
     await render(<LessonProgressIndicator slides={deck} current={1} label="Slide 2 of 5" />);

@@ -114,7 +114,6 @@ describe('usePdfDocuments', () => {
     expect(result.current.documents).toEqual([]);
   });
 
-
   // Reload without a prior error — pre-existing coverage, kept alongside s20's error-clearing case.
   it('refetch reloads documents from the service', async () => {
     const flipped = [
@@ -248,4 +247,3 @@ describe('usePdfDocuments', () => {
     expect(result.current.documents).toEqual(documents);
   });
 });
-

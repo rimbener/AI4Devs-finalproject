@@ -151,7 +151,9 @@ describe('PdfExtractionService', () => {
     it('normalizes a too_many_pages server error', async () => {
       uploadService.uploadPdf.mockResolvedValue({} as never);
       uploadService.insertDocument.mockResolvedValue({} as never);
-      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'too_many_pages' }));
+      uploadService.invokeExtraction.mockRejectedValue(
+        httpErrorWithBody({ errorCode: 'too_many_pages' }),
+      );
 
       await expect(
         PdfExtractionService.extract(
@@ -182,7 +184,9 @@ describe('PdfExtractionService', () => {
     it('normalizes an unauthenticated server error', async () => {
       uploadService.uploadPdf.mockResolvedValue({} as never);
       uploadService.insertDocument.mockResolvedValue({} as never);
-      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'unauthenticated' }));
+      uploadService.invokeExtraction.mockRejectedValue(
+        httpErrorWithBody({ errorCode: 'unauthenticated' }),
+      );
 
       await expect(
         PdfExtractionService.extract(
@@ -197,7 +201,9 @@ describe('PdfExtractionService', () => {
     it('falls back to extraction_failed when the server error body has no known errorCode', async () => {
       uploadService.uploadPdf.mockResolvedValue({} as never);
       uploadService.insertDocument.mockResolvedValue({} as never);
-      uploadService.invokeExtraction.mockRejectedValue(httpErrorWithBody({ errorCode: 'not_a_real_code' }));
+      uploadService.invokeExtraction.mockRejectedValue(
+        httpErrorWithBody({ errorCode: 'not_a_real_code' }),
+      );
 
       await expect(
         PdfExtractionService.extract(
@@ -246,7 +252,9 @@ describe('PdfExtractionService', () => {
     it('normalizes a transport-level FunctionsFetchError as network_error', async () => {
       uploadService.uploadPdf.mockResolvedValue({} as never);
       uploadService.insertDocument.mockResolvedValue({} as never);
-      uploadService.invokeExtraction.mockRejectedValue(new FunctionsFetchError(new Error('offline')));
+      uploadService.invokeExtraction.mockRejectedValue(
+        new FunctionsFetchError(new Error('offline')),
+      );
 
       await expect(
         PdfExtractionService.extract(
@@ -261,7 +269,9 @@ describe('PdfExtractionService', () => {
     it('normalizes a FunctionsRelayError as network_error', async () => {
       uploadService.uploadPdf.mockResolvedValue({} as never);
       uploadService.insertDocument.mockResolvedValue({} as never);
-      uploadService.invokeExtraction.mockRejectedValue(new FunctionsRelayError({ region: 'us-east-1' }));
+      uploadService.invokeExtraction.mockRejectedValue(
+        new FunctionsRelayError({ region: 'us-east-1' }),
+      );
 
       await expect(
         PdfExtractionService.extract(

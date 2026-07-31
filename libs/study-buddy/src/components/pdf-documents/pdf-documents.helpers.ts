@@ -7,7 +7,6 @@ export const toPdfDocumentListState = (
   error: PdfDocumentsErrorCode | null,
   documentCount: number,
 ): PdfDocumentListState => {
-
   if (isLoading) return 'loading';
   // Load Error only when the list is gone. Delete failures keep docs — stay Content.
   if (error && documentCount === 0) return 'error';

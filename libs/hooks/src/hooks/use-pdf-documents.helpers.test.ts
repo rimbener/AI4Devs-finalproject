@@ -1,20 +1,20 @@
 import type { PdfDocumentsError } from '@helsoft/types';
 
 import {
-  PDF_DOCUMENTS_ERROR_CODES,
   isPdfDocumentsErrorShape,
+  PDF_DOCUMENTS_ERROR_CODES,
   toPdfDocumentsErrorCode,
 } from './use-pdf-documents.helpers';
 
 describe('isPdfDocumentsErrorShape', () => {
-  it.each(['network_error', 'validation_error'] as const)(
-    'returns true for a cause carrying code %s',
-    (code) => {
-      const cause: PdfDocumentsError = { code };
+  it.each([
+    'network_error',
+    'validation_error',
+  ] as const)('returns true for a cause carrying code %s', (code) => {
+    const cause: PdfDocumentsError = { code };
 
-      expect(isPdfDocumentsErrorShape(cause)).toBe(true);
-    },
-  );
+    expect(isPdfDocumentsErrorShape(cause)).toBe(true);
+  });
 
   it('returns false for a cause with an unrecognized code', () => {
     expect(isPdfDocumentsErrorShape({ code: 'some_other_code' })).toBe(false);
@@ -40,12 +40,12 @@ describe('PDF_DOCUMENTS_ERROR_CODES', () => {
 });
 
 describe('toPdfDocumentsErrorCode', () => {
-  it.each(['network_error', 'validation_error'] as const)(
-    'passes through code %s when cause has PdfDocumentsError shape',
-    (code) => {
-      expect(toPdfDocumentsErrorCode({ code })).toBe(code);
-    },
-  );
+  it.each([
+    'network_error',
+    'validation_error',
+  ] as const)('passes through code %s when cause has PdfDocumentsError shape', (code) => {
+    expect(toPdfDocumentsErrorCode({ code })).toBe(code);
+  });
 
   it('falls back to network_error for a raw Error instance', () => {
     expect(toPdfDocumentsErrorCode(new Error('boom'))).toBe('network_error');

@@ -109,7 +109,6 @@ describe('PdfDocumentsService', () => {
     expect(dao.deleteDocument).not.toHaveBeenCalled();
   });
 
-
   it('deleteDocument delegates a valid id to PdfDocumentsDao.deleteDocument', async () => {
     dao.deleteDocument.mockResolvedValue(undefined);
 
@@ -127,4 +126,3 @@ describe('PdfDocumentsService', () => {
     });
   });
 });
-

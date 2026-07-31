@@ -16,7 +16,6 @@ export const LESSON_PLAYER_EMPTY_TEST_ID = 'lesson-player-empty';
 export const LESSON_PLAYER_ERROR_TEST_ID = 'lesson-player-error';
 export const LESSON_PLAYER_BODY_TEST_ID = 'lesson-player-body';
 
-
 /** LessonPlayer — SlideView steps, then LessonResults; empty/error short-circuit. */
 export const LessonPlayer = ({
   lesson,
@@ -135,7 +134,6 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
         contentContainerStyle={styles.bodyContent}
         onLayout={onBodyLayout}
       >
-
         {player.isResultsSlide ? (
           <LessonResults
             lesson={lesson}

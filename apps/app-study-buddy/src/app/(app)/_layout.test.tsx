@@ -12,7 +12,6 @@ jest.mock('@helsoft/study-buddy', () => ({
 }));
 
 jest.mock('expo-router', () => {
-
   const React = require('react');
   const { View } = require('react-native');
   const Stack = Object.assign(
@@ -31,7 +30,6 @@ import { LESSON_STACK_SCREENS } from '@helsoft/study-buddy';
 import { render, screen as rtlScreen } from '@testing-library/react-native';
 
 import AppLayout, { unstable_settings } from './_layout';
-
 
 // @s7 @s16 — concrete deep-link back destination (not only headerShown)
 describe('(app)/_layout unstable_settings', () => {

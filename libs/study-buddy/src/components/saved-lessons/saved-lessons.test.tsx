@@ -298,9 +298,7 @@ describe('SavedLessons', () => {
 
   // Mutation: delete-error banner `state === 'content' && error` → true — hide outside content.
   it('does not show the delete-failure banner while loading or on load error', async () => {
-    mockUseLessons.mockReturnValue(
-      lessonsValue({ isLoading: true, error: 'network_error' }),
-    );
+    mockUseLessons.mockReturnValue(lessonsValue({ isLoading: true, error: 'network_error' }));
     await render(<SavedLessons />);
     expect(screen.queryByText("We couldn't delete that lesson.")).toBeNull();
 
@@ -332,9 +330,7 @@ describe('SavedLessons', () => {
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockClear();
-    mockUseLessons.mockReturnValue(
-      lessonsValue({ isLoading: true, error: 'network_error' }),
-    );
+    mockUseLessons.mockReturnValue(lessonsValue({ isLoading: true, error: 'network_error' }));
     await render(<SavedLessons />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
@@ -437,9 +433,7 @@ describe('SavedLessons', () => {
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockClear();
-    mockUseLessons.mockReturnValue(
-      lessonsValue({ lessons: [lesson], error: 'network_error' }),
-    );
+    mockUseLessons.mockReturnValue(lessonsValue({ lessons: [lesson], error: 'network_error' }));
     await rerender(<SavedLessons />);
 
     expect(announceSpy).toHaveBeenCalledWith(deleteFailed);

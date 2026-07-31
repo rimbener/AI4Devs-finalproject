@@ -7,7 +7,6 @@ export const toLessonListState = (
   error: LessonsErrorCode | null,
   lessonCount: number,
 ): LessonListState => {
-
   if (isLoading) return 'loading';
   // Load Error only when the list is gone (@s14). Delete failures keep lessons — stay Content.
   if (error && lessonCount === 0) return 'error';

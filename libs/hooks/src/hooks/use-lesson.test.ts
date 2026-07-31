@@ -117,7 +117,6 @@ describe('useLesson', () => {
     expect(result.current.lesson).toBeNull();
   });
 
-
   // @s8 — refetching after a failed read clears the error once it succeeds.
   it('refetch after a failed read clears the error and exposes the lesson', async () => {
     service.getLesson

@@ -1,8 +1,7 @@
 import { LessonsService } from '@helsoft/supabase-services';
 import { useQuery } from '@tanstack/react-query';
-
-import { toLessonsErrorCode } from './use-lessons.helpers';
 import type { UseLessonResult } from './use-lesson.types';
+import { toLessonsErrorCode } from './use-lessons.helpers';
 
 export const lessonQueryKey = (id: string) => ['lesson', id] as const;
 

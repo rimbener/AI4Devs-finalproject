@@ -11,4 +11,3 @@ export {
 export * from './services';
 export * from './supabase/supabase-client';
 export type * from './supabase/supabase-client.types';
-

@@ -13,14 +13,19 @@
   "sideEffects": false,
   "scripts": {
     "check-types": "tsc --noEmit",
-    "lint": "biome check ."
+    "lint": "biome check .",
+    "test": "jest --coverage=false --passWithNoTests --watchman=false",
+    "test:watch": "jest --watch"
   },
   "peerDependencies": {
     "react-native": "*"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@types/jest": "~29.5.14",
     "@types/react": "~19.2.2",
+    "jest": "~29.7.0",
+    "jest-expo": "~57.0.2",
     "react-native": "0.86.0",
     "typescript": "~6.0.3"
   }

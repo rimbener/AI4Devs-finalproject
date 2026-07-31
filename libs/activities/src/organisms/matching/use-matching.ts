@@ -3,11 +3,7 @@ import { useEffect, useReducer } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
 
 import { findPairForItem } from './matching.helpers';
-import type {
-  ItemVisualState,
-  MatchingResult,
-  UseMatchingProps,
-} from './matching.types';
+import type { ItemVisualState, MatchingResult, UseMatchingProps } from './matching.types';
 import { createMatchingInitialState, matchingReducer } from './use-matching.reducer';
 
 /**
@@ -22,10 +18,8 @@ export const useMatching = ({
   initialAnswer = null,
 }: UseMatchingProps) => {
   const { t } = useLocalization();
-  const [state, dispatch] = useReducer(
-    matchingReducer,
-    undefined,
-    () => createMatchingInitialState(initialPairs, initialAnswer),
+  const [state, dispatch] = useReducer(matchingReducer, undefined, () =>
+    createMatchingInitialState(initialPairs, initialAnswer),
   );
   const { pending, formedPairs, answer } = state;
 

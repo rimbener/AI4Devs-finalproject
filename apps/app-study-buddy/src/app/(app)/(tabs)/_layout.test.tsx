@@ -78,7 +78,6 @@ import { render, screen } from '@testing-library/react-native';
 
 import TabsLayout from './_layout';
 
-
 // @s5 — selected tab on the real NativeTabs layout path (not a dead helper)
 describe('native (tabs)/_layout.tsx selection (@s5)', () => {
   it('marks index Trigger selected on / and settings unselected', async () => {

@@ -19,22 +19,14 @@ export const Matching = ({
   const { t } = useLocalization();
   const valid = isMatchingSlideValid(slide);
 
-  const {
-    answer,
-    result,
-    locked,
-    isUnavailable,
-    formedPairs,
-    itemState,
-    dispatch,
-    allPaired,
-  } = useMatching({
-    leftItems: slide.leftItems,
-    rightItems: slide.rightItems,
-    unavailable: !valid,
-    initialPairs,
-    initialAnswer,
-  });
+  const { answer, result, locked, isUnavailable, formedPairs, itemState, dispatch, allPaired } =
+    useMatching({
+      leftItems: slide.leftItems,
+      rightItems: slide.rightItems,
+      unavailable: !valid,
+      initialPairs,
+      initialAnswer,
+    });
 
   const handleSubmit = () => {
     if (answer || !valid) return;

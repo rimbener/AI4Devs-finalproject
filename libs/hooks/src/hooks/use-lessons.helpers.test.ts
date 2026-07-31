@@ -1,20 +1,20 @@
 import type { LessonsError } from '@helsoft/types';
 
 import {
-  LESSONS_ERROR_CODES,
   isLessonsErrorShape,
+  LESSONS_ERROR_CODES,
   toLessonsErrorCode,
 } from './use-lessons.helpers';
 
 describe('isLessonsErrorShape', () => {
-  it.each(['network_error', 'validation_error'] as const)(
-    'returns true for a cause carrying code %s',
-    (code) => {
-      const cause: LessonsError = { code };
+  it.each([
+    'network_error',
+    'validation_error',
+  ] as const)('returns true for a cause carrying code %s', (code) => {
+    const cause: LessonsError = { code };
 
-      expect(isLessonsErrorShape(cause)).toBe(true);
-    },
-  );
+    expect(isLessonsErrorShape(cause)).toBe(true);
+  });
 
   it('returns false for a cause with an unrecognized code', () => {
     expect(isLessonsErrorShape({ code: 'some_other_code' })).toBe(false);
@@ -40,12 +40,12 @@ describe('LESSONS_ERROR_CODES', () => {
 });
 
 describe('toLessonsErrorCode', () => {
-  it.each(['network_error', 'validation_error'] as const)(
-    'passes through code %s when cause has LessonsError shape',
-    (code) => {
-      expect(toLessonsErrorCode({ code })).toBe(code);
-    },
-  );
+  it.each([
+    'network_error',
+    'validation_error',
+  ] as const)('passes through code %s when cause has LessonsError shape', (code) => {
+    expect(toLessonsErrorCode({ code })).toBe(code);
+  });
 
   it('falls back to network_error for a raw Error instance', () => {
     expect(toLessonsErrorCode(new Error('boom'))).toBe('network_error');

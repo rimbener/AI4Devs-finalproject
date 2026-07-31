@@ -57,10 +57,7 @@ export abstract class LessonsService {
     try {
       await LessonsDao.deleteLesson(id);
     } catch {
-      throw toLessonsError(
-        'network_error',
-        'LessonsService.deleteLesson: failed to delete lesson',
-      );
+      throw toLessonsError('network_error', 'LessonsService.deleteLesson: failed to delete lesson');
     }
   }
 }

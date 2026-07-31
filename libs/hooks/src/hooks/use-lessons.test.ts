@@ -100,7 +100,6 @@ describe('useLessons', () => {
     expect(result.current.lessons).toEqual([]);
   });
 
-
   // Reload without a prior error — pre-existing coverage, kept alongside s13's error-clearing case.
   it('refetch reloads lessons from the service', async () => {
     service.getLessons.mockResolvedValueOnce([]).mockResolvedValueOnce(lessons);
@@ -231,4 +230,3 @@ describe('useLessons', () => {
     expect(result.current.lessons).toEqual(lessons);
   });
 });
-

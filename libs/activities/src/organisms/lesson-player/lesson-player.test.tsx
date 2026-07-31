@@ -96,7 +96,6 @@ import {
   LessonPlayer,
 } from './lesson-player';
 
-
 const mockUseLocalization = useLocalization as jest.Mock;
 
 const lesson: Lesson = {

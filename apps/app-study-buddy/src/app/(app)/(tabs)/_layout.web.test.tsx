@@ -59,7 +59,6 @@ import { render, screen } from '@testing-library/react-native';
 
 import TabsWebLayout from './_layout.web';
 
-
 describe('@s3 @s15 wide web (≥768) — desktop top bar', () => {
   beforeEach(() => {
     mockBreakpoint = 'desktop';

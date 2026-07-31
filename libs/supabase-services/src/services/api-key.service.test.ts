@@ -208,7 +208,9 @@ describe('ApiKeyService', () => {
         { provider: 'openai', updated_at: '2026-01-01T00:00:00.000Z' },
       ]);
 
-      await expect(ApiKeyService.getApiKeyStatus()).resolves.toEqual(keysStatus(['groq', 'openai']));
+      await expect(ApiKeyService.getApiKeyStatus()).resolves.toEqual(
+        keysStatus(['groq', 'openai']),
+      );
     });
 
     // @s7 — a failed read degrades to empty keys (never throws)
