@@ -1,10 +1,22 @@
+jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
+
+import { useLocalization } from '@helsoft/localization';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Text } from 'react-native';
 
 import { padding, shape, spacing } from '../../theme';
 import { Dialog } from './dialog';
 
+const mockUseLocalization = useLocalization as jest.Mock;
+
 describe('Dialog', () => {
+  beforeEach(() => {
+    mockUseLocalization.mockReturnValue({
+      t: (key: string) =>
+        key === 'general.confirm' ? 'Confirm' : key === 'general.cancel' ? 'Cancel' : key,
+    });
+  });
+
   it('renders headline, body, and default actions when open', async () => {
     const onClose = jest.fn();
     const onConfirm = jest.fn();

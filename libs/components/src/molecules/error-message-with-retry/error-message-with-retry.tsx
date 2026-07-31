@@ -6,9 +6,6 @@ import { Button } from '../../atoms/button/button';
 
 import type { ErrorMessageWithRetryProps } from './error-message-with-retry.types';
 
-export const DEFAULT_ERROR_MESSAGE = 'There was an unexpected error';
-export const DEFAULT_RETRY_LABEL = 'Try again';
-
 /**
  * ErrorMessageWithRetry — alert + retry button for recoverable failures.
  * Resolves copy via optional localization keys; falls back to English defaults.
@@ -19,8 +16,8 @@ export const ErrorMessageWithRetry = ({
   onRetry,
 }: ErrorMessageWithRetryProps) => {
   const { t } = useLocalization();
-  const message = messageKey ? t(messageKey) : DEFAULT_ERROR_MESSAGE;
-  const retryLabel = retryKey ? t(retryKey) : DEFAULT_RETRY_LABEL;
+  const message = messageKey ? t(messageKey) : t('general.errorMessage');
+  const retryLabel = retryKey ? t(retryKey) : t('general.errorRetry');
 
   return (
     <View style={styles.root}>

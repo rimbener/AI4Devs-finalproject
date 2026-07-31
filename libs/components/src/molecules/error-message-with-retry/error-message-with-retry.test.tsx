@@ -5,11 +5,7 @@ jest.mock('@helsoft/localization', () => ({
 import { useLocalization } from '@helsoft/localization';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 
-import {
-  DEFAULT_ERROR_MESSAGE,
-  DEFAULT_RETRY_LABEL,
-  ErrorMessageWithRetry,
-} from './error-message-with-retry';
+import { ErrorMessageWithRetry } from './error-message-with-retry';
 
 const mockUseLocalization = useLocalization as jest.Mock;
 
@@ -25,8 +21,8 @@ describe('ErrorMessageWithRetry', () => {
     const onRetry = jest.fn();
     await render(<ErrorMessageWithRetry onRetry={onRetry} />);
 
-    expect(screen.getByRole('alert')).toHaveTextContent(DEFAULT_ERROR_MESSAGE);
-    fireEvent.press(screen.getByRole('button', { name: DEFAULT_RETRY_LABEL }));
+    expect(screen.getByRole('alert')).toHaveTextContent('general.errorMessage');
+    fireEvent.press(screen.getByRole('button', { name: 'general.errorRetry' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
 

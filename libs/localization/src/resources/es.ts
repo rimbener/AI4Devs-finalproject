@@ -10,6 +10,9 @@ export const es: TranslationResource = {
       delete: 'Eliminar',
       close: 'Cerrar',
       disabled: 'Deshabilitado',
+      confirm: 'Confirmar',
+      errorMessage: 'Ocurrió un error inesperado',
+      errorRetry: 'Intentar de nuevo',
     },
     brand: {
       name: 'AI Study Buddy',

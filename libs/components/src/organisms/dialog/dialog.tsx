@@ -1,9 +1,8 @@
+import { useLocalization } from '@helsoft/localization';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-
 import { Button } from '../../atoms/button/button';
 import { Icon } from '../../atoms/icon/icon';
-
 import type { DialogProps } from './dialog.types';
 
 /**
@@ -16,8 +15,8 @@ export const Dialog = ({
   icon,
   headline,
   children,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   confirmDisabled,
   actions,
@@ -25,6 +24,9 @@ export const Dialog = ({
   testID = 'dialog',
 }: DialogProps) => {
   const { theme } = useUnistyles();
+  const { t } = useLocalization();
+  const computedConfirmLabel = confirmLabel ?? t('general.confirm');
+  const computedCancelLabel = cancelLabel ?? t('general.cancel');
 
   return (
     <Modal transparent visible={open} animationType="fade" onRequestClose={onClose}>
@@ -46,10 +48,10 @@ export const Dialog = ({
             {actions ?? (
               <>
                 <Button variant="text" onPress={onClose}>
-                  {cancelLabel}
+                  {computedCancelLabel}
                 </Button>
                 <Button variant="filled" onPress={onConfirm} disabled={confirmDisabled}>
-                  {confirmLabel}
+                  {computedConfirmLabel}
                 </Button>
               </>
             )}

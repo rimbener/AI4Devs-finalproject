@@ -15,6 +15,9 @@ export const en = {
       delete: 'Delete',
       close: 'Close',
       disabled: 'Disabled',
+      confirm: 'Confirm',
+      errorMessage: 'There was an unexpected error',
+      errorRetry: 'Try again',
     },
     brand: {
       name: 'AI Study Buddy',
