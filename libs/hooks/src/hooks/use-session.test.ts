@@ -79,10 +79,14 @@ describe('useSession', () => {
 
   it('does not let a slow initial getSession() overwrite a newer onAuthStateChange session', async () => {
     let resolveGetSession: (session: Session | null) => void = () => undefined;
+    let getSessionSettled = false;
     service.getSession.mockImplementation(
       () =>
         new Promise((resolve) => {
-          resolveGetSession = resolve;
+          resolveGetSession = (session) => {
+            resolve(session);
+            getSessionSettled = true;
+          };
         }),
     );
 
@@ -103,23 +107,17 @@ describe('useSession', () => {
       expect(result.current.session).toBe(next);
     });
 
-    // The stale initial fetch, started before sign-in, finally resolves with the pre-sign-in
-    // (null) session — it must not clobber the newer session just delivered above.
+    // Stale initial fetch resolves null — must not clobber the newer session above.
     act(() => {
       resolveGetSession(null);
     });
 
-    // `isLoading` is already false at this point (setQueryData above already resolved the
-    // query), so waiting on it alone would pass before the stale fetch's own queryFn
-    // continuation — batched onto a macrotask by notifyManager — has actually run. A real
-    // timer tick must elapse first, or a regression here (e.g. the guard's `?? null` returning
-    // the stale `null` outright) would go undetected.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10));
+    // Wait until the deferred getSession promise has settled (not a wall-clock sleep).
+    await waitFor(() => {
+      expect(getSessionSettled).toBe(true);
+      expect(result.current.session).toBe(next);
+      expect(result.current.isLoading).toBe(false);
     });
-
-    expect(result.current.session).toBe(next);
-    expect(result.current.isLoading).toBe(false);
   });
 
   it('unsubscribes on unmount', async () => {

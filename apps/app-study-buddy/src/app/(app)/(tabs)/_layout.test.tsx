@@ -6,6 +6,33 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: () => ({ t: (k: string) => k }),
 }));
 
+// Avoid study-buddy barrel → AsyncStorage; layout only needs NATIVE_TAB_TRIGGERS.
+jest.mock('@helsoft/study-buddy', () => ({
+  NATIVE_TAB_TRIGGERS: [
+    {
+      name: 'index',
+      href: '/',
+      labelKey: 'nav.myLessons',
+      sf: 'books.vertical',
+      md: 'menu_book',
+    },
+    {
+      name: 'pdf-files',
+      href: '/pdf-files',
+      labelKey: 'nav.myPdfFiles',
+      sf: 'doc.text',
+      md: 'picture_as_pdf',
+    },
+    {
+      name: 'settings',
+      href: '/settings',
+      labelKey: 'nav.settings',
+      sf: 'gearshape',
+      md: 'settings',
+    },
+  ],
+}));
+
 jest.mock('expo-router', () => ({
   usePathname: () => mockPathname,
 }));
@@ -49,7 +76,8 @@ jest.mock('expo-router/unstable-native-tabs', () => {
 
 import { render, screen } from '@testing-library/react-native';
 
-import TabsLayout from '../../../../app/(app)/(tabs)/_layout';
+import TabsLayout from './_layout';
+
 
 // @s5 — selected tab on the real NativeTabs layout path (not a dead helper)
 describe('native (tabs)/_layout.tsx selection (@s5)', () => {

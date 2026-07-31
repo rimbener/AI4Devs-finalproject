@@ -1,9 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-const appRoot = resolve(__dirname, '../../../app/(app)');
-const tabsRoute = (name: string) => resolve(appRoot, `(tabs)/${name}`);
+const tabsRoot = __dirname;
+const appRoot = resolve(__dirname, '..');
+const tabsRoute = (name: string) => resolve(tabsRoot, name);
 const appRoute = (name: string) => resolve(appRoot, name);
+
 
 const readTabsLayout = (name: '_layout.tsx' | '_layout.web.tsx') =>
   readFileSync(tabsRoute(name), 'utf8');
@@ -61,11 +63,9 @@ describe('(app)/_layout.tsx Stack structure', () => {
     expect(existsSync(appRoute('upload.tsx'))).toBe(false);
   });
 
-  // @s9 structural proof (lesson routes rendered as Stack.Screen siblings of (tabs), so
-  // the tab bar is absent on lesson screens) lives in the rendering test in
-  // `app-layout-settings.test.tsx` ("renders (tabs) then the three lesson screens, in
-  // LESSON_STACK_SCREENS order"), which asserts actual render output/order rather than
-  // source text. Kept here only as a cheap source-presence guard.
+  // @s9 structural proof lives in `../_layout.test.tsx` (rendered Stack.Screen order).
+  // Kept here only as a cheap source-presence guard.
+
   it('imports LESSON_STACK_SCREENS from @helsoft/study-buddy for the lesson Stack.Screen list', () => {
     const src = readFileSync(appRoute('_layout.tsx'), 'utf8');
     expect(src).toMatch(/LESSON_STACK_SCREENS/);
@@ -84,7 +84,7 @@ describe('(app)/_layout.tsx Stack structure', () => {
 // @s16 — route group adds no URL segment; duplicate routes removed
 describe('@s16 route structure + duplicate route removal', () => {
   it('(tabs) directory exists as a route group', () => {
-    expect(existsSync(resolve(appRoot, '(tabs)'))).toBe(true);
+    expect(existsSync(tabsRoot)).toBe(true);
   });
 
   it('(app)/index.tsx deleted — duplicate / route gone', () => {

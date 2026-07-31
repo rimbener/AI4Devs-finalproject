@@ -57,7 +57,8 @@ jest.mock('expo-router', () => {
 
 import { render, screen } from '@testing-library/react-native';
 
-import TabsWebLayout from '../../../../app/(app)/(tabs)/_layout.web';
+import TabsWebLayout from './_layout.web';
+
 
 describe('@s3 @s15 wide web (≥768) — desktop top bar', () => {
   beforeEach(() => {

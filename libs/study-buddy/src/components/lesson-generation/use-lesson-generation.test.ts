@@ -718,9 +718,9 @@ describe('useLessonGenerationForm', () => {
 
     await act(async () => {
       resolvePref(null);
-      // Flush the effect's `await getStoredPreference()` continuation (which checks `cancelled`
-      // and returns) fully within this act() so it can't leak an update into the next test.
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      // Flush the effect's `await getStoredPreference()` continuation (checks `cancelled`)
+      // within act — microtask drain, no wall-clock sleep (unit-tests.mdc).
+      await Promise.resolve();
     });
   });
 

@@ -2,7 +2,17 @@ jest.mock('@helsoft/localization', () => ({
   useLocalization: () => ({ t: (k: string) => k }),
 }));
 
+// Avoid study-buddy barrel → AsyncStorage (GenerationPreferenceDao) in this layout unit test.
+jest.mock('@helsoft/study-buddy', () => ({
+  LESSON_STACK_SCREENS: [
+    { name: 'lesson/[id]/index', titleKey: 'nav.lesson' },
+    { name: 'lesson/[id]/player', titleKey: 'nav.study' },
+    { name: 'lesson/[id]/results', titleKey: 'nav.results' },
+  ],
+}));
+
 jest.mock('expo-router', () => {
+
   const React = require('react');
   const { View } = require('react-native');
   const Stack = Object.assign(
@@ -20,7 +30,8 @@ jest.mock('expo-router', () => {
 import { LESSON_STACK_SCREENS } from '@helsoft/study-buddy';
 import { render, screen as rtlScreen } from '@testing-library/react-native';
 
-import AppLayout, { unstable_settings } from '../../../app/(app)/_layout';
+import AppLayout, { unstable_settings } from './_layout';
+
 
 // @s7 @s16 — concrete deep-link back destination (not only headerShown)
 describe('(app)/_layout unstable_settings', () => {
