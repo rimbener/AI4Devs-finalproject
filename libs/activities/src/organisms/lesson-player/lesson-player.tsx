@@ -1,7 +1,8 @@
 import { LESSON_PLAYER_TEST_ID } from '@helsoft/activities/test-ids';
 import { Button } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
-import * as React from 'react';
+import { useState } from 'react';
+import type { LayoutChangeEvent } from 'react-native';
 import { ScrollView, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
@@ -13,6 +14,8 @@ import { useLessonPlayer } from './use-lesson-player';
 
 export const LESSON_PLAYER_EMPTY_TEST_ID = 'lesson-player-empty';
 export const LESSON_PLAYER_ERROR_TEST_ID = 'lesson-player-error';
+export const LESSON_PLAYER_BODY_TEST_ID = 'lesson-player-body';
+
 
 /** LessonPlayer — SlideView steps, then LessonResults; empty/error short-circuit. */
 export const LessonPlayer = ({
@@ -95,26 +98,16 @@ type DeckProps = {
   onBackToLessons: () => void;
 };
 
-type Measurable = {
-  measure: (callback: (x: number, y: number, width: number, height: number) => void) => void;
-};
-
 const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
   const { t } = useLocalization();
   const player = useLessonPlayer(lesson);
-  const bodyRef = React.useRef<ScrollView>(null);
-  const [availableHeight, setAvailableHeight] = React.useState<number>();
+  const [availableHeight, setAvailableHeight] = useState<number>();
 
-  const measureBody = React.useCallback(() => {
-    const measurableBody = bodyRef.current as (ScrollView & Measurable) | null;
-    measurableBody?.measure((_x, _y, _width, height) => {
-      if (height > 0) setAvailableHeight(height);
-    });
-  }, []);
-
-  React.useLayoutEffect(() => {
-    measureBody();
-  }, [measureBody]);
+  // Body ScrollView frame height via onLayout (same bound as ref.measure; fireEvent-testable).
+  const onBodyLayout = (event: LayoutChangeEvent) => {
+    const { height } = event.nativeEvent.layout;
+    if (height > 0) setAvailableHeight(height);
+  };
 
   const stepLabel = t('player.slideOf', {
     current: player.currentIndex + 1,
@@ -137,11 +130,12 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
         onNext={player.goNext}
       />
       <ScrollView
-        ref={bodyRef}
+        testID={LESSON_PLAYER_BODY_TEST_ID}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
-        onLayout={measureBody}
+        onLayout={onBodyLayout}
       >
+
         {player.isResultsSlide ? (
           <LessonResults
             lesson={lesson}

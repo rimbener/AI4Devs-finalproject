@@ -87,14 +87,15 @@ jest.mock('../lesson-results/lesson-results', () => ({
 import { useLocalization } from '@helsoft/localization';
 import type { Lesson } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import * as React from 'react';
 import { LESSON_PLAYER_TEST_ID } from '../../test-ids';
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import {
+  LESSON_PLAYER_BODY_TEST_ID,
   LESSON_PLAYER_EMPTY_TEST_ID,
   LESSON_PLAYER_ERROR_TEST_ID,
   LessonPlayer,
 } from './lesson-player';
+
 
 const mockUseLocalization = useLocalization as jest.Mock;
 
@@ -196,32 +197,15 @@ describe('LessonPlayer', () => {
     expect(screen.getByText('Slide 1 of 5')).toBeTruthy();
   });
 
-  // activity-image-split-layout @s8/@s13 — body frame bounds SlideView only after measure.
+  // activity-image-split-layout @s8/@s13 — body frame bounds SlideView only after layout.
   it('passes the measured body height to the active content slide', async () => {
-    const originalUseRef = React.useRef;
-    let reportMeasuredHeight:
-      | ((_x: number, _y: number, _width: number, height: number) => void)
-      | undefined;
-    const measuredBodyRef = Object.defineProperty({}, 'current', {
-      get: () => ({
-        measure: (callback: (_x: number, _y: number, _width: number, height: number) => void) => {
-          reportMeasuredHeight = callback;
-        },
-      }),
-      set: () => {},
-    }) as React.RefObject<unknown>;
-    jest.spyOn(React, 'useRef').mockImplementation((initialValue) => {
-      const ref = originalUseRef(initialValue);
-      return initialValue === null ? measuredBodyRef : ref;
-    });
-
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
 
     expect(screen.getByTestId('slide-available-height').props.children).toBe('undefined');
     expect(typeof screen.getByTestId('slide-mount-id').props.children).toBe('string');
 
-    await act(async () => {
-      reportMeasuredHeight?.(0, 0, 0, 480);
+    await fireEvent(screen.getByTestId(LESSON_PLAYER_BODY_TEST_ID), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 480 } },
     });
 
     expect(screen.getByTestId('slide-available-height').props.children).toBe('480');
@@ -229,28 +213,10 @@ describe('LessonPlayer', () => {
 
   // Mutation — non-positive frame measurements must preserve the pre-measure fallback.
   it.each([0, -1])('ignores a non-positive measured body height of %d', async (height) => {
-    const originalUseRef = React.useRef;
-    let reportMeasuredHeight:
-      | ((_x: number, _y: number, _width: number, measuredHeight: number) => void)
-      | undefined;
-    const measuredBodyRef = Object.defineProperty({}, 'current', {
-      get: () => ({
-        measure: (
-          callback: (_x: number, _y: number, _width: number, measuredHeight: number) => void,
-        ) => {
-          reportMeasuredHeight = callback;
-        },
-      }),
-      set: () => {},
-    }) as React.RefObject<unknown>;
-    jest.spyOn(React, 'useRef').mockImplementation((initialValue) => {
-      const ref = originalUseRef(initialValue);
-      return initialValue === null ? measuredBodyRef : ref;
-    });
-
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
-    await act(async () => {
-      reportMeasuredHeight?.(0, 0, 0, height);
+
+    await fireEvent(screen.getByTestId(LESSON_PLAYER_BODY_TEST_ID), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 320, height } },
     });
 
     expect(screen.getByTestId('slide-available-height').props.children).toBe('undefined');
