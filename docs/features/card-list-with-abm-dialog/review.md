@@ -963,10 +963,116 @@ delta before the next gate.
 
 ---
 
-*Durable trail note: every finding raised anywhere in this file — Round 1/Round 2 (both
-`resolved`), both earlier mini-gates (both `APPROVED`), Mini-gate 3's CI-red gate (3 findings,
-`resolved` by the fix round documented above), and Mini-gate 3's Full review Round 1 (9 findings,
-all now `resolved` — see the fix round immediately above) — remains retained here, nothing deleted.
-The `@s13` human-sign-off item is tracked distinctly and is **not** a normal review finding to be
-closed by a code fix alone; it remains open, needing the human's word, independent of the 9
-findings above all being resolved.*
+## Full review — Round 2 (Mini-gate 3, fix-delta verification)
+
+**Commit reviewed (delta only):** `git diff 8a6a3afab d9cd6f40c` — `implementer`'s single fix commit
+`d9cd6f40c` (`fix(card-list-with-abm-dialog): resolve full-review round 1 findings (9/9)`), on top of
+the Round-1-reviewed HEAD `8a6a3afab` (the `@s13` human-sign-off ratification commit). Per protocol
+this is a scoped delta review, not a full re-review — the 9 Round-1 findings are the subject.
+
+**Note on commit bundling:** this same commit `d9cd6f40c` also carries, in its diff stat, files that
+were touched by the earlier (already-reviewed, previously-uncommitted) "CI-red fix round" — that
+work had been verified by `reviews_lead` directly against the working tree before this session, but
+had not yet been committed, and got committed together with the 9-finding fixes in one commit by
+`implementer`. `reviews_lead` independently re-traced the CI-red-round mechanics inside the current
+tree (grace-timer constant/effect shape in `use-card-list-with-abm-dialog.ts`, the reducer's `submit`
+case preserving `dialogType`/`dialogItem` in `use-card-list-with-abm-dialog.reducer.ts`, restored
+`onAddPress` wiring in the `Interactive` story) and confirmed none of it was silently altered,
+weakened, or partially reverted by the bundled finding-fixing work — the diff against `8a6a3afab`
+(which already contained the CI-red-round code, confirmed by inspecting `8a6a3afab`'s copy of
+`use-card-list-with-abm-dialog.ts` directly) touches only the 9-finding fix shape, nothing else.
+
+**CI (run once by `reviews_lead`, not the reviewer):**
+- `pnpm lint` — green, repo-wide (turbo, 14 packages).
+- `pnpm check-types` — green, repo-wide (turbo, 14 packages).
+- `pnpm --filter @helsoft/components exec jest` — explicitly re-run, not cache-trusted: 72 suites /
+  522 tests green.
+- `pnpm --filter @helsoft/study-buddy exec jest` — explicitly re-run, not cache-trusted: 44 suites /
+  392 tests green.
+- `pnpm test` (repo-wide, `--output-logs=errors-only`) — green, 12/12 packages.
+- Feature e2e — `card-list-with-abm-dialog.e2e.js`, fresh serialized-server run (`--reporter=list`,
+  killed a stale Storybook process on :6011 first): 5/5 passed, no flake.
+- **CI green @ `d9cd6f40c`.**
+
+**Reviewer invoked:** `reviewer_engineering`, scoped to the fix delta only (`git diff 8a6a3afab
+d9cd6f40c`), confirming each of the 9 Round-1 findings and checking for any new issue introduced by
+the fix mechanics themselves. Full findings in `review-engineering.md` under "## Full review — Round
+2 (fix-delta verification, Mini-gate 3)".
+
+### Findings — resolution verification (round 2)
+
+1. **[arch] major — `resolved`, verified.** File moves confirmed via `git diff --stat` (renames from
+   the shared `atoms/`/`molecules/`/`organisms/` top-level folders into
+   `organisms/card-list-with-abm-dialog/components/{header,list,dialog}/`); every relative import in
+   the moved files resolves at the new depth (spot-checked); repo-wide grep for the three old paths —
+   zero hits; Storybook titles read `Organisms/CardListWithABMDialog/{Header,List,Dialog}`; none
+   barrel-exported before or after; old top-level directories deleted.
+2. **[arch] major + [code] minor — `resolved`, verified.** `libs/components/tsconfig.json` and
+   `libs/study-buddy/tsconfig.json` both `"include": ["src"]` — matches every other lib's tsconfig
+   shape in the repo, no partial leftover.
+3. **[arch]/[code] major — `resolved` via documented fallback, verified.** `ACCEPTED RISK` doc
+   comment confirmed on `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS`. The two new
+   `jest.advanceTimersByTime`-based tests in `use-card-list-with-abm-dialog.test.ts` genuinely
+   exercise real elapsed time: a 49ms-still-submitting/50ms-closed boundary test, and a
+   genuinely-delayed-async-submit test proving a stale grace timeout is actually canceled (not
+   masked) when `isSubmitting` flips true partway through the window, staying `'submitting'` through
+   200ms of further elapsed time. Confirmed meaningful, not a restatement of the trivial synchronous
+   case.
+4. **[arch] major — `resolved`, verified.** `default:` branch simplified to `return
+   EMPTY_DIALOG_RESPONSE;`; `prevDialogRef` and its populating effect fully deleted. Repo-wide grep:
+   only remaining reference is an explanatory comment in the reducer test (not live code).
+5. **[arch]/[code] major, out-of-scope drive-by regression — `resolved`, verified byte-identical.**
+   `git diff feature-entrega3-HernanLaura -- .../text-field.tsx` at `d9cd6f40c` → empty output — full,
+   byte-for-byte revert, not partial.
+6. **[code] minor — `resolved`, verified.** Pure 100%-similarity rename to `.context.types.ts`, zero
+   content diff.
+7. **[code] minor — `resolved`, verified.** All 4 testID constants/functions moved to
+   `card-list-with-abm-dialog.helpers.ts`; every consumer's import switched; none straggling on
+   `.types.ts`.
+8. **[security] minor, OWASP A08-adjacent — `resolved`, verified TDD.** `isSafeExternalUrl()`
+   test-first (7 cases), wired as an early-return guard strictly before `Linking.openURL`; new test
+   asserts `openURL` is never called for a `javascript:` guidance url via a real mocked spy.
+9. **[code] minor — `resolved`, verified.** Explanatory comment added above the swallowed
+   `.catch(() => {})`; no behavior change, existing assertions pass unmodified.
+
+### New findings introduced by the fix delta itself
+
+**None, at any severity, across all four lenses** (code quality/TDD, architecture/layering,
+performance, security) — full reasoning in `review-engineering.md`'s matching section: no
+console/debugger/bare-TODO leftovers, no new cross-layer leak (the move is a pure relocation, same
+Context-dependency shape as before, now honestly scoped to a private subfolder), no new
+render/allocation/timer-leak concern (the exit-effect's `setTimeout`/`clearTimeout` pairing is
+correctly cleaned up on every dependency change), no new attack surface (`isSafeExternalUrl()` is a
+pure, side-effect-free regex check, zero new dependency).
+
+### `@s13` human sign-off — confirmed already closed
+
+Item (c) from Round 1 (the `@s13` gherkin-text rewrite, flagged as requiring explicit human
+sign-off, not decided by any reviewer) is confirmed **already resolved**, independent of and prior to
+this round's 9-finding fixes: commit `8a6a3afab` (`docs(card-list-with-abm-dialog): ratify @s13
+human sign-off (isSubmitting-false closes dialog)`, the parent of this round's reviewed delta) adds
+an explicit `spec.md` entry recording `ACCEPTED — human sign-off, 2026-07-30` for the `@s13` rewrite,
+with the "why" rationale spelled out. This item is not re-opened or re-litigated here — it was closed
+before this round's delta began, by the human's own word, not by any agent.
+
+### Verdict: APPROVED
+
+**Zero findings open, any severity.** All 9 Round-1 findings confirmed genuinely resolved by
+`reviews_lead`'s own independent diff/file verification and by `reviewer_engineering`'s scoped
+fix-delta review; no new finding of any severity introduced by the fix itself; the bundled
+(already-reviewed) CI-red-round code confirmed unaltered by this delta; the `@s13` human-sign-off
+item confirmed already closed by the human, prior to this round. CI green @ `d9cd6f40c`
+(lint/check-types/test for `@helsoft/components` + `@helsoft/study-buddy`, repo-wide `pnpm test`,
+and this feature's Playwright e2e, 5/5). This closes Mini-gate 3's full-review cycle with a clean
+approval — nothing outstanding for `implementer` to fix. `review_round` incremented to 2 in
+`tasks.md` (this cycle's 2-round cap now fully used, closed clean — no escalation needed).
+
+---
+
+*Durable trail note: every finding raised anywhere in this file — Round 1/Round 2 of the earliest
+review cycle (both `resolved`), both earlier mini-gates (both `APPROVED`), Mini-gate 3's CI-red gate
+(3 findings, `resolved`), Mini-gate 3's Full review Round 1 (9 findings, all `resolved`), and
+Mini-gate 3's Full review Round 2 (fix-delta verification, zero findings open, `APPROVED`) — remains
+retained here, nothing deleted. The `@s13` human-sign-off item is tracked distinctly and is
+confirmed closed by the human's own word (`8a6a3afab`), independent of and prior to Round 2's code
+verification above.*

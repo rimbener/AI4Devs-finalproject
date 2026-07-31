@@ -758,3 +758,147 @@ the implementer changed a previously human-approved Gherkin scenario unilaterall
 already-shipped, already-tested code/consumer behavior. The new text is technically sound and
 consistent with the codebase; the *process* gap (no human sign-off yet) is real and separate from
 that technical soundness.
+
+---
+
+## Full review — Round 2 (fix-delta verification, Mini-gate 3)
+
+**Commit reviewed (delta only):** `git diff 8a6a3afab d9cd6f40c` — `implementer`'s single fix commit
+`fix(card-list-with-abm-dialog): resolve full-review round 1 findings (9/9)`, on top of the Round-1
+HEAD (`8a6a3afab`, the `@s13` human-sign-off ratification commit) reviewed in "Full review — Round 1
+(post-CI-fix)" above. Per protocol this is a scoped delta review, not a full re-review — Round 1's
+9 findings are the only subject; the bundled, already-reviewed CI-red-round code (grace-timer
+mechanism shape, reducer `submit` preserving `dialogType`/`dialogItem`, `onAddPress` wiring) is
+checked only for silent regression, not re-litigated on its own merits.
+
+**CI:** green @ `d9cd6f40c`, confirmed independently by `reviews_lead` (lint/check-types/test for
+`@helsoft/components` + `@helsoft/study-buddy`, plus this feature's Playwright e2e) — not re-run by
+this reviewer.
+
+### Verdict: APPROVED
+
+All 9 Round-1 findings confirmed genuinely resolved. No new finding, any severity, introduced by the
+fix delta itself. `@s13` human-sign-off item ((c) above) is out of scope for this round (already
+handled by `8a6a3afab`'s ratification commit, which precedes this delta) and is not re-opened here.
+
+### Findings — resolution verification
+
+1. **[arch] major — `resolved`, verified.** `git diff 8a6a3afab d9cd6f40c --stat` shows the header/
+   list/dialog components (plus `.stories.tsx`/`.test.tsx`) `rename`'d from the shared
+   `atoms/card-list-with-abm-dialog-header/`, `molecules/card-list-with-abm-dialog-dialog/`,
+   `organisms/card-list-with-abm-dialog-list/` into
+   `organisms/card-list-with-abm-dialog/components/{header,list,dialog}/`. Verified every relative
+   import inside the moved files resolves correctly at the new depth (spot-checked
+   `components/header/card-list-with-abm-dialog-header.tsx:3-4` → `../../../../atoms/button/button`
+   and `../../hooks/card-list-with-abm-dialog.context`; `components/dialog/card-list-with-abm-dialog-dialog.tsx:5-8`
+   → `../../../../atoms`, `../../../../molecules/submitting-indicator/submitting-indicator`,
+   `../../../dialog/dialog`, `../../card-list-with-abm-dialog.types` — all targets exist on disk).
+   Repo-wide grep for the three old paths (`atoms/card-list-with-abm-dialog-header`,
+   `molecules/card-list-with-abm-dialog-dialog`, `organisms/card-list-with-abm-dialog-list`) across
+   `libs`/`apps`: **zero hits** — no stale importer anywhere. Storybook titles updated correctly:
+   `components/header/card-list-with-abm-dialog-header.stories.tsx:47` →
+   `'Organisms/CardListWithABMDialog/Header'`, `components/list/...stories.tsx:76` → `.../List`,
+   `components/dialog/...stories.tsx:53` → `.../Dialog`. None of the three is barrel-exported before
+   or after (`organisms/index.ts` still only exports the composition-root
+   `card-list-with-abm-dialog`/`.types`) — consistent with the fix's own stated intent (private
+   sub-components, not independently reusable). Old top-level directories confirmed deleted
+   (`ls libs/components/src/{atoms,molecules,organisms}/card-list-with-abm-dialog*` → empty for the
+   three old names).
+
+2. **[arch] major (+ [code] minor companion) — `resolved`, verified.** `libs/components/tsconfig.json`
+   and `libs/study-buddy/tsconfig.json` both now read `"include": ["src"]` — byte-identical in shape
+   to every other lib's tsconfig in the repo (checked all 11: `activities`, `components`, `hooks`,
+   `js-utils`, `lib-with-storybook`, `localization`, `logging-in-out`, `pdf-upload-extraction`,
+   `rn-utils`, `services`, `study-buddy` — all `["src"]`, `lib-with-storybook` the sole justified
+   exception with `.storybook` added). The stale/backwards 5-path and 2-path additions are fully
+   gone, no partial leftover.
+
+3. **[arch]/[code] major, fragile design — `resolved` via documented fallback, verified.** Traced
+   `use-card-list-with-abm-dialog.ts:30-45`'s expanded doc comment on
+   `SUBMIT_WITHOUT_ASYNC_SIGNAL_GRACE_MS`: it explicitly states the accepted-risk trace (React 18
+   auto-batch + TanStack Query v5 synchronous-pending-dispatch making the timer a no-op for the real
+   consumer today, not a contract). Verified the two new tests in
+   `use-card-list-with-abm-dialog.test.ts:227-320` genuinely exercise real elapsed time via
+   `jest.advanceTimersByTime` (not a synchronous `runOnlyPendingTimers` flush):
+   - `'does not close before the grace period genuinely elapses'` (:279-296) — advances 49ms,
+     asserts `dialogState === 'submitting'`; advances 1 more ms (total 50), asserts
+     `dialogState === 'closed'` — a genuine boundary test, not trivial.
+   - `'does not let a genuinely-delayed async submit be mistaken for a synchronous one'`
+     (:302-330) — advances 30ms (within the 50ms window), flips `dynamicIsSubmitting` true,
+     asserts still `'submitting'`; advances 200 more ms (well past the original window) and asserts
+     it is **still** `'submitting'` (proving the stale grace timeout was actually canceled by the
+     effect's cleanup, not merely masked); only closes once `isSubmitting` is set back to `false`.
+     This is a meaningful race-window test, not a restatement of the trivial case.
+   Traced the effect's logic (`use-card-list-with-abm-dialog.ts:176-210`) by hand against both new
+   tests plus the two pre-existing ones (immediate-close-on-genuine-async, eventually-closes-on-its-
+   own) — the `wasReallySubmittingRef` gate + dependency array (`[state.dialogState, isSubmitting,
+   closeDialog]`) correctly re-arms/cancels the timer on every relevant transition; no gap found.
+
+4. **[arch] major — `resolved`, verified.** `use-card-list-with-abm-dialog.ts:144-150`'s `default:`
+   branch now reads `return EMPTY_DIALOG_RESPONSE;` with an explanatory comment; `prevDialogRef`
+   (former line 97) and its populating effect (former lines 153-155) are both deleted — confirmed
+   via the diff hunk (no `React.useRef<DialogResponse>` left, no `prevDialogRef.current =` effect
+   left). Repo-wide grep for `prevDialogRef`: only one hit, a comment in
+   `use-card-list-with-abm-dialog.reducer.test.ts:68` explaining the *old* behavior for context — not
+   live code.
+
+5. **[arch]/[code] major, out-of-scope drive-by regression — `resolved`, verified byte-identical.**
+   `git diff feature-entrega3-HernanLaura -- libs/components/src/molecules/text-field/text-field.tsx`
+   at `d9cd6f40c` → **empty output**, confirming the file is byte-for-byte identical to the delivery
+   branch's version (the conditional `borderBottomWidth: focus ? 2 : 1` / `borderWidth: focus ? 2 :
+   1` on both `filled`/`outlined` variants is restored, `focus` correctly re-threaded into
+   `styles.field(...)`'s call site at line 84). Full revert, not partial.
+
+6. **[code] minor — `resolved`, verified.** `git diff --stat` shows a pure `rename` (100% similarity)
+   from `card-list-with-abm-dialog.context.types.tsx` to `.context.types.ts` — zero content diff, no
+   importer needed updating (every importer already omits the extension), `check-types` unaffected.
+
+7. **[code] minor — `resolved`, verified.** New `card-list-with-abm-dialog.helpers.ts` holds all 4
+   moved exports (`CARD_LIST_WITH_ABM_DIALOG_LIST_TEST_ID`, `cardListItemCardTestId`,
+   `cardListItemEditTestId`, `cardListItemRemoveTestId`); `card-list-with-abm-dialog.types.ts:32-42`
+   no longer has them. Every consumer's import switched to `.helpers` (organism test, row-adapter +
+   its test, the moved list component + its test) — confirmed via the diff, no straggler still
+   importing the constants from `.types`.
+
+8. **[security] minor — OWASP A08-adjacent — `resolved`, verified TDD.**
+   `add-api-key.helpers.ts`'s `isSafeExternalUrl()` (scheme-prefix regex `^https?:\/\//i`) is
+   test-first in `add-api-key.helpers.test.ts` (7 cases — http/https/uppercase accepted;
+   javascript:/data:/protocol-less/empty rejected). Wired into `add-api-key.tsx:79-84` as an
+   early-return guard (`if (!url || !isSafeExternalUrl(url)) return;`) strictly before
+   `Linking.openURL(url)` — no path where an unsafe scheme reaches the platform link-opener. New
+   `add-api-key.test.tsx` case (`'does not open the guidance url when it uses a non-http(s)
+   scheme'`) asserts `openURL` is never called for a `javascript:` guidance url — genuine, not a
+   tautology (uses a real mocked `Linking.openURL` spy).
+
+9. **[code] minor — `resolved`, verified.** `add-api-key.tsx:80-83` now carries an explanatory
+   comment directly above the `.catch(() => {})`, recording the intentional best-effort no-op
+   rationale (no actionable recovery surface on this screen, OS surfaces its own error UI). No
+   behavior change; existing assertions in `add-api-key.test.tsx` pass unmodified.
+
+### New findings introduced by the fix delta itself
+
+**None, at any severity, across all four lenses.**
+
+- **Code quality/TDD** — no `console.log`/`debugger`/bare `TODO` in any file touched by this delta
+  (grepped). The two non-UI `.ts` production changes demanded by this delta
+  (`use-card-list-with-abm-dialog.ts`'s exit-effect doc/timer shape, `.reducer.ts`'s comment) are
+  directly covered by pre-existing/updated tests — no scope inflation. UI file moves (`.tsx`) kept
+  their `.test.tsx`/`.stories.tsx` 1:1, updated only for new import paths.
+- **Architecture/layering** — the move (finding 1) is a pure relocation, not a new cross-layer
+  leak: the header/list/dialog still only import the organism's own private Context hook/types
+  (never a DAO/service), same reverse-dependency shape they had before, just now honestly scoped to
+  a private subfolder instead of misleadingly living in the shared `atoms/`/`molecules/`/`organisms/`
+  top-level folders. `tsconfig.json` reduction (finding 2) removes a backwards dependency,
+  introduces nothing new. Dead-code removal (finding 4) is subtractive only.
+- **Performance** — no new render/list/allocation concerns; the exit-effect's added
+  `wasReallySubmittingRef` is a single `useRef`, no extra render triggered by it; the effect's
+  `setTimeout`/`clearTimeout` pairing is correctly cleaned up on every dependency change (verified
+  above under finding 3) — no leaked timers.
+- **Security** — `isSafeExternalUrl()` (finding 8) is a pure, side-effect-free regex check — no new
+  attack surface. No secrets, no new logging, no new dependency (this delta touches zero
+  `package.json`/lockfile).
+
+**`review_round` should increment accordingly in `tasks.md`** — the durable trail above (Round 1's 9
+findings) all confirmed `resolved`; this feature's Mini-gate 3 cycle is now clean at the engineering
+lens with zero open findings (the `@s13` human-sign-off item remains tracked separately per (c)
+above, already handled by the preceding ratification commit `8a6a3afab`, outside this delta's scope).
