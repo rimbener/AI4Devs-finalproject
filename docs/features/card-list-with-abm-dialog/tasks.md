@@ -1,6 +1,6 @@
 ---
 feature: card-list-with-abm-dialog
-phase: mutation # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
+phase: pr_ready # pending|spec_drafted|spec_ready|approved|in_progress|in_review|mutation|pr_ready|done
 review_round: 2     # incremented by reviews_lead; cap 2 — Mini-gate 3's CI-red gate (findings fixed), Full-review Round 1 (9 findings, all resolved), Full-review Round 2 (fix-delta verification — zero findings open, APPROVED) — see review.md
 ---
 
