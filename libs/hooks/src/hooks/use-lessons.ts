@@ -1,6 +1,8 @@
 import { LessonsService } from '@helsoft/supabase-services';
 import type { LessonSummary } from '@helsoft/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { toLessonsErrorCode } from './use-lessons.helpers';
 import type { UseLessonsResult } from './use-lessons.types';
 
 export const lessonsQueryKey = ['lessons'] as const;
@@ -38,10 +40,12 @@ export const useLessons = (): UseLessonsResult => {
     return refetch();
   };
 
+  const rawError = deleteError ?? queryError;
+
   return {
     lessons: data ?? [],
     isLoading,
-    error: deleteError ?? queryError,
+    error: rawError ? toLessonsErrorCode(rawError) : null,
     refetch: refetchAndClearDeleteError,
     deleteLesson,
   };

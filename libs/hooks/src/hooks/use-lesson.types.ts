@@ -1,8 +1,8 @@
-import type { Lesson } from '@helsoft/types';
+import type { Lesson, LessonsErrorCode } from '@helsoft/types';
 
 export type UseLessonResult = {
   lesson: Lesson | null;
   isLoading: boolean;
-  error: Error | null;
+  error: LessonsErrorCode | null;
   refetch: () => void;
 };

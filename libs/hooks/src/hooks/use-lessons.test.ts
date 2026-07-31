@@ -87,15 +87,19 @@ describe('useLessons', () => {
 
   // @s12 — a failed list read exposes the error and an empty list.
   it('sets error and clears loading when the service rejects', async () => {
-    const failure = new Error('LessonsService.getLessons: failed to load lessons');
-    service.getLessons.mockRejectedValue(failure);
+    service.getLessons.mockRejectedValue(
+      Object.assign(new Error('LessonsService.getLessons: failed to load lessons'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    expect(result.current.error).toBe(failure);
+    expect(result.current.error).toBe('network_error');
     expect(result.current.lessons).toEqual([]);
   });
+
 
   // Reload without a prior error — pre-existing coverage, kept alongside s13's error-clearing case.
   it('refetch reloads lessons from the service', async () => {
@@ -153,9 +157,12 @@ describe('useLessons', () => {
 
   // @s15 — a failed delete surfaces via error and leaves the list unchanged (mutate is void).
   it('deleteLesson leaves the list unchanged and sets error when the service rejects', async () => {
-    const failure = new Error('LessonsService.deleteLesson: failed to delete lesson');
     service.getLessons.mockResolvedValue(lessons);
-    service.deleteLesson.mockRejectedValue(failure);
+    service.deleteLesson.mockRejectedValue(
+      Object.assign(new Error('LessonsService.deleteLesson: failed to delete lesson'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -164,15 +171,21 @@ describe('useLessons', () => {
       result.current.deleteLesson('lesson-2');
     });
 
-    await waitFor(() => expect(result.current.error).toBe(failure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
     expect(result.current.lessons).toEqual(lessons);
   });
 
   // @s16 — the delete error is cleared before the read starts, so a later read failure (not the
   // stale delete error) is what ends up exposed.
   it('clears the delete error before refetching, exposing a later read failure instead', async () => {
-    const deleteFailure = new Error('LessonsService.deleteLesson: failed to delete lesson');
-    const readFailure = new Error('LessonsService.getLessons: failed to load lessons');
+    const deleteFailure = Object.assign(
+      new Error('LessonsService.deleteLesson: failed to delete lesson'),
+      { code: 'network_error' as const },
+    );
+    const readFailure = Object.assign(
+      new Error('LessonsService.getLessons: failed to load lessons'),
+      { code: 'network_error' as const },
+    );
     service.getLessons.mockResolvedValueOnce(lessons).mockRejectedValueOnce(readFailure);
     service.deleteLesson.mockRejectedValue(deleteFailure);
     const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
@@ -182,22 +195,25 @@ describe('useLessons', () => {
     act(() => {
       result.current.deleteLesson('lesson-2');
     });
-    await waitFor(() => expect(result.current.error).toBe(deleteFailure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
 
     await act(async () => {
       result.current.refetch();
     });
 
-    await waitFor(() => expect(result.current.error).toBe(readFailure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
     expect(service.getLessons).toHaveBeenCalledTimes(2);
     expect(result.current.lessons).toEqual(lessons);
   });
 
   // @s16 — a refetch that succeeds after a failed delete clears the delete error entirely.
   it('clears a prior delete error once a refetch succeeds', async () => {
-    const deleteFailure = new Error('LessonsService.deleteLesson: failed to delete lesson');
     service.getLessons.mockResolvedValue(lessons);
-    service.deleteLesson.mockRejectedValue(deleteFailure);
+    service.deleteLesson.mockRejectedValue(
+      Object.assign(new Error('LessonsService.deleteLesson: failed to delete lesson'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => useLessons(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -205,7 +221,7 @@ describe('useLessons', () => {
     act(() => {
       result.current.deleteLesson('lesson-2');
     });
-    await waitFor(() => expect(result.current.error).toBe(deleteFailure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
 
     await act(async () => {
       result.current.refetch();
@@ -215,3 +231,4 @@ describe('useLessons', () => {
     expect(result.current.lessons).toEqual(lessons);
   });
 });
+

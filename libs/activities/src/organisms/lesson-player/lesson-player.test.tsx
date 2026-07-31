@@ -154,6 +154,8 @@ const lesson: Lesson = {
 const t = (key: string, options?: Record<string, unknown>) => {
   if (!key) throw new Error('empty i18n key');
   if (key === 'player.slideOf') return `Slide ${options?.current} of ${options?.total}`;
+  if (key === 'player.progress.lesson') return `Lesson ${options?.n}`;
+  if (key === 'player.progress.activity') return `Activity ${options?.n}`;
   if (key === 'player.next') return 'Next';
   if (key === 'player.back') return 'Back';
   if (key === 'player.loading') return 'Loading lesson…';
@@ -486,7 +488,7 @@ describe('LessonPlayer', () => {
     await render(
       <LessonPlayer
         lesson={null}
-        error={new Error('network')}
+        error="network_error"
         onRetry={onRetry}
         onBackToLessons={onBackToLessons}
       />,
@@ -513,7 +515,7 @@ describe('LessonPlayer', () => {
     const { rerender } = await render(
       <LessonPlayer
         lesson={null}
-        error={new Error('network')}
+        error="network_error"
         onRetry={jest.fn()}
         onBackToLessons={jest.fn()}
       />,
@@ -566,7 +568,7 @@ describe('LessonPlayer', () => {
     await render(
       <LessonPlayer
         lesson={null}
-        error={new Error('network')}
+        error="network_error"
         onRetry={jest.fn()}
         onBackToLessons={jest.fn()}
       />,

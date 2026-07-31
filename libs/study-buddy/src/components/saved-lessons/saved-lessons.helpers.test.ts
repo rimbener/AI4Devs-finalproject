@@ -7,14 +7,14 @@ import {
 describe('saved-lessons.helpers', () => {
   it('maps loading / error / empty / content states', () => {
     expect(toLessonListState(true, null, 0)).toBe('loading');
-    expect(toLessonListState(false, new Error('x'), 0)).toBe('error');
+    expect(toLessonListState(false, 'network_error', 0)).toBe('error');
     expect(toLessonListState(false, null, 0)).toBe('empty');
     expect(toLessonListState(false, null, 2)).toBe('content');
   });
 
   // Delete failure sets error but keeps lessons — must stay Content, not load-Error (@s8/@s14).
   it('keeps content when error is set but lessons remain', () => {
-    expect(toLessonListState(false, new Error('delete failed'), 2)).toBe('content');
+    expect(toLessonListState(false, 'network_error', 2)).toBe('content');
   });
 
   it('formats createdAt with the given locale', () => {

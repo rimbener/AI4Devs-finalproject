@@ -101,15 +101,19 @@ describe('usePdfDocuments', () => {
 
   // @s19 — a failed list read exposes the error and an empty list.
   it('sets error and clears loading when the service rejects', async () => {
-    const failure = new Error('PdfDocumentsService.getDocuments: failed to load documents');
-    service.getDocuments.mockRejectedValue(failure);
+    service.getDocuments.mockRejectedValue(
+      Object.assign(new Error('PdfDocumentsService.getDocuments: failed to load documents'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    expect(result.current.error).toBe(failure);
+    expect(result.current.error).toBe('network_error');
     expect(result.current.documents).toEqual([]);
   });
+
 
   // Reload without a prior error — pre-existing coverage, kept alongside s20's error-clearing case.
   it('refetch reloads documents from the service', async () => {
@@ -170,9 +174,12 @@ describe('usePdfDocuments', () => {
 
   // @s22 — a failed delete surfaces via error and leaves the list unchanged (mutate is void).
   it('deleteDocument leaves the list unchanged and sets error when the service rejects', async () => {
-    const failure = new Error('PdfDocumentsService.deleteDocument: failed to delete document');
     service.getDocuments.mockResolvedValue(documents);
-    service.deleteDocument.mockRejectedValue(failure);
+    service.deleteDocument.mockRejectedValue(
+      Object.assign(new Error('PdfDocumentsService.deleteDocument: failed to delete document'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -181,17 +188,21 @@ describe('usePdfDocuments', () => {
       result.current.deleteDocument('doc-2');
     });
 
-    await waitFor(() => expect(result.current.error).toBe(failure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
     expect(result.current.documents).toEqual(documents);
   });
 
   // @s23 — the delete error is cleared before the read starts, so a later read failure (not the
   // stale delete error) is what ends up exposed.
   it('clears the delete error before refetching, exposing a later read failure instead', async () => {
-    const deleteFailure = new Error(
-      'PdfDocumentsService.deleteDocument: failed to delete document',
+    const deleteFailure = Object.assign(
+      new Error('PdfDocumentsService.deleteDocument: failed to delete document'),
+      { code: 'network_error' as const },
     );
-    const readFailure = new Error('PdfDocumentsService.getDocuments: failed to load documents');
+    const readFailure = Object.assign(
+      new Error('PdfDocumentsService.getDocuments: failed to load documents'),
+      { code: 'network_error' as const },
+    );
     service.getDocuments.mockResolvedValueOnce(documents).mockRejectedValueOnce(readFailure);
     service.deleteDocument.mockRejectedValue(deleteFailure);
     const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
@@ -201,24 +212,25 @@ describe('usePdfDocuments', () => {
     act(() => {
       result.current.deleteDocument('doc-2');
     });
-    await waitFor(() => expect(result.current.error).toBe(deleteFailure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
 
     await act(async () => {
       result.current.refetch();
     });
 
-    await waitFor(() => expect(result.current.error).toBe(readFailure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
     expect(service.getDocuments).toHaveBeenCalledTimes(2);
     expect(result.current.documents).toEqual(documents);
   });
 
   // @s23 — a refetch that succeeds after a failed delete clears the delete error entirely.
   it('clears a prior delete error once a refetch succeeds', async () => {
-    const deleteFailure = new Error(
-      'PdfDocumentsService.deleteDocument: failed to delete document',
-    );
     service.getDocuments.mockResolvedValue(documents);
-    service.deleteDocument.mockRejectedValue(deleteFailure);
+    service.deleteDocument.mockRejectedValue(
+      Object.assign(new Error('PdfDocumentsService.deleteDocument: failed to delete document'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => usePdfDocuments(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -226,7 +238,7 @@ describe('usePdfDocuments', () => {
     act(() => {
       result.current.deleteDocument('doc-2');
     });
-    await waitFor(() => expect(result.current.error).toBe(deleteFailure));
+    await waitFor(() => expect(result.current.error).toBe('network_error'));
 
     await act(async () => {
       result.current.refetch();
@@ -236,3 +248,4 @@ describe('usePdfDocuments', () => {
     expect(result.current.documents).toEqual(documents);
   });
 });
+

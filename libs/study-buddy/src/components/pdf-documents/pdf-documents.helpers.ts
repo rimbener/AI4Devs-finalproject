@@ -1,12 +1,13 @@
 import type { PdfDocumentListItemData, PdfDocumentListState } from '@helsoft/components';
-import type { PdfDocumentSummary } from '@helsoft/types';
+import type { PdfDocumentSummary, PdfDocumentsErrorCode } from '@helsoft/types';
 
 /** Maps usePdfDocuments flags → PdfDocumentList state (@s14/@s15/@s16). */
 export const toPdfDocumentListState = (
   isLoading: boolean,
-  error: Error | null,
+  error: PdfDocumentsErrorCode | null,
   documentCount: number,
 ): PdfDocumentListState => {
+
   if (isLoading) return 'loading';
   // Load Error only when the list is gone. Delete failures keep docs — stay Content.
   if (error && documentCount === 0) return 'error';

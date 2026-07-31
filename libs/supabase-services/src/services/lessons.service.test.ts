@@ -26,20 +26,26 @@ describe('LessonsService', () => {
     ]);
   });
 
-  it('getLessons normalizes a DAO failure into a clear Error', async () => {
+  it('getLessons normalizes a DAO failure into a typed network_error', async () => {
     dao.getLessons.mockRejectedValue({ message: 'select failed' });
 
-    await expect(LessonsService.getLessons()).rejects.toThrow(
-      'LessonsService.getLessons: failed to load lessons',
-    );
+    await expect(LessonsService.getLessons()).rejects.toMatchObject({
+      code: 'network_error',
+      message: 'LessonsService.getLessons: failed to load lessons',
+    });
   });
 
   // @s8 — delete validates id then delegates; empty id never hits the DAO.
   it('deleteLesson rejects an empty id without calling the DAO', async () => {
-    await expect(LessonsService.deleteLesson('')).rejects.toThrow(/id/i);
-    await expect(LessonsService.deleteLesson('   ')).rejects.toThrow(/id/i);
+    await expect(LessonsService.deleteLesson('')).rejects.toMatchObject({
+      code: 'validation_error',
+    });
+    await expect(LessonsService.deleteLesson('   ')).rejects.toMatchObject({
+      code: 'validation_error',
+    });
     expect(dao.deleteLesson).not.toHaveBeenCalled();
   });
+
 
   // @s8/@s12 — valid id delegates to LessonsDao.deleteLesson (RLS scopes ownership).
   it('deleteLesson delegates a valid id to LessonsDao.deleteLesson', async () => {
@@ -50,20 +56,24 @@ describe('LessonsService', () => {
     expect(dao.deleteLesson).toHaveBeenCalledWith('lesson-1');
   });
 
-  it('deleteLesson normalizes a DAO failure into a clear Error', async () => {
+  it('deleteLesson normalizes a DAO failure into a typed network_error', async () => {
     dao.deleteLesson.mockRejectedValue({ message: 'delete failed' });
 
-    await expect(LessonsService.deleteLesson('lesson-1')).rejects.toThrow(
-      'LessonsService.deleteLesson: failed to delete lesson',
-    );
+    await expect(LessonsService.deleteLesson('lesson-1')).rejects.toMatchObject({
+      code: 'network_error',
+      message: 'LessonsService.deleteLesson: failed to delete lesson',
+    });
   });
 
   // @s17 feed — getLesson validates id, delegates, normalizes failure.
   it('getLesson rejects an empty id without calling the DAO', async () => {
-    await expect(LessonsService.getLesson('')).rejects.toThrow(/id/i);
-    await expect(LessonsService.getLesson('   ')).rejects.toThrow(/id/i);
+    await expect(LessonsService.getLesson('')).rejects.toMatchObject({ code: 'validation_error' });
+    await expect(LessonsService.getLesson('   ')).rejects.toMatchObject({
+      code: 'validation_error',
+    });
     expect(dao.getLessonById).not.toHaveBeenCalled();
   });
+
 
   it('getLesson maps a valid id raw row from LessonsDao.getLessonById', async () => {
     dao.getLessonById.mockResolvedValue({
@@ -86,11 +96,13 @@ describe('LessonsService', () => {
     });
   });
 
-  it('getLesson normalizes a DAO failure into a clear Error', async () => {
+  it('getLesson normalizes a DAO failure into a typed network_error', async () => {
     dao.getLessonById.mockRejectedValue({ message: 'not found' });
 
-    await expect(LessonsService.getLesson('lesson-1')).rejects.toThrow(
-      'LessonsService.getLesson: failed to load lesson',
-    );
+    await expect(LessonsService.getLesson('lesson-1')).rejects.toMatchObject({
+      code: 'network_error',
+      message: 'LessonsService.getLesson: failed to load lesson',
+    });
   });
 });
+

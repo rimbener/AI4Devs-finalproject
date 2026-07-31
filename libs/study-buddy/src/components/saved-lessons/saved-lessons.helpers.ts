@@ -1,12 +1,13 @@
 import type { LessonListItemData, LessonListState } from '@helsoft/components';
-import type { LessonSummary } from '@helsoft/types';
+import type { LessonSummary, LessonsErrorCode } from '@helsoft/types';
 
 /** Maps useLessons flags → LessonList state (@s4/@s5/@s13/@s14). */
 export const toLessonListState = (
   isLoading: boolean,
-  error: Error | null,
+  error: LessonsErrorCode | null,
   lessonCount: number,
 ): LessonListState => {
+
   if (isLoading) return 'loading';
   // Load Error only when the list is gone (@s14). Delete failures keep lessons — stay Content.
   if (error && lessonCount === 0) return 'error';

@@ -3,14 +3,14 @@ import { toPdfDocumentListItems, toPdfDocumentListState } from './pdf-documents.
 describe('pdf-documents.helpers', () => {
   it('maps loading / error / empty / content states', () => {
     expect(toPdfDocumentListState(true, null, 0)).toBe('loading');
-    expect(toPdfDocumentListState(false, new Error('x'), 0)).toBe('error');
+    expect(toPdfDocumentListState(false, 'network_error', 0)).toBe('error');
     expect(toPdfDocumentListState(false, null, 0)).toBe('empty');
     expect(toPdfDocumentListState(false, null, 2)).toBe('content');
   });
 
   // Delete failure sets error but keeps docs — must stay Content, not load-Error.
   it('keeps content when error is set but documents remain', () => {
-    expect(toPdfDocumentListState(false, new Error('delete failed'), 2)).toBe('content');
+    expect(toPdfDocumentListState(false, 'network_error', 2)).toBe('content');
   });
 
   // @s2/@s3/@s4/@s11 — data-only items; molecule owns labels / delete visibility.

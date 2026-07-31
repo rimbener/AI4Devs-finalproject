@@ -90,7 +90,7 @@ export const Empty: Story = {
 export const ErrorState: Story = {
   args: {
     lesson: null,
-    error: new Error('network'),
+    error: 'network_error',
     onRetry: () => {},
   },
 };

@@ -104,15 +104,19 @@ describe('useLesson', () => {
 
   // @s7 — a failed lesson read exposes the error and no lesson, loading finished.
   it('sets error and clears loading when the service rejects', async () => {
-    const failure = new Error('LessonsService.getLesson: failed to load lesson');
-    service.getLesson.mockRejectedValue(failure);
+    service.getLesson.mockRejectedValue(
+      Object.assign(new Error('LessonsService.getLesson: failed to load lesson'), {
+        code: 'network_error',
+      }),
+    );
     const { result } = renderHook(() => useLesson('lesson-1'), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    expect(result.current.error).toBe(failure);
+    expect(result.current.error).toBe('network_error');
     expect(result.current.lesson).toBeNull();
   });
+
 
   // @s8 — refetching after a failed read clears the error once it succeeds.
   it('refetch after a failed read clears the error and exposes the lesson', async () => {

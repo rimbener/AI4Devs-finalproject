@@ -312,7 +312,7 @@ describe('PdfDocuments', () => {
   // @s16 — error + retry wired to refetch.
   it('shows error copy and retries via refetch', async () => {
     const refetch = jest.fn();
-    mockUsePdfDocuments.mockReturnValue(docsValue({ error: new Error('network'), refetch }));
+    mockUsePdfDocuments.mockReturnValue(docsValue({ error: 'network_error', refetch }));
 
     await render(<PdfDocuments />);
 
@@ -655,7 +655,7 @@ describe('PdfDocuments', () => {
             lessonId: null,
           },
         ],
-        error: new Error('delete failed'),
+        error: 'network_error',
       }),
     );
 
@@ -683,7 +683,7 @@ describe('PdfDocuments', () => {
             lessonId: null,
           },
         ],
-        error: new Error('delete failed'),
+        error: 'network_error',
       }),
     );
 
@@ -715,7 +715,7 @@ describe('PdfDocuments', () => {
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     mockUsePdfDocuments.mockReturnValue(
-      docsValue({ documents: contentDocs, error: new Error('delete failed') }),
+      docsValue({ documents: contentDocs, error: 'network_error' }),
     );
     await act(async () => {
       rerender(<PdfDocuments />);
@@ -727,13 +727,13 @@ describe('PdfDocuments', () => {
 
   it('does not show the delete-failure banner while loading or on load error', async () => {
     mockUsePdfDocuments.mockReturnValue(
-      docsValue({ isLoading: true, error: new Error('delete failed') }),
+      docsValue({ isLoading: true, error: 'network_error' }),
     );
     await render(<PdfDocuments />);
     expect(screen.queryByText("We couldn't delete that PDF.")).toBeNull();
 
     mockUsePdfDocuments.mockReturnValue(
-      docsValue({ error: new Error('load failed'), documents: [] }),
+      docsValue({ error: 'network_error', documents: [] }),
     );
     await render(<PdfDocuments />);
     expect(screen.queryByText("We couldn't delete that PDF.")).toBeNull();
@@ -765,14 +765,14 @@ describe('PdfDocuments', () => {
 
     announceSpy.mockClear();
     mockUsePdfDocuments.mockReturnValue(
-      docsValue({ isLoading: true, error: new Error('delete failed') }),
+      docsValue({ isLoading: true, error: 'network_error' }),
     );
     await render(<PdfDocuments />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockClear();
     mockUsePdfDocuments.mockReturnValue(
-      docsValue({ error: new Error('load failed'), documents: [] }),
+      docsValue({ error: 'network_error', documents: [] }),
     );
     await render(<PdfDocuments />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);

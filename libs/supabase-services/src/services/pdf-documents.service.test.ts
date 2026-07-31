@@ -89,20 +89,26 @@ describe('PdfDocumentsService', () => {
     ] satisfies PdfDocumentSummary[]);
   });
 
-  it('getDocuments normalizes a DAO failure into a clear Error', async () => {
+  it('getDocuments normalizes a DAO failure into a typed network_error', async () => {
     dao.getDocuments.mockRejectedValue({ message: 'select failed' });
 
-    await expect(PdfDocumentsService.getDocuments()).rejects.toThrow(
-      'PdfDocumentsService.getDocuments: failed to load documents',
-    );
+    await expect(PdfDocumentsService.getDocuments()).rejects.toMatchObject({
+      code: 'network_error',
+      message: 'PdfDocumentsService.getDocuments: failed to load documents',
+    });
   });
 
   // @s12 — delete validates id then delegates; empty id never hits the DAO.
   it('deleteDocument rejects an empty id without calling the DAO', async () => {
-    await expect(PdfDocumentsService.deleteDocument('')).rejects.toThrow(/id/i);
-    await expect(PdfDocumentsService.deleteDocument('   ')).rejects.toThrow(/id/i);
+    await expect(PdfDocumentsService.deleteDocument('')).rejects.toMatchObject({
+      code: 'validation_error',
+    });
+    await expect(PdfDocumentsService.deleteDocument('   ')).rejects.toMatchObject({
+      code: 'validation_error',
+    });
     expect(dao.deleteDocument).not.toHaveBeenCalled();
   });
+
 
   it('deleteDocument delegates a valid id to PdfDocumentsDao.deleteDocument', async () => {
     dao.deleteDocument.mockResolvedValue(undefined);
@@ -112,11 +118,13 @@ describe('PdfDocumentsService', () => {
     expect(dao.deleteDocument).toHaveBeenCalledWith('doc-1');
   });
 
-  it('deleteDocument normalizes a DAO failure into a clear Error', async () => {
+  it('deleteDocument normalizes a DAO failure into a typed network_error', async () => {
     dao.deleteDocument.mockRejectedValue({ message: 'delete failed' });
 
-    await expect(PdfDocumentsService.deleteDocument('doc-1')).rejects.toThrow(
-      'PdfDocumentsService.deleteDocument: failed to delete document',
-    );
+    await expect(PdfDocumentsService.deleteDocument('doc-1')).rejects.toMatchObject({
+      code: 'network_error',
+      message: 'PdfDocumentsService.deleteDocument: failed to delete document',
+    });
   });
 });
+

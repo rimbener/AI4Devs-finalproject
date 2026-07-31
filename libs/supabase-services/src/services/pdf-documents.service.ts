@@ -1,7 +1,13 @@
-import type { PdfDocumentStatus, PdfDocumentSummary } from '@helsoft/types';
+import type {
+  PdfDocumentStatus,
+  PdfDocumentSummary,
+  PdfDocumentsError,
+  PdfDocumentsErrorCode,
+} from '@helsoft/types';
 
 import { PdfDocumentsDao } from '../dao/pdf-documents.dao';
 import type { UserDocumentRow } from '../dao/pdf-documents.types';
+import { toTypedError } from '../utils/typed-error';
 
 const deriveStatus = (row: UserDocumentRow): PdfDocumentStatus => {
   if (row.lesson_id) return 'generated';
@@ -21,6 +27,11 @@ const toPdfDocumentSummary = (row: UserDocumentRow): PdfDocumentSummary => {
   };
 };
 
+const toPdfDocumentsError = (
+  code: PdfDocumentsErrorCode,
+  message: string,
+): Error & PdfDocumentsError => toTypedError(code, message);
+
 /**
  * Business logic over PdfDocumentsDao: validates inputs, derives list status, normalizes failures.
  */
@@ -30,18 +41,29 @@ export abstract class PdfDocumentsService {
       const rows = await PdfDocumentsDao.getDocuments();
       return rows.map(toPdfDocumentSummary);
     } catch {
-      throw new Error('PdfDocumentsService.getDocuments: failed to load documents');
+      throw toPdfDocumentsError(
+        'network_error',
+        'PdfDocumentsService.getDocuments: failed to load documents',
+      );
     }
   }
 
   static async deleteDocument(id: string): Promise<void> {
     if (!id.trim()) {
-      return Promise.reject(new Error('PdfDocumentsService.deleteDocument: id must not be empty'));
+      return Promise.reject(
+        toPdfDocumentsError(
+          'validation_error',
+          'PdfDocumentsService.deleteDocument: id must not be empty',
+        ),
+      );
     }
     try {
       await PdfDocumentsDao.deleteDocument(id);
     } catch {
-      throw new Error('PdfDocumentsService.deleteDocument: failed to delete document');
+      throw toPdfDocumentsError(
+        'network_error',
+        'PdfDocumentsService.deleteDocument: failed to delete document',
+      );
     }
   }
 }

@@ -9,9 +9,12 @@ export * from './lesson';
 export * from './lesson-attempt';
 export * from './lesson-generation';
 export * from './lesson-summary';
+export * from './lessons-error';
 export * from './locale';
 export * from './pdf-document-summary';
+export * from './pdf-documents-error';
 export * from './profile';
+
 export * from './scorable-slide';
 export * from './score-summary';
 export * from './sign-in-params';

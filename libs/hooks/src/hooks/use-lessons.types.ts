@@ -1,9 +1,9 @@
-import type { LessonSummary } from '@helsoft/types';
+import type { LessonSummary, LessonsErrorCode } from '@helsoft/types';
 
 export type UseLessonsResult = {
   lessons: LessonSummary[];
   isLoading: boolean;
-  error: Error | null;
+  error: LessonsErrorCode | null;
   refetch: () => void;
   deleteLesson: (id: string) => void;
 };

@@ -157,7 +157,7 @@ describe('SavedLessons', () => {
   // @s14 — error + retry wired to refetch.
   it('shows error copy and retries via refetch', async () => {
     const refetch = jest.fn();
-    mockUseLessons.mockReturnValue(lessonsValue({ error: new Error('network'), refetch }));
+    mockUseLessons.mockReturnValue(lessonsValue({ error: 'network_error', refetch }));
 
     await render(<SavedLessons />);
 
@@ -259,7 +259,7 @@ describe('SavedLessons', () => {
           },
         ],
         // Hook surfaces delete failure on `error` while keeping lessons (@s8).
-        error: new Error('delete failed'),
+        error: 'network_error',
       }),
     );
 
@@ -286,7 +286,7 @@ describe('SavedLessons', () => {
             createdAt: '2026-07-13T12:00:00.000Z',
           },
         ],
-        error: new Error('delete failed'),
+        error: 'network_error',
       }),
     );
 
@@ -299,12 +299,12 @@ describe('SavedLessons', () => {
   // Mutation: delete-error banner `state === 'content' && error` → true — hide outside content.
   it('does not show the delete-failure banner while loading or on load error', async () => {
     mockUseLessons.mockReturnValue(
-      lessonsValue({ isLoading: true, error: new Error('delete failed') }),
+      lessonsValue({ isLoading: true, error: 'network_error' }),
     );
     await render(<SavedLessons />);
     expect(screen.queryByText("We couldn't delete that lesson.")).toBeNull();
 
-    mockUseLessons.mockReturnValue(lessonsValue({ error: new Error('load failed'), lessons: [] }));
+    mockUseLessons.mockReturnValue(lessonsValue({ error: 'network_error', lessons: [] }));
     await render(<SavedLessons />);
     expect(screen.queryByText("We couldn't delete that lesson.")).toBeNull();
     expect(screen.getByText("We couldn't load your lessons.")).toBeTruthy();
@@ -333,13 +333,13 @@ describe('SavedLessons', () => {
 
     announceSpy.mockClear();
     mockUseLessons.mockReturnValue(
-      lessonsValue({ isLoading: true, error: new Error('delete failed') }),
+      lessonsValue({ isLoading: true, error: 'network_error' }),
     );
     await render(<SavedLessons />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
     announceSpy.mockClear();
-    mockUseLessons.mockReturnValue(lessonsValue({ error: new Error('load failed'), lessons: [] }));
+    mockUseLessons.mockReturnValue(lessonsValue({ error: 'network_error', lessons: [] }));
     await render(<SavedLessons />);
     expect(announceSpy).not.toHaveBeenCalledWith(deleteFailed);
 
@@ -404,7 +404,7 @@ describe('SavedLessons', () => {
             createdAt: '2026-07-13T12:00:00.000Z',
           },
         ],
-        error: new Error('delete failed'),
+        error: 'network_error',
       }),
     );
 
@@ -438,7 +438,7 @@ describe('SavedLessons', () => {
 
     announceSpy.mockClear();
     mockUseLessons.mockReturnValue(
-      lessonsValue({ lessons: [lesson], error: new Error('delete failed') }),
+      lessonsValue({ lessons: [lesson], error: 'network_error' }),
     );
     await rerender(<SavedLessons />);
 

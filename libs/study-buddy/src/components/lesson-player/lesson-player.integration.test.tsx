@@ -170,7 +170,7 @@ describe('LessonPlayer integration (study-buddy -> hook -> service -> DAO)', () 
     await render(
       <LessonPlayer
         lesson={null}
-        error={new Error('network')}
+        error="network_error"
         onRetry={onRetry}
         onBackToLessons={jest.fn()}
       />,

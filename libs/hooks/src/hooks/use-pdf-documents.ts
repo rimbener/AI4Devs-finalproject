@@ -1,6 +1,8 @@
 import { PdfDocumentsService } from '@helsoft/supabase-services';
 import type { PdfDocumentSummary } from '@helsoft/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { toPdfDocumentsErrorCode } from './use-pdf-documents.helpers';
 import type { UsePdfDocumentsResult } from './use-pdf-documents.types';
 
 export const pdfDocumentsQueryKey = ['pdf-documents'] as const;
@@ -38,10 +40,12 @@ export const usePdfDocuments = (): UsePdfDocumentsResult => {
     return refetch();
   };
 
+  const rawError = deleteError ?? queryError;
+
   return {
     documents: data ?? [],
     isLoading,
-    error: deleteError ?? queryError,
+    error: rawError ? toPdfDocumentsErrorCode(rawError) : null,
     refetch: refetchAndClearDeleteError,
     deleteDocument,
   };
