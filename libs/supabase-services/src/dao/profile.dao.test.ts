@@ -1,7 +1,7 @@
 jest.mock('../supabase/supabase-client', () => ({ getSupabase: jest.fn() }));
 
-import { ProfileDao } from '../index';
 import { getSupabase } from '../supabase/supabase-client';
+import { ProfileDao } from './profile.dao';
 
 const mockGetSupabase = getSupabase as jest.Mock;
 
@@ -22,17 +22,10 @@ describe('ProfileDao', () => {
   });
 
   it('@s2 reads the current caller profile with plan flags via profiles→plans join', async () => {
-    single.mockResolvedValue({
-      data: { plan_id: 'free', plans: freePlansEmbed },
-      error: null,
-    });
+    const row = { plan_id: 'free', plans: freePlansEmbed };
+    single.mockResolvedValue({ data: row, error: null });
 
-    await expect(ProfileDao.getCurrentProfile()).resolves.toEqual({
-      plan: 'free',
-      usePlatformKey: false,
-      showAds: true,
-      showKeySettings: true,
-    });
+    await expect(ProfileDao.getCurrentProfile()).resolves.toEqual(row);
     expect(from).toHaveBeenCalledWith('profiles');
     expect(select).toHaveBeenCalledWith(
       'plan_id, plans(use_platform_key, show_ads, show_key_settings)',

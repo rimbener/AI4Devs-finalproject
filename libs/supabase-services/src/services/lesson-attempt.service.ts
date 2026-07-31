@@ -1,6 +1,7 @@
 import type { LessonAttempt, NewLessonAttempt } from '@helsoft/types';
 
 import { LessonAttemptDao } from '../dao/lesson-attempt.dao';
+import type { RawLessonAttemptRow } from '../dao/lesson-attempt.types';
 
 /**
  * Business logic over LessonAttemptDao: validates the score payload before persisting.
@@ -16,10 +17,18 @@ const validationError = (input: NewLessonAttempt): string | null => {
   return null;
 };
 
+const toLessonAttempt = (row: RawLessonAttemptRow): LessonAttempt => ({
+  id: row.id,
+  lessonId: row.lesson_id,
+  score: row.score,
+  total: row.total,
+  createdAt: row.created_at,
+});
+
 export abstract class LessonAttemptService {
-  static saveAttempt(input: NewLessonAttempt): Promise<LessonAttempt> {
+  static async saveAttempt(input: NewLessonAttempt): Promise<LessonAttempt> {
     const error = validationError(input);
     if (error) return Promise.reject(new Error(error));
-    return LessonAttemptDao.insertAttempt(input);
+    return toLessonAttempt(await LessonAttemptDao.insertAttempt(input));
   }
 }

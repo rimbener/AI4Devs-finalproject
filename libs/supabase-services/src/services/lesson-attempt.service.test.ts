@@ -10,16 +10,15 @@ const dao = LessonAttemptDao as jest.Mocked<typeof LessonAttemptDao>;
 describe('LessonAttemptService', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  // @s6 — a valid attempt is persisted via the DAO; the service composes no update path.
-  it('saveAttempt delegates a valid attempt to LessonAttemptDao.insertAttempt', async () => {
-    const attempt = {
+  // @s6 — a valid attempt is persisted via the DAO; the service maps the raw row.
+  it('saveAttempt maps a valid DAO row to LessonAttempt', async () => {
+    dao.insertAttempt.mockResolvedValue({
       id: 'attempt-1',
-      lessonId: 'lesson-1',
+      lesson_id: 'lesson-1',
       score: 3,
       total: 3,
-      createdAt: '2026-07-11T00:00:00.000Z',
-    };
-    dao.insertAttempt.mockResolvedValue(attempt);
+      created_at: '2026-07-11T00:00:00.000Z',
+    });
 
     const result = await LessonAttemptService.saveAttempt({
       lessonId: 'lesson-1',
@@ -28,7 +27,13 @@ describe('LessonAttemptService', () => {
     });
 
     expect(dao.insertAttempt).toHaveBeenCalledWith({ lessonId: 'lesson-1', score: 3, total: 3 });
-    expect(result).toBe(attempt);
+    expect(result).toEqual({
+      id: 'attempt-1',
+      lessonId: 'lesson-1',
+      score: 3,
+      total: 3,
+      createdAt: '2026-07-11T00:00:00.000Z',
+    });
   });
 
   // Validation — a non-positive total, a negative score, a score exceeding the total, and an
@@ -49,14 +54,13 @@ describe('LessonAttemptService', () => {
   // rejection tests above only exercise a negative score, which would still reject even if the
   // operator were mistakenly `<=`).
   it('does not reject when score is exactly zero', async () => {
-    const attempt = {
+    dao.insertAttempt.mockResolvedValue({
       id: 'attempt-2',
-      lessonId: 'lesson-1',
+      lesson_id: 'lesson-1',
       score: 0,
       total: 3,
-      createdAt: '2026-07-11T00:00:00.000Z',
-    };
-    dao.insertAttempt.mockResolvedValue(attempt);
+      created_at: '2026-07-11T00:00:00.000Z',
+    });
 
     const result = await LessonAttemptService.saveAttempt({
       lessonId: 'lesson-1',
@@ -65,6 +69,12 @@ describe('LessonAttemptService', () => {
     });
 
     expect(dao.insertAttempt).toHaveBeenCalledWith({ lessonId: 'lesson-1', score: 0, total: 3 });
-    expect(result).toBe(attempt);
+    expect(result).toEqual({
+      id: 'attempt-2',
+      lessonId: 'lesson-1',
+      score: 0,
+      total: 3,
+      createdAt: '2026-07-11T00:00:00.000Z',
+    });
   });
 });

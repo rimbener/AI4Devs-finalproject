@@ -52,8 +52,8 @@ describe('LessonsDao', () => {
     expect(order).toHaveBeenCalledWith('created_at', { ascending: false });
     expect(eq).not.toHaveBeenCalled();
     expect(result).toEqual([
-      { id: 'lesson-2', title: 'Newer', createdAt: '2026-07-13T12:00:00.000Z' },
-      { id: 'lesson-1', title: 'Older', createdAt: '2026-07-12T12:00:00.000Z' },
+      { id: 'lesson-2', title: 'Newer', created_at: '2026-07-13T12:00:00.000Z' },
+      { id: 'lesson-1', title: 'Older', created_at: '2026-07-12T12:00:00.000Z' },
     ]);
   });
 
@@ -97,7 +97,7 @@ describe('LessonsDao', () => {
   });
 
   // @s17 feed — full Lesson by id (slides JSON column); RLS scopes ownership (no user_id filter).
-  it('getLessonById selects full lesson fields and maps snake_case to Lesson', async () => {
+  it('getLessonById selects full lesson fields and returns the raw snake_case row', async () => {
     const slides = [
       {
         id: 'slide-1',
@@ -108,16 +108,14 @@ describe('LessonsDao', () => {
         kind: 'instructional' as const,
       },
     ];
-    single.mockResolvedValue({
-      data: {
-        id: 'lesson-1',
-        title: 'Capitals',
-        slides,
-        created_at: '2026-07-12T12:00:00.000Z',
-        user_id: 'user-1',
-      },
-      error: null,
-    });
+    const row = {
+      id: 'lesson-1',
+      title: 'Capitals',
+      slides,
+      created_at: '2026-07-12T12:00:00.000Z',
+      user_id: 'user-1',
+    };
+    single.mockResolvedValue({ data: row, error: null });
 
     const result = await LessonsDao.getLessonById('lesson-1');
 
@@ -126,13 +124,7 @@ describe('LessonsDao', () => {
     expect(eq).toHaveBeenCalledWith('id', 'lesson-1');
     expect(single).toHaveBeenCalled();
     expect(eq.mock.calls.every((call) => call[0] !== 'user_id')).toBe(true);
-    expect(result).toEqual({
-      id: 'lesson-1',
-      title: 'Capitals',
-      slides,
-      createdAt: '2026-07-12T12:00:00.000Z',
-      userId: 'user-1',
-    });
+    expect(result).toEqual(row);
   });
 
   it('throws the raw supabase error when getLessonById fails', async () => {

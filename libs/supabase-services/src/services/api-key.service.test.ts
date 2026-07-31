@@ -34,8 +34,16 @@ describe('ApiKeyService', () => {
       const status = keysStatus(['groq']);
       dao.saveApiKey.mockResolvedValue(status);
 
-      await expect(ApiKeyService.saveApiKey('groq', 'sk-test-key')).resolves.toBe(status);
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test-key')).resolves.toEqual(status);
       expect(dao.saveApiKey).toHaveBeenCalledWith({ provider: 'groq', apiKey: 'sk-test-key' });
+    });
+
+    it('normalizes invalid manage-api-key save payloads to network_error', async () => {
+      dao.saveApiKey.mockResolvedValue({ keys: 'not-an-array' });
+
+      await expect(ApiKeyService.saveApiKey('groq', 'sk-test')).rejects.toMatchObject({
+        code: 'network_error',
+      });
     });
 
     // @s4 — replacing a key for a provider runs through the same DAO call (Edge upserts)
@@ -193,12 +201,14 @@ describe('ApiKeyService', () => {
   });
 
   describe('getApiKeyStatus', () => {
-    // @s1 — DAO's status returned as-is
-    it('returns the full keys status from the DAO', async () => {
-      const status = keysStatus(['groq', 'openai']);
-      dao.getApiKeyStatus.mockResolvedValue(status);
+    // @s1 — maps raw DAO rows into ApiKeyStatus
+    it('maps raw DAO rows to the full keys status', async () => {
+      dao.getApiKeyStatus.mockResolvedValue([
+        { provider: 'groq', updated_at: '2026-01-01T00:00:00.000Z' },
+        { provider: 'openai', updated_at: '2026-01-01T00:00:00.000Z' },
+      ]);
 
-      await expect(ApiKeyService.getApiKeyStatus()).resolves.toBe(status);
+      await expect(ApiKeyService.getApiKeyStatus()).resolves.toEqual(keysStatus(['groq', 'openai']));
     });
 
     // @s7 — a failed read degrades to empty keys (never throws)
@@ -210,13 +220,21 @@ describe('ApiKeyService', () => {
   });
 
   describe('removeApiKey', () => {
-    // @s5 — a successful remove returns the DAO's updated keys status
+    // @s5 — a successful remove validates and returns the Edge payload
     it('returns the updated keys status from the DAO on success', async () => {
       const status = keysStatus(['openai']);
       dao.removeApiKey.mockResolvedValue(status);
 
       await expect(ApiKeyService.removeApiKey('groq')).resolves.toEqual(status);
       expect(dao.removeApiKey).toHaveBeenCalledWith('groq');
+    });
+
+    it('normalizes invalid manage-api-key remove payloads to network_error', async () => {
+      dao.removeApiKey.mockResolvedValue(null);
+
+      await expect(ApiKeyService.removeApiKey('groq')).rejects.toMatchObject({
+        code: 'network_error',
+      });
     });
 
     // @s5 (failure) — a failed remove normalizes to network_error

@@ -1,15 +1,31 @@
 import type { Lesson, LessonSummary } from '@helsoft/types';
 
 import { LessonsDao } from '../dao/lessons.dao';
+import type { RawLessonRow, RawLessonSummaryRow } from '../dao/lessons.types';
+
+const toLessonSummary = (row: RawLessonSummaryRow): LessonSummary => ({
+  id: row.id,
+  title: row.title,
+  createdAt: row.created_at,
+});
+
+const toLesson = (row: RawLessonRow): Lesson => ({
+  id: row.id,
+  title: row.title,
+  slides: row.slides,
+  createdAt: row.created_at,
+  userId: row.user_id,
+});
 
 /**
- * Business logic over LessonsDao: validates inputs and normalizes DAO failures.
+ * Business logic over LessonsDao: validates inputs, maps raw rows, normalizes DAO failures.
  * Read-only in Slice 1 — the client never inserts lessons (Edge Function owns persist).
  */
 export abstract class LessonsService {
   static async getLessons(): Promise<LessonSummary[]> {
     try {
-      return await LessonsDao.getLessons();
+      const rows = await LessonsDao.getLessons();
+      return rows.map(toLessonSummary);
     } catch {
       throw new Error('LessonsService.getLessons: failed to load lessons');
     }
@@ -20,7 +36,7 @@ export abstract class LessonsService {
       return Promise.reject(new Error('LessonsService.getLesson: id must not be empty'));
     }
     try {
-      return await LessonsDao.getLessonById(id);
+      return toLesson(await LessonsDao.getLessonById(id));
     } catch {
       throw new Error('LessonsService.getLesson: failed to load lesson');
     }

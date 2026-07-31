@@ -1,7 +1,14 @@
-import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
+import type {
+  AiProvider,
+  ApiKeyError,
+  ApiKeyErrorCode,
+  ApiKeyStatus,
+  SavedProviderKey,
+} from '@helsoft/types';
 import { FunctionsHttpError } from '@supabase/supabase-js';
 
 import { ApiKeyDao } from '../dao/api-key.dao';
+import type { RawUserAiKeyRow } from '../dao/api-key.types';
 import { toTypedError } from '../utils/typed-error';
 
 const toApiKeyError = (code: ApiKeyErrorCode, message: string): Error & ApiKeyError =>
@@ -64,10 +71,36 @@ const normalizeApiKeyError = async (cause: unknown): Promise<Error & ApiKeyError
   return networkError();
 };
 
+const isApiKeyStatus = (value: unknown): value is ApiKeyStatus =>
+  typeof value === 'object' &&
+  value !== null &&
+  Array.isArray((value as ApiKeyStatus).keys) &&
+  (value as ApiKeyStatus).keys.every(
+    (entry) =>
+      typeof entry.provider === 'string' &&
+      typeof (entry as SavedProviderKey).updatedAt === 'string',
+  );
+
+const parseManageApiKeyStatus = (data: unknown): ApiKeyStatus => {
+  if (!isApiKeyStatus(data)) {
+    throw new Error('manage-api-key returned an invalid status payload');
+  }
+  return data;
+};
+
+const toApiKeyStatus = (rows: RawUserAiKeyRow[]): ApiKeyStatus => ({
+  keys: rows.map(
+    (row): SavedProviderKey => ({
+      provider: row.provider as AiProvider,
+      updatedAt: row.updated_at,
+    }),
+  ),
+});
+
 /**
- * Business logic over ApiKeyDao: validates the key before ever calling the DAO, normalizes
- * every save/remove failure into the typed ApiKeyErrorCode contract, and shields a status
- * read from crashing the UI on failure.
+ * Business logic over ApiKeyDao: validates the key before ever calling the DAO, maps raw rows /
+ * Edge payloads into ApiKeyStatus, normalizes every save/remove failure into the typed
+ * ApiKeyErrorCode contract, and shields a status read from crashing the UI on failure.
  */
 export abstract class ApiKeyService {
   static async saveApiKey(provider: AiProvider, rawKey: string): Promise<ApiKeyStatus> {
@@ -75,7 +108,7 @@ export abstract class ApiKeyService {
       throw validationError();
     }
     try {
-      return await ApiKeyDao.saveApiKey({ provider, apiKey: rawKey });
+      return parseManageApiKeyStatus(await ApiKeyDao.saveApiKey({ provider, apiKey: rawKey }));
     } catch (cause) {
       throw await normalizeApiKeyError(cause);
     }
@@ -83,7 +116,7 @@ export abstract class ApiKeyService {
 
   static async getApiKeyStatus(): Promise<ApiKeyStatus> {
     try {
-      return await ApiKeyDao.getApiKeyStatus();
+      return toApiKeyStatus(await ApiKeyDao.getApiKeyStatus());
     } catch {
       return { keys: [] };
     }
@@ -91,7 +124,7 @@ export abstract class ApiKeyService {
 
   static async removeApiKey(provider: AiProvider): Promise<ApiKeyStatus> {
     try {
-      return await ApiKeyDao.removeApiKey(provider);
+      return parseManageApiKeyStatus(await ApiKeyDao.removeApiKey(provider));
     } catch (cause) {
       throw await normalizeApiKeyError(cause);
     }

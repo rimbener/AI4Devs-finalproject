@@ -40,17 +40,15 @@ describe('LessonAttemptDao', () => {
     expect(insert).toHaveBeenCalledWith({ lesson_id: 'lesson-1', score: 3, total: 3 });
   });
 
-  it('maps the inserted row to a camelCase LessonAttempt', async () => {
-    single.mockResolvedValue({
-      data: {
-        id: 'attempt-1',
-        lesson_id: 'lesson-1',
-        score: 3,
-        total: 3,
-        created_at: '2026-07-11T00:00:00.000Z',
-      },
-      error: null,
-    });
+  it('returns the inserted raw snake_case row', async () => {
+    const row = {
+      id: 'attempt-1',
+      lesson_id: 'lesson-1',
+      score: 3,
+      total: 3,
+      created_at: '2026-07-11T00:00:00.000Z',
+    };
+    single.mockResolvedValue({ data: row, error: null });
 
     const result = await LessonAttemptDao.insertAttempt({
       lessonId: 'lesson-1',
@@ -58,13 +56,7 @@ describe('LessonAttemptDao', () => {
       total: 3,
     });
 
-    expect(result).toEqual({
-      id: 'attempt-1',
-      lessonId: 'lesson-1',
-      score: 3,
-      total: 3,
-      createdAt: '2026-07-11T00:00:00.000Z',
-    });
+    expect(result).toEqual(row);
   });
 
   // Failure path — a Supabase insert error is thrown as-is; the service decides what it means.

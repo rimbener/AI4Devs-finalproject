@@ -1,13 +1,17 @@
 export * from './ai-providers.dao';
 export type * from './ai-providers.types';
 export * from './api-key.dao';
+export type * from './api-key.types';
 export * from './auth.dao';
 export type * from './auth.types';
 export * from './lesson-attempt.dao';
+export type * from './lesson-attempt.types';
 export * from './lesson-generation.dao';
 export * from './lesson-image.dao';
 export * from './lessons.dao';
+export type * from './lessons.types';
 export * from './pdf-documents.dao';
 export * from './pdf-upload.dao';
 export type * from './pdf-upload.types';
 export * from './profile.dao';
+export type * from './profile.types';

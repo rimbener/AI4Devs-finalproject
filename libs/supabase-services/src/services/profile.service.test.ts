@@ -12,10 +12,12 @@ describe('ProfileService', () => {
 
   it('@s2 maps free plan flags to user-key entitlements', async () => {
     dao.getCurrentProfile.mockResolvedValue({
-      plan: 'free',
-      usePlatformKey: false,
-      showAds: true,
-      showKeySettings: true,
+      plan_id: 'free',
+      plans: {
+        use_platform_key: false,
+        show_ads: true,
+        show_key_settings: true,
+      },
     });
 
     await expect(ProfileService.getProfile()).resolves.toEqual({
@@ -28,10 +30,12 @@ describe('ProfileService', () => {
 
   it('@s9 maps paid plan flags to platform entitlements without key settings or ads', async () => {
     dao.getCurrentProfile.mockResolvedValue({
-      plan: 'paid',
-      usePlatformKey: true,
-      showAds: false,
-      showKeySettings: false,
+      plan_id: 'paid',
+      plans: {
+        use_platform_key: true,
+        show_ads: false,
+        show_key_settings: false,
+      },
     });
 
     await expect(ProfileService.getProfile()).resolves.toEqual({
@@ -44,15 +48,43 @@ describe('ProfileService', () => {
 
   it('@s16 exposes showAds from the plan row without starting ad behavior', async () => {
     dao.getCurrentProfile.mockResolvedValue({
-      plan: 'free',
-      usePlatformKey: false,
-      showAds: true,
-      showKeySettings: true,
+      plan_id: 'free',
+      plans: {
+        use_platform_key: false,
+        show_ads: true,
+        show_key_settings: true,
+      },
     });
 
     await expect(ProfileService.getProfile()).resolves.toMatchObject({
       plan: 'free',
       showAds: true,
     });
+  });
+
+  it('unwraps a plans embed returned as a one-element array', async () => {
+    dao.getCurrentProfile.mockResolvedValue({
+      plan_id: 'free',
+      plans: [
+        {
+          use_platform_key: false,
+          show_ads: true,
+          show_key_settings: true,
+        },
+      ],
+    });
+
+    await expect(ProfileService.getProfile()).resolves.toEqual({
+      plan: 'free',
+      keySource: 'user',
+      showKeySettings: true,
+      showAds: true,
+    });
+  });
+
+  it('rejects when the plans embed is missing', async () => {
+    dao.getCurrentProfile.mockResolvedValue({ plan_id: 'free', plans: null });
+
+    await expect(ProfileService.getProfile()).rejects.toThrow('Plan not found');
   });
 });
