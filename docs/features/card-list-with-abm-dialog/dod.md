@@ -312,3 +312,143 @@ All DoD gates confirmed passed after the molecule extraction mini-gate:
 
 **Reference line**: `dod_validator` / second re-validation after CardListRow extraction mini-gate / 2026-07-27.
 
+---
+feature: card-list-with-abm-dialog
+verdict: PASS
+reference: dod_validator / Mini-gate 3 post-mutation-kill re-review / 2026-07-31
+---
+
+# Definition of Done — card-list-with-abm-dialog (Round 4: Mini-gate 3 post-mutation-kill validation)
+
+## Verdict
+
+**PASS** — all DoD gates met. The full Mini-gate 3 cycle (architecture rewrite + Add-dialog feature + real consumer wiring) has passed:
+- Full review Round 1: 9 findings, all resolved
+- Full review Round 2 (fix-delta verification): zero findings open, APPROVED
+- Mutation kill pass Round 9: 99.84% score, 1 documented-equivalent survivor
+- Mutation kill production-source re-review Round 1: 1 minor finding (testID namespacing)
+- Mutation kill production-source re-review Round 2: minor finding resolved, zero findings open, APPROVED
+
+Feature is ready for PR. **See "Outstanding stale documentation" below.**
+
+---
+
+## Functionality — all 27 scenarios implemented & tested
+
+- [x] **@s1–@s27 documented** — gherkin-scenarios.md contains all 27 scenarios, 100% coverage:
+  - @s1-@s20: original organism/dialog scenarios (title, add button, cards, disabled state, edit/remove dialogs, isSubmitting, empty state)
+  - @s21-@s27: new Add-dialog feature scenarios (add dialog open, submit, cancel, no-flash on close, mutual exclusivity, errorMessage, submitDisabled)
+  - All scenarios traced to concrete tests in `.test.tsx`/`.e2e.js`/Storybook stories
+
+- [x] **Unit + E2E + Storybook coverage confirmed**:
+  - Unit: 72 suites / 536–549 tests green (varies by round as new testID cases added; final: 549)
+  - E2E: 5/5 passed (card-list-with-abm-dialog.e2e.js), 1/1 passed (dialog.e2e.js), 6/6 total
+  - Storybook: 11+ stories covering the full state matrix (Populated, EmptyWithMessage, EmptyWithoutMessage, DisabledCard, EditOnlyCard, RemoveOnlyCard, EditDialogOpen, RemoveDialogOpen, EditDialogSubmitting, RemoveDialogSubmitting, Interactive)
+
+- [x] **No hardcoded user-facing strings** — all chrome (title, button labels, dialog titles, empty state text, accessible names) is caller-supplied props. Confirmed via review.md's full-review Round 1 lens coverage.
+
+---
+
+## Code quality
+
+- [x] **`pnpm lint` clean** — lint: 0 errors, biome check green across 14 packages (turbo cache hit).
+
+- [x] **`pnpm check-types` clean** — check-types: tsc --noEmit green across 14 workspaces (turbo cache hit).
+
+- [x] **`pnpm test` green** — all 12 packages with tests: 549 tests total in final mutation-kill round, zero failures. Feature's own tests: 72 suites / 536+ tests (70 in @helsoft/components alone for card-list-with-abm-dialog + card-list-row).
+
+- [x] **E2E non-interactive via Playwright** — card-list-with-abm-dialog.e2e.js (5/5) + dialog.e2e.js (1/1), run with `--reporter=list`, fresh Storybook server start, no flake across review cycles.
+
+- [x] **No TODOs without issues; Conventional Commits** — review.md Round 1 lens coverage (code quality/TDD discipline) confirmed no console/debugger/bare-TODO leftovers. All commits follow conventional commit format (evidenced by git log in the durable review trail).
+
+---
+
+## Architecture
+
+- [x] **`Component→Hook→Service→DAO` respected; no cross-layer imports** — review.md Full review Round 1 confirmed: `Component → Hook → (no DAO/Service)` chain held for the entire feature. Real consumer `ApiKeySettingsScreen` correctly wraps `useApiKey()` hook (which wraps `ApiKeyService` via TanStack Query).
+
+- [x] **DTOs not leaked out of data/DAO; barrels updated** — review.md finding 7 (code minor) verified: all 4 testID constants/functions moved from `.types.ts` (type-only) to `.helpers.ts`; every consumer import switched; `molecules/index.ts` barrel entry added for `CardListRow` (flat/portable, zero organism import).
+
+- [x] **No unapproved dependencies** — review.md and review-engineering.md confirmed zero new dependency added; feature reuses existing `Card`, `Button`, `IconButton`, `Dialog`, `SubmittingIndicator`, `ErrorBanner` atoms/molecules unchanged.
+
+- [x] **Atom/molecule/organism split now consolidated into organism-private subfolders** — review.md finding 1 (arch major) fixed: `CardListWithABMDialogHeader`/`List`/`Dialog` moved from shared `atoms/`/`molecules/`/`organisms/` top-level into private `organisms/card-list-with-abm-dialog/components/{header,list,dialog}/` subfolders. Matches the existing `components/card-list-row-adapter.tsx` precedent.
+
+---
+
+## Design system
+
+- [x] **Tokens/existing components reused; correct atomic-design placement** — review.md Full review Round 1 confirmed: disabled state uses `theme.disabledOpacity` (0.38, reused from Button/IconButton); typography via `theme.typography.*` (titleLarge, bodyLarge); spacing via `theme.spacing.*` (s1–s4); touch targets `layout.touchTarget` (48dp) on all `IconButton`s; no new colors/tokens introduced, no hardcoded hex/rgb/px values.
+
+- [x] **Storybook story per shared component (4+ states)** — `CardListRow` molecule ships `card-list-row.stories.tsx` covering BothIcons, EditOnly, RemoveOnly, Disabled; `CardListWithABMDialog` organism ships 11+ stories; each component atom/molecule that was barrel-exported has coverage.
+
+- [x] **Every component has a Jest unit test** — `card-list-with-abm-dialog.test.tsx` (30+ cases), `use-card-list-with-abm-dialog.test.ts` (12 cases including new grace-timer tests), `card-list-row.test.tsx` (10 cases for the molecule), `dialog.test.tsx` (14 cases including new testID-prefix coverage from mutation-kill re-review).
+
+---
+
+## Security (OWASP)
+
+- [x] **No secrets/keys in code or logs; inputs validated** — review.md Full review Round 1 marked security "N/A" (pure presentational UI organism in @helsoft/components); review.md finding 8 (security minor, OWASP A08-adjacent) added scheme validation for `Linking.openURL` in the real consumer (`ApiKeySettingsScreen`): `isSafeExternalUrl()` early-return guard, test-first (7 cases: http/https/uppercase accepted, javascript:/data:/protocol-less/empty rejected).
+
+- [x] **Supabase RLS/auth respected; no PII in logs; TLS for external calls** — review.md Full review Round 1 confirmed: no direct Supabase/auth surface touched in the feature itself (organism is pure UI); real consumer (`ApiKeySettingsScreen`) correctly uses `useApiKey()` hook which wraps `ApiKeyService` (service respects RLS per the app's established patterns); Linking.openURL now guarded by scheme validation (finding 8).
+
+---
+
+## Accessibility (WCAG 2.2 AA)
+
+- [x] **Labels/roles; contrast ≥ 4.5:1; touch targets ≥ 44/48; focus order; dynamic type** — review.md Full review Round 1 confirmed all WCAG 2.2 AA criteria: per-card edit/remove `IconButton`s have `accessibilityLabel` via `getEditAccessibilityLabel(item)`/`getRemoveAccessibilityLabel(item)` (required type per spec.md decision 4); all icons have `accessibilityRole="button"` (intrinsic); touch targets 48dp minimum; disabled state conveyed by both opacity and `accessibilityState.disabled`; dialog's scrim/Escape/Cancel all route through `onClose` (keyboard access); `SubmittingIndicator` has `accessibilityLiveRegion="polite"` (live region announcement).
+
+---
+
+## Testing rigor
+
+- [x] **Every `@s` scenario covered** — all 27 scenarios (@s1-@s27) have ≥1 concrete test (unit or e2e or story). Traceability confirmed in review.md Round 1 code-quality lens (every `@s` maps to a test; no repeat collision as in the pre-Mini-gate-3 @s17 mislabeling, which was fixed).
+
+- [x] **Mutation score threshold genuinely met** — mutation.md Round 9: **99.84% (641 killed / 642 valid mutants, 1 survivor, 44 error mutants, 686 total)**. The 1 survivor is **documented-equivalent in source** with justification (`card-list-with-abm-dialog.tsx` initialDialogState `'closed'` StringLiteral, can only ever seed first render while isSubmitting false, no path makes Dialog visible from that state, both `'closed'` and any other non-`'open'`/`'submitting'` string are observationally identical). This survivor was preserved through all prior rounds (2, 3, 5, 7) with the same reasoning — not a new exception or a rewritten fabrication.
+
+- [x] **No rewritten survivors / `human-excluded` fabrication; error mutants not propping up score** — mutation.md Round 9 breakdown by lib:
+  - @helsoft/services: 100.0% (7 total, 6 killed, 1 error)
+  - @helsoft/hooks: 100.0% (77 total, 44 killed, 33 errors)
+  - @helsoft/components: 100.0% (244 total, 238 killed, 6 errors)
+  - @helsoft/study-buddy: 99.7% (358 total, 353 killed, 1 survivor, 4 errors)
+  - All error mutants are type mismatches (timeout/CompileError/RuntimeError from the test sandbox), not masked survivors or artificial passes. Round 9's investigation section confirms every Round-8 survivor (113 total) was either killed by a strengthened/new test or documented as genuinely equivalent.
+
+- [x] **Review history retained — non-empty durable trails** — review.md, review-engineering.md, review-slice.md, review-spec.md all present and non-empty. Every finding across all rounds (initial Round 1/2, three mini-gates, Full review Round 1/2, mutation-kill re-review Round 1/2) is retained with status marked resolved/ACCEPTED, not deleted or wiped. Durable trail note at review.md's end (line 1072+) explicitly states nothing was deleted across the full history.
+
+---
+
+## Observability & i18n
+
+- [x] **No hardcoded strings** — all user-facing chrome is caller-supplied props (title, button labels, dialog titles, empty-state message). `SubmittingIndicator` (reused molecule) calls `useLocalization()` for `general.saving` — mocked in tests. Confirmed via review.md Full review Round 1 lens coverage.
+
+- [x] **No logging added** — diff is pure UI; no console.log, no analytics events (out of scope per spec.md). Confirmed via review.md Code-quality lens (no console/debug leftovers).
+
+---
+
+## Outstanding stale documentation
+
+**`spec.md`'s "Outstanding" section (lines 87-88) is now STALE and should be updated.**
+
+The section states: "The architecture rewrite... and the Add-dialog/`errorMessage`/`submitDisabled` features... have **not** been through `spec_partner`/`spec_reviewer`/the human gate..., `reviewer_slice`/`reviews_lead`, or a fresh `mutation_tester` run. `review.md`, `review-engineering.md`, `mutation.md`, and `dod.md` are all flagged `STALE`..."
+
+**Actual state (as of 2026-07-31):**
+- `spec_partner`/`spec_reviewer` — spec.md itself is the post-hoc documentation (reviewed and amended by the human); `review-spec.md` is APPROVED (0 findings)
+- `reviewer_slice` — `review-slice.md` covers task-1/2/3 (pre-Mini-gate-3); the human requested Mini-gate 3 be a formal full review, which it received
+- `reviews_lead` — Mini-gate 3 Full review Round 1 (9 findings) + Round 2 (fix-delta verification, zero findings open): both APPROVED
+- `mutation_tester` — Round 9 kill pass (99.84%, 1 documented survivor): APPROVED
+- Mutation-kill production-source re-review — Round 1 (1 minor) + Round 2 (zero findings open): APPROVED
+
+All gates have now been completed. The `STALE` flags on `review.md` (line 1), `mutation.md` (implicit in the header history), and `dod.md` (line 9-14 of the prior round) should be removed or updated to reflect that the current code has been fully reviewed and mutation-tested.
+
+**Recommendation:** the human or `orchestrator_lead` should:
+1. Remove or amend the "Outstanding" section of `spec.md` (lines 87-88) to reflect that all gates have been completed.
+2. Remove the initial `STALE` warning from `review.md` line 1-5 (those warnings were appropriate when Mini-gate 3's code first landed; they are no longer accurate).
+
+This is **not** a blocker on the DoD verdict — the code itself is solid and all gates are passed — but the documentation should reflect current reality for future readers.
+
+---
+
+## Trace to orchestrator
+
+- **Phase**: `mutation` → ready for `pr_ready` (manual human step).
+- **Orchestrator reference**: `/ORCHESTRATOR_PLAN.md` §7 DoD categories + `.agents/ORCHESTRATOR.md` gate definition.
+- **Next step**: `orchestrator_lead` (after this dod_validator report): update `tasks.md` phase to `pr_ready` and update spec.md's stale documentation; manual human approval to create + merge PR.
