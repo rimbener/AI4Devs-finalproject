@@ -1,18 +1,11 @@
 import { Button, Card, Icon } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
-import type { MatchingAnswer } from '@helsoft/types';
-import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { gradeMatching, isMatchingSlideValid } from '../../grading/grade-matching';
-import { findPairForItem, itemAccessibilityLabel } from './matching.helpers';
-import type {
-  ItemVisualState,
-  MatchingItemView,
-  MatchingProps,
-  MatchingResult,
-} from './matching.types';
+import { itemAccessibilityLabel } from './matching.helpers';
+import type { ItemVisualState, MatchingItemView, MatchingProps } from './matching.types';
 import { useMatching } from './use-matching';
 
 /** Matching — pairs + grades; reports via `onAnswered` once. */
@@ -24,41 +17,29 @@ export const Matching = ({
 }: MatchingProps) => {
   const { theme } = useUnistyles();
   const { t } = useLocalization();
-  const [answer, setAnswer] = useState<MatchingAnswer | null>(initialAnswer);
   const valid = isMatchingSlideValid(slide);
 
-  const result: MatchingResult | null = answer
-    ? {
-        pairs: answer.pairs,
-        isCorrect: answer.isCorrect,
-        summary: t('activity.matching.summary', {
-          correct: answer.correctPairCount,
-          total: answer.totalPairCount,
-        }),
-      }
-    : null;
-
   const {
-    pending,
+    answer,
+    result,
     locked,
     isUnavailable,
     formedPairs,
     itemState,
-    setFormedPairs,
-    setPending,
+    dispatch,
     allPaired,
   } = useMatching({
     leftItems: slide.leftItems,
     rightItems: slide.rightItems,
     unavailable: !valid,
     initialPairs,
-    result,
+    initialAnswer,
   });
 
   const handleSubmit = () => {
     if (answer || !valid) return;
     const graded = gradeMatching(slide, formedPairs);
-    setAnswer(graded);
+    dispatch({ type: 'submit', answer: graded });
     onAnswered?.(graded);
   };
 
@@ -70,39 +51,8 @@ export const Matching = ({
     );
   }
 
-  const releasePair = (itemId: string) => {
-    setFormedPairs((prev) =>
-      prev.filter((pair) => pair.leftId !== itemId && pair.rightId !== itemId),
-    );
-    setPending(null);
-  };
-
   const handleItemPress = (column: 'left' | 'right', id: string) => {
-    const existing = findPairForItem(formedPairs, id);
-    if (existing) {
-      releasePair(id);
-      return;
-    }
-
-    if (!pending) {
-      setPending({ column, id });
-      return;
-    }
-
-    if (pending.column === column && pending.id === id) {
-      setPending(null);
-      return;
-    }
-
-    if (pending.column === column) {
-      setPending({ column, id });
-      return;
-    }
-
-    const leftId = column === 'left' ? id : pending.id;
-    const rightId = column === 'right' ? id : pending.id;
-    setFormedPairs((prev) => [...prev, { leftId, rightId }]);
-    setPending(null);
+    dispatch({ type: 'item/press', column, id });
   };
 
   const renderItem = (column: 'left' | 'right', item: MatchingItemView) => {

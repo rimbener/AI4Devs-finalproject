@@ -30,5 +30,5 @@ export type UseMatchingProps = {
   rightItems: MatchingItemView[];
   unavailable?: boolean;
   initialPairs?: MatchingPairSelection[];
-  result?: MatchingResult | null;
+  initialAnswer?: MatchingAnswer | null;
 };

@@ -1,33 +1,47 @@
 import { useLocalization } from '@helsoft/localization';
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { AccessibilityInfo, Platform } from 'react-native';
+
 import { findPairForItem } from './matching.helpers';
 import type {
   ItemVisualState,
-  MatchingPairSelection,
-  PendingSelection,
+  MatchingResult,
   UseMatchingProps,
 } from './matching.types';
+import { createMatchingInitialState, matchingReducer } from './use-matching.reducer';
 
 /**
  * Matching interaction + derived state for the matching organism.
- * Owns ephemeral tap-to-pair while unsubmitted; locks from `result` once graded.
+ * Owns pending / formedPairs / answer via reducer; locks once graded.
  */
 export const useMatching = ({
   leftItems,
   rightItems,
   unavailable = false,
   initialPairs = [],
-  result,
+  initialAnswer = null,
 }: UseMatchingProps) => {
   const { t } = useLocalization();
-  const [pending, setPending] = useState<PendingSelection>(null);
-  const [formedPairs, setFormedPairs] = useState<MatchingPairSelection[]>(initialPairs);
+  const [state, dispatch] = useReducer(
+    matchingReducer,
+    undefined,
+    () => createMatchingInitialState(initialPairs, initialAnswer),
+  );
+  const { pending, formedPairs, answer } = state;
 
-  const locked = !!result;
-  // Empty columns return early below — once past that guard, length > 0 is implied.
+  const result: MatchingResult | null = answer
+    ? {
+        pairs: answer.pairs,
+        isCorrect: answer.isCorrect,
+        summary: t('activity.matching.summary', {
+          correct: answer.correctPairCount,
+          total: answer.totalPairCount,
+        }),
+      }
+    : null;
+
+  const locked = !!answer;
   const allPaired = formedPairs.length === leftItems.length;
-  // One-column empty is also unequal; both-empty is 0===0 so needs an explicit empty guard.
   const isEmpty = leftItems.length === 0;
   const isUnequal = leftItems.length !== rightItems.length;
   const isUnavailable = unavailable || isEmpty || isUnequal;
@@ -54,12 +68,13 @@ export const useMatching = ({
 
   return {
     pending,
+    answer,
+    result,
     locked,
     allPaired,
     formedPairs,
     isUnavailable,
-    setPending,
-    setFormedPairs,
+    dispatch,
     itemState,
   };
 };

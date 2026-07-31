@@ -1,12 +1,19 @@
 jest.mock('@helsoft/localization', () => ({
   useLocalization: () => ({
-    t: (key: string) => key,
+    t: (key: string, opts?: Record<string, unknown>) => {
+      if (key === 'activity.matching.summary' && opts) {
+        return `${opts.correct} of ${opts.total} correct`;
+      }
+      return key;
+    },
   }),
 }));
 
+import type { MatchingAnswer } from '@helsoft/types';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import { AccessibilityInfo, Platform } from 'react-native';
-import type { MatchingItemView, MatchingResult, UseMatchingProps } from './matching.types';
+
+import type { MatchingItemView, UseMatchingProps } from './matching.types';
 import { useMatching } from './use-matching';
 
 const leftItems: MatchingItemView[] = [
@@ -21,24 +28,30 @@ const rightItems: MatchingItemView[] = [
   { id: 'r3', label: 'Rome' },
 ];
 
-const allCorrectResult: MatchingResult = {
+const allCorrectAnswer: MatchingAnswer = {
+  slideId: 'slide-1',
+  activityType: 'matching',
   pairs: [
     { leftId: 'l1', rightId: 'r1', isCorrect: true },
     { leftId: 'l2', rightId: 'r2', isCorrect: true },
     { leftId: 'l3', rightId: 'r3', isCorrect: true },
   ],
+  correctPairCount: 3,
+  totalPairCount: 3,
   isCorrect: true,
-  summary: '3 of 3 correct',
 };
 
-const mixedResult: MatchingResult = {
+const mixedAnswer: MatchingAnswer = {
+  slideId: 'slide-1',
+  activityType: 'matching',
   pairs: [
     { leftId: 'l1', rightId: 'r1', isCorrect: true },
     { leftId: 'l2', rightId: 'r3', isCorrect: false },
     { leftId: 'l3', rightId: 'r2', isCorrect: false },
   ],
+  correctPairCount: 1,
+  totalPairCount: 3,
   isCorrect: false,
-  summary: '1 of 3 correct',
 };
 
 const defaultProps: UseMatchingProps = {
@@ -52,6 +65,7 @@ describe('useMatching', () => {
 
     expect(result.current.pending).toBeNull();
     expect(result.current.formedPairs).toEqual([]);
+    expect(result.current.answer).toBeNull();
     expect(result.current.locked).toBe(false);
     expect(result.current.allPaired).toBe(false);
     expect(result.current.isUnavailable).toBe(false);
@@ -69,17 +83,18 @@ describe('useMatching', () => {
     expect(result.current.allPaired).toBe(true);
   });
 
-  it('locks when result is set and isCorrect', async () => {
+  it('locks when initialAnswer is set and isCorrect', async () => {
     const { result } = await renderHook(() =>
-      useMatching({ ...defaultProps, result: allCorrectResult }),
+      useMatching({ ...defaultProps, initialAnswer: allCorrectAnswer }),
     );
 
     expect(result.current.locked).toBe(true);
+    expect(result.current.answer).toEqual(allCorrectAnswer);
   });
 
-  it('locks when result is set and incorrect', async () => {
+  it('locks when initialAnswer is set and incorrect', async () => {
     const { result } = await renderHook(() =>
-      useMatching({ ...defaultProps, result: mixedResult }),
+      useMatching({ ...defaultProps, initialAnswer: mixedAnswer }),
     );
 
     expect(result.current.locked).toBe(true);
@@ -123,7 +138,7 @@ describe('useMatching', () => {
       const { result } = await renderHook(() => useMatching(defaultProps));
 
       await act(() => {
-        result.current.setPending({ column: 'left', id: 'l1' });
+        result.current.dispatch({ type: 'item/press', column: 'left', id: 'l1' });
       });
 
       expect(result.current.itemState('left', 'l1')).toBe('pending');
@@ -135,7 +150,8 @@ describe('useMatching', () => {
       const { result } = await renderHook(() => useMatching(defaultProps));
 
       await act(() => {
-        result.current.setFormedPairs([{ leftId: 'l1', rightId: 'r1' }]);
+        result.current.dispatch({ type: 'item/press', column: 'left', id: 'l1' });
+        result.current.dispatch({ type: 'item/press', column: 'right', id: 'r1' });
       });
 
       expect(result.current.itemState('left', 'l1')).toBe('paired');
@@ -149,30 +165,32 @@ describe('useMatching', () => {
         useMatching({
           ...defaultProps,
           initialPairs: [{ leftId: 'l1', rightId: 'r1' }],
-          result: mixedResult,
+          initialAnswer: mixedAnswer,
         }),
       );
 
       await act(() => {
-        result.current.setPending({ column: 'left', id: 'l2' });
+        result.current.dispatch({ type: 'item/press', column: 'left', id: 'l2' });
       });
 
       expect(result.current.itemState('left', 'l1')).toBe('correct');
       expect(result.current.itemState('right', 'r1')).toBe('correct');
       expect(result.current.itemState('left', 'l2')).toBe('incorrect');
       expect(result.current.itemState('right', 'r3')).toBe('incorrect');
-      // pending must not win once graded
       expect(result.current.itemState('left', 'l2')).not.toBe('pending');
     });
 
-    it('returns undefined for items absent from result.pairs', async () => {
-      const partialResult: MatchingResult = {
+    it('returns undefined for items absent from answer.pairs', async () => {
+      const partialAnswer: MatchingAnswer = {
+        slideId: 'slide-1',
+        activityType: 'matching',
         pairs: [{ leftId: 'l1', rightId: 'r1', isCorrect: true }],
+        correctPairCount: 1,
+        totalPairCount: 3,
         isCorrect: false,
-        summary: '1 of 3 correct',
       };
       const { result } = await renderHook(() =>
-        useMatching({ ...defaultProps, result: partialResult }),
+        useMatching({ ...defaultProps, initialAnswer: partialAnswer }),
       );
 
       expect(result.current.itemState('left', 'l2')).toBeUndefined();
@@ -199,25 +217,25 @@ describe('useMatching', () => {
       announceSpy.mockRestore();
     });
 
-    it('announces the correct label when result is correct', async () => {
+    it('announces the correct label when answer is correct', async () => {
       const announceSpy = jest
         .spyOn(AccessibilityInfo, 'announceForAccessibility')
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMatching({ ...defaultProps, result: allCorrectResult }));
+      await renderHook(() => useMatching({ ...defaultProps, initialAnswer: allCorrectAnswer }));
 
       expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct');
       announceSpy.mockRestore();
     });
 
-    it('announces the incorrect label when result is incorrect', async () => {
+    it('announces the incorrect label when answer is incorrect', async () => {
       const announceSpy = jest
         .spyOn(AccessibilityInfo, 'announceForAccessibility')
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMatching({ ...defaultProps, result: mixedResult }));
+      await renderHook(() => useMatching({ ...defaultProps, initialAnswer: mixedAnswer }));
 
       expect(announceSpy).toHaveBeenCalledWith('activity.matching.incorrect');
       announceSpy.mockRestore();
@@ -229,14 +247,12 @@ describe('useMatching', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      const { rerender } = await renderHook((props: UseMatchingProps) => useMatching(props), {
-        initialProps: defaultProps,
-      });
+      const { result } = await renderHook(() => useMatching(defaultProps));
 
       expect(announceSpy).not.toHaveBeenCalled();
 
-      await act(async () => {
-        await rerender({ ...defaultProps, result: allCorrectResult });
+      await act(() => {
+        result.current.dispatch({ type: 'submit', answer: allCorrectAnswer });
       });
 
       await waitFor(() => expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct'));
@@ -251,7 +267,7 @@ describe('useMatching', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMatching({ ...defaultProps, result: allCorrectResult }));
+      await renderHook(() => useMatching({ ...defaultProps, initialAnswer: allCorrectAnswer }));
 
       expect(announceSpy).not.toHaveBeenCalled();
       announceSpy.mockRestore();
@@ -264,7 +280,7 @@ describe('useMatching', () => {
         .mockImplementation(() => {});
       announceSpy.mockClear();
 
-      await renderHook(() => useMatching({ ...defaultProps, result: allCorrectResult }));
+      await renderHook(() => useMatching({ ...defaultProps, initialAnswer: allCorrectAnswer }));
 
       expect(announceSpy).toHaveBeenCalledWith('activity.matching.correct');
       announceSpy.mockRestore();
