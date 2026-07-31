@@ -97,7 +97,7 @@ jest.mock('../flashcard/flashcard', () => ({
     );
   },
 }));
-jest.mock('./open-ended-body', () => ({
+jest.mock('../../molecules/open-ended-body/open-ended-body', () => ({
   OpenEndedBody: ({
     slide,
     initialAnswer,

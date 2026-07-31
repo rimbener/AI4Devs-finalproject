@@ -1,4 +1,4 @@
-jest.mock('../open-ended/open-ended', () => ({
+jest.mock('../../organisms/open-ended/open-ended', () => ({
   OpenEnded: ({
     prompt,
     unavailable,
@@ -20,7 +20,7 @@ jest.mock('../open-ended/open-ended', () => ({
 }));
 
 import type { OpenEndedSlide } from '@helsoft/types';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import { OpenEndedBody } from './open-ended-body';
 
@@ -59,5 +59,44 @@ describe('OpenEndedBody', () => {
     );
 
     expect(screen.getByTestId('open-ended-unavailable')).toBeTruthy();
+  });
+
+  it('marks empty model answer as unavailable', async () => {
+    await render(<OpenEndedBody slide={{ ...slide, modelAnswer: '   ' }} onAnswered={jest.fn()} />);
+
+    expect(screen.getByTestId('open-ended-unavailable')).toBeTruthy();
+  });
+
+  it('ignores a second submit and does not call onAnswered again', async () => {
+    const onAnswered = jest.fn();
+    await render(<OpenEndedBody slide={slide} onAnswered={onAnswered} />);
+
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('open-ended-submit'));
+    });
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('open-ended-submit'));
+    });
+
+    expect(onAnswered).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores submit when an initialAnswer is already present', async () => {
+    const onAnswered = jest.fn();
+    await render(
+      <OpenEndedBody
+        slide={slide}
+        onAnswered={onAnswered}
+        initialAnswer={{
+          slideId: slide.id,
+          activityType: 'open-ended',
+          submittedAnswer: 'already answered',
+        }}
+      />,
+    );
+
+    fireEvent.press(screen.getByTestId('open-ended-submit'));
+
+    expect(onAnswered).not.toHaveBeenCalled();
   });
 });
