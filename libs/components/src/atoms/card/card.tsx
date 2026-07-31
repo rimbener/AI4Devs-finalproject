@@ -24,19 +24,20 @@ export const Card = ({
   children,
   variant = 'elevated',
   interactive = false,
-  padding = 16,
+  padding,
   onPress,
   style,
   testID,
 }: CardProps) => {
   const { theme } = useUnistyles();
   const { hover, handlers } = useInteractionState();
+  const resolvedPadding = padding ?? theme.spacing.s4;
 
   styles.useVariants({ variant });
   const pressable = interactive || !!onPress;
 
   const containerStyle: StyleProp<ViewStyle> = [
-    styles.root(padding),
+    styles.root(resolvedPadding),
     interactive && hover ? styles.shadowHover : styles.shadowRest,
     style,
   ];
