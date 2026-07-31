@@ -1,17 +1,14 @@
 ---
 feature: card-list-with-abm-dialog
 verdict: PASS
-reference: dod_validator / 2026-07-27
+reference: dod_validator / 2026-07-31 (Round 4, Mini-gate 3)
 ---
 
 # Definition of Done — card-list-with-abm-dialog
 
-> ⚠ **STALE relative to current code.** The `verdict: PASS` in this file's frontmatter and below
-> reflects the tree as of its last validation round — it predates a substantial human-authored
-> architecture rewrite (Context + `useReducer`, atom/molecule/organism extraction) and a new
-> Add-dialog feature, neither of which has been re-reviewed, mutation-tested, or DoD-validated.
-> See `spec.md`'s "Issues found by this doc pass" and `task-4.md`. Treat this feature as **not**
-> currently `pr_ready` until a fresh DoD pass runs against the current tree.
+> **Resolved.** The prior STALE notice here referred to the architecture rewrite and Add-dialog
+> feature being un-reviewed — see Round 4 below (dated 2026-07-31) for the fresh DoD PASS covering
+> that work, after Mini-gate 3's full review + mutation re-run both closed clean.
 
 ## Verdict
 

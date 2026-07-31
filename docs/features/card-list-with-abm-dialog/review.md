@@ -1,8 +1,7 @@
-> ⚠ **STALE relative to current code.** Everything below predates a substantial human-authored
-> architecture rewrite (Context + `useReducer`, atom/molecule/organism extraction) and a new
-> Add-dialog feature (see `spec.md`'s "Issues found by this doc pass" and `task-4.md`). This delta
-> has not been reviewed by `reviewer_engineering`/`reviews_lead`. Do not read the APPROVED verdicts
-> below as covering the current tree.
+> **Resolved.** The architecture rewrite (Context + `useReducer`, atom/molecule/organism
+> extraction) and the new Add-dialog feature this STALE notice originally referred to have since
+> been fully reviewed under "Mini-gate 3" below (APPROVED, zero findings open) — see `spec.md`'s
+> "Fixed by a later doc-and-code pass" for the summary.
 
 Durable trail (`reviews_lead`). Never emptied; every finding retained across rounds, marked
 `open`/`resolved`/`ACCEPTED`. Covers the **full** review (all 3 vertical slices combined), run

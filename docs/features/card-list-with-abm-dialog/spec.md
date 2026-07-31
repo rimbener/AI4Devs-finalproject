@@ -39,24 +39,27 @@ None (story explicitly excludes a flag).
 - No `supabase/` schema/RLS/edge-function changes — pure frontend component.
 - Not modeled on `api-key-form-dialog` — reuses the generic `Dialog` organism directly, no bespoke dialog wrapper (`api-key-form-dialog.tsx` itself has since been deleted from the lib in this same working tree, superseded by this organism's real usage in `ApiKeySettingsScreen`).
 
-## Architecture (as of this revision)
+## Architecture (final, post-Mini-gate-3)
 ```
 libs/components/src/
-  atoms/card-list-with-abm-dialog-header/         # title + add button (own .stories/.test)
-  atoms/error-banner/                             # inline error message, used by the shared dialog's error state
-  molecules/card-list-row/                        # portable, organism-agnostic row (Card + edit/remove icons)
-  molecules/card-list-with-abm-dialog-dialog/      # the ONE shared Dialog wrapper — swaps body/chrome by dialogType/dialogState/errorMessage
-  organisms/card-list-with-abm-dialog-list/        # FlatList wrapper, renders CardListRowAdapter per item
+  atoms/error-banner/                              # inline error message, used by the shared dialog's error state (genuinely reusable — barrel-exported)
+  molecules/card-list-row/                         # portable, organism-agnostic row (Card + edit/remove icons; genuinely reusable — barrel-exported)
   organisms/card-list-with-abm-dialog/
     card-list-with-abm-dialog.tsx                  # composition root: Provider + header + list-or-empty + the one dialog
-    card-list-with-abm-dialog.types.ts             # CardListItem<TItem>, CardListWithABMDialogProps, dialog-state types, testID builders
-    components/card-list-row-adapter.tsx            # maps CardListItem<TItem> → CardListRow's flat props (mirrors PdfDocumentListRow)
+    card-list-with-abm-dialog.types.ts             # CardListItem<TItem>, CardListWithABMDialogProps, dialog-state types
+    card-list-with-abm-dialog.helpers.ts           # testID builders (moved out of .types.ts — type-only file rule)
+    components/
+      card-list-row-adapter.tsx                    # maps CardListItem<TItem> → CardListRow's flat props (mirrors PdfDocumentListRow)
+      header/card-list-with-abm-dialog-header.tsx  # title + add button
+      list/card-list-with-abm-dialog-list.tsx      # FlatList wrapper, renders CardListRowAdapter per item
+      dialog/card-list-with-abm-dialog-dialog.tsx  # the ONE shared Dialog wrapper — swaps body/chrome by dialogType/dialogState/errorMessage
     hooks/
-      card-list-with-abm-dialog.context.tsx        # CardListWithABMDialogProvider/useCardListWithABMDialogContext (state-sharing.mdc — avoids prop-drilling the full value object through header/list/dialog)
-      card-list-with-abm-dialog.context.types.tsx  # CardListWithABMDialogValue<TItem> — the full caller-facing prop surface (title/items/add-edit-remove wiring/isSubmitting)
+      card-list-with-abm-dialog.context.tsx        # CardListWithABMDialogProvider/useCardListWithABMDialogContext (state-sharing.mdc)
+      card-list-with-abm-dialog.context.types.ts   # CardListWithABMDialogValue<TItem> — the full caller-facing prop surface
       use-card-list-with-abm-dialog.ts             # local dialog-open state: useReducer wiring + open*/close callbacks + per-dialogType chrome resolution
       use-card-list-with-abm-dialog.reducer.ts     # cardListWithABMDialogReducer — { dialogType, dialogItem, dialogState } as one useReducer (state.mdc: 3 related fields)
 ```
+`header`/`list`/`dialog` live under the organism's own private `components/` subfolder, not the shared top-level `atoms`/`molecules`/`organisms` folders — Mini-gate 3's full review caught that they'd been placed there despite depending on this one organism's Context (a reverse-dependency anti-pattern, same class already fixed once for `CardListRow`); moving them here is honest about them not being independently reusable, while `error-banner` and `card-list-row` (which don't need the Context) stay genuinely shared and barrel-exported.
 `CardListWithABMDialogProps` (the outer, non-generic props: `style`/`cardStyle`/`cardListStyle`/`cardListContentContainerStyle`/`showAddButton`/`submitDisabled`/`errorMessage`/`onClose`) is separate from `CardListWithABMDialogValue<TItem>` (the generic, caller-facing content/behavior contract — title, items, add/edit/remove render props and callbacks, `isSubmitting`). The component's actual prop type is the intersection of both.
 
 ## Open decisions (resolved, with rationale)
@@ -75,17 +78,15 @@ libs/components/src/
 - **Dialog-open state moved from a single `useState` discriminated union to `useReducer`** (`cardListWithABMDialogReducer`, `{ dialogType, dialogItem, dialogState }`, 3 related fields) — **why:** correctly satisfies `state.mdc`'s ≥3-related-fields → `useReducer` threshold, which the original 2-field `useState` did not cross. `dialogState` is a 3-value enum (`'open' | 'closed' | 'submitting'`); `close` never nulls `dialogItem`, only flips `dialogState`, preserving the `@s19`/`@s20` no-flash-on-close guarantee.
 - **`CardListWithABMDialogProvider`/`useCardListWithABMDialogContext`** (React Context, `state-sharing.mdc`) shares the full caller-facing value object across the now-multiple sub-components (header atom, list organism, dialog molecule, row adapter) instead of prop-drilling it through each layer.
 - **`errorMessage`/`submitDisabled`/`showAddButton`/`onClose` props** on `CardListWithABMDialogProps` (the non-generic half). `errorMessage` forces the shared dialog open regardless of `dialogType`/`dialogState`, replacing its body with `ErrorBanner` (new atom) and its actions with a single "Close" button. `submitDisabled` disables the dialog's confirm button. `showAddButton` toggles the header's add button. **why:** needed by `ApiKeySettingsScreen`'s real save/remove-error and in-flight-save-button-disabled UX. Covered end-to-end by `@s26`/`@s27` (added after `errorMessage`/`submitDisabled` were previously only unit-tested on the `CardListWithABMDialogDialog` molecule in isolation).
-- **`CardListItem<TItem>.content` is optional** (a card can be content-less, e.g. relying on `title` alone in a future usage) — no current caller omits it.
-- **Mutation score accepted at 97.2–97.5%, not 100%** — 2 documented-equivalent surviving mutants (`ConditionalExpression` `true`-replacement on the dialog-open guards) — see `mutation.md`. **⚠ Predates the architecture rewrite above** — the guard code has since moved into `use-card-list-with-abm-dialog.ts`/the reducer; mutation has not been re-run against the current shape (see "Outstanding" below).
+- **`CardListItem<TItem>.content` is optional** (a card can be content-less) — no current caller omits it. (The type no longer has a `title` field — see "Fixed by a later doc-and-code pass" below; it was removed as dead.)
+- **Mutation score: 99.84% (641/642 valid mutants killed), 1 documented-equivalent survivor** — `use-card-list-with-abm-dialog.reducer.ts`'s `initialDialogState('closed')` seed value can only ever be observed pre-first-render, observationally identical to any other non-`'open'`/`'submitting'` string at that point — see `mutation.md`'s Round 9 for the full trace. This supersedes the earlier 97.2–97.5% acceptance (that guard code moved during the architecture rewrite; the new number is a fresh, full re-run against the current shape, not a carry-forward).
 
 ## Fixed by a later doc-and-code pass
 - **`getEditAccessibilityLabel`/`getRemoveAccessibilityLabel`/`CardListItem.accessibleLabel` re-tightened to required** (briefly optional during the architecture rewrite — see the a11y decision above). `CardListRowAdapter` no longer needs `?.()` on the getters.
 - **Removed the dead `CardListItem<TItem>.title?: string` field** — declared but never read/rendered anywhere in this feature's code.
 - **Fixed a traceability collision**: a test in `card-list-with-abm-dialog.test.tsx` had mislabeled itself `@s17` in a comment (`@s17` already means, and still means, "tapping the add button calls `onAddPress`" — unchanged, still tested at the e2e level); retagged to the correct `@s21`–`@s25` tags per `gherkin-scenarios.md`.
 - **Added `@s26`/`@s27` end-to-end tests** on `CardListWithABMDialog` itself (not just the `CardListWithABMDialogDialog` molecule in isolation) for `errorMessage` and `submitDisabled`.
-
-## Outstanding — pipeline gates not yet re-run
-The architecture rewrite (Context/`useReducer`, atom/molecule/organism split) and the Add-dialog/`errorMessage`/`submitDisabled` features above are real, working, and now fully unit-tested — but have **not** been through `spec_partner`/`spec_reviewer`/the human gate (retroactively accepted via chat, not a formal gate), `reviewer_slice`/`reviews_lead`, or a fresh `mutation_tester` run. `docs/features/card-list-with-abm-dialog/review.md`, `review-engineering.md`, `mutation.md`, and `dod.md` are all flagged `STALE` at the top and describe a prior, now-superseded state of the code. This feature is not honestly `pr_ready` again until a real full review + mutation re-run happens against the current tree.
+- **Mini-gate 3 (full pipeline re-run against the architecture rewrite)**: a CI-red gate (stuck-forever submitting-state bug + 2 other findings, fixed), a full review (9 findings — a repeated reverse-dependency anti-pattern in the header/list/dialog sub-components, dead/backwards `tsconfig.json` includes, a fragile grace-timer, dead code, an out-of-scope `TextField` regression, file-naming/type-file issues, and 2 security/code minors on `Linking.openURL` — all fixed, verified APPROVED with zero findings), a mutation run (77.3% baseline → 99.84% after a kill pass, 1 documented-equivalent survivor), and a follow-up review + fix on the mutation-kill's own production-source changes (an additive `testID`-prefix prop on the shared `Dialog` organism, plus its test). `docs/features/card-list-with-abm-dialog/dod.md`'s Round 4 is a clean PASS covering all of this. `review.md`/`review-engineering.md`/`mutation.md`/`dod.md`'s `STALE` banners (written when Mini-gate 3 first landed, undocumented) no longer apply — removed.
 
 ## Prop surface (informative — full types in `card-list-with-abm-dialog.types.ts` / `hooks/card-list-with-abm-dialog.context.types.tsx`)
 ```

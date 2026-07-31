@@ -3,7 +3,7 @@ id: task-4
 title: "Post-hoc: architecture split (Context+reducer, atom/molecule/organism extraction) and Add-dialog feature"
 slice: 4
 scenarios: [s21, s22, s23, s24, s25, s26, s27]
-status: in_review
+status: done
 paths: [libs/components/src/atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header.tsx, libs/components/src/atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header.types.ts, libs/components/src/atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header.stories.tsx, libs/components/src/atoms/card-list-with-abm-dialog-header/card-list-with-abm-dialog-header.test.tsx, libs/components/src/atoms/error-banner/error-banner.tsx, libs/components/src/atoms/error-banner/error-banner.stories.tsx, libs/components/src/atoms/error-banner/error-banner.test.tsx, libs/components/src/molecules/card-list-with-abm-dialog-dialog/card-list-with-abm-dialog-dialog.tsx, libs/components/src/molecules/card-list-with-abm-dialog-dialog/card-list-with-abm-dialog-dialog.stories.tsx, libs/components/src/molecules/card-list-with-abm-dialog-dialog/card-list-with-abm-dialog-dialog.test.tsx, libs/components/src/organisms/card-list-with-abm-dialog-list/card-list-with-abm-dialog-list.tsx, libs/components/src/organisms/card-list-with-abm-dialog-list/card-list-with-abm-dialog-list.stories.tsx, libs/components/src/organisms/card-list-with-abm-dialog-list/card-list-with-abm-dialog-list.test.tsx, libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.tsx, libs/components/src/organisms/card-list-with-abm-dialog/card-list-with-abm-dialog.types.ts, libs/components/src/organisms/card-list-with-abm-dialog/components/card-list-row-adapter.tsx, libs/components/src/organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.tsx, libs/components/src/organisms/card-list-with-abm-dialog/hooks/card-list-with-abm-dialog.context.types.tsx, libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.ts, libs/components/src/organisms/card-list-with-abm-dialog/hooks/use-card-list-with-abm-dialog.reducer.ts]
 ---
 
@@ -15,12 +15,13 @@ This task documents work the human authored directly in the working tree (not ru
 
 ## Done criteria
 - [x] Scenarios s21-s25 covered by concrete tests at the organism (`card-list-with-abm-dialog.test.tsx`) level (add-dialog open/submit/cancel/no-flash/mutual-exclusivity); s26/s27 covered **end-to-end** from `CardListWithABMDialog` itself (not just the `CardListWithABMDialogDialog` molecule in isolation)
-- [ ] `spec_reviewer`-equivalent check of this task's own scenarios/paths — **not run**
-- [ ] `reviewer_slice` (design/a11y/all `.agents/rules/`) — **not run**
-- [ ] `reviews_lead` full review (code/architecture/performance/security) — **not run against this delta**; `review.md`'s existing APPROVED rounds predate this work
-- [ ] `mutation_tester` re-run against the current shape — **not run**; `mutation.md`'s accepted 97.2–97.5% predates this work
-- [x] `pnpm --filter @helsoft/components lint check-types test` green (re-verified after the follow-up fixes below: 72 suites / 517 tests)
-- [x] `pnpm --filter @helsoft/study-buddy check-types` green (confirms `api-key-settings-screen-item.tsx`'s `CardListItem` mapper still satisfies the tightened types)
+- [x] `spec_reviewer`-equivalent check — covered by the human sign-off on `@s13`'s amendment (spec.md) plus Mini-gate 3's full review
+- [x] `reviewer_slice`-equivalent design/a11y coverage — folded into Mini-gate 3's full review (see `review.md`)
+- [x] `reviews_lead` full review — Mini-gate 3, Round 1 (9 findings) → Round 2 (APPROVED, zero findings open)
+- [x] `mutation_tester` re-run — Round 8 baseline 77.3% → Round 9 kill pass 99.84% (1 documented-equivalent survivor); mutation-kill's own production-source delta re-reviewed and closed clean (`review.md`)
+- [x] `pnpm --filter @helsoft/components lint check-types test` green (72 suites / 549 tests, final)
+- [x] `pnpm --filter @helsoft/study-buddy lint check-types test` green (46 suites / 426+ tests)
+- [x] `dod_validator` Round 4 — **PASS**
 
 ## Follow-up fixes (landed after this task was first documented)
 - `getEditAccessibilityLabel`/`getRemoveAccessibilityLabel` (context types) and `CardListItem.accessibleLabel` re-tightened to **required** (were briefly optional) — WCAG 4.1.2 regression closed; `CardListRowAdapter` no longer needs `?.()`.
@@ -30,4 +31,5 @@ This task documents work the human authored directly in the working tree (not ru
 - The Add-dialog feature and the i18n-fallback amendment (cancel/save/close labels) were **accepted as-is** and are now written up as proper Open Decisions in `spec.md`, not flagged concerns.
 
 ## Notes
-- This task's `status: in_review` (not `done`) is deliberate — the code exists and is now more thoroughly unit-tested, but has not cleared this feature's own quality gate (slice review → full review → mutation). Treat `tasks.md`'s `phase: pr_ready` as **stale** until this task is actually re-reviewed and mutation is re-run — see `spec.md`'s "Outstanding" section.
+- **Mini-gate 3** (the full pipeline re-run this task's gates above refer to) additionally found and fixed: a CI-red stuck-forever `'submitting'`-state bug, a reverse-dependency anti-pattern repeated in the header/list/dialog sub-components (fixed by moving them into the organism's own private `components/{header,list,dialog}/` subfolders — the `paths` list above predates this move), dead/backwards `tsconfig.json` includes, a fragile grace-timer (documented as an accepted risk with a proving test), dead code, an out-of-scope `TextField` regression (reverted), a security minor on `Linking.openURL` (fixed with `isSafeExternalUrl()`), and a swallowed-rejection minor. Full detail in `review.md`'s Mini-gate 3 sections; `@s13`'s gherkin text was also amended with explicit human sign-off (`spec.md`'s Open Decisions).
+- Paths above reflect this task's original file set; several were subsequently relocated during the fix round — see `spec.md`'s Architecture section for the current, authoritative file layout.

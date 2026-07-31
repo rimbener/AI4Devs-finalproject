@@ -1,8 +1,8 @@
 # Full engineering review — card-list-with-abm-dialog
 
-> ⚠ **STALE relative to current code.** See the same notice in `review.md` — a substantial
-> architecture rewrite and new Add-dialog feature landed after everything below was written and
-> has not been reviewed. See `spec.md`'s "Issues found by this doc pass" and `task-4.md`.
+> **Resolved.** See the same notice in `review.md` — the architecture rewrite and Add-dialog
+> feature this STALE notice referred to have since been fully reviewed under "Mini-gate 3" (see
+> below), APPROVED with zero findings open.
 
 Durable trail (`reviews_lead` → `reviewer_engineering`). Never emptied; updated per round.
 Scope: sole reviewer of the full review — code quality/TDD, architecture/layering, performance,
