@@ -194,3 +194,5 @@
 2026-08-01 | review-findings (ad hoc) | n/a | — | Empty plans guard; error-code helper; TextField focus; e2e .env backup/restore; RNTL docs; migration contract tests.
 
 2026-08-01 | types.mdc + activity exploration (ad hoc) | n/a | — | types.mdc cross-file-only + inference; activity-types exploration notes.
+
+2026-08-01 | component-split animations (ad hoc) | n/a | — | component-split.mdc: animation → use-*.animations.ts (aacba0852).
