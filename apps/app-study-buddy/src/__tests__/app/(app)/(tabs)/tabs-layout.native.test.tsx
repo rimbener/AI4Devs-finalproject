@@ -7,30 +7,11 @@ jest.mock('@helsoft/localization', () => ({
 }));
 
 // Avoid study-buddy barrel → AsyncStorage; layout only needs NATIVE_TAB_TRIGGERS.
+// requireActual of the concrete module keeps the test on the app's real tab data.
 jest.mock('@helsoft/study-buddy', () => ({
-  NATIVE_TAB_TRIGGERS: [
-    {
-      name: 'index',
-      href: '/',
-      labelKey: 'nav.myLessons',
-      sf: 'books.vertical',
-      md: 'menu_book',
-    },
-    {
-      name: 'pdf-files',
-      href: '/pdf-files',
-      labelKey: 'nav.myPdfFiles',
-      sf: 'doc.text',
-      md: 'picture_as_pdf',
-    },
-    {
-      name: 'settings',
-      href: '/settings',
-      labelKey: 'nav.settings',
-      sf: 'gearshape',
-      md: 'settings',
-    },
-  ],
+  NATIVE_TAB_TRIGGERS: jest.requireActual(
+    '../../../../../../../libs/study-buddy/src/components/app-chrome/native-tabs-triggers',
+  ).NATIVE_TAB_TRIGGERS,
 }));
 
 jest.mock('expo-router', () => ({

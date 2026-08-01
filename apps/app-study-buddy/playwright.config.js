@@ -24,7 +24,12 @@ module.exports = defineConfig({
   webServer: {
     command: 'pnpm web',
     url: 'http://localhost:8081',
-    reuseExistingServer: !process.env.CI,
+    // Never silently reuse a running `pnpm web`: its bundle inlines the EXPO_PUBLIC_* vars
+    // it was started with, so a stale server can point the suite at the HOSTED Supabase
+    // project instead of the local stack e2e-prepare-supabase.sh just reset. With reuse off,
+    // Playwright fails fast when :8081 is taken. Opt back in (e.g. a trusted local-stack
+    // server during test:e2e:ui iteration) with PLAYWRIGHT_REUSE_SERVER=1.
+    reuseExistingServer: process.env.PLAYWRIGHT_REUSE_SERVER === '1',
     timeout: 120 * 1000,
   },
 });

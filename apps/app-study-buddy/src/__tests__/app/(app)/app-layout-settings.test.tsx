@@ -3,12 +3,11 @@ jest.mock('@helsoft/localization', () => ({
 }));
 
 // Avoid study-buddy barrel → AsyncStorage (GenerationPreferenceDao) in this layout unit test.
+// requireActual of the concrete module keeps the test on the app's real screen data.
 jest.mock('@helsoft/study-buddy', () => ({
-  LESSON_STACK_SCREENS: [
-    { name: 'lesson/[id]/index', titleKey: 'nav.lesson' },
-    { name: 'lesson/[id]/player', titleKey: 'nav.study' },
-    { name: 'lesson/[id]/results', titleKey: 'nav.results' },
-  ],
+  LESSON_STACK_SCREENS: jest.requireActual(
+    '../../../../../../libs/study-buddy/src/components/app-chrome/lesson-stack-screens',
+  ).LESSON_STACK_SCREENS,
 }));
 
 jest.mock('expo-router', () => {
