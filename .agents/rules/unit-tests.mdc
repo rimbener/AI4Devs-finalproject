@@ -17,9 +17,13 @@ use `src/__tests__/app/...` instead (Expo docs).
   pnpm --filter <workspace> test                       # full workspace suite, once at the gate
   ```
   Never invent a `yarn`/`test-ci` command — this repo is pnpm + Turborepo (see root `AGENTS.md`).
-- **Library**: `@testing-library/react-native` (`renderHook`, `render`, `fireEvent`, `waitFor`)
-  if the package.json has `@testing-library/react-native` as a dependency otherwise 
-  use `@testing-library/react-hooks`
+- **Library**: `@testing-library/react-native` (`renderHook`, `render`, `fireEvent`, `waitFor`).
+  If a workspace gains its first hook/component test and lacks it, add
+  `@testing-library/react-native` or `@testing-library/react` to that workspace's devDependencies,
+  it will depend if the workspace is a library with UI or not (for example, `@helsoft/components` is a library with UI, so it will depend on `@testing-library/react-native`, but `@helsoft/localization` is a library without UI, so it will depend on `@testing-library/react`). Do **not** use
+  `@testing-library/react-hooks` — it's archived, React-17-only (this repo is React 19), and
+  superseded by the built-in `renderHook`. Do **not** reach for `@testing-library/react` unless
+  the workspace is genuinely DOM-only (like `@helsoft/localization`).
 - **Mocking boundary is layer-specific** — mock exactly one layer below the file under test, never
   the file itself and never two layers down. Full patterns and worked examples: the
   `add-unit-test` skill and its per-layer table (DAO → transport, Service → DAO, Hook → Service,

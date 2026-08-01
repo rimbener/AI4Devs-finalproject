@@ -56,7 +56,10 @@ bucket 2 — flag it, don't force it.
 3. **Fix the stale ones.** Make the smallest change that restores the test's original intent
    against the current code. Match the surrounding test style and this repo's testing rules
    (mock at the DAO/service boundary per `.agents/rules/hooks-service-dao.mdc`, an inline
-   `QueryClientProvider` wrapper for tanstack-query hooks per `.agents/rules/tanstack-query.mdc`.
+   `QueryClientProvider` wrapper for tanstack-query hooks per `.agents/rules/tanstack-query.mdc`,
+   and `@testing-library/react-native`'s built-in `renderHook` — never
+   `@testing-library/react-hooks`, which is archived and React-17-only; add
+   `@testing-library/react-native` or `@testing-library/react` to the workspace if it's missing).
 4. **Re-run the affected files** to confirm — jest takes path args, so you don't re-run the
    whole workspace each round:
    ```bash
