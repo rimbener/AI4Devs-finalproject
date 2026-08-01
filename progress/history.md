@@ -196,3 +196,5 @@
 2026-08-01 | types.mdc + activity exploration (ad hoc) | n/a | — | types.mdc cross-file-only + inference; activity-types exploration notes.
 
 2026-08-01 | component-split animations (ad hoc) | n/a | — | component-split.mdc: animation → use-*.animations.ts (aacba0852).
+
+2026-08-01 | activity-submit-result (ad hoc) | n/a | — | ActivitySubmitResult + ScrollViewProvider; matching/player wired; session-gate types inlined.
