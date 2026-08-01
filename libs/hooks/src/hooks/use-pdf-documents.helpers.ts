@@ -1,14 +1,11 @@
-import type { PdfDocumentsError, PdfDocumentsErrorCode } from '@helsoft/types';
+import type { PdfDocumentsErrorCode } from '@helsoft/types';
+
+import { toErrorCode } from './error-code.helpers';
 
 export const PDF_DOCUMENTS_ERROR_CODES: ReadonlySet<PdfDocumentsErrorCode> = new Set([
   'network_error',
   'validation_error',
 ]);
 
-export const isPdfDocumentsErrorShape = (cause: unknown): cause is PdfDocumentsError =>
-  PDF_DOCUMENTS_ERROR_CODES.has(
-    (cause as { code?: unknown } | null)?.code as PdfDocumentsErrorCode,
-  );
-
 export const toPdfDocumentsErrorCode = (cause: unknown): PdfDocumentsErrorCode =>
-  isPdfDocumentsErrorShape(cause) ? cause.code : 'network_error';
+  toErrorCode(PDF_DOCUMENTS_ERROR_CODES, cause, 'network_error');

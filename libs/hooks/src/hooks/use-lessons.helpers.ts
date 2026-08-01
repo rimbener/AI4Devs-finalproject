@@ -1,12 +1,11 @@
-import type { LessonsError, LessonsErrorCode } from '@helsoft/types';
+import type { LessonsErrorCode } from '@helsoft/types';
+
+import { toErrorCode } from './error-code.helpers';
 
 export const LESSONS_ERROR_CODES: ReadonlySet<LessonsErrorCode> = new Set([
   'network_error',
   'validation_error',
 ]);
 
-export const isLessonsErrorShape = (cause: unknown): cause is LessonsError =>
-  LESSONS_ERROR_CODES.has((cause as { code?: unknown } | null)?.code as LessonsErrorCode);
-
 export const toLessonsErrorCode = (cause: unknown): LessonsErrorCode =>
-  isLessonsErrorShape(cause) ? cause.code : 'network_error';
+  toErrorCode(LESSONS_ERROR_CODES, cause, 'network_error');

@@ -1,8 +1,9 @@
 import { ApiKeyService } from '@helsoft/supabase-services';
-import type { AiProvider, ApiKeyError, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
+import type { AiProvider, ApiKeyErrorCode, ApiKeyStatus } from '@helsoft/types';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { toErrorCode } from './error-code.helpers';
 import { getApiKeyErrorMessageKey } from './use-api-key.helpers';
 import { useSessionGate } from './use-session-gate';
 
@@ -14,14 +15,11 @@ const API_KEY_ERROR_CODES: ReadonlySet<ApiKeyErrorCode> = new Set([
   'provider_disabled',
 ]);
 
-const isApiKeyErrorShape = (cause: unknown): cause is ApiKeyError =>
-  API_KEY_ERROR_CODES.has((cause as { code?: unknown } | null)?.code as ApiKeyErrorCode);
-
 /** Query key for a learner's key status, scoped by user id (D1) — never leaks across users. */
 export const apiKeyStatusQueryKey = (userId = '') => ['api-key', 'status', userId] as const;
 
-const toErrorCode = (cause: unknown | null): ApiKeyErrorCode | null =>
-  cause === null ? null : isApiKeyErrorShape(cause) ? cause.code : 'network_error';
+const toApiKeyErrorCode = (cause: unknown | null): ApiKeyErrorCode | null =>
+  cause === null ? null : toErrorCode(API_KEY_ERROR_CODES, cause, 'network_error');
 
 /**
  * React integration over ApiKeyService: loads the current multi-key status for an
@@ -68,7 +66,7 @@ export const useApiKey = () => {
 
   const status = data ?? EMPTY_STATUS;
   const hasKey = useMemo(() => status.keys.length > 0, [status]);
-  const error = toErrorCode(saveMutation.error) || toErrorCode(removeMutation.error);
+  const error = toApiKeyErrorCode(saveMutation.error) || toApiKeyErrorCode(removeMutation.error);
 
   const errorKey = getApiKeyErrorMessageKey(error);
 
