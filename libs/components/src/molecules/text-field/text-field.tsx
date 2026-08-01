@@ -82,7 +82,7 @@ export const TextField = ({
   return (
     <View style={[styles.root(fullWidth), style]}>
       {label ? <Text style={styles.label(error)}>{label}</Text> : null}
-      <View style={styles.field(accent, borderColor, !!multiline, disabled)}>
+      <View style={styles.field(accent, borderColor, focus, !!multiline, disabled)}>
         {leadingIcon ? (
           <Icon
             name={leadingIcon}
@@ -132,7 +132,13 @@ const styles = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing.s2,
     color: error ? theme.colors.error : theme.colors.onSurfaceVariant,
   }),
-  field: (accent: string, borderColor: string, multiline: boolean, disabled: boolean) => ({
+  field: (
+    accent: string,
+    borderColor: string,
+    focus: boolean,
+    multiline: boolean,
+    disabled: boolean,
+  ) => ({
     flexDirection: 'row',
     alignItems: multiline ? 'flex-start' : 'center',
     gap: theme.spacing.s3,
@@ -142,16 +148,20 @@ const styles = StyleSheet.create((theme) => ({
     opacity: disabled ? theme.disabledOpacity : 1,
     variants: {
       variant: {
+        // MD3 focus indicator is a 2px border (WCAG 2.4.7); the negative margin absorbs the
+        // extra pixel so focusing never shifts layout (the jitter that got 2px removed before).
         filled: {
           backgroundColor: theme.colors.surfaceContainerHighest,
-          borderBottomWidth: 1,
+          borderBottomWidth: focus ? 2 : 1,
+          marginBottom: focus ? -1 : 0,
           borderBottomColor: accent,
           borderTopLeftRadius: theme.shape.textField,
           borderTopRightRadius: theme.shape.textField,
         },
         outlined: {
           backgroundColor: 'transparent',
-          borderWidth: 1,
+          borderWidth: focus ? 2 : 1,
+          margin: focus ? -1 : 0,
           borderColor,
           borderRadius: theme.shape.xs,
         },
