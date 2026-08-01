@@ -192,3 +192,5 @@
 2026-07-31 | entrega-final docs (ad hoc) | n/a | — | Filled readme/prompts; synced C4 Mermaid+Excalidraw to BYOK/plans; OpenAPI review fixes.
 
 2026-08-01 | review-findings (ad hoc) | n/a | — | Empty plans guard; error-code helper; TextField focus; e2e .env backup/restore; RNTL docs; migration contract tests.
+
+2026-08-01 | types.mdc + activity exploration (ad hoc) | n/a | — | types.mdc cross-file-only + inference; activity-types exploration notes.
