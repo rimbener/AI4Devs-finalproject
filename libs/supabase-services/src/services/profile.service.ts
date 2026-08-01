@@ -5,8 +5,9 @@ import type { RawPlansEmbed, RawProfilePlanJoinRow } from '../dao/profile.types'
 import type { ProfilePlan } from './profile.types';
 
 const embedPlans = (plans: RawProfilePlanJoinRow['plans']): RawPlansEmbed => {
-  if (!plans) throw new Error('Plan not found');
-  return Array.isArray(plans) ? plans[0] : plans;
+  const plan = Array.isArray(plans) ? plans[0] : plans;
+  if (!plan) throw new Error('Plan not found');
+  return plan;
 };
 
 const toProfilePlan = (row: RawProfilePlanJoinRow): ProfilePlan => {

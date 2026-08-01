@@ -87,4 +87,10 @@ describe('ProfileService', () => {
 
     await expect(ProfileService.getProfile()).rejects.toThrow('Plan not found');
   });
+
+  it('rejects when the plans embed is an empty array', async () => {
+    dao.getCurrentProfile.mockResolvedValue({ plan_id: 'free', plans: [] });
+
+    await expect(ProfileService.getProfile()).rejects.toThrow('Plan not found');
+  });
 });
