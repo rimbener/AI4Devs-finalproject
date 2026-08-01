@@ -190,3 +190,5 @@
 2026-07-31 | golden-path e2e picker (ad hoc) | n/a | — | E2E clicks panel Choose PDF after dialog open (no auto chooser).
 
 2026-07-31 | entrega-final docs (ad hoc) | n/a | — | Filled readme/prompts; synced C4 Mermaid+Excalidraw to BYOK/plans; OpenAPI review fixes.
+
+2026-08-01 | review-findings (ad hoc) | n/a | — | Empty plans guard; error-code helper; TextField focus; e2e .env backup/restore; RNTL docs; migration contract tests.
