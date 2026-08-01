@@ -5,15 +5,24 @@ alwaysApply: false
 
 # Types
 
-Types are used to define the shape of data that is used in a component, class, service, hook, etc. If the type is used in multiple files, it should be stored in a `*.types.ts` file, and not exported from the component, class, service, hook, etc.
+A type lives **inline / next to the implementation that uses it** by default. Pull it into a `*.types.ts` file **only** when the type is **exported from its module because another file imports it**.
+
+## When to create a `*.types.ts` file
+
+Create `<name>.types.ts` **only** for a type that is **both**:
+
+1. **exported** from its module (part of the public contract), **and**
+2. **actually referenced by another file**.
+
+If a type is used only within its own file, keep it **inline or local** — do **not** create a `*.types.ts`, and do **not** export it. A `*.types.ts` whose types nothing else imports is a smell — inline it and delete the file.
 
 ```
-component-name.types.ts     # Props + related types (no JSX → .ts, not .tsx) (only exported types, no private types)
+component-name.types.ts     # ONLY the shapes other files import (Props a parent builds, shared DTOs) — no JSX → .ts, not .tsx
 ```
 
 ## Rules
 
-- **Only exported types** — no private / unexported types in `*.types.ts`; if a type isn't part of the public contract, keep it next to the implementation that uses it (or inline)
-- **No runtime logic** — types files are type-only; pure transforms go in helpers / services
-- Prefer `export type` / `export interface` for every shape consumers need (DAO DTOs, service results, hook return shapes, error codes)
-- Prefer type inference over type declarations for return types in hooks/services/DAOs/etc.
+- **Cross-file only.** `*.types.ts` holds exclusively types imported by another file. Private / single-file types stay inline next to the implementation, never exported.
+- **No runtime logic.** Types files are type-only; pure transforms go in helpers / services.
+- **Don't declare result / return types — prefer inference.** Never write a `FooServiceResult`, `UseFooResult`, or an explicit return-type annotation for a hook / service / DAO / helper — let TypeScript **infer** the return. Consumers read the inferred type; you only name a return shape when **another file must reference it by name**, and then it lives in `*.types.ts`.
+- **Names worth extracting** (only when another file imports them): shared **DTOs**, **error-code unions**, cross-lib contracts (→ `@helsoft/types`), and a **Props** type a parent constructs. Even these move to `*.types.ts` only when a second file actually uses them.

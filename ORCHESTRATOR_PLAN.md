@@ -64,7 +64,7 @@ We extend the existing `.agents/` folder rather than introducing `.claude/`. Orc
 │   ├── tanstack-query.mdc        # useQuery/useMutation in @helsoft/hooks (one QueryClient, mutation primitives, error guard, waitFor tests)
 │   ├── atomic-design.mdc
 │   ├── component-split.mdc
-│   ├── types.mdc                 # existing — multi-file types live in *.types.ts
+│   ├── types.mdc                 # *.types.ts only for cross-file types (single-file → inline); no result types, prefer inference
 │   ├── state.mdc                 # ≥3 related local states that change together → useReducer
 │   ├── state-sharing.mdc         # React Context to avoid deep / large prop-drilling
 │   ├── i18n.mdc                  # NEW — t('ns.key') inline, no labels object (key dictionaries excepted)

@@ -7,12 +7,12 @@ alwaysApply: false
 
 For components with real state or pure logic, split the folder. Keep simple atoms/molecules as a single `component-name.tsx` (+ stories).
 
-Types follow `.agents/rules/types.mdc` — multi-file types go in `*.types.ts` (exported only); do not export types from the component / hook / helpers. Related local state (≥3 fields that change together) → `useReducer` per `.agents/rules/state.mdc`.
+Types follow `.agents/rules/types.mdc` — a `*.types.ts` file exists **only** for types **another file imports** (single-file types stay inline; don't declare result/return types, prefer inference). A component with no cross-file types has **no** `*.types.ts`. Related local state (≥3 fields that change together) → `useReducer` per `.agents/rules/state.mdc`.
 
 ```
 component-name/
   component-name.tsx          # JSX + event handlers (onPress / onClick wiring)
-  component-name.types.ts     # Props + related types (no JSX → .ts, not .tsx; see types.mdc)
+  component-name.types.ts     # ONLY if another file imports these types (Props a parent builds, shared shapes); else omit — see types.mdc
   use-component-name.ts       # state, derived values, effects
   component-name.helpers.ts   # pure functions (no React, no hooks)
   component-name.stories.tsx
@@ -26,7 +26,7 @@ component-name/
 | `*.tsx` | layout, styles, a11y attrs, **event handlers** that call hook setters / props | business state machines |
 | `use-*.ts` | `useState` / `useReducer` / `useEffect`, derived flags, computed getters (see `state.mdc`) | `onPress` / `onClick` handlers |
 | `*.helpers.ts` | pure transforms / lookups / label builders | React, hooks, side effects |
-| `*.types.ts` | public `Props`, view models, result shapes | private types, runtime logic (see `types.mdc`) |
+| `*.types.ts` | types **another file imports** (a `Props` a parent builds, shared shapes) — created only then | private/single-file types (keep inline), declared result/return types (infer), runtime logic (see `types.mdc`) |
 
 ## Rules of thumb
 

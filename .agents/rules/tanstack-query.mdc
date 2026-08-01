@@ -15,7 +15,7 @@ Fetch-once / observe-forever data uses `useQuery` for the initial read and pushe
 // use-session.ts
 export const SESSION_QUERY_KEY = ['auth', 'session'] as const;
 
-export const useSession = (): UseSessionResult => {
+export const useSession = () => {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -86,7 +86,7 @@ const unsubscribe = AuthService.onAuthStateChange((next) => {
 
 ```typescript
 // use-sign-out.ts
-export const useSignOut = (): UseSignOutResult => {
+export const useSignOut = () => {
   const {
     mutate: signOut,
     isPending: isSigningOut,
@@ -104,7 +104,7 @@ export const useSignOut = (): UseSignOutResult => {
 ```
 ```tsx
 // ❌ don't — add unnecessary useCallback for the refetch function
-export const useLesson = (id: string): UseLessonResult => {
+export const useLesson = (id: string) => {
   const {
     data,
     isLoading,
@@ -129,7 +129,7 @@ export const useLesson = (id: string): UseLessonResult => {
 
 
 // ✅ do — refetch function is already stable
-export const useLesson = (id: string): UseLessonResult => {
+export const useLesson = (id: string) => {
   const {
     data,
     isLoading,
@@ -194,8 +194,8 @@ const error = saveMutation.error ?? removeMutation.error;
 ```
 
 Keep genuinely independent actions (different files, no shared `error`/`isPending` contract) as
-separate hooks/mutations — this carve-out is for a single hook whose *return type* already
-committed to one slot, not a default for every multi-action domain.
+separate hooks/mutations — this carve-out is for a single hook whose *returned shape* already
+commits to one slot, not a default for every multi-action domain.
 
 ### `isPending` is not a synchronous guard (D5)
 

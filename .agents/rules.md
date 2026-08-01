@@ -5,7 +5,7 @@ Superseded. Canonical rules:
 - /.agents/rules/tanstack-query.mdc — `useQuery`/`useMutation` in `@helsoft/hooks`: one `QueryClient` via `QueryProvider`, expose mutation primitives directly, normalize errors, `QueryClientProvider` + `waitFor` in tests
 - /.agents/rules/atomic-design.mdc — component structure methodology
 - /.agents/rules/component-split.mdc — UI co-location split for non-trivial components
-- /.agents/rules/types.mdc — multi-file types live in `*.types.ts` (exported only)
+- /.agents/rules/types.mdc — `*.types.ts` only for types another file imports (single-file → inline); no result/return types, prefer inference
 - /.agents/rules/i18n.mdc — user-facing text via `t('ns.key')` inline; no `labels` object (key dictionaries excepted)
 - /.agents/rules/state.mdc — ≥3 related local states that change together → `useReducer` (not Redux)
 - /.agents/rules/state-sharing.mdc — React Context when prop-drilling is deep or a large props bag is threaded through intermediates

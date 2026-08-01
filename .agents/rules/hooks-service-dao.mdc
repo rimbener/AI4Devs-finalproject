@@ -84,9 +84,9 @@ export const useGetProfile = () => {
 
 Follow `.agents/rules/types.mdc`.
 
-- Multi-file / shared layer shapes (DAO DTOs, service results, hook return shapes, error codes) → co-located `{feature}.types.ts` (or `@helsoft/types` for cross-lib contracts)
-- Do **not** export types from the DAO / service / hook implementation file
-- Private / single-file types stay next to the implementation (or inline)
+- Only a shape **another file imports** goes in a co-located `{feature}.types.ts` (or `@helsoft/types` for cross-lib contracts): shared **DAO DTOs**, **error-code unions**. A single-file type stays inline.
+- **Don't declare service-result / hook-return types — infer them.** Never annotate a service or hook return (`FooServiceResult`, `UseFooResult`); let TypeScript infer it. Name a return shape only when a second file references it by name (`types.mdc`).
+- Private / single-file types stay next to the implementation (or inline); never exported from the DAO / service / hook file just to relocate them.
 
 ## Local state in hooks / components
 
