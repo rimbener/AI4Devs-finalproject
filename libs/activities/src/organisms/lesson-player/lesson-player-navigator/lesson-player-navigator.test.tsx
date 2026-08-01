@@ -29,8 +29,8 @@ describe('LessonPlayerNavigator', () => {
     expect(screen.getByLabelText('player.next')).toBeTruthy();
     expect(screen.getByText('1 of 2')).toBeTruthy();
 
-    fireEvent.press(screen.getByLabelText('player.back'));
-    fireEvent.press(screen.getByLabelText('player.next'));
+    await fireEvent.press(screen.getByLabelText('player.back'));
+    await fireEvent.press(screen.getByLabelText('player.next'));
     expect(onBack).toHaveBeenCalledTimes(1);
     expect(onNext).toHaveBeenCalledTimes(1);
   });

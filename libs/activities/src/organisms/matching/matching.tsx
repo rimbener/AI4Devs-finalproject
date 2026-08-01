@@ -1,9 +1,10 @@
-import { Button, Card, Icon } from '@helsoft/components';
+import { Card, Icon } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import { Pressable, Text, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { gradeMatching, isMatchingSlideValid } from '../../grading/grade-matching';
+import { ActivitySubmitResult } from '../../molecules/activity-submit-result/activity-submit-result';
 import { itemAccessibilityLabel } from './matching.helpers';
 import type { ItemVisualState, MatchingItemView, MatchingProps } from './matching.types';
 import { useMatching } from './use-matching';
@@ -81,43 +82,52 @@ export const Matching = ({
   };
 
   return (
-    <Card testID="matching-root" style={styles.root}>
-      <Text style={styles.prompt}>{slide.content}</Text>
-      <View testID="matching-columns" style={styles.columns}>
-        <View testID="matching-column-left" style={styles.column}>
-          {slide.leftItems.map((item) => renderItem('left', item))}
+    <>
+      <Card testID="matching-root" style={styles.root}>
+        <Text style={styles.prompt}>{slide.content}</Text>
+        <View testID="matching-columns" style={styles.columns}>
+          <View testID="matching-column-left" style={styles.column}>
+            {slide.leftItems.map((item) => renderItem('left', item))}
+          </View>
+          <View testID="matching-column-right" style={styles.column}>
+            {slide.rightItems.map((item) => renderItem('right', item))}
+          </View>
         </View>
-        <View testID="matching-column-right" style={styles.column}>
-          {slide.rightItems.map((item) => renderItem('right', item))}
-        </View>
-      </View>
-      {!locked ? (
-        <Button disabled={!allPaired} fullWidth onPress={handleSubmit}>
-          {t('activity.matching.submit')}
-        </Button>
-      ) : null}
-      {result ? (
-        <View
-          testID="matching-result-banner"
-          accessibilityRole={result.isCorrect ? undefined : 'alert'}
-          style={[styles.banner, result.isCorrect ? styles.bannerCorrect : styles.bannerIncorrect]}
-        >
-          <Text
-            style={styles.bannerText(result.isCorrect)}
-            accessibilityLiveRegion={result.isCorrect ? 'polite' : 'assertive'}
+      </Card>
+      <ActivitySubmitResult
+        canSubmit={allPaired}
+        hasResult={result !== null}
+        submitLabel={t('activity.matching.submit')}
+        onSubmit={handleSubmit}
+      >
+        {result ? (
+          <View
+            testID="matching-result-banner"
+            accessibilityRole={result.isCorrect ? undefined : 'alert'}
+            style={[
+              styles.banner,
+              result.isCorrect ? styles.bannerCorrect : styles.bannerIncorrect,
+            ]}
           >
-            {result.isCorrect ? t('activity.matching.correct') : t('activity.matching.incorrect')}
-          </Text>
-          <Text style={styles.summary(result.isCorrect)}>{result.summary}</Text>
-        </View>
-      ) : null}
-      {result && slide.explanation ? (
-        <View testID="matching-explanation" style={styles.explanation}>
-          <Text style={styles.explanationHeading}>{t('activity.matching.explanationHeading')}</Text>
-          <Text style={styles.explanationBody}>{slide.explanation}</Text>
-        </View>
-      ) : null}
-    </Card>
+            <Text
+              style={styles.bannerText(result.isCorrect)}
+              accessibilityLiveRegion={result.isCorrect ? 'polite' : 'assertive'}
+            >
+              {result.isCorrect ? t('activity.matching.correct') : t('activity.matching.incorrect')}
+            </Text>
+            <Text style={styles.summary(result.isCorrect)}>{result.summary}</Text>
+          </View>
+        ) : null}
+        {result && slide.explanation ? (
+          <View testID="matching-explanation" style={styles.explanation}>
+            <Text style={styles.explanationHeading}>
+              {t('activity.matching.explanationHeading')}
+            </Text>
+            <Text style={styles.explanationBody}>{slide.explanation}</Text>
+          </View>
+        ) : null}
+      </ActivitySubmitResult>
+    </>
   );
 };
 
@@ -219,6 +229,7 @@ const styles = StyleSheet.create((theme) => ({
   }),
   explanation: {
     gap: theme.spacing.s1,
+    marginTop: theme.spacing.s3,
   },
   explanationHeading: {
     ...theme.typography.titleSmall,

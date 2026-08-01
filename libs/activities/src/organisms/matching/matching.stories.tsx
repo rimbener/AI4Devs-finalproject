@@ -73,6 +73,16 @@ export const PartiallyPaired: Story = {
   },
 };
 
+export const AllPairedNotSubmitted: Story = {
+  args: {
+    initialPairs: [
+      { leftId: 'l1', rightId: 'r1' },
+      { leftId: 'l2', rightId: 'r2' },
+      { leftId: 'l3', rightId: 'r3' },
+    ],
+  },
+};
+
 export const SubmittedAllCorrect: Story = {
   args: { initialAnswer: allCorrectAnswer },
 };

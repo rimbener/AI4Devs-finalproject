@@ -123,7 +123,7 @@ describe('Matching', () => {
       expect(btn.props.accessibilityState.selected).toBe(false);
     }
 
-    expect(submitButton().props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: I18N.submit })).toBeNull();
     expect(screen.queryByText(I18N.correct)).toBeNull();
     expect(screen.queryByText(I18N.incorrect)).toBeNull();
   });
@@ -227,27 +227,26 @@ describe('Matching', () => {
     expect(itemButton('Paris').props.accessibilityState.checked).toBe(false);
   });
 
-  // @s7 — Submit disabled while unpaired remain.
-  it('keeps Submit disabled while at least one item is unpaired', async () => {
+  // @s7 — Submit hidden while unpaired remain.
+  it('keeps Submit hidden while at least one item is unpaired', async () => {
     await render(<Matching slide={slide} />);
 
-    expect(submitButton().props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: I18N.submit })).toBeNull();
 
     await press('France');
     await press('Paris');
-    expect(submitButton().props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: I18N.submit })).toBeNull();
   });
 
-  // @s7 — disabled Submit does not call onAnswered.
-  it('does not call onAnswered when Submit is pressed while disabled', async () => {
+  // @s7 — no Submit to press while unpaired → onAnswered never fires early.
+  it('does not call onAnswered while unpaired because Submit is hidden', async () => {
     const onAnswered = jest.fn();
     await render(<Matching slide={slide} onAnswered={onAnswered} />);
 
-    expect(submitButton().props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: I18N.submit })).toBeNull();
 
-    await act(async () => {
-      fireEvent.press(submitButton());
-    });
+    await press('France');
+    await press('Paris');
 
     expect(onAnswered).not.toHaveBeenCalled();
   });
@@ -387,13 +386,13 @@ describe('Matching', () => {
     expect(itemButton('France')).toHaveStyle({ minHeight: layout.touchTarget });
   });
 
-  it('seeds formed pairs from initialPairs so Submit stays disabled until all paired', async () => {
+  it('seeds formed pairs from initialPairs so Submit stays hidden until all paired', async () => {
     await render(<Matching slide={slide} initialPairs={[{ leftId: 'l1', rightId: 'r1' }]} />);
 
     expect(itemButton('France').props.accessibilityState.checked).toBe(true);
     expect(itemButton('Paris').props.accessibilityState.checked).toBe(true);
     expect(itemButton('Germany').props.accessibilityState.checked).toBe(false);
-    expect(submitButton().props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: I18N.submit })).toBeNull();
   });
 
   it('exposes a button role and accessible label for every item', async () => {
@@ -540,7 +539,7 @@ describe('Matching', () => {
     expect(itemButton('Paris').props.accessibilityState.checked).toBe(false);
     expect(itemButton('Germany').props.accessibilityState.checked).toBe(true);
     expect(itemButton('Berlin').props.accessibilityState.checked).toBe(true);
-    expect(submitButton().props.accessibilityState.disabled).toBe(true);
+    expect(screen.queryByRole('button', { name: I18N.submit })).toBeNull();
   });
 
   it('ignores item presses once result locks the activity', async () => {

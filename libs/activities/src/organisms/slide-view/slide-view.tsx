@@ -1,8 +1,8 @@
 import { useLocalization } from '@helsoft/localization';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
-
 import { OpenEndedBody } from '../../molecules/open-ended-body/open-ended-body';
+import { ScrollViewProvider } from '../../scroll-view-provider/scroll-view-provider';
 import { FillInTheBlank } from '../fill-in-the-blank/fill-in-the-blank';
 import { Flashcard } from '../flashcard/flashcard';
 import { Matching } from '../matching/matching';
@@ -41,7 +41,7 @@ export const SlideView = ({
             <SlideImage image={slide.image} layout="split" />
           </View>
           <View testID="slide-body-pane" style={styles.splitPane}>
-            <ScrollView
+            <ScrollViewProvider
               accessible
               accessibilityLabel={t('player.slideBody.scroll')}
               focusable
@@ -50,7 +50,7 @@ export const SlideView = ({
               style={styles.bodyScroll}
             >
               {body}
-            </ScrollView>
+            </ScrollViewProvider>
           </View>
         </View>
       ) : (
@@ -116,6 +116,7 @@ const styles = StyleSheet.create((theme) => ({
   root: (isSplit: boolean, availableHeight: number | null | undefined) => ({
     gap: theme.spacing.s3,
     ...(isSplit && availableHeight ? { height: availableHeight } : { flex: 1 }),
+    padding: theme.spacing.s1,
   }),
   title: {
     ...theme.typography.headlineSmall,

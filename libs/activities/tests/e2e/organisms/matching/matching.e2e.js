@@ -30,7 +30,8 @@ test('tapping an unpaired item marks it pending then forms a pair with the oppos
   await expectState(canvas, 'l1', 'paired');
   await expectState(canvas, 'r1', 'paired');
   await expectState(canvas, 'l2', 'idle');
-  await expect(submit).toBeDisabled();
+  // Submit stays hidden while unpaired remain (@s7).
+  await expect(submit).toHaveCount(0);
 });
 
 test('tapping a paired item releases the pair before submit', async ({ page }) => {
@@ -53,17 +54,19 @@ test('tapping a paired item releases the pair before submit', async ({ page }) =
   await expectState(canvas, 'r1', 'paired');
 });
 
-test('Submit stays disabled until every item is paired, then enables', async ({ page }) => {
+test('Submit stays hidden until every item is paired, then appears and submits', async ({
+  page,
+}) => {
   await page.goto(story('interactive'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
   const submit = canvas.getByText('Submit', { exact: true });
-  await expect(submit).toBeVisible();
+  await expect(submit).toHaveCount(0);
 
   await clickItem(canvas, 'l1');
   await clickItem(canvas, 'r1');
-  // Still unpaired remain — clicking Submit should not show a result (@s7).
-  await submit.click({ force: true });
+  // Still unpaired remain — no Submit to press (@s7).
+  await expect(submit).toHaveCount(0);
   await expect(canvas.getByText('All correct!', { exact: true })).toHaveCount(0);
 
   await clickItem(canvas, 'l2');
@@ -71,6 +74,7 @@ test('Submit stays disabled until every item is paired, then enables', async ({ 
   await clickItem(canvas, 'l3');
   await clickItem(canvas, 'r3');
 
+  await expect(submit).toBeVisible();
   await submit.click();
   await expect(canvas.getByText('All correct!', { exact: true })).toBeVisible();
 });

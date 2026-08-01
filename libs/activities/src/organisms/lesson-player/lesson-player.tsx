@@ -3,9 +3,10 @@ import { Button, layout } from '@helsoft/components';
 import { useLocalization } from '@helsoft/localization';
 import { useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { ScrollViewProvider } from '../../scroll-view-provider/scroll-view-provider';
 import { LessonResults } from '../lesson-results/lesson-results';
 import { SlideView } from '../slide-view/slide-view';
 import type { LessonPlayerProps } from './lesson-player.types';
@@ -128,7 +129,7 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
         onBack={player.goBack}
         onNext={player.goNext}
       />
-      <ScrollView
+      <ScrollViewProvider
         testID={LESSON_PLAYER_BODY_TEST_ID}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
@@ -151,7 +152,7 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
             initialAnswer={player.answers[player.currentSlide.id]}
           />
         ) : null}
-      </ScrollView>
+      </ScrollViewProvider>
     </View>
   );
 };
