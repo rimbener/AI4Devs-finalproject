@@ -20,6 +20,9 @@ export const pt: TranslationResource = {
     error: {
       network: 'Erro de rede. Tente novamente.',
     },
+    toast: {
+      alreadyInProgress: 'Este PDF já está a ser processado',
+    },
     nav: {
       myLessons: 'Minhas lições',
       myPdfFiles: 'Meus arquivos PDF',
@@ -189,6 +192,7 @@ export const pt: TranslationResource = {
     player: {
       loading: 'Carregando lição…',
       next: 'Próximo',
+      continue: 'Continuar',
       back: 'Voltar',
       slideOf: 'Slide {{current}} de {{total}}',
       progress: {
@@ -278,37 +282,29 @@ export const pt: TranslationResource = {
       },
     },
     activity: {
-      mcq: {
+      result: {
         submit: 'Enviar',
         correct: 'Correto',
         incorrect: 'Incorreto',
         explanation: 'Explicação',
+        answerHeading: 'Resposta',
         unavailable: 'Esta pergunta não está disponível',
       },
+      footer: {
+        collapseResults: 'Recolher resultados',
+        expandResults: 'Expandir resultados',
+      },
       matching: {
-        submit: 'Enviar',
-        correct: 'Tudo correto!',
-        incorrect: 'Quase',
         correctPair: 'correto',
         incorrectPair: 'incorreto',
-        explanationHeading: 'Por quê',
         summary: '{{correct}} de {{total}} corretos',
-        unavailable: 'Esta atividade não está disponível',
       },
       fillInTheBlank: {
-        submit: 'Enviar',
-        correct: 'Correto!',
-        incorrect: 'Incorreto',
-        explanationHeading: 'Por quê',
-        unavailable: 'Esta atividade não está disponível',
         blankInput: 'Preencha o espaço',
       },
       openEnded: {
-        submit: 'Enviar',
         yourAnswer: 'Sua resposta',
         modelAnswer: 'Resposta modelo',
-        explanationHeading: 'Por quê',
-        unavailable: 'Esta atividade não está disponível',
         answerInput: 'Sua resposta',
       },
       flashcard: {
@@ -317,9 +313,6 @@ export const pt: TranslationResource = {
         notRecalled: 'Não lembrei',
         recalledConfirmed: 'Marcado como lembrado',
         notRecalledConfirmed: 'Marcado como não lembrado',
-        answerHeading: 'Resposta',
-        explanationHeading: 'Por quê',
-        unavailable: 'Esta atividade não está disponível',
       },
     },
   },

@@ -3,6 +3,12 @@ const { test, expect } = require('@playwright/test');
 // Title 'Organisms/LessonPlayer' → slug 'organisms-lessonplayer'.
 const story = (name) => `/?path=/story/organisms-lessonplayer--${name}`;
 
+// The lesson player now renders a second (footer) Next and the results screen has its own
+// Back home control, so navigation targets the header nav controls by testID (same choice
+// the app e2e made).
+const next = (canvas) => canvas.getByTestId('lesson-player-nav-next');
+const back = (canvas) => canvas.getByTestId('lesson-player-nav-back');
+
 // @s2/@s20 — Next advances; Back from results returns to last content slide.
 test('Lesson player navigates to results and back', async ({ page }) => {
   await page.goto(story('first-slide'));
@@ -12,13 +18,13 @@ test('Lesson player navigates to results and back', async ({ page }) => {
 
   // 4 content slides → results is step 5
   for (let i = 0; i < 4; i++) {
-    await canvas.getByRole('button', { name: 'Next' }).click();
+    await next(canvas).click();
   }
 
   await expect(canvas.getByText('Slide 5 of 5', { exact: true })).toBeVisible();
-  await expect(canvas.getByRole('button', { name: 'Back' })).toBeVisible();
+  await expect(back(canvas)).toBeVisible();
 
-  await canvas.getByRole('button', { name: 'Back' }).click();
+  await back(canvas).click();
   await expect(canvas.getByText('Summary', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Slide 4 of 5', { exact: true })).toBeVisible();
 });
@@ -31,8 +37,8 @@ test('Lesson player is usable on a mobile viewport', async ({ page }) => {
 
   await expect(canvas.getByText('Welcome', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Slide 1 of 5', { exact: true })).toBeVisible();
-  await expect(canvas.getByRole('button', { name: 'Next' })).toBeVisible();
-  await canvas.getByRole('button', { name: 'Next' }).click();
+  await expect(next(canvas)).toBeVisible();
+  await next(canvas).click();
   await expect(canvas.getByText('France', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Slide 2 of 5', { exact: true })).toBeVisible();
 });
@@ -45,7 +51,7 @@ test('Lesson player is usable on a web viewport', async ({ page }) => {
 
   await expect(canvas.getByText('Welcome', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Slide 1 of 5', { exact: true })).toBeVisible();
-  await expect(canvas.getByRole('button', { name: 'Next' })).toBeVisible();
-  await canvas.getByRole('button', { name: 'Next' }).click();
+  await expect(next(canvas)).toBeVisible();
+  await next(canvas).click();
   await expect(canvas.getByText('France', { exact: true })).toBeVisible();
 });

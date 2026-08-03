@@ -1,4 +1,4 @@
-jest.mock('../slide-image/slide-image', () => ({
+jest.mock('../../molecules/slide-image/slide-image', () => ({
   SlideImage: ({
     image,
     layout,
@@ -19,7 +19,7 @@ jest.mock('@helsoft/localization', () => ({
     t: (key: string) => key,
   }),
 }));
-jest.mock('../multiple-choice/multiple-choice', () => ({
+jest.mock('../../templates/multiple-choice/multiple-choice', () => ({
   MultipleChoice: ({
     slide,
     initialAnswer,
@@ -40,7 +40,7 @@ jest.mock('../multiple-choice/multiple-choice', () => ({
     );
   },
 }));
-jest.mock('../fill-in-the-blank/fill-in-the-blank', () => ({
+jest.mock('../../templates/fill-in-the-blank/fill-in-the-blank', () => ({
   FillInTheBlank: ({
     slide,
     initialAnswer,
@@ -59,7 +59,7 @@ jest.mock('../fill-in-the-blank/fill-in-the-blank', () => ({
     );
   },
 }));
-jest.mock('../matching/matching', () => ({
+jest.mock('../../templates/matching/matching', () => ({
   Matching: ({
     slide,
     initialAnswer,
@@ -78,7 +78,7 @@ jest.mock('../matching/matching', () => ({
     );
   },
 }));
-jest.mock('../flashcard/flashcard', () => ({
+jest.mock('../../templates/flashcard/flashcard', () => ({
   Flashcard: ({
     slide,
     initialAnswer,
@@ -375,6 +375,8 @@ describe('SlideView', () => {
     expect(row.parent?.props.style).toEqual(expect.objectContaining({ height: 600, gap: 12 }));
     expect(imagePane.props.style).toEqual(expect.objectContaining({ flex: 1 }));
     expect(bodyPane.props.style).toEqual(expect.objectContaining({ flex: 1 }));
+    // The ScrollView is a direct child of the pane (no nested footer host — the activity
+    // footer registers on the outer LessonPlayer provider, not on the split pane).
     expect(bodyScroll.parent).toBe(bodyPane);
     expect(bodyScroll.props).toEqual(
       expect.objectContaining({

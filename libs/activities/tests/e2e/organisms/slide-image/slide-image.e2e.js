@@ -4,7 +4,7 @@ const { test, expect } = require('@playwright/test');
 test.describe.configure({ mode: 'serial' });
 
 test('WithImage opens the lightbox and dismisses it from the close control', async ({ page }) => {
-  await page.goto('/?path=/story/organisms-slideimage--with-image');
+  await page.goto('/?path=/story/molecules-slideimage--with-image');
 
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
   await expect(canvas.getByLabel('View image fullscreen')).toBeVisible();
@@ -18,7 +18,7 @@ test('WithImage opens the lightbox and dismisses it from the close control', asy
 });
 
 test('SplitImage opens the lightbox from the bounded pane', async ({ page }) => {
-  await page.goto('/?path=/story/organisms-slideimage--split-image');
+  await page.goto('/?path=/story/molecules-slideimage--split-image');
 
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
   await expect(canvas.getByLabel('View image fullscreen')).toBeVisible();

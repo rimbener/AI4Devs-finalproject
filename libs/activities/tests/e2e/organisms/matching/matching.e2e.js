@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
-// Title 'Organisms/Matching' → slug 'organisms-matching'.
-const story = (name) => `/?path=/story/organisms-matching--${name}`;
+// Title 'Templates/Matching' → slug 'templates-matching'.
+const story = (name) => `/?path=/story/templates-matching--${name}`;
 
 /** testID is `matching-item-<id>--<state>`; locate by id prefix for clicks. */
 const item = (canvas, id) => canvas.locator(`[data-testid^="matching-item-${id}--"]`);
@@ -67,7 +67,7 @@ test('Submit stays hidden until every item is paired, then appears and submits',
   await clickItem(canvas, 'r1');
   // Still unpaired remain — no Submit to press (@s7).
   await expect(submit).toHaveCount(0);
-  await expect(canvas.getByText('All correct!', { exact: true })).toHaveCount(0);
+  await expect(canvas.getByText('Correct', { exact: true })).toHaveCount(0);
 
   await clickItem(canvas, 'l2');
   await clickItem(canvas, 'r2');
@@ -76,7 +76,7 @@ test('Submit stays hidden until every item is paired, then appears and submits',
 
   await expect(submit).toBeVisible();
   await submit.click();
-  await expect(canvas.getByText('All correct!', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Correct', { exact: true })).toBeVisible();
 });
 
 test('submitting all-correct pairs shows correct banner, icons, and locks', async ({ page }) => {
@@ -91,7 +91,7 @@ test('submitting all-correct pairs shows correct banner, icons, and locks', asyn
   await clickItem(canvas, 'r3');
   await canvas.getByText('Submit', { exact: true }).click();
 
-  await expect(canvas.getByText('All correct!', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Correct', { exact: true })).toBeVisible();
   await expect(canvas.getByText('3 of 3 correct', { exact: true })).toBeVisible();
   await expect(canvas.getByText('check_circle', { exact: true }).first()).toBeVisible();
   await expect(canvas.getByText('Submit', { exact: true })).toHaveCount(0);
@@ -109,7 +109,7 @@ test('submitting mixed pairs shows incorrect banner and mixed icons', async ({ p
   await clickItem(canvas, 'r2'); // incorrect
   await canvas.getByText('Submit', { exact: true }).click();
 
-  await expect(canvas.getByText('Not quite', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Incorrect', { exact: true })).toBeVisible();
   await expect(canvas.getByText('1 of 3 correct', { exact: true })).toBeVisible();
   await expect(canvas.getByText('check_circle', { exact: true }).first()).toBeVisible();
   await expect(canvas.getByText('cancel', { exact: true }).first()).toBeVisible();

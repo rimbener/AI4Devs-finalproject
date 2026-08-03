@@ -68,7 +68,7 @@ describe('SlideView', () => {
       fireEvent.press(screen.getByRole('button', { name: /Berlin/ }));
     });
     await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'activity.mcq.submit' }));
+      fireEvent.press(screen.getByRole('button', { name: 'activity.result.submit' }));
     });
 
     expect(onAnswered).toHaveBeenCalledTimes(1);
@@ -87,7 +87,7 @@ describe('SlideView', () => {
     expect(screen.getByRole('button', { name: /Berlin/ }).props.accessibilityState.disabled).toBe(
       true,
     );
-    expect(screen.queryByRole('button', { name: 'activity.mcq.submit' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'activity.result.submit' })).toBeNull();
     expect(onAnswered).not.toHaveBeenCalled();
   });
 });

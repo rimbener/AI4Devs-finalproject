@@ -2,6 +2,8 @@
 
 This file provides guidance to Code agents when working with code in this repository.
 In all interactions, be extremely concise and sacrifice grammar for the sake of concision.
+Use simple and plain language. Don't use fancy words or phrases. Avoid common-expressions and idioms.
+
 
 ## Project
 

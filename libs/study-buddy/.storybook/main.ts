@@ -55,6 +55,9 @@ const config: StorybookConfig = {
       alias: {
         ...viteConfig.resolve?.alias,
         // Storybook-only seams: no Expo Router / Supabase tree here. See .storybook/mocks/*.
+        // More-specific `/ui` first — bare `expo-router` alias would make Vite look for
+        // `mocks/expo-router.ts/ui` (breaks @helsoft/components WebBottomTabs).
+        'expo-router/ui': `${dirname}mocks/expo-router-ui.tsx`,
         'expo-router': `${dirname}mocks/expo-router.ts`,
         'expo-document-picker': `${dirname}mocks/expo-document-picker.ts`,
         '@helsoft/hooks': `${dirname}mocks/hooks.ts`,

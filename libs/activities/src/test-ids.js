@@ -17,3 +17,6 @@ export const MULTIPLE_CHOICE_OPTION_TEST_ID_PREFIX = 'multiple-choice-option-';
 /** testID for one MultipleChoice AnswerOption, keyed by option id. */
 export const multipleChoiceOptionTestId = (optionId) =>
   `${MULTIPLE_CHOICE_OPTION_TEST_ID_PREFIX}${optionId}`;
+
+export const ACTIVITY_FOOTER_COLLAPSE_TEST_ID = 'activity-footer-collapse';
+export const ACTIVITY_FOOTER_NEXT_TEST_ID = 'activity-footer-next';

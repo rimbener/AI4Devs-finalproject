@@ -11,6 +11,12 @@
       "dependsOn": ["^check-types"]
     },
     "test": {},
+    "test:e2e": {
+      "cache": false
+    },
+    "test:e2e:ci": {
+      "cache": false
+    },
     "mutation": {
       "cache": false
     },

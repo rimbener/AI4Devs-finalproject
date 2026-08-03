@@ -4,7 +4,6 @@
  */
 
 export const PDF_UPLOAD_PANEL_CHOOSE_FILE_TEST_ID = 'pdf-upload-panel-choose-file';
-export const PDF_UPLOAD_PANEL_CONTINUE_TEST_ID = 'pdf-upload-panel-continue';
 
 /** testID for a PDF list row's status-driven action button (generate/retry/open), keyed by filename. */
 export const pdfDocumentListItemActionTestId = (filename) =>
@@ -12,6 +11,7 @@ export const pdfDocumentListItemActionTestId = (filename) =>
 
 export const LESSON_GENERATION_GENERATE_TEST_ID = 'lesson-generation-generate';
 export const LESSON_GENERATION_OPEN_IN_PLAYER_TEST_ID = 'lesson-generation-open-in-player';
+export const PDF_UPLOAD_PANEL_CONTINUE_TEST_ID = 'pdf-upload-panel-continue';
 
 export const RESULTS_RETAKE_TEST_ID = 'results-summary-retake';
 export const RESULTS_BACK_HOME_TEST_ID = 'results-summary-back-home';

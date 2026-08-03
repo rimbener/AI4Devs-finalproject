@@ -14,15 +14,15 @@ test('revealing shows answer, self-mark actions, and explanation', async ({ page
   await expect(canvas.getByText(ANSWER, { exact: true })).toBeVisible();
   await expect(canvas.getByText('Recalled', { exact: true })).toBeVisible();
   await expect(canvas.getByText('Not recalled', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Why', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Explanation', { exact: true })).toBeVisible();
 });
 
-test('WithoutExplanation story reveals without Why', async ({ page }) => {
+test('WithoutExplanation story reveals without Explanation', async ({ page }) => {
   await page.goto(story('without-explanation'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
   await canvas.getByText('Reveal answer', { exact: true }).click();
 
   await expect(canvas.getByText(ANSWER, { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Why', { exact: true })).toHaveCount(0);
+  await expect(canvas.getByText('Explanation', { exact: true })).toHaveCount(0);
 });

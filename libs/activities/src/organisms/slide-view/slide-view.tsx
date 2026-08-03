@@ -1,13 +1,12 @@
 import { useLocalization } from '@helsoft/localization';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 import { OpenEndedBody } from '../../molecules/open-ended-body/open-ended-body';
-import { ScrollViewProvider } from '../../scroll-view-provider/scroll-view-provider';
-import { FillInTheBlank } from '../fill-in-the-blank/fill-in-the-blank';
-import { Flashcard } from '../flashcard/flashcard';
-import { Matching } from '../matching/matching';
-import { MultipleChoice } from '../multiple-choice/multiple-choice';
-import { SlideImage } from '../slide-image/slide-image';
+import { SlideImage } from '../../molecules/slide-image/slide-image';
+import { FillInTheBlank } from '../../templates/fill-in-the-blank/fill-in-the-blank';
+import { Flashcard } from '../../templates/flashcard/flashcard';
+import { Matching } from '../../templates/matching/matching';
+import { MultipleChoice } from '../../templates/multiple-choice/multiple-choice';
 import { isInstructional } from './slide-view.helpers';
 import type { ActivityBodyProps, SlideViewProps } from './slide-view.types';
 import { useSlideLayout } from './use-slide-layout';
@@ -41,7 +40,7 @@ export const SlideView = ({
             <SlideImage image={slide.image} layout="split" />
           </View>
           <View testID="slide-body-pane" style={styles.splitPane}>
-            <ScrollViewProvider
+            <ScrollView
               accessible
               accessibilityLabel={t('player.slideBody.scroll')}
               focusable
@@ -50,7 +49,7 @@ export const SlideView = ({
               style={styles.bodyScroll}
             >
               {body}
-            </ScrollViewProvider>
+            </ScrollView>
           </View>
         </View>
       ) : (

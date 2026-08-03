@@ -1,5 +1,6 @@
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 
+import { LESSON_PLAYER_NAV_NEXT_TEST_ID } from '@helsoft/activities/test-ids';
 import { RESULTS_LOADING_TEST_ID } from '@helsoft/components';
 import { QueryProvider } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
@@ -61,6 +62,12 @@ const lesson: Lesson = {
  * Integration: thin study-buddy LessonPlayer → activities organism deck → results slide →
  * useLessonAttempt → LessonAttemptService → LessonAttemptDao (mocked Supabase `.from()`).
  */
+const pressNext = async () => {
+  await act(async () => {
+    fireEvent.press(screen.getByTestId(LESSON_PLAYER_NAV_NEXT_TEST_ID));
+  });
+};
+
 describe('LessonPlayer integration (study-buddy -> hook -> service -> DAO)', () => {
   let client: SupabaseClient;
 
@@ -97,12 +104,8 @@ describe('LessonPlayer integration (study-buddy -> hook -> service -> DAO)', () 
 
     expect(screen.getByText('Slide 1 of 3')).toBeTruthy();
 
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Next' }));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Next' }));
-    });
+    await pressNext();
+    await pressNext();
 
     expect(screen.getByText('0 / 1')).toBeTruthy();
     await waitFor(() =>
@@ -131,12 +134,8 @@ describe('LessonPlayer integration (study-buddy -> hook -> service -> DAO)', () 
       wrapper: QueryProvider,
     });
 
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Next' }));
-    });
-    await act(async () => {
-      fireEvent.press(screen.getByRole('button', { name: 'Next' }));
-    });
+    await pressNext();
+    await pressNext();
     await waitFor(() => expect(insert).toHaveBeenCalled());
     await waitFor(() => expect(screen.queryByTestId(RESULTS_LOADING_TEST_ID)).toBeNull());
     await act(async () => {

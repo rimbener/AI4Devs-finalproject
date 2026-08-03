@@ -27,6 +27,7 @@ const flattenValues = (node: unknown, prefix = ''): Record<string, string> => {
 const PLAYER_KEYS = [
   'player.loading',
   'player.next',
+  'player.continue',
   'player.back',
   'player.slideOf',
   'player.empty.message',

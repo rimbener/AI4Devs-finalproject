@@ -14,10 +14,10 @@ test('submitting reveals model answer and explanation', async ({ page }) => {
 
   await expect(canvas.getByText('Model answer', { exact: true })).toBeVisible();
   await expect(canvas.getByText(MODEL_ANSWER, { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Why', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Explanation', { exact: true })).toBeVisible();
 });
 
-test('WithoutExplanation story reveals without Why', async ({ page }) => {
+test('WithoutExplanation story reveals without Explanation', async ({ page }) => {
   await page.goto(story('without-explanation'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
@@ -25,5 +25,5 @@ test('WithoutExplanation story reveals without Why', async ({ page }) => {
   await canvas.getByText('Submit', { exact: true }).click();
 
   await expect(canvas.getByText(MODEL_ANSWER, { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Why', { exact: true })).toHaveCount(0);
+  await expect(canvas.getByText('Explanation', { exact: true })).toHaveCount(0);
 });

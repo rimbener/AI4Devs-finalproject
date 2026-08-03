@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
-// Title 'Organisms/OpenEnded' → slug 'organisms-openended'.
-const story = (name) => `/?path=/story/organisms-openended--${name}`;
+// Title 'Templates/OpenEnded' → slug 'templates-openended'.
+const story = (name) => `/?path=/story/templates-openended--${name}`;
 
 const MODEL_ANSWER = 'Conversion of light energy into chemical energy.';
 
@@ -48,7 +48,8 @@ test('after submit the attempt cannot be changed or resubmitted (@s4)', async ({
   await expect(input).toHaveAttribute('readonly', '');
   await expect(input).toHaveValue('first answer');
 
-  await canvas.getByText('Submit', { exact: true }).click({ force: true });
+  // Submit control is replaced by the result once locked — no resubmit path remains.
+  await expect(canvas.getByText('Submit', { exact: true })).toHaveCount(0);
   await expect(input).toHaveValue('first answer');
   await expect(canvas.getByText(MODEL_ANSWER, { exact: true })).toBeVisible();
 });

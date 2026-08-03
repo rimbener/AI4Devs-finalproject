@@ -25,6 +25,10 @@ export const en = {
     error: {
       network: 'Network error. Try again.',
     },
+    toast: {
+      alreadyInProgress: 'This PDF is already being processed',
+    },
+
     nav: {
       myLessons: 'My lessons',
       myPdfFiles: 'My PDF files',
@@ -208,6 +212,7 @@ export const en = {
     player: {
       loading: 'Loading lesson…',
       next: 'Next',
+      continue: 'Continue',
       back: 'Back',
       slideOf: 'Slide {{current}} of {{total}}',
       progress: {
@@ -320,37 +325,29 @@ export const en = {
       },
     },
     activity: {
-      mcq: {
+      result: {
         submit: 'Submit',
         correct: 'Correct',
         incorrect: 'Incorrect',
         explanation: 'Explanation',
+        answerHeading: 'Answer',
         unavailable: 'This question is unavailable',
       },
+      footer: {
+        collapseResults: 'Collapse results',
+        expandResults: 'Expand results',
+      },
       matching: {
-        submit: 'Submit',
-        correct: 'All correct!',
-        incorrect: 'Not quite',
         correctPair: 'correct',
         incorrectPair: 'incorrect',
-        explanationHeading: 'Why',
         summary: '{{correct}} of {{total}} correct',
-        unavailable: 'This activity is unavailable',
       },
       fillInTheBlank: {
-        submit: 'Submit',
-        correct: 'Correct!',
-        incorrect: 'Incorrect',
-        explanationHeading: 'Why',
-        unavailable: 'This activity is unavailable',
         blankInput: 'Fill in the blank',
       },
       openEnded: {
-        submit: 'Submit',
         yourAnswer: 'Your answer',
         modelAnswer: 'Model answer',
-        explanationHeading: 'Why',
-        unavailable: 'This activity is unavailable',
         answerInput: 'Your response',
       },
       flashcard: {
@@ -359,9 +356,6 @@ export const en = {
         notRecalled: 'Not recalled',
         recalledConfirmed: 'Marked recalled',
         notRecalledConfirmed: 'Marked not recalled',
-        answerHeading: 'Answer',
-        explanationHeading: 'Why',
-        unavailable: 'This activity is unavailable',
       },
     },
   },

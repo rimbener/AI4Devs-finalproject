@@ -6,7 +6,7 @@ import type { LayoutChangeEvent } from 'react-native';
 import { Text, View } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
-import { ScrollViewProvider } from '../../scroll-view-provider/scroll-view-provider';
+import { ActivityScrollViewProvider } from '../../activity-scroll-view-provider/activity-scroll-view-provider';
 import { LessonResults } from '../lesson-results/lesson-results';
 import { SlideView } from '../slide-view/slide-view';
 import type { LessonPlayerProps } from './lesson-player.types';
@@ -16,6 +16,7 @@ import { useLessonPlayer } from './use-lesson-player';
 export const LESSON_PLAYER_EMPTY_TEST_ID = 'lesson-player-empty';
 export const LESSON_PLAYER_ERROR_TEST_ID = 'lesson-player-error';
 export const LESSON_PLAYER_BODY_TEST_ID = 'lesson-player-body';
+export const LESSON_PLAYER_FRAME_TEST_ID = 'lesson-player-frame';
 
 /** LessonPlayer — SlideView steps, then LessonResults; empty/error short-circuit. */
 export const LessonPlayer = ({
@@ -129,11 +130,13 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
         onBack={player.goBack}
         onNext={player.goNext}
       />
-      <ScrollViewProvider
+      <ActivityScrollViewProvider
         testID={LESSON_PLAYER_BODY_TEST_ID}
+        wrapperTestID={LESSON_PLAYER_FRAME_TEST_ID}
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
         onLayout={onBodyLayout}
+        onFooterNext={player.canGoNext ? player.goNext : undefined}
       >
         {player.isResultsSlide ? (
           <LessonResults
@@ -152,7 +155,7 @@ const LessonPlayerDeck = ({ lesson, onBackToLessons }: DeckProps) => {
             initialAnswer={player.answers[player.currentSlide.id]}
           />
         ) : null}
-      </ScrollViewProvider>
+      </ActivityScrollViewProvider>
     </View>
   );
 };

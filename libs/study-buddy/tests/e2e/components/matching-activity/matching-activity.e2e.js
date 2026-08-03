@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 // Title 'Features/MatchingActivity' → slug 'features-matchingactivity'.
 const story = (name) => `/?path=/story/features-matchingactivity--${name}`;
 
-test('pairing all items and submitting shows All correct and explanation', async ({ page }) => {
+test('pairing all items and submitting shows Correct and explanation', async ({ page }) => {
   await page.goto(story('default'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
@@ -15,11 +15,11 @@ test('pairing all items and submitting shows All correct and explanation', async
   await canvas.getByText('Rome', { exact: true }).click();
   await canvas.getByText('Submit', { exact: true }).click();
 
-  await expect(canvas.getByText('All correct!', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Why', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Correct', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Explanation', { exact: true })).toBeVisible();
 });
 
-test('WithoutExplanation story grades without Why', async ({ page }) => {
+test('WithoutExplanation story grades without Explanation', async ({ page }) => {
   await page.goto(story('without-explanation'));
   const canvas = page.frameLocator('iframe[title="storybook-preview-iframe"]');
 
@@ -31,6 +31,6 @@ test('WithoutExplanation story grades without Why', async ({ page }) => {
   await canvas.getByText('Rome', { exact: true }).click();
   await canvas.getByText('Submit', { exact: true }).click();
 
-  await expect(canvas.getByText('All correct!', { exact: true })).toBeVisible();
-  await expect(canvas.getByText('Why', { exact: true })).toHaveCount(0);
+  await expect(canvas.getByText('Correct', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('Explanation', { exact: true })).toHaveCount(0);
 });

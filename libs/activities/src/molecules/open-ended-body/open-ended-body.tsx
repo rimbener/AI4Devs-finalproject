@@ -1,7 +1,7 @@
 import type { OpenEndedAnswer, OpenEndedSlide } from '@helsoft/types';
 import { useState } from 'react';
 
-import { OpenEnded } from '../../organisms/open-ended/open-ended';
+import { OpenEnded } from '../../templates/open-ended/open-ended';
 
 /** Short-answer ceiling — not derived from modelAnswer (ungraded). */
 export const OPEN_ENDED_MAX_LENGTH = 2000;

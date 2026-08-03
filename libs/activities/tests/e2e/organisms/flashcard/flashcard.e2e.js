@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
-// Title 'Organisms/Flashcard' → slug 'organisms-flashcard'.
-const story = (name) => `/?path=/story/organisms-flashcard--${name}`;
+// Title 'Templates/Flashcard' → slug 'templates-flashcard'.
+const story = (name) => `/?path=/story/templates-flashcard--${name}`;
 
 const PROMPT = 'What pigment absorbs light for photosynthesis?';
 const ANSWER = 'Chlorophyll';

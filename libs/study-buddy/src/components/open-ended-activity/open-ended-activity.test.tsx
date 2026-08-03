@@ -23,11 +23,11 @@ const slide: OpenEndedSlide = {
 };
 
 const labels = {
-  submit: 'activity.openEnded.submit',
+  submit: 'activity.result.submit',
   yourAnswer: 'activity.openEnded.yourAnswer',
   modelAnswer: 'activity.openEnded.modelAnswer',
-  explanationHeading: 'activity.openEnded.explanationHeading',
-  unavailable: 'activity.openEnded.unavailable',
+  explanationHeading: 'activity.result.explanation',
+  unavailable: 'activity.result.unavailable',
   answerInput: 'activity.openEnded.answerInput',
 };
 
@@ -89,9 +89,8 @@ describe('OpenEndedActivity', () => {
     await act(async () => {
       fireEvent.press(submitButton());
     });
-    await act(async () => {
-      fireEvent.press(submitButton());
-    });
+    // Submit control is replaced by the result once locked — no resubmit path remains.
+    expect(screen.queryByRole('button', { name: labels.submit })).toBeNull();
 
     expect(onAnswered).toHaveBeenCalledTimes(1);
     expect(onAnswered).toHaveBeenCalledWith({

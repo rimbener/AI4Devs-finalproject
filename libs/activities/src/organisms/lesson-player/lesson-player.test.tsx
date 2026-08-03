@@ -87,12 +87,13 @@ jest.mock('../lesson-results/lesson-results', () => ({
 import { useLocalization } from '@helsoft/localization';
 import type { Lesson } from '@helsoft/types';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { LESSON_PLAYER_TEST_ID } from '../../test-ids';
+import { LESSON_PLAYER_NAV_NEXT_TEST_ID, LESSON_PLAYER_TEST_ID } from '../../test-ids';
 import { localizationValue } from '../../test-utils/auth-test-factories';
 import {
   LESSON_PLAYER_BODY_TEST_ID,
   LESSON_PLAYER_EMPTY_TEST_ID,
   LESSON_PLAYER_ERROR_TEST_ID,
+  LESSON_PLAYER_FRAME_TEST_ID,
   LessonPlayer,
 } from './lesson-player';
 
@@ -167,7 +168,7 @@ const t = (key: string, options?: Record<string, unknown>) => {
 
 const pressNext = async () => {
   await act(async () => {
-    fireEvent.press(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.press(screen.getByTestId(LESSON_PLAYER_NAV_NEXT_TEST_ID));
   });
 };
 const pressBack = async () => {
@@ -203,7 +204,7 @@ describe('LessonPlayer', () => {
     expect(screen.getByTestId('slide-available-height').props.children).toBe('undefined');
     expect(typeof screen.getByTestId('slide-mount-id').props.children).toBe('string');
 
-    await fireEvent(screen.getByTestId(LESSON_PLAYER_BODY_TEST_ID), 'layout', {
+    await fireEvent(screen.getByTestId(LESSON_PLAYER_FRAME_TEST_ID), 'layout', {
       nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 480 } },
     });
 
@@ -214,7 +215,7 @@ describe('LessonPlayer', () => {
   it.each([0, -1])('ignores a non-positive measured body height of %d', async (height) => {
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
 
-    await fireEvent(screen.getByTestId(LESSON_PLAYER_BODY_TEST_ID), 'layout', {
+    await fireEvent(screen.getByTestId(LESSON_PLAYER_FRAME_TEST_ID), 'layout', {
       nativeEvent: { layout: { x: 0, y: 0, width: 320, height } },
     });
 
@@ -237,7 +238,7 @@ describe('LessonPlayer', () => {
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
 
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
+    expect(screen.getByTestId(LESSON_PLAYER_NAV_NEXT_TEST_ID)).toBeTruthy();
   });
 
   // @s2 — Next advances between content slides.
@@ -500,7 +501,7 @@ describe('LessonPlayer', () => {
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
 
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Next' })).toBeTruthy();
+    expect(screen.getByTestId(LESSON_PLAYER_NAV_NEXT_TEST_ID)).toBeTruthy();
     expect(screen.getByText('Slide 1 of 5').props.accessibilityLiveRegion).toBe('polite');
   });
 
@@ -563,7 +564,9 @@ describe('LessonPlayer', () => {
     await render(<LessonPlayer lesson={lesson} onBackToLessons={jest.fn()} />);
     const deckRoot = screen.getAllByTestId(LESSON_PLAYER_TEST_ID).at(-1)!;
     const header = deckRoot.children[0] as unknown as { props: { style: unknown } };
-    const body = deckRoot.children[1] as unknown as {
+    // The body ScrollView now sits inside the provider's footer wrapper — assert the
+    // ScrollView directly rather than a fixed children index.
+    const body = screen.getByTestId(LESSON_PLAYER_BODY_TEST_ID) as unknown as {
       props: { style: unknown; contentContainerStyle: unknown };
     };
     expect(header.props.style).toEqual(
@@ -576,7 +579,7 @@ describe('LessonPlayer', () => {
     expect(body.props.style).toEqual(expect.objectContaining({ flex: 1 }));
     expect(body.props.contentContainerStyle).toEqual(expect.objectContaining({ flexGrow: 1 }));
     expect(screen.getByText('Slide 1 of 5')).toBeTruthy();
-    const next = screen.getByRole('button', { name: 'Next' });
+    const next = screen.getByTestId(LESSON_PLAYER_NAV_NEXT_TEST_ID);
     expect(next.props.accessibilityLabel).toBe('Next');
     expect(screen.getByText('arrow_forward')).toBeTruthy();
 

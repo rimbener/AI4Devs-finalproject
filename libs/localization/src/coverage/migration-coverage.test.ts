@@ -79,14 +79,14 @@ const SIGN_OUT_DIR = resolve(REPO_ROOT, 'libs/logging-in-out/src/organisms/sign-
  */
 const MULTIPLE_CHOICE_ACTIVITY_DIR = resolve(
   REPO_ROOT,
-  'libs/activities/src/organisms/multiple-choice',
+  'libs/activities/src/templates/multiple-choice',
 );
 /**
  * activity-matching, task-6/@s16 — Matching organism chrome (`t('activity.matching.*')`)
  * needs the same missing-key guard: i18next has no missing-key handler. Moved from
  * libs/study-buddy/src/components/matching-activity for the same reason as above.
  */
-const MATCHING_ACTIVITY_DIR = resolve(REPO_ROOT, 'libs/activities/src/organisms/matching');
+const MATCHING_ACTIVITY_DIR = resolve(REPO_ROOT, 'libs/activities/src/templates/matching');
 /**
  * activity-fill-in-the-blank, task-6/@s13 — FillInTheBlank organism chrome
  * (`t('activity.fillInTheBlank.*')`) needs the same missing-key guard. Moved from
@@ -94,7 +94,7 @@ const MATCHING_ACTIVITY_DIR = resolve(REPO_ROOT, 'libs/activities/src/organisms/
  */
 const FILL_IN_THE_BLANK_ACTIVITY_DIR = resolve(
   REPO_ROOT,
-  'libs/activities/src/organisms/fill-in-the-blank',
+  'libs/activities/src/templates/fill-in-the-blank',
 );
 /**
  * activity-open-ended, task-6/@s8 — OpenEnded chrome (`t('activity.openEnded.*')`) needs the
@@ -102,7 +102,7 @@ const FILL_IN_THE_BLANK_ACTIVITY_DIR = resolve(
  * that chrome copy migrated into the @helsoft/activities organism (the study-buddy component is
  * now a thin wrapper with no t() calls of its own).
  */
-const OPEN_ENDED_ACTIVITY_DIR = resolve(REPO_ROOT, 'libs/activities/src/organisms/open-ended');
+const OPEN_ENDED_ACTIVITY_DIR = resolve(REPO_ROOT, 'libs/activities/src/templates/open-ended');
 /**
  * score-results-summary, task-7/@s1 — ResultsSummary calls `t('results.score'/'results.scorePercent'
  * /'results.retake'/'results.backHome')`; same missing-key guard. Keys live on the presentational
@@ -115,7 +115,25 @@ const LESSON_RESULTS_DIR = resolve(REPO_ROOT, 'libs/components/src/organisms/res
  * missing-key handler, so a typo'd/renamed key would silently render the raw key
  * string to real users.
  */
-const FLASHCARD_DIR = resolve(REPO_ROOT, 'libs/activities/src/organisms/flashcard');
+const FLASHCARD_DIR = resolve(REPO_ROOT, 'libs/activities/src/templates/flashcard');
+/**
+ * Shared activity-footer chrome — `t('activity.result.submit')` lives in the
+ * ActivityResultPanel molecule, not in any template dir, so the per-template
+ * guards above never scan it. Same missing-key guard as the others.
+ */
+const ACTIVITY_RESULT_PANEL_DIR = resolve(
+  REPO_ROOT,
+  'libs/activities/src/molecules/activity-result-panel',
+);
+/**
+ * Shared activity-result chrome — `t('activity.result.correct'/'incorrect')` and
+ * `t('activity.footer.collapseResults'/'expandResults')` live in the
+ * ActivityResultContent atom (rendered by matching / FITB / MCQ / open-ended).
+ */
+const ACTIVITY_RESULT_CONTENT_DIR = resolve(
+  REPO_ROOT,
+  'libs/activities/src/atoms/activity-result-content',
+);
 
 /**
  * ai-key-management task-13 (Slice 3) — same class of guard, extended for this feature's
@@ -283,6 +301,8 @@ const T_KEY_COMPONENT_DIRS: Array<[name: string, dir: string]> = [
   ['api-key-settings-screen', API_KEY_SETTINGS_SCREEN_DIR],
   ['api-key-gate', API_KEY_GATE_DIR],
   ['flashcard', FLASHCARD_DIR],
+  ['activity-result-panel', ACTIVITY_RESULT_PANEL_DIR],
+  ['activity-result-content', ACTIVITY_RESULT_CONTENT_DIR],
   ['lesson-generation-panel', LESSON_GENERATION_PANEL_DIR],
   ['lesson-generation', LESSON_GENERATION_DIR],
   ['app-chrome', APP_CHROME_DIR],

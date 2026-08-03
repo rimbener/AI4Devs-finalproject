@@ -3,7 +3,7 @@ jest.mock('@helsoft/localization', () => ({
     t: (key: string) => key,
   }),
 }));
-jest.mock('../slide-image/slide-image', () => ({
+jest.mock('../../molecules/slide-image/slide-image', () => ({
   SlideImage: ({ layout }: { layout?: 'stacked' | 'split' }) => {
     const { Text } = require('react-native');
     return <Text testID={`slide-image-${layout ?? 'stacked'}`}>{layout ?? 'stacked'}</Text>;

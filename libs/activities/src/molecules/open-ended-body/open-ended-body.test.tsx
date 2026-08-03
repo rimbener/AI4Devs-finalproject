@@ -1,4 +1,4 @@
-jest.mock('../../organisms/open-ended/open-ended', () => ({
+jest.mock('../../templates/open-ended/open-ended', () => ({
   OpenEnded: ({
     prompt,
     unavailable,

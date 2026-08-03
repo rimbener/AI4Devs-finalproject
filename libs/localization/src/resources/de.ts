@@ -20,6 +20,9 @@ export const de: TranslationResource = {
     error: {
       network: 'Netzwerkfehler. Versuche es erneut.',
     },
+    toast: {
+      alreadyInProgress: 'Dieses PDF wird bereits verarbeitet',
+    },
     nav: {
       myLessons: 'Meine Lektionen',
       myPdfFiles: 'Meine PDF-Dateien',
@@ -194,6 +197,7 @@ export const de: TranslationResource = {
     player: {
       loading: 'Lektion wird geladen…',
       next: 'Weiter',
+      continue: 'Fortfahren',
       back: 'Zurück',
       slideOf: 'Folie {{current}} von {{total}}',
       progress: {
@@ -283,37 +287,29 @@ export const de: TranslationResource = {
       },
     },
     activity: {
-      mcq: {
+      result: {
         submit: 'Absenden',
         correct: 'Richtig',
         incorrect: 'Falsch',
         explanation: 'Erklärung',
+        answerHeading: 'Antwort',
         unavailable: 'Diese Frage ist nicht verfügbar',
       },
+      footer: {
+        collapseResults: 'Ergebnisse einklappen',
+        expandResults: 'Ergebnisse ausklappen',
+      },
       matching: {
-        submit: 'Absenden',
-        correct: 'Alles richtig!',
-        incorrect: 'Nicht ganz',
         correctPair: 'richtig',
         incorrectPair: 'falsch',
-        explanationHeading: 'Warum',
         summary: '{{correct}} von {{total}} richtig',
-        unavailable: 'Diese Aktivität ist nicht verfügbar',
       },
       fillInTheBlank: {
-        submit: 'Absenden',
-        correct: 'Richtig!',
-        incorrect: 'Falsch',
-        explanationHeading: 'Warum',
-        unavailable: 'Diese Aktivität ist nicht verfügbar',
         blankInput: 'Lücke ausfüllen',
       },
       openEnded: {
-        submit: 'Absenden',
         yourAnswer: 'Deine Antwort',
         modelAnswer: 'Musterantwort',
-        explanationHeading: 'Warum',
-        unavailable: 'Diese Aktivität ist nicht verfügbar',
         answerInput: 'Deine Antwort',
       },
       flashcard: {
@@ -322,9 +318,6 @@ export const de: TranslationResource = {
         notRecalled: 'Nicht gewusst',
         recalledConfirmed: 'Als gewusst markiert',
         notRecalledConfirmed: 'Als nicht gewusst markiert',
-        answerHeading: 'Antwort',
-        explanationHeading: 'Warum',
-        unavailable: 'Diese Aktivität ist nicht verfügbar',
       },
     },
   },

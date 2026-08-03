@@ -20,6 +20,9 @@ const MULTIPLE_CHOICE_OPTION_TEST_ID_PREFIX = 'multiple-choice-option-';
 const multipleChoiceOptionTestId = (optionId) =>
   `${MULTIPLE_CHOICE_OPTION_TEST_ID_PREFIX}${optionId}`;
 
+const ACTIVITY_FOOTER_COLLAPSE_TEST_ID = 'activity-footer-collapse';
+const ACTIVITY_FOOTER_NEXT_TEST_ID = 'activity-footer-next';
+
 module.exports = {
   LESSON_PLAYER_TEST_ID,
   LESSON_PLAYER_NAV_BACK_TEST_ID,
@@ -31,4 +34,6 @@ module.exports = {
   MULTIPLE_CHOICE_SUBMIT_TEST_ID,
   MULTIPLE_CHOICE_OPTION_TEST_ID_PREFIX,
   multipleChoiceOptionTestId,
+  ACTIVITY_FOOTER_COLLAPSE_TEST_ID,
+  ACTIVITY_FOOTER_NEXT_TEST_ID,
 };
