@@ -1,6 +1,6 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
-  useApiKey: jest.fn(),
+  useGetApiKey: jest.fn(),
   useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/services', () => ({
@@ -11,7 +11,7 @@ jest.mock('@helsoft/services', () => ({
   },
 }));
 
-import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useGetApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
 import type { Session, SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
@@ -32,11 +32,11 @@ import { useLessonGenerationForm } from './lesson-generation/use-lesson-generati
  * `libs/supabase-services/src/dao/ai-providers.dao.test.ts`'s raw-row shape and
  * `libs/hooks/src/hooks/api-key.integration.test.ts`'s session-mocking convention) — `useAiProviders`
  * itself, `useApiKeyManager`, and `useLessonGenerationForm` are never mocked, so the wiring between
- * them is what's actually exercised. `useApiKey`/`useProfile`/`GenerationPreferenceService` are
+ * them is what's actually exercised. `useGetApiKey`/`useProfile`/`GenerationPreferenceService` are
  * mocked as incidental collaborators `useLessonGenerationForm` also depends on — unrelated to the
  * catalog-driven identity/order/visibility behavior this test proves.
  */
-const mockUseApiKey = useApiKey as jest.Mock;
+const mockUseGetApiKey = useGetApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
 
@@ -105,7 +105,7 @@ describe('ai-providers integration (catalog -> useAiProviders -> useApiKeyManage
     } as never);
 
     mockUseProfile.mockReturnValue({
-      profile: { keySource: 'user', canCreate: false },
+      profile: { keySource: 'user' },
       isLoading: false,
       error: null,
       retry: jest.fn(),
@@ -159,7 +159,7 @@ describe('ai-providers integration (catalog -> useAiProviders -> useApiKeyManage
     // 4 — real useLessonGenerationForm, backed by the same real useAiProviders()/QueryClient. Both
     // anthropic (disabled) and groq (enabled) have saved keys; only groq should survive into
     // savedProviders, proving the exclusion holds even when a key exists (task-7/task-9).
-    mockUseApiKey.mockReturnValue({
+    mockUseGetApiKey.mockReturnValue({
       status: {
         keys: [
           { provider: 'anthropic', updatedAt: '2026-01-01T00:00:00.000Z' },
@@ -167,6 +167,7 @@ describe('ai-providers integration (catalog -> useAiProviders -> useApiKeyManage
         ],
       },
       hasKey: true,
+      isLoading: false,
     });
 
     const { result: generation } = await renderHook(

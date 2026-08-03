@@ -1,7 +1,7 @@
-import type { Profile } from '@helsoft/types';
+import type { ProfilePlan } from '@helsoft/supabase-services';
 
 export type UseProfileResult = {
-  profile: Profile | null;
+  profile: ProfilePlan | null;
   isLoading: boolean;
   error: Error | null;
   retry: () => void;

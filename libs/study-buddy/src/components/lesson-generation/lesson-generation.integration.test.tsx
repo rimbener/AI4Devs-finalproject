@@ -9,7 +9,7 @@ jest.mock('@helsoft/services', () => ({
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
-  // useAiProviders is mocked the same way useApiKey/useProfile already are here — this
+  // useAiProviders is mocked the same way useGetApiKey/useProfile already are here — this
   // integration test's docstring scope is LessonGeneration -> useLessonGeneration ->
   // LessonGenerationService -> LessonGenerationDao; the provider catalog is an orthogonal
   // concern already covered by use-ai-providers's own hook/service/DAO tests.
@@ -38,14 +38,10 @@ jest.mock('@helsoft/hooks', () => ({
       isLoading: false,
     };
   }),
-  useApiKey: jest.fn(() => ({
+  useGetApiKey: jest.fn(() => ({
     status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
     isLoading: false,
-    isSubmitting: false,
-    error: null,
     hasKey: true,
-    saveApiKey: jest.fn(),
-    removeApiKey: jest.fn(),
   })),
   useProfile: jest.fn(() => ({
     profile: {
@@ -53,7 +49,6 @@ jest.mock('@helsoft/hooks', () => ({
       keySource: 'user',
       showKeySettings: true,
       showAds: true,
-      canCreate: true,
     },
     isLoading: false,
     error: null,

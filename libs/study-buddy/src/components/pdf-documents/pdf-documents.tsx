@@ -1,5 +1,5 @@
 import { PdfDocumentList, TabsHeader } from '@helsoft/components';
-import { usePdfDocuments, useProfile } from '@helsoft/hooks';
+import { useCanCreate, usePdfDocuments } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -17,8 +17,7 @@ import { toPdfDocumentListItems, toPdfDocumentListState } from './pdf-documents.
 export const PdfDocuments = () => {
   const router = useRouter();
   const { t } = useLocalization();
-  const { profile } = useProfile();
-  const canCreate = Boolean(profile?.canCreate);
+  const { canCreate } = useCanCreate();
   const { documents, isLoading, error, refetch, deleteDocument } = usePdfDocuments();
 
   const [generateDocumentId, setGenerateDocumentId] = useState<string | undefined>();

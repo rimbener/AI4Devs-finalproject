@@ -1,4 +1,4 @@
-import { useApiKey } from '@helsoft/hooks';
+import { useApiKey, useGetApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { AiProvider } from '@helsoft/types';
 import { useCallback } from 'react';
@@ -14,17 +14,9 @@ import { useApiKeySettingsProviders } from './use-api-key-settings-providers';
 export const useApiKeySettings = () => {
   const { t, locale } = useLocalization();
 
-  const {
-    status,
-    isSubmitting,
-    isError,
-    errorKey,
-    saveApiKey,
-    removeApiKey,
-    resetSave,
-    resetRemove,
-    isLoading: isLoadingApiKey,
-  } = useApiKey();
+  const { status, isLoading: isLoadingApiKey } = useGetApiKey();
+  const { isSubmitting, isError, errorKey, saveApiKey, removeApiKey, resetSave, resetRemove } =
+    useApiKey();
   const errorMessage = errorKey ? t(errorKey) : undefined;
 
   const {

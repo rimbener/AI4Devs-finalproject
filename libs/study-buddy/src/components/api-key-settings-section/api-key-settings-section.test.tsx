@@ -29,7 +29,6 @@ const profileValue = (overrides: Partial<ReturnType<typeof useProfile>> = {}) =>
     keySource: 'user' as const,
     showKeySettings: true,
     showAds: true,
-    canCreate: false,
   },
   isLoading: false,
   error: null,
@@ -131,7 +130,6 @@ describe('ApiKeySettings', () => {
           keySource: 'platform',
           showKeySettings: false,
           showAds: false,
-          canCreate: true,
         },
       }),
     );

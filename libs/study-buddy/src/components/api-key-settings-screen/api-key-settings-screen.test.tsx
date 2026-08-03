@@ -3,13 +3,19 @@ jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useAiProviders: jest.fn(),
   useApiKey: jest.fn(),
+  useGetApiKey: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
 }));
 
 import { lightTheme } from '@helsoft/components/theme';
-import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey } from '@helsoft/hooks';
+import {
+  AI_PROVIDER_CATALOG_FIXTURE,
+  useAiProviders,
+  useApiKey,
+  useGetApiKey,
+} from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
@@ -20,6 +26,7 @@ import { ApiKeySettingsScreen } from './api-key-settings-screen';
 
 const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseApiKey = useApiKey as jest.Mock;
+const mockUseGetApiKey = useGetApiKey as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 
 const emptyStatus = { keys: [] };
@@ -33,18 +40,24 @@ const ERROR_MESSAGE_KEYS: Partial<Record<string, string>> = {
   provider_disabled: 'settings.apiKey.error.providerDisabled',
 };
 
+const apiKeyStatusValue = (overrides: Partial<ReturnType<typeof useGetApiKey>> = {}) => ({
+  status: emptyStatus,
+  isLoading: false,
+  hasKey: false,
+  ...overrides,
+});
+
 const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => {
   const error = overrides.error ?? null;
   return {
-    status: emptyStatus,
-    isLoading: false,
     isSubmitting: false,
-    hasKey: false,
-    error,
     isError: Boolean(error),
     errorKey: error ? ERROR_MESSAGE_KEYS[error] : undefined,
     saveApiKey: jest.fn(),
     removeApiKey: jest.fn(),
+    resetSave: jest.fn(),
+    resetRemove: jest.fn(),
+    error,
     ...overrides,
   };
 };
@@ -53,6 +66,7 @@ describe('ApiKeySettingsScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseAiProviders.mockReturnValue(aiProvidersValue());
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue());
     mockUseApiKey.mockReturnValue(apiKeyValue());
   });
 
@@ -105,7 +119,8 @@ describe('ApiKeySettingsScreen', () => {
   // @s3 — a returning user (status.keys with groq) sees the masked saved state.
   it('renders the masked saved-status text built from the localized template', async () => {
     const updatedAt = '2026-01-01T00:00:00.000Z';
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(
       localizationValue({
         t: (key: string, options?: Record<string, unknown>) =>
@@ -122,9 +137,9 @@ describe('ApiKeySettingsScreen', () => {
     ).toBeTruthy();
   });
 
-  // @s3 — useApiKey().isLoading drives the loading spinner.
-  it('shows the loading placeholder while useApiKey().isLoading is true', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ isLoading: true }));
+  // @s3 — useGetApiKey().isLoading drives the loading spinner.
+  it('shows the loading placeholder while useGetApiKey().isLoading is true', async () => {
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ isLoading: true }));
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -167,7 +182,8 @@ describe('ApiKeySettingsScreen', () => {
   // @s8 — confirming removal calls useApiKey().removeApiKey with the provider.
   it('calls removeApiKey with the provider when the removal is confirmed', async () => {
     const removeApiKey = jest.fn().mockResolvedValue(undefined);
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true, removeApiKey }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue({ removeApiKey }));
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -193,7 +209,8 @@ describe('ApiKeySettingsScreen', () => {
       provider.id === 'groq' ? { ...provider, enabled: false } : provider,
     );
     mockUseAiProviders.mockReturnValue(aiProvidersValue({ providers: catalogWithDisabledGroq }));
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -364,7 +381,8 @@ describe('ApiKeySettingsScreen', () => {
 
   // Mutation coverage — the cardStyle (styles.card) reaches each saved-provider row.
   it('colors each saved-provider card from the theme (styles.card)', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -376,7 +394,8 @@ describe('ApiKeySettingsScreen', () => {
 
   // Mutation coverage — removeConfirmationText styles the confirmation body from the theme.
   it('styles the remove-confirmation body from the theme (styles.removeConfirmationText)', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -393,7 +412,7 @@ describe('ApiKeySettingsScreen', () => {
 
   // Mutation coverage — progressIndicator centers the loading spinner (styles.progressIndicator).
   it('centers the loading spinner (styles.progressIndicator)', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ isLoading: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ isLoading: true }));
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -427,7 +446,8 @@ describe('ApiKeySettingsScreen', () => {
   // Mutation coverage — renderRemoveConfirmation actually renders the localized confirmation
   // body (not a no-op), built from the exact i18n key.
   it('shows the localized remove-confirmation body when the remove dialog is open', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -467,7 +487,8 @@ describe('ApiKeySettingsScreen', () => {
 
     expect(screen.queryByRole('button', { name: 'settings.apiKey.remove Groq' })).toBeNull();
 
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
 
     await act(async () => {
       screen.rerender(<ApiKeySettingsScreen />);
@@ -479,7 +500,8 @@ describe('ApiKeySettingsScreen', () => {
   // Mutation coverage — renderRemoveConfirmation's `[t]` dependency must recompute the body when
   // the localization function itself changes on rerender.
   it('reflects an updated translation function in the remove-confirmation body', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -499,7 +521,8 @@ describe('ApiKeySettingsScreen', () => {
   // Mutation coverage — opening the replace dialog for a saved provider both calls the correct
   // wiring (onEditPress → openReplaceModal) and shows the correctly-labeled dialog headline.
   it('opens the replace dialog for a saved provider with its locked-provider title', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue());
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);
@@ -538,7 +561,8 @@ describe('ApiKeySettingsScreen', () => {
   // called with the confirmed provider, never undefined.
   it('always calls removeApiKey with the confirmed provider, never undefined', async () => {
     const removeApiKey = jest.fn();
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: groqStatus, hasKey: true, removeApiKey }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: groqStatus }));
+    mockUseApiKey.mockReturnValue(apiKeyValue({ removeApiKey }));
     mockUseLocalization.mockReturnValue(localizationValue());
 
     await render(<ApiKeySettingsScreen />);

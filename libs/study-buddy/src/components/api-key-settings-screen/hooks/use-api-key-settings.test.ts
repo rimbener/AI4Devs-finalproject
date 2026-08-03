@@ -1,6 +1,7 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useApiKey: jest.fn(),
+  useGetApiKey: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({
   useLocalization: jest.fn(),
@@ -9,7 +10,7 @@ jest.mock('./use-api-key-settings-providers', () => ({
   useApiKeySettingsProviders: jest.fn(),
 }));
 
-import { useApiKey } from '@helsoft/hooks';
+import { useApiKey, useGetApiKey } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { renderHook } from '@testing-library/react-native';
 
@@ -18,12 +19,11 @@ import { useApiKeySettings } from './use-api-key-settings';
 import { useApiKeySettingsProviders } from './use-api-key-settings-providers';
 
 const mockUseApiKey = useApiKey as jest.Mock;
+const mockUseGetApiKey = useGetApiKey as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseApiKeySettingsProviders = useApiKeySettingsProviders as jest.Mock;
 
 const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => ({
-  status: { keys: [] },
-  isLoading: false,
   isSubmitting: false,
   isError: false,
   errorKey: undefined,
@@ -31,6 +31,13 @@ const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => (
   removeApiKey: jest.fn(),
   resetSave: jest.fn(),
   resetRemove: jest.fn(),
+  ...overrides,
+});
+
+const apiKeyStatusValue = (overrides: Partial<ReturnType<typeof useGetApiKey>> = {}) => ({
+  status: { keys: [] },
+  isLoading: false,
+  hasKey: false,
   ...overrides,
 });
 
@@ -55,6 +62,7 @@ describe('useApiKeySettings', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseApiKey.mockReturnValue(apiKeyValue());
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue());
     mockUseLocalization.mockReturnValue(localizationValue());
     mockUseApiKeySettingsProviders.mockReturnValue(providersValue());
   });
@@ -92,7 +100,7 @@ describe('useApiKeySettings', () => {
   });
 
   it('exposes isLoading true when either the api key or the provider catalog is still loading', async () => {
-    mockUseApiKey.mockReturnValue(apiKeyValue({ isLoading: true }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ isLoading: true }));
 
     const { result } = await renderHook(() => useApiKeySettings());
 

@@ -1,7 +1,6 @@
 jest.mock('@helsoft/supabase-services', () => ({
   ProfileService: { getProfile: jest.fn() },
 }));
-jest.mock('./use-api-key', () => ({ useApiKey: jest.fn() }));
 jest.mock('./use-session', () => ({ useSession: jest.fn() }));
 
 import { ProfileService } from '@helsoft/supabase-services';
@@ -10,12 +9,10 @@ import { act, render, renderHook, waitFor } from '@testing-library/react-native'
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
 
-import { useApiKey } from './use-api-key';
 import { profileQueryKey, useProfile } from './use-profile';
 import { useSession } from './use-session';
 
 const service = ProfileService as jest.Mocked<typeof ProfileService>;
-const mockUseApiKey = useApiKey as jest.Mock;
 const mockUseSession = useSession as jest.Mock;
 
 const createWrapper = (
@@ -27,15 +24,6 @@ const createWrapper = (
 
 const authenticatedSession = { session: { user: { id: 'user-1' } }, isLoading: false };
 const noSession = { session: null, isLoading: false };
-const loadedApiKey = {
-  status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01T00:00:00.000Z' }] },
-  hasKey: true,
-  isLoading: false,
-  isSubmitting: false,
-  error: null,
-  saveApiKey: jest.fn(),
-  removeApiKey: jest.fn(),
-};
 
 const freePlan = { plan: 'free', keySource: 'user', showKeySettings: true, showAds: true } as const;
 const paidPlan = {
@@ -49,7 +37,6 @@ describe('useProfile', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseSession.mockReturnValue(authenticatedSession);
-    mockUseApiKey.mockReturnValue(loadedApiKey);
   });
 
   // Migration anchor — cached under the user-scoped key, not a private reducer slice.
@@ -70,17 +57,20 @@ describe('useProfile', () => {
     const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.profile).toEqual({ ...freePlan, canCreate: true });
+    expect(result.current.profile).toEqual(freePlan);
     expect(result.current.error).toBeNull();
   });
 
   // @s52 — an unauthenticated visitor has no profile and the profile service is never called.
+  // isLoading is the query's own pending state: the disabled query never settles (TanStack v5
+  // gotcha), so it stays true — the app bootstrap owns the signed-out resolution (it branches on
+  // the session before trusting this flag).
   it('exposes no profile and never calls the service when there is no session', async () => {
     mockUseSession.mockReturnValue(noSession);
 
     const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
 
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isLoading).toBe(true);
     expect(result.current.profile).toBeNull();
     expect(service.getProfile).not.toHaveBeenCalled();
   });
@@ -104,18 +94,6 @@ describe('useProfile', () => {
 
     expect(result.current.isLoading).toBe(true);
     expect(service.getProfile).not.toHaveBeenCalled();
-  });
-
-  // @s53 (example: the key status) — loading is true while the api-key status is still loading.
-  it('reports loading while the key status is still loading', async () => {
-    mockUseApiKey.mockReturnValue({ ...loadedApiKey, isLoading: true });
-    service.getProfile.mockResolvedValue(freePlan);
-
-    const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
-
-    await waitFor(() => expect(service.getProfile).toHaveBeenCalled());
-    expect(result.current.isLoading).toBe(true);
-    expect(result.current.profile).toBeNull();
   });
 
   // @s53 (example: the profile read) — loading is true while the profile read is still pending.
@@ -153,38 +131,6 @@ describe('useProfile', () => {
     expect(result.current.error?.message).toBe(String(postgrestError));
   });
 
-  // @s55 (example: the plan uses the platform key) — creation is allowed.
-  it('allows creation when the plan uses the platform key, even without a saved key', async () => {
-    mockUseApiKey.mockReturnValue({ ...loadedApiKey, status: { keys: [] }, hasKey: false });
-    service.getProfile.mockResolvedValue(paidPlan);
-
-    const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.profile?.canCreate).toBe(true);
-  });
-
-  // @s55 (example: the learner has a saved provider key) — creation is allowed.
-  it('allows creation when the learner has a saved provider key', async () => {
-    service.getProfile.mockResolvedValue(freePlan);
-
-    const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.profile?.canCreate).toBe(true);
-  });
-
-  // @s55 (example: neither of those holds) — creation is not allowed.
-  it('disallows creation for a user-key plan without a saved key', async () => {
-    mockUseApiKey.mockReturnValue({ ...loadedApiKey, status: { keys: [] }, hasKey: false });
-    service.getProfile.mockResolvedValue(freePlan);
-
-    const { result } = renderHook(() => useProfile(), { wrapper: createWrapper() });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.profile?.canCreate).toBe(false);
-  });
-
   // @s56 — retry re-reads a failed profile and clears the error.
   it('retry re-reads a failed profile and clears the error', async () => {
     service.getProfile
@@ -198,7 +144,7 @@ describe('useProfile', () => {
       result.current.retry();
     });
 
-    await waitFor(() => expect(result.current.profile).toEqual({ ...paidPlan, canCreate: true }));
+    await waitFor(() => expect(result.current.profile).toEqual(paidPlan));
     expect(result.current.error).toBeNull();
   });
 
@@ -213,7 +159,6 @@ describe('useProfile', () => {
     rerender(undefined as never);
 
     await waitFor(() => expect(result.current.profile).toBeNull());
-    expect(result.current.isLoading).toBe(false);
   });
 
   // @s58 — two profile consumers share one read with no provider in the tree: the shared

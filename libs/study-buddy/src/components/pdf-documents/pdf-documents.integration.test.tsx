@@ -1,12 +1,12 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useLessonGeneration: jest.fn(),
-  useProfile: jest.fn(),
+  useCanCreate: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
 
-import { QueryProvider, useLessonGeneration, useProfile } from '@helsoft/hooks';
+import { QueryProvider, useCanCreate, useLessonGeneration } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import type { SupabaseClient } from '@helsoft/supabase-services';
 import { initSupabase } from '@helsoft/supabase-services';
@@ -19,7 +19,7 @@ const renderPdfDocuments = () => render(<PdfDocuments />, { wrapper: QueryProvid
 
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
-const mockUseProfile = useProfile as jest.Mock;
+const mockUseCanCreate = useCanCreate as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
 
 const t = (key: string, options?: Record<string, unknown>) => {
@@ -73,18 +73,7 @@ describe('PdfDocuments integration (wiring → hook → service → DAO)', () =>
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseRouter.mockReturnValue({ push: jest.fn() });
-    mockUseProfile.mockReturnValue({
-      profile: {
-        plan: 'paid',
-        keySource: 'platform',
-        showKeySettings: false,
-        showAds: false,
-        canCreate: true,
-      },
-      isLoading: false,
-      error: null,
-      retry: jest.fn(),
-    });
+    mockUseCanCreate.mockReturnValue({ canCreate: true });
     mockUseLocalization.mockReturnValue({
       t,
       locale: 'en',

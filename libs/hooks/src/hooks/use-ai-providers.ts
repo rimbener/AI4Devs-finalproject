@@ -18,7 +18,7 @@ const EMPTY_PROVIDERS: AiProviderCatalogEntry[] = [];
  * catalog read surfaces as `providers: []`.
  */
 export const useAiProviders = () => {
-  const { enabled, deriveIsLoading } = useSessionGate();
+  const { enabled } = useSessionGate();
 
   const { data, isPending } = useQuery({
     queryKey: AI_PROVIDERS_QUERY_KEY,
@@ -31,6 +31,6 @@ export const useAiProviders = () => {
 
   return {
     providers,
-    isLoading: deriveIsLoading(isPending),
+    isLoading: isPending,
   };
 };

@@ -78,14 +78,16 @@ describe('useAiProviders', () => {
     expect(result.current.isLoading).toBe(true);
   });
 
-  // deriveIsLoading (not raw isPending) — a signed-out session resolves isLoading to false
-  // instead of staying stuck true forever.
-  it('resolves isLoading to false for a signed-out session, and never calls the service', () => {
+  // isLoading is the query's own pending state (no bootstrap here): a disabled query never
+  // settles in TanStack Query v5, so a signed-out session reports isLoading true forever — the
+  // app bootstrap owns that resolution (it branches on the session before trusting isLoading,
+  // and this hook only mounts under `(app)` once a session is resolved).
+  it('keeps isLoading true for a signed-out session, and never calls the service', () => {
     mockUseSession.mockReturnValue(noSession);
 
     const { result } = renderHook(() => useAiProviders(), { wrapper: createWrapper() });
 
-    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isLoading).toBe(true);
     expect(service.getCatalog).not.toHaveBeenCalled();
   });
 

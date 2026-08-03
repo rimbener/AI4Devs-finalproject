@@ -10,11 +10,16 @@ jest.mock('@helsoft/services', () => ({
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useAiProviders: jest.fn(),
-  useApiKey: jest.fn(),
+  useGetApiKey: jest.fn(),
   useProfile: jest.fn(),
 }));
 
-import { AI_PROVIDER_CATALOG_FIXTURE, useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
+import {
+  AI_PROVIDER_CATALOG_FIXTURE,
+  useAiProviders,
+  useGetApiKey,
+  useProfile,
+} from '@helsoft/hooks';
 import { GenerationPreferenceService } from '@helsoft/services';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
@@ -22,7 +27,7 @@ import { aiProvidersValue } from '../../test-utils/ai-provider-test-factories';
 import { useLessonGenerationForm } from './use-lesson-generation';
 
 const mockUseAiProviders = useAiProviders as jest.Mock;
-const mockUseApiKey = useApiKey as jest.Mock;
+const mockUseApiKey = useGetApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
 // @s19 regression: the fixture-pinned catalog ids, in canonical order — replaces the deleted
@@ -35,7 +40,7 @@ describe('useLessonGenerationForm', () => {
     mockGetStoredPreference.mockResolvedValue(null);
     mockUseAiProviders.mockReturnValue(aiProvidersValue());
     mockUseProfile.mockReturnValue({
-      profile: { keySource: 'user', canCreate: false },
+      profile: { keySource: 'user' },
     });
     mockUseApiKey.mockReturnValue({
       status: { keys: [] },
@@ -106,7 +111,7 @@ describe('useLessonGenerationForm', () => {
 
     await waitFor(() => expect(result.current.showPickers).toBe(false));
     expect(result.current.savedProviders).toEqual([]);
-    // hasKey reflects "holds any key at all" (useApiKey, unrelated to the catalog) — still true
+    // hasKey reflects "holds any key at all" (useGetApiKey, unrelated to the catalog) — still true
     // here, so the missing-key gate itself is unaffected by the provider being disabled.
     expect(result.current.showMissingKeyGate).toBe(false);
   });
@@ -507,7 +512,7 @@ describe('useLessonGenerationForm', () => {
 
   it('does not load a stored preference when pickers are hidden', async () => {
     mockUseProfile.mockReturnValue({
-      profile: { keySource: 'platform', canCreate: true },
+      profile: { keySource: 'platform' },
     });
     mockUseApiKey.mockReturnValue({
       status: {
@@ -562,7 +567,7 @@ describe('useLessonGenerationForm', () => {
   // must yield a real empty array, not a placeholder-filled one.
   it('exposes an empty modelOptions array before any provider is selected', async () => {
     mockUseProfile.mockReturnValue({
-      profile: { keySource: 'platform', canCreate: true },
+      profile: { keySource: 'platform' },
     });
 
     const { result } = await renderHook(() =>
@@ -579,7 +584,7 @@ describe('useLessonGenerationForm', () => {
   // while showPickers stays false — the only combination that tells `&&` apart from `||`.
   it('omits provider and model from the generate request when showPickers is false even if selectProvider was called', async () => {
     mockUseProfile.mockReturnValue({
-      profile: { keySource: 'platform', canCreate: true },
+      profile: { keySource: 'platform' },
     });
     mockUseApiKey.mockReturnValue({
       status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
@@ -728,7 +733,7 @@ describe('useLessonGenerationForm', () => {
   // keySource), hasPickerSelection must be true regardless of provider/model selection, so
   // canGenerate depends only on documentId/showMissingKeyGate here.
   it('treats hasPickerSelection as true when pickers are hidden, independent of selection', async () => {
-    mockUseProfile.mockReturnValue({ profile: { keySource: 'platform', canCreate: true } });
+    mockUseProfile.mockReturnValue({ profile: { keySource: 'platform' } });
     mockUseApiKey.mockReturnValue({ status: { keys: [] }, hasKey: false });
 
     const { result } = await renderHook(() =>
@@ -769,7 +774,7 @@ describe('useLessonGenerationForm', () => {
   // — isolates the documentId term by holding the other two true (platform path: no gate, no
   // pickers so hasPickerSelection is trivially true).
   it('requires a documentId for canGenerate independently of the gate/picker terms', async () => {
-    mockUseProfile.mockReturnValue({ profile: { keySource: 'platform', canCreate: true } });
+    mockUseProfile.mockReturnValue({ profile: { keySource: 'platform' } });
     mockUseApiKey.mockReturnValue({ status: { keys: [] }, hasKey: false });
 
     const { result, rerender } = await renderHook(
