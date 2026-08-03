@@ -198,3 +198,5 @@
 2026-08-01 | component-split animations (ad hoc) | n/a | — | component-split.mdc: animation → use-*.animations.ts (aacba0852).
 
 2026-08-01 | activity-submit-result (ad hoc) | n/a | — | ActivitySubmitResult + ScrollViewProvider; matching/player wired; session-gate types inlined.
+
+2026-08-03 | activity-result-panel + templates (ad hoc) | n/a | — | Move activity organisms→templates; ActivitySubmitResult→ActivityResultPanel (+ content/explanation atoms); scoped scroll provider; turbo e2e scripts (35f534224).
