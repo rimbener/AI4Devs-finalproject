@@ -12,7 +12,7 @@ import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-c
 
 import '@/lib/supabase';
 import { ErrorScreen } from '@helsoft/components';
-import { QueryProvider, useProfile } from '@helsoft/hooks';
+import { QueryProvider, useGetApiKey, useProfile, useSession } from '@helsoft/hooks';
 import { useEffect } from 'react';
 
 SplashScreen.preventAutoHideAsync();
@@ -39,7 +39,13 @@ export default function RootLayout() {
 
 function RootValidation() {
   const { t } = useLocalization();
-  const { profile, isLoading, error, retry } = useProfile();
+  // Single readiness gate: the app waits for the session, the profile, and the key status before
+  // rendering any route. `useSession` is branched on first — a signed-out visitor is "ready" as
+  // soon as the session resolves, because the profile/key-status queries stay disabled (their
+  // `isPending` would otherwise never settle, the TanStack v5 disabled-query gotcha).
+  const { session, isLoading: isSessionLoading } = useSession();
+  const { profile, isLoading: isProfileLoading, error, retry } = useProfile();
+  const { isLoading: isApiKeyLoading } = useGetApiKey();
 
   // Keys must match `fontFamily` tokens in `@helsoft/components` theme typography.
   const [fontsLoaded, fontError] = useFonts({
@@ -48,6 +54,9 @@ function RootValidation() {
     'IBM Plex Sans': IBMPlexSans_400Regular,
     'IBM Plex Mono': IBMPlexMono_400Regular,
   });
+
+  const isSignedIn = Boolean(session?.user?.id);
+  const isLoading = isSessionLoading || (isSignedIn && (isProfileLoading || isApiKeyLoading));
 
   useEffect(() => {
     if (isLoading) {

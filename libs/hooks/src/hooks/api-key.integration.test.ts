@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
-
 import { useApiKey } from './use-api-key';
+import { useGetApiKey } from './use-get-api-key';
 
 const createWrapper = (queryClient = new QueryClient()) => {
   return ({ children }: { children: ReactNode }) =>
@@ -13,9 +13,9 @@ const createWrapper = (queryClient = new QueryClient()) => {
 };
 
 /**
- * Integration (ai-key-management): useApiKey -> ApiKeyService -> ApiKeyDao, exercised for
- * real, against a mocked Supabase client boundary (only `auth.getSession`,
- * `from(...).select(...)`, and `functions.invoke` are stubbed).
+ * Integration (ai-key-management): useGetApiKey (read) + useApiKey (mutate) -> ApiKeyService ->
+ * ApiKeyDao, exercised for real, against a mocked Supabase client boundary (only
+ * `auth.getSession`, `from(...).select(...)`, and `functions.invoke` are stubbed).
  */
 let client: SupabaseClient;
 
@@ -50,7 +50,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     const select = jest.fn().mockResolvedValue({ data: [groqRow], error: null });
     jest.spyOn(client, 'from').mockReturnValue({ select } as never);
 
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useGetApiKey(), { wrapper: createWrapper() });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -66,12 +66,18 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     } as never);
     const invoke = mockInvoke(() => Promise.resolve({ data: groqKeyStatus, error: null }));
 
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status).toEqual({ keys: [] });
+    const queryClient = new QueryClient();
+    const { result: read } = renderHook(() => useGetApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    const { result: mutate } = renderHook(() => useApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(read.current.isLoading).toBe(false));
+    expect(read.current.status).toEqual({ keys: [] });
 
     act(() => {
-      result.current.saveApiKey('groq', 'sk-test-key');
+      mutate.current.saveApiKey('groq', 'sk-test-key');
     });
 
     await waitFor(() =>
@@ -79,7 +85,7 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
         body: { action: 'save', provider: 'groq', apiKey: 'sk-test-key' },
       }),
     );
-    await waitFor(() => expect(result.current.status).toEqual(groqKeyStatus));
+    await waitFor(() => expect(read.current.status).toEqual(groqKeyStatus));
   });
 
   // @s4 — replacing one provider leaves the other provider's key unchanged.
@@ -100,21 +106,27 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       }),
     );
 
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status.keys).toHaveLength(2);
+    const queryClient = new QueryClient();
+    const { result: read } = renderHook(() => useGetApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    const { result: mutate } = renderHook(() => useApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(read.current.isLoading).toBe(false));
+    expect(read.current.status.keys).toHaveLength(2);
 
     act(() => {
-      result.current.saveApiKey('groq', 'sk-replacement-key');
+      mutate.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
     await waitFor(() =>
-      expect(result.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
+      expect(read.current.status.keys.find((k) => k.provider === 'groq')?.updatedAt).toBe(
         '2026-03-01T00:00:00.000Z',
       ),
     );
-    expect(result.current.status.keys).toHaveLength(2);
-    expect(result.current.status.keys.find((k) => k.provider === 'openai')).toEqual({
+    expect(read.current.status.keys).toHaveLength(2);
+    expect(read.current.status.keys.find((k) => k.provider === 'openai')).toEqual({
       provider: 'openai',
       updatedAt: '2026-02-01T00:00:00.000Z',
     });
@@ -132,16 +144,22 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
       }),
     );
 
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.status.keys[0]?.updatedAt).toBe('2026-01-01T00:00:00.000Z');
+    const queryClient = new QueryClient();
+    const { result: read } = renderHook(() => useGetApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    const { result: mutate } = renderHook(() => useApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(read.current.isLoading).toBe(false));
+    expect(read.current.status.keys[0]?.updatedAt).toBe('2026-01-01T00:00:00.000Z');
 
     act(() => {
-      result.current.saveApiKey('groq', 'sk-replacement-key');
+      mutate.current.saveApiKey('groq', 'sk-replacement-key');
     });
 
     await waitFor(() =>
-      expect(result.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z'),
+      expect(read.current.status.keys[0]?.updatedAt).toBe('2026-03-01T00:00:00.000Z'),
     );
   });
 
@@ -152,12 +170,18 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     } as never);
     const invoke = mockInvoke(() => Promise.resolve({ data: { keys: [] }, error: null }));
 
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.hasKey).toBe(true);
+    const queryClient = new QueryClient();
+    const { result: read } = renderHook(() => useGetApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    const { result: mutate } = renderHook(() => useApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(read.current.isLoading).toBe(false));
+    expect(read.current.hasKey).toBe(true);
 
     act(() => {
-      result.current.removeApiKey('groq');
+      mutate.current.removeApiKey('groq');
     });
 
     await waitFor(() =>
@@ -165,8 +189,8 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
         body: { action: 'remove', provider: 'groq' },
       }),
     );
-    await waitFor(() => expect(result.current.status).toEqual({ keys: [] }));
-    expect(result.current.error).toBeNull();
+    await waitFor(() => expect(read.current.status).toEqual({ keys: [] }));
+    expect(mutate.current.error).toBeNull();
   });
 
   // @s9 — a failed remove normalizes to network_error and preserves the saved status.
@@ -176,16 +200,22 @@ describe('ai-key-management integration (hook -> service -> DAO)', () => {
     } as never);
     mockInvoke(() => Promise.reject(new Error('edge unreachable')));
 
-    const { result } = renderHook(() => useApiKey(), { wrapper: createWrapper() });
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    const queryClient = new QueryClient();
+    const { result: read } = renderHook(() => useGetApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    const { result: mutate } = renderHook(() => useApiKey(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await waitFor(() => expect(read.current.isLoading).toBe(false));
 
     act(() => {
       // removeApiKey (react-query's `mutate`) is fire-and-forget — it doesn't return a
       // rejectable promise. The failure surfaces through the hook's `error` state instead.
-      result.current.removeApiKey('groq');
+      mutate.current.removeApiKey('groq');
     });
 
-    await waitFor(() => expect(result.current.error).toBe('network_error'));
-    expect(result.current.status).toEqual(groqKeyStatus);
+    await waitFor(() => expect(mutate.current.error).toBe('network_error'));
+    expect(read.current.status).toEqual(groqKeyStatus);
   });
 });

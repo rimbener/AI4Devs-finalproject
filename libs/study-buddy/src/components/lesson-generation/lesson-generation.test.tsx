@@ -3,7 +3,7 @@ jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   useAiProviders: jest.fn(),
   useLessonGeneration: jest.fn(),
-  useApiKey: jest.fn(),
+  useGetApiKey: jest.fn(),
   useProfile: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
@@ -42,7 +42,7 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
-import { useAiProviders, useApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useGetApiKey, useLessonGeneration, useProfile } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { GenerationPreferenceService } from '@helsoft/services';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
@@ -55,7 +55,7 @@ import { useLessonGenerationForm } from './use-lesson-generation';
 
 const mockUseAiProviders = useAiProviders as jest.Mock;
 const mockUseLessonGeneration = useLessonGeneration as jest.Mock;
-const mockUseApiKey = useApiKey as jest.Mock;
+const mockUseGetApiKey = useGetApiKey as jest.Mock;
 const mockUseProfile = useProfile as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
@@ -67,14 +67,10 @@ const actualUseLessonGenerationForm =
 const mockGetStoredPreference = GenerationPreferenceService.getStoredPreference as jest.Mock;
 const mockSetStoredPreference = GenerationPreferenceService.setStoredPreference as jest.Mock;
 
-const apiKeyValue = (overrides: Partial<ReturnType<typeof useApiKey>> = {}) => ({
+const apiKeyStatusValue = (overrides: Partial<ReturnType<typeof useGetApiKey>> = {}) => ({
   status: { keys: [] },
   isLoading: false,
-  isSubmitting: false,
-  error: null,
   hasKey: false,
-  saveApiKey: jest.fn(),
-  removeApiKey: jest.fn(),
   ...overrides,
 });
 
@@ -84,7 +80,6 @@ const profileValue = (overrides: Partial<ReturnType<typeof useProfile>> = {}) =>
     keySource: 'user' as const,
     showKeySettings: true,
     showAds: true,
-    canCreate: true,
   },
   isLoading: false,
   error: null,
@@ -111,8 +106,8 @@ describe('LessonGeneration', () => {
     mockSetStoredPreference.mockResolvedValue(undefined);
     mockUseRouter.mockReturnValue({ push: jest.fn() });
     mockUseLocalization.mockReturnValue(localizationValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
         hasKey: true,
       }),
@@ -126,7 +121,7 @@ describe('LessonGeneration', () => {
     const push = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: { keys: [] }, hasKey: false }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: { keys: [] }, hasKey: false }));
     mockUseProfile.mockReturnValue(profileValue());
 
     await render(<LessonGeneration documentId="doc-1" />);
@@ -143,8 +138,8 @@ describe('LessonGeneration', () => {
   // @s19 — paid/platform learners do not see provider or model pickers.
   it('hides provider and model pickers for platform keySource', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
         hasKey: true,
       }),
@@ -162,8 +157,8 @@ describe('LessonGeneration', () => {
   // @s10 — free-BYOK shows saved providers and curated models.
   it('shows saved provider and model pickers for free-BYOK users', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -192,8 +187,8 @@ describe('LessonGeneration', () => {
       model: 'gpt-5.6-terra',
     });
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -216,8 +211,8 @@ describe('LessonGeneration', () => {
   it('writes the current provider and model when Generate is pressed', async () => {
     const generate = jest.fn();
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -249,8 +244,8 @@ describe('LessonGeneration', () => {
       model: 'claude-haiku-4-5',
     });
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -272,8 +267,8 @@ describe('LessonGeneration', () => {
   // @s11 — switching provider resets model to that provider's first curated model.
   it('resets the model when the provider changes', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -296,8 +291,8 @@ describe('LessonGeneration', () => {
   it('includes provider and model in the generate request for free-BYOK', async () => {
     const generate = jest.fn();
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: { keys: [{ provider: 'anthropic', updatedAt: '2026-01-01' }] },
         hasKey: true,
       }),
@@ -317,8 +312,8 @@ describe('LessonGeneration', () => {
   it('omits provider and model from the generate request on the platform path', async () => {
     const generate = jest.fn();
     mockUseLessonGeneration.mockReturnValue(hookValue({ generate }));
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
         hasKey: true,
       }),
@@ -336,8 +331,8 @@ describe('LessonGeneration', () => {
   // @s1 — composition state defaults to "both".
   it('defaults the composition selection to both', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
         hasKey: true,
       }),
@@ -939,8 +934,8 @@ describe('LessonGeneration', () => {
 
   it('ignores invalid provider values from the picker', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -965,8 +960,8 @@ describe('LessonGeneration', () => {
 
   it('updates the selected model when onModelChange fires', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: { keys: [{ provider: 'groq', updatedAt: '2026-01-01' }] },
         hasKey: true,
       }),
@@ -1130,8 +1125,8 @@ describe('LessonGeneration', () => {
 
   it('wires providerNameKeys for every saved provider label', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'anthropic', updatedAt: '2026-01-01' },
@@ -1158,7 +1153,7 @@ describe('LessonGeneration', () => {
     const push = jest.fn();
     mockUseRouter.mockReturnValue({ push });
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(apiKeyValue({ status: { keys: [] }, hasKey: false }));
+    mockUseGetApiKey.mockReturnValue(apiKeyStatusValue({ status: { keys: [] }, hasKey: false }));
 
     const { rerender } = await render(<LessonGeneration documentId="doc-1" />);
 
@@ -1174,8 +1169,8 @@ describe('LessonGeneration', () => {
 
   it('applies a provider change through the latest selectProvider callback', async () => {
     mockUseLessonGeneration.mockReturnValue(hookValue());
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },
@@ -1191,8 +1186,8 @@ describe('LessonGeneration', () => {
       expect(screen.getByRole('radio', { name: 'Groq', checked: true })).toBeTruthy();
     });
 
-    mockUseApiKey.mockReturnValue(
-      apiKeyValue({
+    mockUseGetApiKey.mockReturnValue(
+      apiKeyStatusValue({
         status: {
           keys: [
             { provider: 'groq', updatedAt: '2026-01-01' },

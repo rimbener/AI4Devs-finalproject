@@ -1,7 +1,7 @@
 jest.mock('@helsoft/hooks', () => ({
   ...jest.requireActual('@helsoft/hooks'),
   usePdfDocuments: jest.fn(),
-  useProfile: jest.fn(),
+  useCanCreate: jest.fn(),
 }));
 jest.mock('@helsoft/localization', () => ({ useLocalization: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: jest.fn() }));
@@ -51,7 +51,7 @@ jest.mock('@helsoft/components', () => {
   };
 });
 
-import { usePdfDocuments, useProfile } from '@helsoft/hooks';
+import { useCanCreate, usePdfDocuments } from '@helsoft/hooks';
 import { useLocalization } from '@helsoft/localization';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { useRouter } from 'expo-router';
@@ -62,7 +62,7 @@ import { PdfDocuments } from './pdf-documents';
 
 const mockUsePdfDocuments = usePdfDocuments as jest.Mock;
 const mockUseLocalization = useLocalization as jest.Mock;
-const mockUseProfile = useProfile as jest.Mock;
+const mockUseCanCreate = useCanCreate as jest.Mock;
 const mockUseRouter = useRouter as jest.Mock;
 
 const t = (key: string, options?: Record<string, unknown>) => {
@@ -102,25 +102,11 @@ const docsValue = (overrides: Partial<ReturnType<typeof usePdfDocuments>> = {}) 
   ...overrides,
 });
 
-const profileValue = (canCreate = true) => ({
-  profile: canCreate
-    ? {
-        plan: 'paid' as const,
-        keySource: 'platform' as const,
-        showKeySettings: false,
-        showAds: false,
-        canCreate: true,
-      }
-    : {
-        plan: 'free' as const,
-        keySource: 'user' as const,
-        showKeySettings: true,
-        showAds: true,
-        canCreate: false,
-      },
-  isLoading: false,
-  error: null,
-  retry: jest.fn(),
+// Creation entitlement comes from the shared `useCanCreate()` hook; its derivation matrix
+// (`keySource === 'platform' || hasKey`) is covered in @helsoft/hooks' use-can-create.test.ts.
+const canCreateValue = (overrides: Partial<ReturnType<typeof useCanCreate>> = {}) => ({
+  canCreate: true,
+  ...overrides,
 });
 
 describe('PdfDocuments', () => {
@@ -129,7 +115,7 @@ describe('PdfDocuments', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseLocalization.mockReturnValue(localizationValue({ t, locale: 'en' }));
-    mockUseProfile.mockReturnValue(profileValue(true));
+    mockUseCanCreate.mockReturnValue(canCreateValue());
     mockUseRouter.mockReturnValue({ push });
   });
 
@@ -273,8 +259,8 @@ describe('PdfDocuments', () => {
   });
 
   // @s13 — disabling creation keeps existing generated lessons openable.
-  it('hides Generate while preserving Open lesson when canCreate is false', async () => {
-    mockUseProfile.mockReturnValue(profileValue(false));
+  it('hides Generate while preserving Open lesson when creation is disabled', async () => {
+    mockUseCanCreate.mockReturnValue(canCreateValue({ canCreate: false }));
     mockUsePdfDocuments.mockReturnValue(
       docsValue({
         documents: [
@@ -307,6 +293,31 @@ describe('PdfDocuments', () => {
       pathname: '/lesson/[id]/player',
       params: { id: 'lesson-42' },
     });
+  });
+
+  // @s13 (facet) — creation enabled via the shared hook: Generate is shown for a learner who
+  // can create (platform plan or saved key — decided by useCanCreate).
+  it('shows Generate when creation is enabled', async () => {
+    mockUseCanCreate.mockReturnValue(canCreateValue({ canCreate: true }));
+    mockUsePdfDocuments.mockReturnValue(
+      docsValue({
+        documents: [
+          {
+            id: 'doc-ready',
+            filename: 'notes.pdf',
+            pageCount: 12,
+            createdAt: '2026-07-13T12:00:00.000Z',
+            status: 'ready',
+            lessonId: null,
+          },
+        ],
+      }),
+    );
+
+    await render(<PdfDocuments />);
+
+    expect(screen.getByRole('button', { name: 'Generate notes.pdf' })).toBeTruthy();
+    expect(screen.getByText('sim-extract')).toBeTruthy();
   });
 
   // @s16 — error + retry wired to refetch.

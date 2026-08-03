@@ -1,4 +1,4 @@
-import { useAiProviders, useApiKey, useProfile } from '@helsoft/hooks';
+import { useAiProviders, useGetApiKey, useProfile } from '@helsoft/hooks';
 import { GenerationPreferenceService, getEnabledProviders } from '@helsoft/services';
 import type { AiProvider, GenerateLessonRequest, LessonComposition } from '@helsoft/types';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -27,7 +27,7 @@ type UseLessonGenerationArgs = {
 export const useLessonGenerationForm = ({ documentId, composition }: UseLessonGenerationArgs) => {
   const { providers } = useAiProviders();
   const enabledProviders = useMemo(() => getEnabledProviders(providers), [providers]);
-  const { status, hasKey } = useApiKey();
+  const { status, hasKey } = useGetApiKey();
   const { profile } = useProfile();
   const [selectedProvider, setSelectedProvider] = useState<AiProvider | undefined>();
   const [selectedModel, setSelectedModel] = useState<string | undefined>();

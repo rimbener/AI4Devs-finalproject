@@ -11,9 +11,9 @@ describe('useSessionGate', () => {
     jest.clearAllMocks();
   });
 
-  // Shared gating hoisted out of use-api-key.ts/use-profile.ts (round 1 full-review finding):
-  // a user-scoped query should be enabled/loading in lockstep with the session.
-  it('enables and reports not-loading-yet when a session user id is present and the session settled', () => {
+  // Shared gating hoisted out of use-get-api-key.ts/use-profile.ts (round 1 full-review
+  // finding): a user-scoped query should be enabled in lockstep with the session.
+  it('enables when a session user id is present and the session settled', () => {
     mockUseSession.mockReturnValue({
       session: { user: { id: 'user-1' } },
       isLoading: false,
@@ -22,27 +22,27 @@ describe('useSessionGate', () => {
     const { result } = renderHook(() => useSessionGate());
 
     expect(result.current.sessionUserId).toBe('user-1');
+    expect(result.current.isSessionLoading).toBe(false);
     expect(result.current.enabled).toBe(true);
-    expect(result.current.deriveIsLoading(false)).toBe(false);
   });
 
-  it('disables and never reports loading when there is no session', () => {
+  it('disables when there is no session', () => {
     mockUseSession.mockReturnValue({ session: null, isLoading: false });
 
     const { result } = renderHook(() => useSessionGate());
 
     expect(result.current.sessionUserId).toBeUndefined();
     expect(result.current.enabled).toBe(false);
-    expect(result.current.deriveIsLoading(true)).toBe(false);
   });
 
-  it('reports loading while the session itself is still resolving, regardless of query-pending state', () => {
+  it('disables while the session itself is still resolving', () => {
     mockUseSession.mockReturnValue({ session: null, isLoading: true });
 
     const { result } = renderHook(() => useSessionGate());
 
+    expect(result.current.sessionUserId).toBeUndefined();
+    expect(result.current.isSessionLoading).toBe(true);
     expect(result.current.enabled).toBe(false);
-    expect(result.current.deriveIsLoading(false)).toBe(true);
   });
 
   // Mutation-kill — a session object with no `user` field (e.g. a partially-hydrated session)
@@ -55,17 +55,5 @@ describe('useSessionGate', () => {
 
     expect(result.current.sessionUserId).toBeUndefined();
     expect(result.current.enabled).toBe(false);
-  });
-
-  it('derives loading from the query-pending flag once authenticated and settled', () => {
-    mockUseSession.mockReturnValue({
-      session: { user: { id: 'user-1' } },
-      isLoading: false,
-    });
-
-    const { result } = renderHook(() => useSessionGate());
-
-    expect(result.current.deriveIsLoading(true)).toBe(true);
-    expect(result.current.deriveIsLoading(false)).toBe(false);
   });
 });
