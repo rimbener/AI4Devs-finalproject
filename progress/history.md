@@ -200,3 +200,5 @@
 2026-08-01 | activity-submit-result (ad hoc) | n/a | — | ActivitySubmitResult + ScrollViewProvider; matching/player wired; session-gate types inlined.
 
 2026-08-03 | activity-result-panel + templates (ad hoc) | n/a | — | Move activity organisms→templates; ActivitySubmitResult→ActivityResultPanel (+ content/explanation atoms); scoped scroll provider; turbo e2e scripts (35f534224).
+
+2026-08-03 | activity specs sync (ad hoc) | n/a | — | Specs/gherkin/stories match templates + ActivityResultPanel; MCQ select→submit; lesson-player footer Next gate (ca25b5207).
