@@ -120,6 +120,41 @@ describe('useSession', () => {
     });
   });
 
+  it('returns cached session when queryFn runs after auth event overwrites cache', async () => {
+    let resolveGetSession: (session: Session | null) => void = () => undefined;
+    service.getSession.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveGetSession = resolve;
+        }),
+    );
+
+    let push: ((session: Session | null) => void) | undefined;
+    service.onAuthStateChange.mockImplementation((callback) => {
+      push = callback;
+      return jest.fn();
+    });
+
+    const { result } = renderHook(() => useSession(), { wrapper: createWrapper() });
+
+    const next = { access_token: 'next' } as Session;
+    act(() => {
+      push?.(next);
+    });
+
+    await waitFor(() => {
+      expect(result.current.session).toBe(next);
+    });
+
+    act(() => {
+      resolveGetSession(null);
+    });
+
+    await waitFor(() => {
+      expect(result.current.session).toBe(next);
+    });
+  });
+
   it('unsubscribes on unmount', async () => {
     const stop = jest.fn();
     service.onAuthStateChange.mockReturnValue(stop);

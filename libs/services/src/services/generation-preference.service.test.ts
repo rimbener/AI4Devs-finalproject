@@ -48,9 +48,41 @@ describe('GenerationPreferenceService', () => {
     dao.getStoredPreference.mockResolvedValueOnce('{"provider":"openai","model":null}');
     dao.getStoredPreference.mockResolvedValueOnce('{"provider":"openai","model":456}');
 
-    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
-    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
-    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toBeNull();
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toEqual(null);
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toEqual(null);
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toEqual(null);
+  });
+
+  it('getStoredPreference returns null when parsed object is null', async () => {
+    dao.getStoredPreference.mockResolvedValue('null');
+
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toEqual(null);
+  });
+
+  it('getStoredPreference returns null when parsed object is an array', async () => {
+    dao.getStoredPreference.mockResolvedValue('[]');
+
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toEqual(null);
+  });
+
+  it('getStoredPreference returns null when provider key is missing', async () => {
+    dao.getStoredPreference.mockResolvedValue('{"model":"gpt-5.6-luna"}');
+
+    await expect(GenerationPreferenceService.getStoredPreference()).resolves.toEqual(null);
+  });
+
+  it('getStoredPreference returns null when model key is missing', async () => {
+    dao.getStoredPreference.mockResolvedValue('{"provider":"openai"}');
+
+    const result = await GenerationPreferenceService.getStoredPreference();
+    expect(result).toBeNull();
+  });
+
+  it('getStoredPreference returns null when object has no provider or model keys', async () => {
+    dao.getStoredPreference.mockResolvedValue('{"foo":"bar"}');
+
+    const result = await GenerationPreferenceService.getStoredPreference();
+    expect(result).toBeNull();
   });
 
   it('getStoredPreference returns null for non-object JSON values', async () => {

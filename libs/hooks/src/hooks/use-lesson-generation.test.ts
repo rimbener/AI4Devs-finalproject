@@ -224,6 +224,56 @@ describe('useLessonGeneration', () => {
     expect(result.current.result?.lessonId).toBe('lesson-2');
   });
 
+  // stopStepper — the stepper must stop advancing after generation resolves.
+  it('stops advancing currentStep after generation resolves', async () => {
+    service.generate.mockResolvedValue({
+      lessonId: 'lesson-1',
+      title: 'Photosynthesis',
+      composition: 'both' as const,
+      slides: [],
+    });
+    const { result } = renderHook(() => useLessonGeneration());
+
+    act(() => {
+      result.current.generate(request);
+    });
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    await act(async () => {});
+
+    expect(result.current.stage).toBe('content');
+    expect(result.current.currentStep).toBe('attaching');
+
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+
+    expect(result.current.currentStep).toBe('attaching');
+  });
+
+  it('passes an empty string as userId when session has no user id', async () => {
+    mockUseSession.mockReturnValue({ session: { user: {} }, isLoading: false });
+    service.generate.mockResolvedValue({
+      lessonId: 'lesson-1',
+      title: 'Photosynthesis',
+      composition: 'both' as const,
+      slides: [],
+    });
+    const { result } = renderHook(() => useLessonGeneration());
+
+    await act(async () => {
+      await result.current.generate(request);
+    });
+
+    expect(service.generate).toHaveBeenCalledWith(request, '');
+  });
+
   // Passes documentId/composition through to the service, along with the session's userId.
   it('calls the service with the request and the current session userId', async () => {
     service.generate.mockResolvedValue({

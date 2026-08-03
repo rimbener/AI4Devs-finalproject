@@ -149,6 +149,17 @@ describe('SignOut', () => {
     expect(onSignOut).not.toHaveBeenCalled();
   });
 
+  it('does not throw when retry is pressed without onSignOutError', async () => {
+    const onSignOut = jest.fn().mockResolvedValue(undefined);
+    await renderSignOut({ error: 'network_error', onSignOut });
+
+    await act(async () => {
+      fireEvent.press(screen.getByRole('button', { name: 'auth.logOutRetry' }));
+    });
+
+    expect(onSignOut).toHaveBeenCalledTimes(1);
+  });
+
   it('disables the trigger while signing out', async () => {
     await renderSignOut({ isSigningOut: true });
 

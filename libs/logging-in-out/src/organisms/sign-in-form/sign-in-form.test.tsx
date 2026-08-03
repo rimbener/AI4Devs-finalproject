@@ -143,6 +143,16 @@ describe('SignInForm', () => {
     expect(onSignIn).not.toHaveBeenCalled();
   });
 
+  it('does not show email error when typing invalid email without prior error', async () => {
+    await renderSignInForm();
+
+    await act(async () => {
+      fireEvent.changeText(screen.getByLabelText('auth.email'), 'not-an-email');
+    });
+
+    expect(screen.queryByText('auth.error.email')).toBeNull();
+  });
+
   // @s5 — invalid_credentials error renders as the auth.error.invalidCredentials banner.
   it('renders the invalidCredentials banner when error is invalid_credentials', async () => {
     await renderSignInForm({ error: 'invalid_credentials' });
