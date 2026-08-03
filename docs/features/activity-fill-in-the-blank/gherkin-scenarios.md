@@ -17,7 +17,7 @@ Feature: Fill-in-the-blank activity slide
   Scenario: The slide renders unanswered with an inline editable blank
     When the slide renders
     Then the prompt is shown with an inline empty editable text input in place of the blank
-    And the Submit control is enabled
+    And the Submit control is visible
     And no result is shown
 
   @s2
@@ -138,7 +138,8 @@ Feature: Fill-in-the-blank activity slide
   Scenario: User-facing chrome is localized
     Given the app is set to a supported locale
     When the slide and its results render
-    Then the Submit label, result labels, explanation heading, blank input name, and unavailable notice render from the active locale bundle
+    Then Submit, correct/incorrect, explanation, and unavailable render from activity.result.*
+    And the blank input name renders from activity.fillInTheBlank.blankInput
     And no user-facing chrome string is hardcoded
 
   @s14
@@ -172,17 +173,17 @@ Feature: Fill-in-the-blank activity slide
 
 | Scenario | Primary test |
 |---|---|
-| @s1 | `fill-in-the-blank.test.tsx` (unanswered inline blank + Submit enabled) |
-| @s2 | `grade-fill-in-the-blank.test.ts` + organism/wiring (correct + lock) |
-| @s3 | grader + organism (incorrect + reveal `[0]` + lock) |
-| @s4 | `fill-in-the-blank.test.tsx` (explanation with result) |
-| @s5 | organism + `fill-in-the-blank-activity.test.tsx` (ignore edit/resubmit; onAnswered once) |
-| @s6 | grader (empty → incorrect) + organism/wiring resolve path |
-| @s7 | organism (Enter + button → same `onSubmit`) + wiring once |
+| @s1 | `templates/fill-in-the-blank/fill-in-the-blank.test.tsx` (inline blank + Submit visible) |
+| @s2 | `grading/grade-fill-in-the-blank.test.ts` + template (correct + lock) |
+| @s3 | grader + template (incorrect + reveal `[0]` + lock) |
+| @s4 | template (explanation via ActivityResultContent) |
+| @s5 | template (ignore edit/resubmit; onAnswered once) |
+| @s6 | grader (empty → incorrect) + template resolve path |
+| @s7 | template (Enter + Submit → same grade path) |
 | @s8 | `normalizeFillInAnswer` / grader unit outline |
 | @s9 | grader (non-first accepted match + `acceptedAnswerShown` = matched) |
-| @s10 | grader shape + `acceptedAnswerShown` rules + activity `onAnswered` payload |
-| @s11 | `isFillInTheBlankSlideValid` false (empty list **or** any empty entry) + organism unavailable |
+| @s10 | grader shape + activity `onAnswered` payload |
+| @s11 | `isFillInTheBlankSlideValid` false + template unavailable |
 | @s12 | valid=false / unrenderable → unavailable, no crash |
-| @s13 | activity labels via `t()` + localization key alignment |
-| @s14 | organism a11y assertions + Playwright e2e |
+| @s13 | `activity.result.*` + `blankInput` via `t()` + localization key alignment |
+| @s14 | template a11y assertions + Playwright e2e |

@@ -17,7 +17,7 @@ Feature: Open-ended activity slide
     When the slide renders
     Then the prompt is shown
     And an empty editable multiline text input is shown
-    And the Submit control is enabled
+    And the Submit control is visible
     And the model answer is hidden
     And no self-mark controls are shown
 
@@ -81,7 +81,8 @@ Feature: Open-ended activity slide
   Scenario: User-facing chrome is localized
     Given the app is set to a supported locale
     When the slide and its submitted comparison render
-    Then the Submit label, your-answer heading, model-answer heading, explanation heading, answer input name, and unavailable notice render from the active locale bundle
+    Then Submit, explanation heading, and unavailable notice render from activity.result.*
+    And your-answer heading, model-answer heading, and answer input name render from activity.openEnded.*
     And no user-facing chrome string is hardcoded
 
   @s9

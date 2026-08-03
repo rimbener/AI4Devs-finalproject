@@ -34,7 +34,7 @@ None.
 - Persisting position/answers across sessions, devices, or logout — **R9**.
 - Results screen scoring/attempt-persistence internals — **R7 (done)**; R4 only feeds `LessonResults` real data, inline.
 - Standalone `results.tsx` route + `index.tsx` "View results" link — legacy deep-links, out of R4's happy path (still on the stub), deferred to R9.
-- Building new activity UI — R4 wires the **existing** R3 organisms.
+- Building new activity UI — R4 wires the **existing** R3 activity templates.
 - Swipe navigation — Next/Back buttons only, same on web + mobile.
 
 ## Open decisions (resolved, with rationale)
@@ -43,7 +43,7 @@ None.
 - **Save the attempt once per session** — first entry persists (R7); Back then re-enter shows the score UI **without** saving again; retake allows a new save. Gated by an `attemptSaved` deck flag + a backward-compatible `persistOnMount` prop on `LessonResults`. *Why:* results is an unmount-on-leave step, so R7's save-on-mount would otherwise record an attempt per visit.
 - **Results fed inline from deck state** (not router params, not a cross-route store). *Why:* in-deck = no route hop; deck state already holds lesson + answers.
 - **Retake = in-deck reset** — wipe answers + `attemptSaved`, return to first content slide. *Why:* fresh attempt in the same deck; no navigation.
-- **Skip allowed** — Next never gates on an answer. *Why:* self-paced study.
+- **Body = `ActivityScrollViewProvider`** — pinned activity footer (Submit/result) + shared footer Next (`player.continue`). Footer Next is **hidden until the activity has a result** (or flashcard is self-marked); instructional slides keep it visible. Header navigator Next still advances without requiring an answer (skip allowed via top chrome). *Why:* keep submit/result always on screen; nudge complete-before-continue without blocking skip.
 - **Images via Supabase signed URL** from `SlideImageRef.storagePath` (bucket `pdf-images`); missing/failed → text-only, no error. *Why:* refs aren't bytes; mirrors R2's degrade AC.
 - **0-slide lesson → Empty + Back** (not error/retry). *Why:* nothing failed; nothing to play.
 - **Load failure → Error + Retry + Back** *(spec_partner decision).* *Why:* transient I/O; mirrors `useLessons.refetch` / `useLessonAttempt.retry`.

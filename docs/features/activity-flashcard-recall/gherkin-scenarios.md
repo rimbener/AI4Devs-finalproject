@@ -91,7 +91,8 @@ Feature: Flashcard / recall activity slide
   Scenario: User-facing chrome is localized
     Given the app is set to a supported locale
     When the slide renders, the answer is revealed, and a self-mark is chosen
-    Then the reveal label, the self-mark actions, the locked confirmation, the answer and explanation headings, and the unavailable notice render from the active locale bundle
+    Then reveal and self-mark chrome render from activity.flashcard.*
+    And answer heading, explanation heading, and unavailable notice render from activity.result.*
     And no user-facing chrome string is hardcoded
 
   @s10

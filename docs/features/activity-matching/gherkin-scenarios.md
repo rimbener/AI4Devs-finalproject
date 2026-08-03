@@ -57,15 +57,15 @@ Feature: Matching activity slide
     And both of its items become unpaired again
 
   @s7
-  Scenario Outline: Submit is enabled only when every item is paired
+  Scenario Outline: Submit is visible only when every item is paired
     Given <paired-state>
     When the slide is shown
     Then the Submit control is <submit-state>
 
     Examples:
       | paired-state                        | submit-state |
-      | at least one item is still unpaired | disabled     |
-      | every item is paired                | enabled      |
+      | at least one item is still unpaired | hidden       |
+      | every item is paired                | visible      |
 
   @s8
   Scenario: Submitting grades every pair and locks the activity
@@ -80,7 +80,8 @@ Feature: Matching activity slide
     Given every formed pair matches the correct pairing
     When the learner submits
     Then every pair is marked correct
-    And an all-correct result is shown
+    And a correct result banner is shown (activity.result.correct)
+    And the summary shows all pairs correct
 
   @s10
   Scenario: Some pairs incorrect
@@ -88,7 +89,8 @@ Feature: Matching activity slide
     When the learner submits
     Then the matching pairs are marked correct
     And the non-matching pairs are marked incorrect
-    And a mixed (incorrect) result is shown
+    And an incorrect result banner is shown (activity.result.incorrect)
+    And the summary shows the partial count
 
   @s11
   Scenario: Explanation is shown with the results
@@ -139,7 +141,8 @@ Feature: Matching activity slide
     Given the app is set to a supported locale
     And every item is paired
     When the learner submits
-    Then the Submit label, result labels, per-pair result wording, summary, explanation heading, and unavailable notice render from the active locale bundle
+    Then Submit / correct / incorrect / explanation / unavailable render from activity.result.*
+    And the summary and per-pair a11y wording render from activity.matching.*
     And no user-facing chrome string is hardcoded
 
   @s17

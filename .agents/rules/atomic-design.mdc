@@ -49,7 +49,7 @@ Specific instances of templates filled with real representative content.
 
 | Layer | Where |
 | --- | --- |
-| Atoms / molecules / organisms | `libs/components` (shared UI); activity organisms in `libs/activities` |
-| Templates / pages | App screens (`apps/app-study-buddy`) and feature libs — not in the component library |
+| Atoms / molecules / organisms | `libs/components` (shared UI); shared activity chrome (e.g. result panel) as atoms/molecules in `libs/activities` |
+| Templates / pages | Activity slides as templates in `libs/activities/src/templates/`; app screens (`apps/app-study-buddy`) and feature libs |
 
 **Every component authored in a Storybook-enabled library _always_ ships a co-located `component-name.stories.tsx` — no exceptions.** This covers `@helsoft/components`, `@helsoft/activities`, `@helsoft/logging-in-out`, and any lib scaffolded from `@helsoft/lib-with-storybook`. The story must cover the component's states (the 4 UI states — Loading/Content/Error/Empty — where applicable). Follow kebab-case folders (`button/button.tsx` + `button.stories.tsx`) and reuse tokens — no hardcoded colors/spacing. A component without its story is an incomplete component.

@@ -83,9 +83,10 @@ Feature: Slide navigation & lesson player
     And on the results slide the indicator reads the final step, "slide 5 of 5"
 
   @s11
-  Scenario: I may skip an activity without answering it
+  Scenario: I may skip an activity without answering it via the header Next
     Given the current slide is an activity slide I have not answered
-    When I choose Next
+    And the footer Next is hidden until a result exists
+    When I choose Next from the header navigator
     Then I advance to the following slide
     And I am not blocked or prompted to answer first
 
