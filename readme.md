@@ -29,6 +29,8 @@ AI Study Buddy convierte cualquier PDF en una lección interactiva generada por 
 
 [https://aistudybuddy.expo.app](https://aistudybuddy.expo.app) (web, desplegado en EAS Hosting)
 
+Credenciales de prueba: lidr@ai4devs.com / AI4Devs123
+
 ### 0.5. URL o archivo comprimido del repositorio
 
 [https://github.com/rimbener/AI4Devs-finalproject](https://github.com/rimbener/AI4Devs-finalproject)
